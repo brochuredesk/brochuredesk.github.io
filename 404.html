@@ -1,0 +1,1052 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>BrochureDesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400&display=swap" rel="stylesheet">
+<link id="teamFonts" rel="stylesheet" href="data:text/css,">
+<link rel="stylesheet" href="/team/flow.css?v=2">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<!--
+  Team pages and the site's 404.
+  GitHub Pages serves this file for any address that isn't a real file. If the address starts with a team code
+  (e.g. /<team>-<code>, /<team>-<code>/new, /<team>-<code>/package/<id>), the team's own record is loaded from the
+  database and every screen draws in that team's brand (theme tokens: colors, fonts, logos, lockup) until sign-out.
+  Nothing about any team lives in this public repo: no names, logos, colors, fonts or list.
+  Any other address shows the plain BrochureDesk 404.
+-->
+<style>
+:root{
+  /* team tokens: filled from the team record */
+  --team-primary:#1F4D3F; --team-deep:#163a2f; --team-ink:#1E2226;
+  --team-display:"Bodoni Moda", Georgia, serif;
+  --team-body:"Figtree", system-ui, sans-serif;
+  /* BrochureDesk */
+  --bd-ink:#1E2226; --bd-emerald:#1F4D3F; --bd-brass:#9C7B45; --bd-marble:#ECECE9;
+  --bd-display:"Bodoni Moda", Georgia, serif;
+  --paper:#fff; --mist:#f4f2f1; --line:#e2dddb; --muted:#6b6462; --ok:#14613a; --focus:#1a5fd1;
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font-family:var(--team-body);color:var(--team-ink);background:var(--paper);-webkit-font-smoothing:antialiased;font-size:16px;line-height:1.5}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+[hidden]{display:none!important}
+dialog{margin:auto}
+
+/* ---------- loading and 404 ---------- */
+.plain{min-height:100%;display:grid;place-items:center;padding:40px 20px;background:var(--bd-marble);color:var(--bd-ink);font-family:system-ui,sans-serif;text-align:center}
+.plain .in{display:grid;gap:14px;justify-items:center;max-width:440px}
+.plain .mk{font-family:var(--bd-display);font-size:26px;display:inline-flex;gap:10px;align-items:center;text-decoration:none;color:var(--bd-ink)}
+.plain h1{font-family:var(--bd-display);font-weight:400;font-size:40px;line-height:1.05}
+.plain p{color:#4A5157}
+.plain .b{display:inline-block;margin-top:6px;background:var(--bd-emerald);color:#F4F2EC;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:2px}
+
+/* ---------- sign-in ---------- */
+.vs{min-height:100%;display:grid;grid-template-columns:minmax(320px,46%) 1fr}
+.vs .brand{display:grid;grid-template-rows:55fr 6px 39fr}
+.vs .top{background:var(--team-primary);color:#fff;padding:48px 56px;display:flex;flex-direction:column;justify-content:center}
+.vs .gap{background:var(--paper)}
+.vs .bottom{background:var(--team-deep);color:#fff;padding:36px 56px 40px;display:flex;flex-direction:column;justify-content:flex-end}
+.lockup{display:flex;flex-direction:column;gap:26px}
+.lk-title{display:flex;flex-direction:column;gap:16px;font-weight:400}
+.lk-logo svg{width:min(360px,100%);height:auto;display:block}
+.lk-logo{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.lk-logo img{display:block;max-width:min(340px,100%);max-height:150px;width:auto;height:auto}
+.wm{display:inline-flex;flex-direction:column;gap:6px;font-family:var(--team-display);line-height:1}
+.wm-top{font-size:clamp(34px,3.6vw,52px);font-weight:600;letter-spacing:.01em}
+.wm-sub{font-family:var(--team-body);font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;opacity:.9}
+.lk-word{font-family:var(--team-display);font-size:clamp(46px,5.4vw,78px);line-height:.98}
+.lk-powered{display:inline-flex;align-items:center;gap:14px;color:#fff;text-decoration:none;padding-top:18px;border-top:1px solid rgba(255,255,255,.45);align-self:flex-start;min-width:min(360px,100%)}
+.lk-by{font-size:13px;letter-spacing:.06em;opacity:.85}
+.lk-bd{display:inline-flex;align-items:center;gap:9px;font-family:var(--bd-display);font-size:26px}
+.lk-bd svg{width:24px;height:24px;flex:none}
+.vs .carries{font-size:15px;line-height:1.55;max-width:38ch;opacity:.92}
+.vs .carries strong{font-weight:700}
+.vs .carries + .carries{margin-top:10px}
+.vs .printer{margin-top:14px;font-family:var(--team-display);font-size:24px;line-height:1.2;max-width:24ch}
+.vs .office{margin-top:22px;font-size:13.5px;line-height:1.55;opacity:.85}
+.vs .office b{font-weight:700}
+.vs .signin{display:flex;flex-direction:column;justify-content:center;padding:48px clamp(24px,7vw,112px) 56px}
+.vs .inner{width:100%;max-width:420px}
+.vs .tag{font-size:13px;color:var(--muted);margin-bottom:6px}
+.vs h2{font-family:var(--team-display);font-size:34px;font-weight:400;line-height:1.2}
+.vs .lede{margin-top:10px;color:var(--muted);font-size:16px}
+.vs label{display:block;margin-top:22px;font-size:14px;font-weight:700}
+.vs input{display:block;width:100%;margin-top:8px;font:inherit;font-size:17px;padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--team-ink)}
+.vs input:focus{outline:none;border-color:var(--team-ink)}
+.vs .go{margin-top:20px;width:100%;font:inherit;font-size:17px;font-weight:700;padding:15px 18px;border:0;border-radius:8px;background:var(--team-primary);color:#fff;cursor:pointer}
+.vs .go:hover{background:var(--team-deep)}
+.vs .go[disabled]{opacity:.7;cursor:progress}
+.vs .status{margin-top:14px;font-size:15px;min-height:1.5em}
+.vs .status.err{color:#a1161b}
+.vs .help{margin-top:34px;padding-top:22px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.vs .help p + p{margin-top:8px}
+.vs .help b{color:var(--team-ink)}
+.vs .about{margin-top:28px;padding:16px 18px;background:var(--bd-marble);border-left:3px solid var(--bd-emerald);font-size:14px;color:var(--bd-ink)}
+
+/* ---------- home ---------- */
+.vh .wrap{max-width:1180px;margin:0 auto;padding:0 32px}
+.vh header .bar{display:flex;align-items:center;justify-content:space-between;gap:20px;height:76px}
+.team-lock{display:inline-flex;align-items:center;gap:16px;text-decoration:none;color:var(--team-ink)}
+.team-lock svg{width:210px;height:auto;display:block}
+.team-lock [data-slot="logoColor"]{display:inline-flex;align-items:center;gap:10px}
+.team-lock img{display:block;max-height:46px;max-width:200px;width:auto;height:auto}
+.team-lock .wm{gap:3px}.team-lock .wm-top{font-size:22px}.team-lock .wm-sub{font-size:9.5px;letter-spacing:.2em}
+.tl-div{width:1px;height:30px;background:var(--team-ink);opacity:.35}
+.tl-word{font-family:var(--team-display);font-size:26px;line-height:1;color:var(--team-primary);white-space:nowrap}
+.vh .right{display:flex;align-items:center;gap:22px}
+.vh .bd{display:inline-flex;align-items:center;gap:8px;font-family:var(--bd-display);font-size:18px;color:var(--bd-ink);text-decoration:none}
+.vh .bd svg{width:18px;height:18px}
+.vh .bd .by{font-family:var(--team-body);font-size:12px;color:var(--muted);letter-spacing:.04em;margin-right:2px}
+.vh .roles{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;font-size:13.5px;margin-right:10px}
+.vh .roles a{padding:6px 14px;color:var(--team-ink);text-decoration:none}
+.vh .roles a.on{background:var(--team-primary);color:#fff;font-weight:700}
+.vh .roles a:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.vh .acct{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:999px;padding:4px 12px 4px 4px;background:var(--paper);font:inherit;font-size:14px;cursor:pointer;color:var(--team-ink)}
+.vh .acct .ini{width:30px;height:30px;border-radius:50%;background:var(--team-ink);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700}
+.vh .rule{height:6px;background:var(--team-primary);box-shadow:0 4px 0 var(--team-deep)}
+.vh .test{background:var(--bd-ink);color:#e8e9e6;font-size:13px;text-align:center;padding:7px 16px}
+.vh .hello{padding:44px 0 28px}
+.vh .hello h1{font-family:var(--team-display);font-weight:400;font-size:clamp(38px,5vw,58px);line-height:1.04}
+.vh .hello p{margin-top:8px;color:var(--muted);font-size:17px}
+.vh .start{background:var(--team-primary);color:#fff;padding:30px 34px 32px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:28px;align-items:end}
+.vh .start h2{font-family:var(--team-display);font-weight:400;font-size:32px;line-height:1.1}
+.vh .start p{margin-top:8px;font-size:15px;opacity:.92;max-width:38ch}
+.vh .start p.printer{margin-top:12px;font-family:var(--team-display);font-size:21px;opacity:1}
+.vh .linkbox{display:flex;background:#fff;border-radius:6px;overflow:hidden}
+.vh .linkbox input{flex:1;min-width:0;border:0;font:inherit;font-size:16px;padding:15px 16px;color:var(--team-ink)}
+.vh .linkbox input:focus{outline:none}
+.vh .linkbox:focus-within{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--team-ink)}
+.vh .linkbox button{border:0;font:inherit;font-weight:700;font-size:16px;padding:0 26px;background:var(--team-ink);color:#fff;cursor:pointer}
+.vh .start .small{grid-column:2;margin-top:-14px;font-size:13px;opacity:.9}
+.vh .start .small a{font-weight:700}
+.vh .start .hlp{background:none;border:0;padding:0;font:inherit;font-weight:700;color:#fff;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.vh .start .small.draft{margin-top:-18px;max-width:62ch}
+.vh .start .msg{grid-column:1 / -1;font-size:15px;background:rgba(0,0,0,.18);padding:10px 14px;border-radius:6px}
+.vh .main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:36px;padding:40px 0 64px}
+.vh h2.sec{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:14px;letter-spacing:.02em}
+.vh .resume{display:grid;grid-template-columns:220px minmax(0,1fr);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.vh .resume img{width:100%;height:100%;object-fit:cover;object-position:center top;min-height:180px;display:block}
+.vh .resume .body{padding:22px 24px;display:flex;flex-direction:column;gap:10px}
+.vh .addr{font-family:var(--team-display);font-size:26px;line-height:1.1}
+.vh .sub{color:var(--muted);font-size:14px}
+.vh .steps{display:flex;gap:6px;margin-top:4px;list-style:none;padding:0}
+.vh .steps li{flex:1;font-size:12px;color:var(--muted);padding-top:8px;border-top:3px solid var(--line)}
+.vh .steps li.done{border-color:var(--team-deep);color:var(--team-ink)}
+.vh .steps li.now{border-color:var(--team-primary);color:var(--team-ink);font-weight:700}
+.vh .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.vh .btn{display:inline-flex;align-items:center;justify-content:center;font:inherit;font-weight:700;font-size:15px;padding:11px 18px;border-radius:6px;border:0;background:var(--team-primary);color:#fff;text-decoration:none;cursor:pointer}
+.vh .btn:hover{background:var(--team-deep)}
+.vh .btn.line{background:transparent;color:var(--team-ink);border:1px solid var(--team-ink)}
+.vh .btn.line:hover{background:var(--mist)}
+.vh .quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:30px}
+.vh .q{display:block;text-decoration:none;text-align:left;font:inherit;color:var(--team-ink);background:var(--mist);border:0;border-left:4px solid var(--team-deep);padding:16px 18px;cursor:pointer;border-radius:0 6px 6px 0}
+.vh .q:hover{background:#ece8e6}
+.vh .q b{display:block;font-size:16px}
+.vh .q span{display:block;font-size:13.5px;color:var(--muted);margin-top:3px}
+.vh .orders{margin-top:36px}
+.vh table{width:100%;border-collapse:collapse}
+.vh th{text-align:left;font-size:12.5px;font-weight:700;color:var(--muted);padding:0 12px 10px 0;border-bottom:2px solid var(--team-ink)}
+.vh td{padding:14px 12px 14px 0;border-bottom:1px solid var(--line);vertical-align:middle;font-size:15px}
+.vh td .t{display:flex;align-items:center;gap:14px}
+.vh td img{width:64px;height:48px;object-fit:cover;border-radius:3px;display:block}
+.vh td .a{font-weight:700}
+.vh td .s2{font-size:13px;color:var(--muted)}
+.vh .pill{display:inline-block;font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--mist);white-space:nowrap}
+.vh .pill.cart{background:#fdecec;color:var(--team-deep)}
+.vh .pill.ok{background:#e7f3ec;color:var(--ok)}
+.vh td .lnk{font-weight:700;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+.vh aside{display:flex;flex-direction:column;gap:16px}
+.vh .pack{background:var(--team-deep);color:#fff;padding:24px}
+.vh .pack .n{font-family:var(--team-display);font-size:64px;line-height:1}
+.vh .pack p{font-size:14.5px;opacity:.92;margin-top:6px}
+.vh .pack .btn{margin-top:16px;background:#fff;color:var(--team-deep)}
+.vh .card{border:1px solid var(--line);border-radius:8px;padding:20px 22px}
+.vh .card h3{font-size:16px;font-weight:700}
+.vh .card p{font-size:14px;color:var(--muted);margin-top:4px}
+.vh .contact{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:6px;font-size:13px;line-height:1.45}
+.vh .contact b{font-size:15px}
+.vh .card ul{list-style:none;padding:0;margin-top:10px;display:grid;gap:8px;font-size:15px}
+.vh .card ul a,.vh .card ul button{text-decoration:none;font-weight:700;background:none;border:0;padding:0;font:inherit;font-weight:700;color:inherit;cursor:pointer;text-align:left}
+.vh footer{border-top:1px solid var(--line);padding:22px 0 30px;font-size:13px;color:var(--muted)}
+.vh footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+.vh .contact{display:flex;gap:12px;align-items:center}
+.vh .contact img{width:56px;height:56px;border-radius:50%;object-fit:cover;flex:none}
+.vh .card ul button{font-size:15px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.vh .pf{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:40px;padding:8px 0 64px;align-items:start}
+.vh .pf-form{max-width:520px}
+.vh .pf-head{display:flex;gap:20px;align-items:center;padding-bottom:22px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.vh .pf-photo{width:112px;height:112px;border-radius:50%;background:var(--mist);border:2px dashed var(--line);display:grid;place-items:center;overflow:hidden;flex:none;font-size:12px;color:var(--muted);text-align:center;padding:10px}
+.vh .pf-photo.has{border:3px solid var(--team-primary);padding:0}
+.vh .pf-photo img{width:100%;height:100%;object-fit:cover}
+.vh .pf-lbl{display:block;margin-top:20px;font-size:15px;font-weight:700}
+.vh .pf-head .pf-lbl{margin-top:0}
+.vh .pf-hint{font-size:13.5px;color:var(--muted);margin-top:2px}
+.vh .pf-form input[type=text],.vh .pf-form input[type=email],.vh .pf-form input[type=tel]{display:block;width:100%;margin-top:8px;font:inherit;font-size:17px;padding:13px 15px;border:1px solid var(--line);border-radius:8px;color:var(--team-ink);background:var(--paper)}
+.vh .pf-form input:focus{outline:none;border-color:var(--team-ink)}
+.vh .pf-pick{cursor:pointer}
+#pfFile:focus-visible + *, .vh .pf-pick:focus-within{outline:3px solid var(--focus)}
+.vh .pf-link{background:none;border:0;font:inherit;font-size:14px;font-weight:700;color:var(--muted);text-decoration:underline;cursor:pointer;padding:0 4px}
+.vh .pf-status{margin-top:18px;font-size:15px;min-height:1.5em}
+.vh .pf-status.err{color:#a1161b}
+.vh .pf-status.ok{color:var(--ok)}
+.vh .pf-actions{margin-top:6px}
+.vh .pf-prev{position:sticky;top:20px}
+.vh .pf-card{display:flex;gap:16px;align-items:center;border:1px solid var(--line);border-top:6px solid var(--team-primary);padding:20px;background:var(--paper);box-shadow:0 1px 0 var(--line)}
+.vh .pf-card-photo{width:76px;height:76px;border-radius:50%;background:var(--mist);overflow:hidden;flex:none}
+.vh .pf-card-photo img{width:100%;height:100%;object-fit:cover}
+.vh .pv-name{font-family:var(--team-display);font-size:24px;line-height:1.1;word-break:break-word}
+.vh .pv-line{font-size:14px;margin-top:3px;word-break:break-word}
+dialog.cropdlg{border:0;padding:0;width:min(440px,calc(100vw - 24px));background:var(--paper);color:var(--team-ink);box-shadow:0 20px 60px rgba(0,0,0,.35);font-family:var(--team-body)}
+dialog.cropdlg::backdrop{background:rgba(20,18,18,.6)}
+.crop-in{padding:22px;display:grid;gap:12px}
+.crop-in h3{font-family:var(--team-display);font-weight:400;font-size:26px;line-height:1.1}
+.crop-hint{font-size:13.5px;color:var(--muted)}
+.crop-view{position:relative;width:100%;aspect-ratio:1;overflow:hidden;background:#222;touch-action:none;cursor:grab;user-select:none}
+.crop-view:active{cursor:grabbing}
+.crop-view img{position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;pointer-events:none}
+.crop-ring{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at center,transparent 0 49.6%,rgba(255,255,255,.9) 49.8% 50.2%,rgba(0,0,0,.38) 50.4%)}
+.crop-zl{font-size:14px;font-weight:700}
+#cropZoom{width:100%;accent-color:var(--team-primary)}
+.crop-warn{font-size:13.5px;color:#a1161b;min-height:1.2em}
+.crop-acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.cropdlg .btn{display:inline-flex;align-items:center;font:inherit;font-weight:700;font-size:15px;padding:11px 18px;border-radius:6px;border:0;background:var(--team-primary);color:#fff;cursor:pointer}
+.cropdlg .btn.line{background:transparent;color:var(--team-ink);border:1px solid var(--team-ink)}
+.cropdlg .pf-link{background:none;border:0;font:inherit;font-size:14px;font-weight:700;color:var(--muted);text-decoration:underline;cursor:pointer}
+@media (max-width:960px){ .vh .pf{grid-template-columns:1fr} .vh .pf-prev{position:static;order:-1} }
+@media (max-width:640px){ .vh .pf-head{flex-direction:column;align-items:flex-start} }
+
+@media (max-width:960px){
+  .vh .main{grid-template-columns:1fr}
+  .vh .start{grid-template-columns:1fr}
+  .vh .start .small{grid-column:1}
+}
+@media (max-width:820px){
+  .vs{grid-template-columns:1fr}
+  .vs .brand{grid-template-rows:auto 5px auto}
+  .vs .top{padding:28px 20px 30px}
+  .vs .bottom{padding:22px 20px}
+  .vs .signin{padding:32px 20px 40px}
+}
+@media (max-width:640px){
+  .vh .wrap{padding:0 18px}
+  .vh header .bar{height:64px}
+  .team-lock{gap:10px}
+  .team-lock svg{width:116px}
+  .tl-div{height:22px}
+  .tl-word{font-size:15px}
+  .vh .bd .by,.vh .bd .bdw,.vh .acct .nm{display:none}
+  .vh .right{gap:10px}
+  .vh .acct{padding:3px}
+  .vh header .bar{gap:10px}
+  .vh .start{padding:24px 18px}
+  .vh .resume{grid-template-columns:1fr}
+  .vh .resume img{height:180px}
+  .vh .quick{grid-template-columns:1fr}
+  .vh thead{display:none}
+  .vh table,.vh tbody,.vh tr,.vh td{display:block;width:100%}
+  .vh tr{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .vh td{border:0;padding:0}
+  .vh td:nth-child(1){grid-column:1 / -1}
+  .vh td:nth-child(2){display:none}
+  .vh td:nth-child(4){text-align:right}
+  .vh .pill{white-space:normal}
+  /* admins: room for the Agent / Team switch */
+  .vh header:has(.roles:not([hidden])) .tl-word,.vh header:has(.roles:not([hidden])) .tl-div{display:none}
+  .vh .roles{margin-right:0;font-size:12.5px}
+  .vh .roles a{padding:6px 10px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .lk-logo,.lk-word,.lk-powered{animation:lk .7s cubic-bezier(.2,.7,.2,1) both}
+  .lk-word{animation-delay:.12s}
+  .lk-powered{animation-delay:.32s}
+  @keyframes lk{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+}
+
+</style>
+</head>
+<body>
+
+<!-- Loading: plain, so nothing about any team shows before the record arrives -->
+<div class="plain" id="vLoad"><div class="in"><p>Loading...</p></div></div>
+
+<!-- Plain BrochureDesk 404 (also what any wrong team address shows) -->
+<div class="plain" id="v404" hidden>
+  <div class="in">
+    <a class="mk" href="/"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="12" height="15" fill="none" stroke="#9C7B45" stroke-width="1.5" transform="rotate(-8 9 12.5)"/><rect x="8" y="3" width="12" height="15" fill="#1F4D3F"/></svg>BrochureDesk</a>
+    <h1>This page isn't here</h1>
+    <p>Check the address and try again, or head to the homepage.</p>
+    <a class="b" href="/">Go to brochuredesk.com</a>
+  </div>
+</div>
+
+<!-- Team sign-in -->
+<div class="vs" id="vSignin" hidden>
+  <section class="brand" aria-label="Brand">
+    <div class="top">
+      <div class="lockup">
+        <h1 class="lk-title"><span class="lk-logo" data-slot="logoLight"></span><span class="lk-word" data-slot="lockup">Print Marketing</span></h1>
+        <span class="lk-powered">
+          <span class="lk-by">powered by</span>
+          <span class="lk-bd"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="12" height="15" fill="none" stroke="#E9D7B3" stroke-width="1.5" transform="rotate(-8 9 12.5)"/><rect x="8" y="3" width="12" height="15" fill="#ffffff"/></svg>BrochureDesk</span>
+        </span>
+      </div>
+    </div>
+    <div class="gap" aria-hidden="true"></div>
+    <div class="bottom">
+      <p class="carries">Every piece carries the <strong><span data-k="org">team</span> logo and colors</strong>, with <strong>your own contact card</strong> on the back.</p>
+      <p class="carries">Paste a listing link and your brochure, flyers and postcard come back ready to print.</p>
+      <p class="printer">We can even upload them to your printer! You just check out.</p>
+      <p class="office" data-slot="office"></p>
+    </div>
+  </section>
+  <main class="signin">
+    <div class="inner">
+      <p class="tag"><span data-k="Org">Team</span> sign-in</p>
+      <h2>Sign in</h2>
+      <p class="lede">Use the email and password for your <span data-k="org">team</span> account.</p>
+      <form id="signinForm" novalidate>
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="username" inputmode="email" required>
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+        <button class="go" id="goBtn" type="submit">Sign in</button>
+        <p class="status" id="signinStatus" role="status" aria-live="polite"></p>
+      </form>
+      <form id="pwForm" novalidate hidden>
+        <label for="newPw">New password</label>
+        <input id="newPw" type="password" autocomplete="new-password" minlength="8" required>
+        <p class="sub">At least 8 characters.</p>
+        <button class="go" id="pwBtn" type="submit">Save and sign in</button>
+        <p class="status" id="pwStatus" role="status" aria-live="polite"></p>
+      </form>
+      <div class="help">
+        <p>Joining the <span data-k="org">team</span>? Ask your <span data-k="org">team</span> admin to send you an invite.</p>
+        <p>Trouble signing in? Email <b>support@brochuredesk.com</b></p>
+      </div>
+      <p class="about"><span data-slot="name"></span> Print Marketing runs on <b>BrochureDesk</b>. Signing in takes you to your BrochureDesk account, set up in the <span data-slot="name"></span> brand.</p>
+    </div>
+  </main>
+</div>
+
+<!-- Agent home (after sign-in) -->
+<div class="vh" id="vHome" hidden>
+  <div class="test">Test page. Nothing here is a real order yet.</div>
+  <header>
+    <div class="wrap bar">
+      <a class="team-lock" href="#" id="lockHome" data-nav data-home aria-label="Go to your home page"><span data-slot="logoColor"></span><span class="tl-div" aria-hidden="true"></span><span class="tl-word" data-slot="lockup">Print Marketing</span></a>
+      <div class="right">
+        <a class="bd" href="#" id="bdHome" data-nav data-home aria-label="Powered by BrochureDesk, go to your home page"><span class="by">powered by</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="12" height="15" fill="none" stroke="#9C7B45" stroke-width="1.5" transform="rotate(-8 9 12.5)"/><rect x="8" y="3" width="12" height="15" fill="#1F4D3F"/></svg>
+          <span class="bdw">BrochureDesk</span></a>
+        <nav class="roles" id="roles" aria-label="Switch view" hidden><a href="#" id="roleAgent" data-nav data-home>Agent</a><a href="#" id="roleTeam" data-nav data-to="team"><span data-k="Org">Team</span></a></nav>
+        <button class="acct" type="button" id="acctBtn"><span class="ini" id="ini"></span><span class="nm" id="firstName"></span></button>
+      </div>
+    </div>
+    <div class="rule" aria-hidden="true"></div>
+  </header>
+  <main class="wrap" id="homeMain">
+    <section class="hello">
+      <h1 id="welcome">Welcome back.</h1>
+      <p id="helloLede">Paste a listing link below to start a package.</p>
+    </section>
+    <section class="start" aria-labelledby="startH">
+      <div>
+        <h2 id="startH">Start a new listing package</h2>
+        <p>Paste your Matrix listing link. We pull the photos and details and lay out your brochure, flyers and postcard.</p>
+        <p class="printer">We can even upload them to your printer!</p>
+      </div>
+      <form class="linkbox" id="startForm" novalidate>
+        <input id="link" type="url" inputmode="url" aria-label="Matrix listing link" placeholder="Paste your Matrix listing link">
+        <button type="submit">Go</button>
+      </form>
+      <p class="small"><button type="button" class="hlp" data-mx-help>How do I create a Matrix link?</button></p>
+      <p class="small draft">Listing not live yet? <a href="#" data-nav data-to="new?manual=1">Upload your photos and a draft printout of the listing</a>, with your notes and descriptions, so our writers can get to know the house and go to work.</p>
+      <p class="msg" id="startMsg" role="status" aria-live="polite" hidden></p>
+    </section>
+    <div class="main">
+      <div>
+        <section id="resumeBox" hidden>
+          <h2 class="sec">Pick up where you left off</h2>
+          <article class="resume">
+            <img id="resumeImg" alt="" hidden>
+            <div class="body">
+              <div class="addr" id="resumeAddr"></div>
+              <div class="sub" id="resumeSub"></div>
+              <ol class="steps" aria-label="Package progress" id="resumeSteps"></ol>
+              <div class="row"><a class="btn" id="resumeOpen" href="#" data-nav>Open package</a></div>
+            </div>
+          </article>
+        </section>
+        <div class="quick">
+          <a class="q" href="#" data-nav data-to="orders"><b>Update an open house flyer</b><span>Change the date, time or label. Free every time.</span></a>
+          <a class="q" href="#" data-nav data-to="orders"><b>Pick up a Just Sold postcard</b><span>Sold a listing? Its matching postcard is included. Open for 2 years after the sale.</span></a>
+          <a class="q" href="#" data-nav data-to="orders"><b>Reuse a past order</b><span>More pieces or another design for the same listing.</span></a>
+          <a class="q" href="#" data-nav data-to="orders"><b>Printer uploads</b><span>See what's waiting in your printer's cart.</span></a>
+        </div>
+        <section class="orders" aria-labelledby="ordersH">
+          <h2 class="sec" id="ordersH">Past orders</h2>
+          <div id="homeOrders"><p class="sub">No orders yet. Your packages show up here for 60 days.</p></div>
+        </section>
+      </div>
+      <aside>
+        <div class="pack"><div class="n">3</div><p>packages left in your 5-pack. Use them on any listing, any time.</p><a class="btn" href="#">Buy another 5-pack</a></div>
+        <div class="card" id="designTeaser">
+          <h3>Want your own design?</h3>
+          <p>We'll build a full matching set around your brand and keep it in your account.</p>
+          <div class="row" style="margin-top:12px"><button class="btn line" type="button" id="openDesign">See how it works</button></div>
+        </div>
+        <div class="card">
+          <h3>Your contact card</h3>
+          <p>This goes on the back of every piece, under the <span data-k="org">team</span> brand.</p>
+          <div class="contact" id="contactCard"></div>
+          <div class="row" style="margin-top:12px"><button class="btn line" type="button" id="editCard">Edit profile</button></div>
+        </div>
+        <div class="card">
+          <h3>Account</h3>
+          <ul>
+            <li><button type="button" id="openProfile">Profile and headshot</button></li>
+            <li><a href="#" data-nav data-to="receipts">Receipts</a></li>
+            <li><a href="#" data-nav data-to="printer">Printer and mail vendor</a></li>
+            <li><a href="#" data-nav data-to="help">Help</a></li>
+            <li><a href="#">Suggest an improvement</a></li>
+            <li><button type="button" id="signOut">Sign out</button></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Personalized design request (own-design.js is loaded the first time this opens) -->
+  <main class="wrap" id="designMain" hidden>
+    <section class="hello">
+      <p><button class="btn line" type="button" id="designBack">Back to your home</button></p>
+      <h1>Want your own design?</h1>
+      <p>We'll build a full matching set around your brand and keep it in your account.</p>
+    </section>
+    <div id="designRoot" style="padding-bottom:64px"></div>
+  </main>
+
+  <!-- Everything else under the team address: new package, a package, past orders, receipts, help (team/flow.js) -->
+  <main class="wrap" id="flowMain" hidden></main>
+
+  <!-- First-sign-in intake and the profile page share one form -->
+  <main class="wrap" id="profileMain" hidden>
+    <section class="hello">
+      <h1 id="pfTitle">Your profile</h1>
+      <p id="pfLede">This is what goes on the back of every piece. Change it any time.</p>
+    </section>
+    <div class="pf">
+      <form id="pfForm" class="pf-form" novalidate>
+        <div class="pf-head">
+          <div class="pf-photo" id="pfPhoto" aria-hidden="true"><span id="pfPhotoEmpty">No headshot yet</span><img id="pfPhotoImg" alt="" hidden></div>
+          <div class="pf-photo-txt">
+            <label class="pf-lbl" for="pfFile">Headshot</label>
+            <p class="pf-hint">A clear, recent photo, shoulders up. JPG or PNG from your phone or computer.</p>
+            <div class="row">
+              <label class="btn line pf-pick" for="pfFile" id="pfPickLbl">Upload a photo</label>
+              <button type="button" class="btn line" id="pfAdjust" hidden>Adjust photo</button>
+              <button type="button" class="pf-link" id="pfRemove" hidden>Remove</button>
+            </div>
+            <input id="pfFile" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" class="sr">
+          </div>
+        </div>
+
+        <label class="pf-lbl" for="pfDisplay">Your name as it should appear</label>
+        <p class="pf-hint">Exactly how it prints on your contact card, like Alex Morgan or Alex J. Morgan.</p>
+        <input id="pfDisplay" type="text" autocomplete="name" maxlength="40" required>
+
+        <label class="pf-lbl" for="pfMailer">Name on mailers <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+        <p class="pf-hint">Your postcards use this name. If your name is long, a shorter form here fits every design, like Alex Morgan or Alexandra M. Reyes. Leave it blank to use the name above.</p>
+        <input id="pfMailer" type="text" autocomplete="off" maxlength="40">
+
+        <label class="pf-lbl" for="pfGreet">What should we call you?</label>
+        <p class="pf-hint">Used when we welcome you back.</p>
+        <input id="pfGreet" type="text" autocomplete="given-name" maxlength="24">
+
+        <label class="pf-lbl" for="pfEmail">Preferred email</label>
+        <p class="pf-hint">Printed on your pieces. Can be different from the email you sign in with.</p>
+        <input id="pfEmail" type="email" autocomplete="email" inputmode="email" maxlength="80" required>
+
+        <label class="pf-lbl" for="pfCell">Preferred cell phone</label>
+        <p class="pf-hint">Printed on your pieces.</p>
+        <input id="pfCell" type="tel" autocomplete="tel" inputmode="tel" maxlength="14" placeholder="713.555.0142" required>
+
+        <p class="pf-status" id="pfStatus" role="status" aria-live="polite"></p>
+        <div class="row pf-actions">
+          <button class="btn" type="submit" id="pfSave">Save</button>
+          <button class="btn line" type="button" id="pfCancel">Cancel</button>
+        </div>
+      </form>
+      <aside class="pf-prev" aria-label="Contact card preview">
+        <h2 class="sec">Your contact card</h2>
+        <div class="pf-card">
+          <div class="pf-card-photo" id="pvPhoto"><img id="pvImg" alt="" hidden></div>
+          <div class="pf-card-txt">
+            <div class="pv-name" id="pvName">Your name</div>
+            <div class="pv-line">REALTOR® | <span data-slot="name"></span></div>
+            <div class="pv-line" id="pvCell">Cell</div>
+            <div class="pv-line" id="pvEmail">Email</div>
+          </div>
+        </div>
+        <p class="pf-hint" style="margin-top:12px">Shown under the <span data-slot="name"></span> logo and colors on every piece.</p>
+      </aside>
+    </div>
+  </main>
+  <footer><div class="wrap"><span>Questions? support@brochuredesk.com</span><span>BrochureDesk</span></div></footer>
+</div>
+
+<dialog class="cropdlg" id="cropDlg" aria-labelledby="cropH">
+  <div class="crop-in">
+    <h3 id="cropH">Frame your headshot</h3>
+    <p class="crop-hint">Drag the photo to move it. Use the slider to zoom. The circle shows a round frame; designs with a square frame use the whole square.</p>
+    <div class="crop-view" id="cropView" tabindex="0" aria-label="Photo position. Arrow keys move it, plus and minus zoom.">
+      <img id="cropImg" alt="" draggable="false">
+      <div class="crop-ring" aria-hidden="true"></div>
+    </div>
+    <label class="crop-zl" for="cropZoom">Zoom</label>
+    <input id="cropZoom" type="range" min="1" max="4" step="0.01" value="1">
+    <p class="crop-warn" id="cropWarn" role="status" aria-live="polite"></p>
+    <div class="crop-acts">
+      <button type="button" class="pf-link" id="cropReset">Reset</button>
+      <span style="flex:1"></span>
+      <button type="button" class="btn line" id="cropCancel">Cancel</button>
+      <button type="button" class="btn" id="cropUse">Use this photo</button>
+    </div>
+  </div>
+</dialog>
+<script src="/team/matrix-help.js?v=2"></script>
+<script src="/designs/shared/engine.js?v=1"></script>
+<script src="/designs/shared/account-menu.js?v=1"></script>
+<script src="/team/flow.js?v=1"></script>
+<script src="/team/admin.js?v=1"></script>
+<script>
+(() => {
+  const SUPABASE_URL = 'https://depwvwewbmxspoxidxrx.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_mF60NaxAKLQV_pDLBoR2og_PzJ9fxxH';   // public browser key; access is enforced in the database
+  const $ = id => document.getElementById(id);
+  const show = id => ['vLoad','v404','vSignin','vHome'].forEach(v => $(v).hidden = v !== id);
+  const notFound = () => { document.title = 'Page not found | BrochureDesk'; show('v404'); };
+
+  // a team address is the first path segment: letters, digits and dashes, at least 8 long; the rest is the screen
+  const parts = location.pathname.split('/').filter(Boolean).map(x => { try { return decodeURIComponent(x); } catch (_) { return x; } });
+  const code = (parts[0] || '').toLowerCase();
+  if (!/^[a-z0-9-]{8,64}$/.test(code) || !window.supabase) return notFound();
+  // an invite or set-password link from the team-invite email lands here with its one-time sign-in in the address;
+  // note which before the client reads it, so the person chooses a password first
+  const linkKind = (/[#&]type=(invite|recovery)\b/.exec(location.hash) || [])[1] || null;
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  let team = null;
+
+  // The skin: theme tokens from the team's own record, applied as CSS variables. Fonts are either Google Fonts
+  // (brand.googleFonts) or files we host (brand.fontFaces: [{family, url, weight, style}]).
+  function applyBrand(t){
+    const b = t.brand || {};
+    const r = document.documentElement.style;
+    if (b.primary) r.setProperty('--team-primary', b.primary);
+    if (b.deep) r.setProperty('--team-deep', b.deep);
+    if (b.ink) r.setProperty('--team-ink', b.ink);
+    if (b.display) r.setProperty('--team-display', b.display);
+    if (b.body) r.setProperty('--team-body', b.body);
+    if (b.googleFonts) $('teamFonts').href = 'https://fonts.googleapis.com/css2?' + b.googleFonts + '&display=swap';
+    const org = b.kind === 'brokerage' ? 'brokerage' : 'team';   // set per company record; prospects are brokerages
+    document.querySelectorAll('[data-k="org"]').forEach(e => e.textContent = org);
+    document.querySelectorAll('[data-k="Org"]').forEach(e => e.textContent = org[0].toUpperCase() + org.slice(1));
+    (b.fontFaces || []).forEach(f => {
+      if (!f.family || !/^\/fonts\/[\w.-]+\.woff2$/.test(f.url || '')) return;    // only fonts we host
+      try { const ff = new FontFace(f.family, `url(${f.url}) format("woff2")`, {weight: String(f.weight || 400), style: f.style || 'normal', display: 'swap'});
+        document.fonts.add(ff); ff.load().catch(() => {}); } catch (_) {}
+    });
+    document.querySelectorAll('[data-slot="lockup"]').forEach(e => e.textContent = b.lockup || 'Print Marketing');
+    document.querySelectorAll('[data-slot="name"]').forEach(e => e.textContent = t.name);
+    document.querySelectorAll('[data-slot="logoLight"]').forEach(e => e.innerHTML = b.logoLight || '');
+    document.querySelectorAll('[data-slot="logoColor"]').forEach(e => e.innerHTML = b.logoColor || '');
+    const o = $('vSignin').querySelector('[data-slot="office"]');
+    o.textContent = '';
+    const nm = document.createElement('b'); nm.textContent = t.name; o.append(nm);
+    (b.office || []).forEach(line => { o.append(document.createElement('br'), line); });
+    if (b.phone) o.append(document.createElement('br'), b.phone);
+    if (b.emailDomain) $('email').placeholder = 'you@' + b.emailDomain;
+  }
+
+  // ---------- profile ----------
+  let me = null, profile = null, pendingPhoto = null, removePhoto = false, profileMode = 'edit';
+  const fmtCell = v => { const d = (v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'').slice(0,10);
+    return d.length < 4 ? d : d.length < 7 ? d.slice(0,3)+'.'+d.slice(3) : d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6); };
+  const complete = p => p && p.display_name && p.preferred_email && p.cell && p.headshot_path;
+  const initials = n => (n||'').split(/\s+/).filter(Boolean).map(w => w[0]).filter((c,i,a) => i === 0 || i === a.length-1).join('').toUpperCase().slice(0,2);
+
+  async function headshotUrl(path){
+    if (!path) return '';
+    const { data } = await sb.storage.from('headshots').createSignedUrl(path, 3600);
+    return data?.signedUrl || '';
+  }
+
+  async function loadProfile(){
+    const { data } = await sb.from('agent_profiles').select('*').eq('user_id', me.id).maybeSingle();
+    profile = data || null;
+    if (profile) profile._photo = await headshotUrl(profile.headshot_path);
+  }
+
+  function setImg(img, url){ if (url){ img.src = url; img.hidden = false; } else { img.removeAttribute('src'); img.hidden = true; } }
+
+  function preview(){
+    const name = $('pfDisplay').value.trim() || 'Your name';
+    $('pvName').textContent = name;
+    $('pvCell').textContent = $('pfCell').value.trim() || 'Cell';
+    $('pvEmail').textContent = $('pfEmail').value.trim() || 'Email';
+    const url = pendingPhoto ? pendingPhoto.url : (removePhoto ? '' : (profile?._photo || ''));
+    setImg($('pvImg'), url); setImg($('pfPhotoImg'), url);
+    $('pfPhoto').classList.toggle('has', !!url); $('pfPhotoEmpty').hidden = !!url;
+    $('pfRemove').hidden = !url; $('pfAdjust').hidden = !url; $('pfPickLbl').textContent = url ? 'Change photo' : 'Upload a photo';
+  }
+
+  function openProfile(mode){
+    profileMode = mode;
+    const p = profile || {};
+    $('pfDisplay').value = p.display_name || [me.team.first_name, me.team.last_name].filter(Boolean).join(' ');
+    $('pfGreet').value = p.greeting_name || me.team.first_name || '';
+    $('pfMailer').value = p.mailer_name || '';
+    $('pfEmail').value = p.preferred_email || me.email || '';
+    $('pfCell').value = p.cell || '';
+    pendingPhoto = null; removePhoto = false;
+    $('pfStatus').textContent = ''; $('pfStatus').className = 'pf-status';
+    if (mode === 'intake'){
+      const first = me.team.first_name ? `, ${me.team.first_name}` : '';
+      $('pfTitle').textContent = `Welcome to BrochureDesk${first}!`;
+      $('pfLede').textContent = 'We’re glad you’re here. Tell us four quick things for your contact card: your headshot, your name, your email and your cell. It goes on the back of every piece you order, and you can change it any time.';
+      $('pfSave').textContent = 'Save and continue'; $('pfCancel').hidden = true;
+    } else {
+      $('pfTitle').textContent = 'Your profile';
+      $('pfLede').textContent = 'This is what goes on the back of every piece. Change it any time.';
+      $('pfSave').textContent = 'Save changes'; $('pfCancel').hidden = false;
+    }
+    preview(); fillHeader();
+    $('homeMain').hidden = true; $('flowMain').hidden = true; $('designMain').hidden = true; $('profileMain').hidden = false;
+    show('vHome'); window.scrollTo(0,0);
+  }
+
+  async function shrinkPhoto(file){
+    // re-draw at up to 2000 px (sharp enough for print) as a JPEG; also reads iPhone photos where the browser can
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = url; });
+      const s = Math.min(1, 2000 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth*s); c.height = Math.round(img.naturalHeight*s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.9));
+      return { blob, w: img.naturalWidth, h: img.naturalHeight };
+    } finally { URL.revokeObjectURL(url); }
+  }
+
+  // ---------- headshot editor: drag to move, slider to zoom; saves a square crop plus the original ----------
+  const OUT = 1200, MIN_SRC = 450;   // crop is saved 1200 px square; refuse zoom that would use under 450 px of the photo
+  const crop = { img: null, w: 0, h: 0, V: 0, zoom: 1, maxZoom: 4, cx: .5, cy: .5, src: null };
+  const cv = $('cropView'), ci = $('cropImg'), cz = $('cropZoom');
+
+  function layout(){
+    crop.V = cv.clientWidth;
+    const s = crop.V / Math.min(crop.w, crop.h) * crop.zoom;            // screen px per photo px
+    const half = crop.V / 2 / s;                                       // half the view, in photo px
+    crop.cx = Math.min(Math.max(crop.cx * crop.w, half), crop.w - half) / crop.w;
+    crop.cy = Math.min(Math.max(crop.cy * crop.h, half), crop.h - half) / crop.h;
+    const ox = crop.V/2 - crop.cx*crop.w*s, oy = crop.V/2 - crop.cy*crop.h*s;
+    ci.style.width = crop.w + 'px'; ci.style.height = crop.h + 'px';
+    ci.style.transform = `translate(${ox}px,${oy}px) scale(${s})`;
+    cz.value = crop.zoom;
+  }
+  function setZoom(z){ crop.zoom = Math.min(Math.max(z, 1), crop.maxZoom); layout();
+    $('cropWarn').textContent = crop.zoom >= crop.maxZoom - 0.01 && crop.maxZoom < 4 ? 'That’s as close as this photo can go and still print sharp.' : ''; }
+
+  function openCropper(src, saved){
+    return new Promise(resolve => {
+      const img = new Image(); img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        crop.img = img; crop.w = img.naturalWidth; crop.h = img.naturalHeight; crop.src = src;
+        crop.maxZoom = Math.max(1, Math.min(4, Math.min(crop.w, crop.h) / MIN_SRC));
+        cz.max = crop.maxZoom;
+        crop.zoom = saved?.zoom || 1; crop.cx = saved?.cx ?? .5; crop.cy = saved?.cy ?? (crop.h > crop.w ? .4 : .5);  // portrait: start a bit high, faces sit up top
+        ci.src = img.src; $('cropWarn').textContent = '';
+        crop.done = resolve;
+        $('cropDlg').showModal(); requestAnimationFrame(() => { layout(); cv.focus(); });
+      };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  }
+  function closeCropper(result){ const d = crop.done; crop.done = null; if ($('cropDlg').open) $('cropDlg').close(); d && d(result); }
+
+  // drag (mouse, finger, pen)
+  let drag = null;
+  cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, cx: crop.cx, cy: crop.cy }; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const s = crop.V / Math.min(crop.w, crop.h) * crop.zoom;
+    crop.cx = drag.cx - (e.clientX - drag.x) / s / crop.w;
+    crop.cy = drag.cy - (e.clientY - drag.y) / s / crop.h;
+    layout();
+  });
+  ['pointerup','pointercancel'].forEach(ev => cv.addEventListener(ev, () => { drag = null; }));
+  cv.addEventListener('wheel', e => { e.preventDefault(); setZoom(crop.zoom * (e.deltaY < 0 ? 1.06 : 1/1.06)); }, { passive: false });
+  cv.addEventListener('keydown', e => {
+    const step = 0.02 / crop.zoom;
+    if (e.key === 'ArrowLeft') crop.cx -= step; else if (e.key === 'ArrowRight') crop.cx += step;
+    else if (e.key === 'ArrowUp') crop.cy -= step; else if (e.key === 'ArrowDown') crop.cy += step;
+    else if (e.key === '+' || e.key === '=') return setZoom(crop.zoom + .1);
+    else if (e.key === '-') return setZoom(crop.zoom - .1);
+    else return;
+    e.preventDefault(); layout();
+  });
+  cz.addEventListener('input', () => setZoom(+cz.value));
+  window.addEventListener('resize', () => { if ($('cropDlg').open) layout(); });
+  $('cropReset').addEventListener('click', () => { crop.zoom = 1; crop.cx = .5; crop.cy = crop.h > crop.w ? .4 : .5; setZoom(1); });
+  $('cropCancel').addEventListener('click', () => closeCropper(null));
+  $('cropDlg').addEventListener('cancel', e => { e.preventDefault(); closeCropper(null); });
+  $('cropUse').addEventListener('click', async () => {
+    const side = Math.min(crop.w, crop.h) / crop.zoom;
+    const sx = crop.cx*crop.w - side/2, sy = crop.cy*crop.h - side/2;
+    const c = document.createElement('canvas'); c.width = c.height = Math.min(OUT, Math.round(side));
+    c.getContext('2d').drawImage(crop.img, sx, sy, side, side, 0, 0, c.width, c.height);
+    const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.92));
+    closeCropper({ blob, crop: { cx: +crop.cx.toFixed(4), cy: +crop.cy.toFixed(4), zoom: +crop.zoom.toFixed(3) } });
+  });
+
+  function setPending(p){
+    if (pendingPhoto) { URL.revokeObjectURL(pendingPhoto.url); if (pendingPhoto.origUrl) URL.revokeObjectURL(pendingPhoto.origUrl); }
+    pendingPhoto = p; removePhoto = false; preview();
+  }
+
+  $('pfFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    const st = $('pfStatus'); st.className = 'pf-status'; st.textContent = 'Getting your photo ready...';
+    try {
+      const r = await shrinkPhoto(f);
+      if (Math.min(r.w, r.h) < 500) { st.className='pf-status err'; st.textContent = 'That photo is too small to print sharp. Use one at least 500 pixels on each side.'; return; }
+      const origUrl = URL.createObjectURL(r.blob);
+      st.textContent = '';
+      const res = await openCropper(origUrl);
+      if (!res) { URL.revokeObjectURL(origUrl); return; }
+      setPending({ orig: r.blob, origUrl, blob: res.blob, url: URL.createObjectURL(res.blob), crop: res.crop });
+      st.textContent = 'Photo added. Save to keep it.';
+    } catch (_) { st.className='pf-status err'; st.textContent = 'This browser couldn’t open that photo. Try a JPG or PNG.'; }
+  });
+
+  $('pfAdjust').addEventListener('click', async () => {
+    const st = $('pfStatus'); st.className = 'pf-status';
+    let src, saved;
+    if (pendingPhoto) { src = pendingPhoto.origUrl; saved = pendingPhoto.crop; }
+    else { st.textContent = 'Opening your photo...';
+      src = await headshotUrl(profile?.headshot_original_path || profile?.headshot_path);
+      saved = profile?.headshot_original_path ? profile?.headshot_crop : null; st.textContent = ''; }
+    if (!src) { st.className='pf-status err'; st.textContent = 'Couldn’t open your photo. Upload it again.'; return; }
+    const res = await openCropper(src, saved);
+    if (!res) return;
+    if (pendingPhoto && pendingPhoto.orig) {        // re-framing a photo not saved yet: keep its original
+      URL.revokeObjectURL(pendingPhoto.url);
+      pendingPhoto = { ...pendingPhoto, blob: res.blob, url: URL.createObjectURL(res.blob), crop: res.crop }; preview();
+    } else setPending({ orig: null, blob: res.blob, url: URL.createObjectURL(res.blob), crop: res.crop });
+    st.textContent = 'Photo adjusted. Save to keep it.';
+  });
+  $('pfRemove').addEventListener('click', () => { if (pendingPhoto) URL.revokeObjectURL(pendingPhoto.url); pendingPhoto = null; removePhoto = true; preview(); });
+  ['pfDisplay','pfEmail','pfCell'].forEach(id => $(id).addEventListener('input', preview));
+  $('pfCell').addEventListener('input', e => { const f = fmtCell(e.target.value); if (f !== e.target.value) e.target.value = f; preview(); });
+  $('pfDisplay').addEventListener('blur', () => { if (!$('pfGreet').value.trim()) $('pfGreet').value = $('pfDisplay').value.trim().split(/\s+/)[0] || ''; });
+  $('pfCancel').addEventListener('click', () => nav(home()));
+
+  $('pfForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const st = $('pfStatus'); st.className = 'pf-status err';
+    const display = $('pfDisplay').value.trim(), greet = $('pfGreet').value.trim() || display.split(/\s+/)[0] || '';
+    const email = $('pfEmail').value.trim(), cell = fmtCell($('pfCell').value);
+    const hasPhoto = pendingPhoto || (!removePhoto && profile?.headshot_path);
+    if (!hasPhoto) { st.textContent = 'Add a headshot. It goes on every piece.'; return; }
+    if (!display) { st.textContent = 'Enter your name the way it should print.'; $('pfDisplay').focus(); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { st.textContent = 'Enter a full email address, like name@example.com.'; $('pfEmail').focus(); return; }
+    if (cell.replace(/\D/g,'').length !== 10) { st.textContent = 'Enter a 10-digit cell number, like 713.555.0142.'; $('pfCell').focus(); return; }
+    $('pfSave').disabled = true; st.className = 'pf-status'; st.textContent = pendingPhoto ? 'Uploading your headshot...' : 'Saving...';
+    try {
+      let path = removePhoto ? null : (profile?.headshot_path || null);
+      let origPath = removePhoto ? null : (profile?.headshot_original_path || null);
+      let cropSet = removePhoto ? null : (profile?.headshot_crop || null);
+      if (pendingPhoto) {
+        const stamp = Date.now();
+        if (pendingPhoto.orig) {
+          origPath = `${me.id}/original-${stamp}.jpg`;
+          const u1 = await sb.storage.from('headshots').upload(origPath, pendingPhoto.orig, { contentType: 'image/jpeg', upsert: false });
+          if (u1.error) throw u1.error;
+        } else if (!origPath) {
+          origPath = profile?.headshot_path || null;      // older photo saved before the editor: it becomes the original
+        }
+        path = `${me.id}/headshot-${stamp}.jpg`;
+        const u2 = await sb.storage.from('headshots').upload(path, pendingPhoto.blob, { contentType: 'image/jpeg', upsert: false });
+        if (u2.error) throw u2.error;
+        cropSet = pendingPhoto.crop;
+        st.textContent = 'Saving...';
+      }
+      const row = { user_id: me.id, display_name: display, mailer_name: $('pfMailer').value.trim() || null, greeting_name: greet, preferred_email: email, cell,
+        headshot_path: path, headshot_original_path: origPath, headshot_crop: cropSet, updated_at: new Date().toISOString() };
+      let { error } = await sb.from('agent_profiles').upsert(row);
+      if (error && /mailer_name/.test(error.message || '')) {   // until the mailer_name column exists, save the rest
+        delete row.mailer_name; ({ error } = await sb.from('agent_profiles').upsert(row));
+      }
+      if (error) throw error;
+      const keep = new Set([path, origPath].filter(Boolean));
+      const stale = [profile?.headshot_path, profile?.headshot_original_path].filter(p => p && !keep.has(p));
+      if (stale.length) sb.storage.from('headshots').remove(stale);
+      await loadProfile();
+      setPending(null);
+      st.className = 'pf-status ok'; st.textContent = 'Saved.';
+      if (profileMode === 'intake' && route().length) render();
+      else { if (route().length) history.pushState(null, '', home()); enterHome(profileMode === 'intake'); }
+    } catch (err) {
+      st.className = 'pf-status err';
+      st.textContent = /fetch|network/i.test(err?.message || '') ? 'Couldn’t reach the server. Check your connection and press Save again.' : 'That didn’t save. Press Save again, and if it keeps happening email support@brochuredesk.com.';
+    } finally { $('pfSave').disabled = false; }
+  });
+
+  // ---------- home ----------
+  // the account button in the header, on every screen
+  const isAdmin = () => !!(me && me.team && me.team.role === 'admin');
+  const ROLE_KEY = `bd-role-${code}`;     // the last view an admin used (agent | team)
+  function fillHeader(){
+    const p = profile || {};
+    $('roles').hidden = !isAdmin();
+    const onTeam = route()[0] === 'team';
+    $('roleAgent').classList.toggle('on', !onTeam); $('roleTeam').classList.toggle('on', onTeam);
+    if (isAdmin()) try { localStorage.setItem(ROLE_KEY, onTeam ? 'team' : 'agent'); } catch (_) {}
+    $('firstName').textContent = p.greeting_name || me.team.first_name || '';
+    $('ini').textContent = initials(p.display_name || [me.team.first_name, me.team.last_name].join(' '));
+  }
+
+  function enterHome(firstTime){
+    const p = profile || {};
+    const greet = p.greeting_name || me.team.first_name || '';
+    if (firstTime === true) {
+      $('welcome').textContent = greet ? `You’re all set, ${greet}.` : 'You’re all set.';
+      $('helloLede').textContent = 'Your contact card is saved. Paste your first listing link below to start a package.';
+    } else {
+      $('welcome').textContent = greet ? `Welcome back, ${greet}.` : 'Welcome back.';
+      $('helloLede').textContent = 'Paste a listing link below to start a package.';
+    }
+    fillHeader();
+    const c = $('contactCard'); c.textContent = '';
+    if (p._photo){ const im = document.createElement('img'); im.src = p._photo; im.alt = ''; c.append(im); }
+    const tx = document.createElement('div');
+    const nm = document.createElement('b'); nm.textContent = p.display_name || me.email;
+    tx.append(nm, document.createElement('br'), 'REALTOR® | ' + team.name);
+    if (p.cell) tx.append(document.createElement('br'), p.cell);
+    tx.append(document.createElement('br'), p.preferred_email || me.email);
+    c.append(tx);
+    document.title = `${team.name} Print Marketing`;
+    $('profileMain').hidden = true; $('flowMain').hidden = true; $('designMain').hidden = true; $('homeMain').hidden = false;
+    show('vHome'); window.scrollTo(0,0);
+    homePackages();
+  }
+
+  // the agent's own packages made under this team (never another team's)
+  async function homePackages(){
+    let list = [];
+    try { list = await TeamFlow.myPackages(ctx()); } catch (_) {}
+    const latest = list[0];
+    $('resumeBox').hidden = !latest;
+    if (latest) {
+      const L = latest.listing || {}, S = TeamFlow.STATUS[latest.status] || TeamFlow.STATUS.draft;
+      $('resumeAddr').textContent = L.address || 'Your listing';
+      $('resumeSub').textContent = `${TeamFlow.designName(latest.design)} design. ${S.label}.`;
+      $('resumeSteps').innerHTML = ['Listing','Design','Proof','Printer','Pay'].map((t, i) => { const n = i < 2 ? i + 1 : i + 2;
+        return `<li class="${n < S.step ? 'done' : n === S.step ? 'now' : ''}">${t}</li>`; }).join('');
+      $('resumeOpen').setAttribute('href', `/${code}/package/${latest.id}`);
+    }
+    const box = $('homeOrders'); box.textContent = '';
+    if (!list.length) { box.innerHTML = '<p class="sub">No orders yet. Your packages show up here for 60 days.</p>'; return; }
+    const tb = document.createElement('table');
+    tb.innerHTML = '<thead><tr><th>Listing</th><th>Design</th><th>Status</th><th></th></tr></thead><tbody></tbody>';
+    list.slice(0, 5).forEach(p => {
+      const tr = document.createElement('tr'), L = p.listing || {};
+      const cell = (txt, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = txt; tr.append(td); return td; };
+      cell(L.address || 'Listing', 'a'); cell(TeamFlow.designName(p.design));
+      const st = cell(''); const pill = document.createElement('span'); pill.className = 'pill'; pill.textContent = (TeamFlow.STATUS[p.status] || TeamFlow.STATUS.draft).label; st.append(pill);
+      const op = cell(''); const a = document.createElement('a'); a.className = 'lnk'; a.href = `/${code}/package/${p.id}`; a.dataset.nav = ''; a.textContent = 'Open'; op.append(a);
+      tb.tBodies[0].append(tr);
+    });
+    box.append(tb);
+  }
+  // the account button opens a menu on every team screen (same list as the home page's Account card)
+  AccountMenu.mount($('acctBtn'), [
+    { label: 'Profile and headshot', onSelect: () => nav(`/${code}/profile`) },
+    { label: 'Receipts', onSelect: () => nav(`/${code}/receipts`) },
+    { label: 'Printer and mail vendor', onSelect: () => nav(`/${code}/printer`) },
+    { label: 'Help', onSelect: () => nav(`/${code}/help`) },
+    { label: 'Sign out', onSelect: () => signOut() }
+  ]);
+  $('editCard').addEventListener('click', () => nav(`/${code}/profile`));
+  $('openProfile').addEventListener('click', () => nav(`/${code}/profile`));
+
+  // ---------- screens under the team address ----------
+  const home = () => `/${code}`;
+  const route = () => location.pathname.split('/').filter(Boolean).slice(1);
+  const ctx = () => ({ sb, code, team, me, profile, main: $('flowMain'), nav });
+  function nav(path){ if (path !== location.pathname + location.search) history.pushState(null, '', path); render(); }
+  function render(){
+    if (!me) return;
+    if (!complete(profile)) return openProfile('intake');      // first sign-in: the contact card comes first
+    const r = route();
+    if (!r.length) return enterHome();
+    if (r[0] === 'profile' && r.length === 1) return openProfile('edit');
+    if (r[0] === 'welcome') { history.replaceState(null, '', home()); return render(); }
+    fillHeader();
+    if (r[0] === 'team' && r.length === 1 && isAdmin()) {
+      $('homeMain').hidden = true; $('profileMain').hidden = true; $('designMain').hidden = true; $('flowMain').hidden = false;
+      document.title = `${team.name} Print Marketing`;
+      show('vHome'); window.scrollTo(0, 0);
+      return TeamAdmin.mount(ctx());
+    }
+    $('homeMain').hidden = true; $('profileMain').hidden = true; $('designMain').hidden = true; $('flowMain').hidden = false;
+    document.title = `${team.name} Print Marketing`;
+    show('vHome');
+    TeamFlow.mount(ctx(), r);
+  }
+  window.addEventListener('popstate', render);
+  // links inside the team pages stay under the team address and keep the skin
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[data-nav]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+    e.preventDefault();
+    nav(a.dataset.home !== undefined ? home() : a.dataset.to ? `${home()}/${a.dataset.to}` : a.getAttribute('href'));
+  });
+  document.querySelectorAll('a[data-nav][data-to]').forEach(a => a.setAttribute('href', `/${code}/${a.dataset.to}`));
+  document.querySelectorAll('a[data-nav][data-home]').forEach(a => a.setAttribute('href', `/${code}`));
+
+  // ---------- own design request ----------
+  let designLoaded = null;
+  function loadOwnDesign(){
+    if (window.OwnDesign) return Promise.resolve();
+    if (!designLoaded) designLoaded = new Promise((ok, no) => {
+      const s = document.createElement('script');
+      s.src = '/team/own-design.js?v=1'; s.onload = ok; s.onerror = () => { designLoaded = null; no(); };
+      document.head.appendChild(s);
+    });
+    return designLoaded;
+  }
+  async function openDesign(){
+    const b = team.brand || {};
+    const { data: s } = await sb.auth.getSession();
+    try { await loadOwnDesign(); } catch (e) { return; }
+    const p = profile || {};
+    window.OwnDesign.mount($('designRoot'), {
+      mode: 'portal',
+      org: { name: team.name, kind: b.kind === 'brokerage' ? 'brokerage' : 'team', logoSvg: b.logoColor, colors: [b.primary, b.deep].filter(Boolean) },
+      person: { name: p.display_name || '', preferred: p.greeting_name || '', email: p.preferred_email || me.email, brokerage: team.name },
+      logo: b.logoColor ? { svg: b.logoColor } : null,
+      accessToken: s.session ? s.session.access_token : null,
+      portal: code
+    });
+    $('homeMain').hidden = true; $('profileMain').hidden = true; $('flowMain').hidden = true; $('designMain').hidden = false;
+    show('vHome'); window.scrollTo(0,0);
+  }
+  $('openDesign').addEventListener('click', openDesign);
+  $('designBack').addEventListener('click', () => nav(home()));
+
+  async function tryEnter(){
+    const { data, error } = await sb.rpc('my_team', { p_code: code });
+    if (error || !data) return false;
+    const { data: u } = await sb.auth.getUser();
+    me = { id: u.user.id, email: u.user.email || '', team: data };
+    await loadProfile();
+    let last = null; try { last = localStorage.getItem(ROLE_KEY); } catch (_) {}
+    if (data.role === 'admin' && !route().length && last !== 'agent') history.replaceState(null, '', `${home()}/team`);
+    render();
+    return true;
+  }
+
+  async function boot(){
+    const { data, error } = await sb.rpc('team_page', { p_code: code });
+    if (error || !data) return notFound();
+    team = data;
+    applyBrand(team);
+    document.title = `${team.name} Print Marketing`;
+    const { data: s } = await sb.auth.getSession();
+    if (s.session && linkKind) return choosePassword();
+    if (s.session && await tryEnter()) return;
+    if (s.session) await sb.auth.signOut();
+    show('vSignin');
+  }
+
+  // the person came from an invite or set-password email: same sign-in panel, asking for a password instead
+  function choosePassword(){
+    history.replaceState(null, '', home());
+    $('signinForm').hidden = true; $('pwForm').hidden = false;
+    document.querySelector('#vSignin .signin h2').textContent = linkKind === 'invite' ? 'Choose your password' : 'Set a new password';
+    document.querySelector('#vSignin .signin .lede').textContent = 'You’ll use it with this email address to sign in.';
+    show('vSignin'); $('newPw').focus();
+  }
+  $('pwForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const pw = $('newPw').value, st = $('pwStatus'); st.className = 'status';
+    if (pw.length < 8) { st.className = 'status err'; st.textContent = 'Use at least 8 characters.'; return; }
+    $('pwBtn').disabled = true; st.textContent = 'Saving...';
+    const { error } = await sb.auth.updateUser({ password: pw });
+    $('pwBtn').disabled = false;
+    if (error) { st.className = 'status err'; st.textContent = /weak|short|pwned|leaked/i.test(error.message) ? 'Pick a harder-to-guess password.' : 'That link has expired. Ask your admin to send the invite again.'; return; }
+    $('newPw').value = ''; st.textContent = '';
+    $('pwForm').hidden = true; $('signinForm').hidden = false;
+    if (!await tryEnter()) { await sb.auth.signOut(); show('vSignin'); }
+  });
+
+  const NEUTRAL = () => `That email and password don't match a ${team && team.brand && team.brand.kind === 'brokerage' ? 'brokerage' : 'team'} account. Check both and try again.`;
+  $('signinForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = $('email').value.trim(), password = $('password').value;
+    const st = $('signinStatus'); st.className = 'status';
+    if (!email || !password){ st.className='status err'; st.textContent='Enter your email and password.'; return; }
+    $('goBtn').disabled = true; st.textContent = 'Signing you in...';
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (!error && await tryEnter()){ $('goBtn').disabled = false; st.textContent=''; $('password').value=''; return; }
+    if (!error) await sb.auth.signOut();          // signed in, but not on this team: same message, nothing revealed
+    $('goBtn').disabled = false;
+    st.className = 'status err';
+    st.textContent = (error && /fetch|network/i.test(error.message)) ? "Can't reach the sign-in service right now. Check your connection and try again." : NEUTRAL();
+  });
+
+  // Sign out: end the Supabase session, forget everything kept in this browser, wipe what the last person saw,
+  // and land on this team's own sign-in page.
+  async function signOut(){
+    try { await sb.auth.signOut(); } catch (_) {}
+    AccountMenu.signOutStorage();
+    me = profile = null; $('roles').hidden = true;
+    if (pendingPhoto) { URL.revokeObjectURL(pendingPhoto.url); if (pendingPhoto.origUrl) URL.revokeObjectURL(pendingPhoto.origUrl); }
+    pendingPhoto = null; removePhoto = false;
+    ['pfDisplay','pfGreet','pfEmail','pfCell','email','password','link'].forEach(id => $(id).value = '');
+    ['pfPhotoImg','pvImg'].forEach(id => setImg($(id), ''));
+    ['contactCard','firstName','ini','flowMain','pvName','pvCell','pvEmail','pfStatus','signinStatus','pfTitle','pfLede','welcome','helloLede'].forEach(id => $(id).textContent = '');
+    $('homeOrders').innerHTML = ''; $('resumeBox').hidden = true; $('startMsg').hidden = true;
+    history.pushState(null, '', home());
+    document.title = `${team.name} Print Marketing`;
+    show('vSignin'); window.scrollTo(0, 0); $('email').focus();
+  }
+  $('signOut').addEventListener('click', signOut);
+
+  // the Go box starts a package on this team's own page, never the public preview
+  $('startForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const v = $('link').value.trim(), m = $('startMsg'); m.hidden = false;
+    if (!v) { m.textContent = 'Paste the link from Matrix first. It starts with https://matrix.harmls.com.'; return; }
+    if (!/matrix\.harmls\.com/i.test(v)) { m.textContent = "That link isn't from Matrix. In Matrix, tick your listing, click Email, then Preview, and copy the address of the tab that opens."; return; }
+    m.hidden = true; $('link').value = '';
+    nav(`${home()}/new?link=${encodeURIComponent(v)}`);
+  });
+
+  boot().catch(notFound);
+})();
+</script>
+</body>
+</html>
