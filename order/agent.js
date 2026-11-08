@@ -856,6 +856,7 @@
       copy: written ? written.copy : pre.copy,
       companion: written ? Object.assign({fineprint: FINE_PRINT}, written.companion) : pre.companion,
       copyPending: false}, written ? {} : {preview: true}, plan ? {planPreview: plan, planNote: PLAN_NOTE} : {},
+      pkg.colors ? {colors: pkg.colors} : {},   // the fold-over's background and plan box (owner 11/7/2026)
       // the colored plan is saved as masks and labels; each design tints it in its own colors, never a second read
       written && pkg.plan && fp && fp.active ? {plan: pkg.plan} : {},
       // some designs read their copy under their own name (data.ct, data.pr, data.sw: copy-example.json "as")
@@ -911,8 +912,9 @@
 
   // ---------- drawing a part into a sheet ----------
   const SLOT = '<script id="brochure-data" type="application/json">{}</' + 'script>';
-  function srcdoc(designId, html, data, panel, keepBg){
+  function srcdoc(designId, html, data, panel, keepBg, fold){
     const hide = panel ? `.page:not([data-page="${panel}"]){display:none!important}` : '';
+    if(fold) html = html.replace('</head>', '<script src="/designs/shared/foldcolors.js"></' + 'script></head>');   // the agent's two colors (11/7)
     const base = `/designs/${designId}/`;
     return html.replace('<head>', `<head><base href="${base}">`)
       .replace(/(href|src)="(?!https?:|\/|data:|blob:|#)([^"]+\.(?:css|js))"/g, `$1="${base}$2"`)
@@ -965,8 +967,11 @@
       fr.title = pt.label;
       fr.onload = () => { const w = fr.contentWindow;
         Promise.resolve(w.brochureReady).then(() => fr.contentDocument.fonts ? fr.contentDocument.fonts.ready : 0)
-          .then(() => addressFit(fr)).then(() => { if(d.preview) PT.fitPreview(fr.contentDocument); fit(s); if(onReady) onReady(fr, s, pt); }).finally(done); fit(s); };
-      fr.srcdoc = srcdoc(designId, html[pt.piece.file], d, pt.panel);
+          .then(() => addressFit(fr)).then(() => { if(d.preview) PT.fitPreview(fr.contentDocument);
+            // the fold-over's background and plan box colors, over the design's own (pieces.json); text flips by contrast
+            if(pt.piece.kind === 'foldover' && d.colors && w.FoldColors) w.FoldColors.apply(d.colors, pt.piece.colors || {});
+            fit(s); if(onReady) onReady(fr, s, pt); }).finally(done); fit(s); };
+      fr.srcdoc = srcdoc(designId, html[pt.piece.file], d, pt.panel, false, pt.piece.kind === 'foldover');
     });
     await Promise.all(ready);
   }
@@ -1566,7 +1571,7 @@
     $('#finalPiece').innerHTML = ps.map(id => `<option value="${id}"${id === finalPiece ? ' selected' : ''}>${pieceLabel(id)}${pkg.approvals[id] ? ' (approved)' : ''}</option>`).join('');
     $('#finalTitle').textContent = `Proof: ${pkg.listing.address}`;
     $('#backToRough').hidden = !!pkg.paid;
-    ohFit = null; await ohFields(); planSizesBox(); approveBox(); switchTiles(); await drawFinal(); drawExtras('extrasFinal');
+    ohFit = null; await ohFields(); foldColorFields(); planSizesBox(); approveBox(); switchTiles(); await drawFinal(); drawExtras('extrasFinal');
     // a proof that hasn't had its fill pass or outside AI check yet (written before it existed, or interrupted) gets one now
     const w = pkg.copy[pkg.design]; if(w && !pkg.paid && pkg.stage === 'final'){ if(!w.filled) await fillPass(); if(!w.aiCheck) await aiCheckPass(); }
   }
@@ -1747,7 +1752,20 @@
     } catch(e) { console.error('ai check', e); }
     save(); await drawFinal();
   }
-  $('#finalPiece').onchange = async e => { finalPiece = e.target.value; await ohFields(); approveBox(); drawFinal(); };
+  $('#finalPiece').onchange = async e => { finalPiece = e.target.value; await ohFields(); foldColorFields(); approveBox(); drawFinal(); };
+  // the fold-over's two colors (owner 11/7/2026, every design set): the background and the floor plan box. Free, no AI;
+  // pkg.colors {page, planBox} goes to the renderer with the rest of the package
+  let fcTimer = null;
+  async function foldColorFields(){
+    const on = finalPiece === 'foldover';
+    $('#foldColorsCtl').hidden = !on; if(!on) return;
+    const S = await spec(pkg.design), fo = (S.pieces || []).find(p => p.kind === 'foldover') || {};
+    if(!fo.colors){ $('#foldColorsCtl').hidden = true; return; }
+    const k = brandKit() || {};
+    ProofEditor.foldColors($('#foldColors'), {value: pkg.colors || {}, defaults: fo.colors, colors: [pkg.brand.accent].concat(k.colors || []),
+      plan: !!(pkg.floorPlan && pkg.floorPlan.active) || !!pkg.plan,
+      onChange: c => { if(c) pkg.colors = c; else delete pkg.colors; save(); store.event(pkg.id, 'fold-colors', c || {}); clearTimeout(fcTimer); fcTimer = setTimeout(drawFinal, 60); }});
+  }
   async function drawFinal(again){
     const S = await spec(pkg.design); S.design = pkg.design;
     const box = $('#finalProof');
@@ -2246,7 +2264,8 @@
     const data = Object.assign(await dataFor(pkg.design, true), pt.piece.kind === 'foldover' ? {mode: 'proof'} : {mode: 'email', piece: pt.piece});
     if(data.preview || data.planPreview || PT.isPreview(JSON.stringify([data.copy, data.companion]))){
       await ask('<h2>Not ready to download</h2><p>This piece still has rough-draft text. Finalize the design first.</p>', [['OK', 'ok', 'line']]); return; }
-    const html = srcdoc(pkg.design, await tpl(pkg.design, pt.piece.file), data, null, true)
+    const fold = pt.piece.kind === 'foldover';
+    const html = srcdoc(pkg.design, await tpl(pkg.design, pt.piece.file), data, null, true, fold)
       .replace('</head>', '<style>@media print{body{margin:0}.page{margin:0!important;box-shadow:none!important;break-after:page}}</style></head>');
     document.querySelectorAll('iframe.bd-print').forEach(f => f.remove());
     const fr = document.createElement('iframe');
@@ -2254,6 +2273,7 @@
     fr.style.cssText = 'position:fixed;left:-10000px;top:0;width:1200px;height:900px;border:0';
     fr.onload = () => Promise.resolve(fr.contentWindow.brochureReady)
       .then(() => fr.contentDocument.fonts ? fr.contentDocument.fonts.ready : 0)
+      .then(() => { if(fold && data.colors && fr.contentWindow.FoldColors) fr.contentWindow.FoldColors.apply(data.colors, pt.piece.colors || {}); })
       .then(() => setTimeout(() => fr.contentWindow.print(), 300));
     document.body.appendChild(fr);
     fr.srcdoc = html;
