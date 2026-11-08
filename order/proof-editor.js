@@ -25,6 +25,8 @@
        opt: {stock: {writeup, writeup9, writeup11, steps: [...], stepsLabel, cta}, agent: {years, justSold}, saved: bool,
              onChange(agentPatch), onSave(wording|null)}
      ProofEditor.planUpload(el, opt) "Add a floor plan" on the proof: opt {state, onFiles(files), onRemove(), onRestore()}
+     ProofEditor.foldColors(el, opt) the fold-over's background and floor plan box colors (owner 11/7/2026): writes
+                                     colors {page, planBox}; opt {value, defaults (the design's pieces.json), colors, plan, onChange}
      ProofEditor.photo(file, max)    a picked photo as a JPEG data URL no wider or taller than max px, with its size
    Wording on buttons and labels is a draft; the owner's call. */
 (function(){
@@ -632,5 +634,42 @@
     const bk = el.querySelector('[data-a="back"]'); if(bk) bk.onclick = () => opt.onRestore && opt.onRestore();
   }
 
-  window.ProofEditor = {event, justSold, planUpload, measure, forPrint, toFields, foodFor, photo, LIMITS, HEADS};
+  // the fold-over's two colors (owner 11/7/2026, every design set): the main background (colors.page) and the box
+  // behind the floor plan (colors.planBox). Both start on the design's own colors; text and lines on them flip light or
+  // dark by contrast when the piece draws (designs/shared/foldcolors.js). A set whose plan sits on the page with no box
+  // of its own (defaults.planBox null) has the plan follow the background until the agent picks a plan color.
+  //   opt: {value: {page, planBox}, defaults: {page, planBox}, colors: [main, accent, ...] (the brand kit), plan: bool
+  //         (the piece shows a floor plan), onChange(colors | null)}
+  function foldColors(el, opt){
+    const val = Object.assign({}, opt.value || {}), def = opt.defaults || {}, brand = (opt.colors || []).filter(c => /^#[0-9a-f]{6}$/i.test(c));
+    injectStyle(); el.classList.add('pe');
+    const mix = (a, b, t) => { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); const x = p(a), y = p(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
+    const STOCK = [['#ffffff', 'White'], ['#f6f1e7', 'Warm white'], ['#eef1f3', 'Cool gray'], ['#1c2436', 'Deep navy'], ['#22332c', 'Forest'], ['#2a2a2a', 'Charcoal']];
+    const fromBrand = brand.slice(0, 2).flatMap((c, i) => [[c, i ? 'Your second color' : 'Your main color'], [mix(c, '#ffffff', .86), i ? 'Light shade of your second color' : 'Light shade of your main color']]);
+    function row(key, title, sub, std, stdLabel){
+      const cur = val[key] || '';
+      const list = [['', std, stdLabel]].concat(STOCK.map(([v, t]) => [v, v, t]), fromBrand.map(([v, t]) => [v, v, t]))
+        .filter(([v], i, a) => !v || a.findIndex(x => x[0] === v) === i);
+      return `<h4>${title}</h4><p class="pe-sub">${sub}</p><div class="pe-papers" data-part="${key}">`
+        + list.map(([v, show, t]) => `<button type="button" class="pe-paper" data-p="${esc(v)}" aria-pressed="${cur.toLowerCase() === v.toLowerCase() || (!cur && !v)}" title="${esc(t)}" aria-label="${esc(t)}" style="background:${show}"></button>`).join('')
+        + `<label class="pe-own">Your own <input type="color" value="${esc(/^#[0-9a-f]{6}$/i.test(cur) ? cur : std)}" aria-label="${esc(title)}: pick your own"></label>`
+        + (cur ? '<button type="button" class="pe-link" data-a="reset">Back to the standard</button>' : '') + '</div>';
+    }
+    function draw(){
+      const pageStd = def.page || '#ffffff', planStd = def.planBox || val.page || pageStd;
+      el.innerHTML = row('page', 'Background', "The fold-over's main color. Text and lines switch light or dark so they stay easy to read.", pageStd, 'The design’s own background (standard)')
+        + (opt.plan === false ? '' : row('planBox', 'Floor plan box', def.planBox ? 'The box behind your floor plan.' : 'The area behind your floor plan. It matches the background until you pick a color.', planStd, def.planBox ? 'The design’s own plan box (standard)' : 'Same as the background (standard)'));
+      el.querySelectorAll('[data-part]').forEach(box => {
+        const key = box.dataset.part;
+        const set = v => { if(v) val[key] = v; else delete val[key]; draw(); opt.onChange && opt.onChange(Object.keys(val).length ? Object.assign({}, val) : null); };
+        box.querySelectorAll('[data-p]').forEach(b => b.onclick = () => set(b.dataset.p));
+        box.querySelector('input[type=color]').onchange = e => set(e.target.value);
+        const r = box.querySelector('[data-a="reset"]'); if(r) r.onclick = () => set('');
+      });
+    }
+    draw();
+    return {set(v){ Object.keys(val).forEach(k => delete val[k]); Object.assign(val, v || {}); draw(); }};
+  }
+
+  window.ProofEditor = {event, justSold, planUpload, foldColors, measure, forPrint, toFields, foodFor, photo, LIMITS, HEADS};
 })();
