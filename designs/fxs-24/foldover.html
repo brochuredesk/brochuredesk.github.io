@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · fxs-24 fold-over</title>
+<link rel="stylesheet" href="fxs24.css">
+<script src="fxs24.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/agentcard.js"></script>
+<!--
+  BrochureDesk · fxs-24 (FX24 look) · 11 x 17 fold-over: one sheet folded once down the middle into four upright 8.5 x 11 panels,
+  0.125 in (9 pt) bleed, 0.25 in safe zone. Outside spread: back (left) + cover (right). Inside spread: left + right.
+  Every panel keeps the FX24 hand (tokens: fxs24-tokens.css): the address set vertically up the left edge with the gold rule and the vertical
+  place line, square photos with gold hairline-underlined labels, Cormorant italic write-ups, the round seal, white notes cards.
+    COVER   the FX24 front: whole house, two rooms with the neighborhood seal, write-up, four-stat row, agent and the one logo.
+    BACK    the FX24 back: four outdoor / community photos (or the plan and two), About the house, the two notes cards, the standard agent card.
+    LEFT    kicker, title, intro; three captioned rooms; the feature card (heading and six labeled notes in two columns).
+    RIGHT   kicker, title, intro; three rows of captioned photos on one two-column split; the one logo at the foot.
+  Copy comes as a lead plus whole sentences (data.sw.*); fxs24.js picks the sentences that fill each box (last line at least 3/4 full).
+  Modes: proof = four panel pages 8.75 x 11.25 in; print = two spreads 17.25 x 11.25 in, each half clipped at the fold.
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const mode = D.mode || 'proof';
+  const esc = SW.esc, L = D.listing, K = D.sw || {};
+  const issues = [];
+  await SW.setup(D);
+  const X0 = 36, CW = 540, gap = 9;
+  const rightIds0 = [].concat(...(((K.right || {}).rows) || [])).map(c => c.photo);
+  FXS.coverAvoid = rightIds0;   // the cover strip never repeats a room the inside right shows
+  const usedCover = [(K.front || {}).hero || 'front'].concat(FXS.coverRooms(D));
+
+  // ================= COVER =================
+  const photoIds = html => [...String(html).matchAll(/data-photo="([^"]+)"/g)].map(m => m[1]);
+  const rightIds = [].concat(...(((K.right || {}).rows) || [])).map(c => c.photo);
+  const cover = () => FXS.cover(D, {});
+  // ================= BACK (outside) =================
+  const back = (avoid) => { const r = FXS.back(D, {outdoor: true, avoid, coverIds: usedCover.slice(1), coverText: [(K.front || {}).summary, ((D.companion || {}).flyer || {}).front && D.companion.flyer.front.intro]}); issues.push(...r.issues); return r.html; };
+  // ================= INSIDE LEFT =================
+  // both inside pages start their rows on one line and end on one bottom line: a blue footer bar closes each page
+  const FOOT = 774, RBOT = 726, LBOT = 774,   // owner 11/7: no agent band on the inside pages; the left box runs to the foot, the right ends over its corner logo
+   RGAP = 8, RLINES = 3, CAPH = 25 + RLINES*13.5;
+  const headL = () => { const I = K.left || {}; return FXS.pageHead(I.kicker || '', I.title || '', I.intro, 'left', 4); };
+  const headR = () => { const R = K.right || {}; return FXS.pageHead(R.kicker || '', R.title || '', R.intro, 'right', 4); };
+  const rowsTop = Math.max(headL().bottom, headR().bottom) + 16;
+  const RPH = Math.floor((RBOT - rowsTop - 2*RGAP - 3*CAPH)/3);
+  const rightBottom = RBOT;
+  const hsSrc = (D.agent || {}).headshot && ((D.photos || {})[D.agent.headshot] ? D.photos[D.agent.headshot].src : D.agent.headshot) || '';
+  const left = (avoid) => {
+    const I = K.left || {}, box = I.box || {};
+    const hd = headL();
+    let h = hd.html;
+    const hs = FXS.fitSize(box.heading || '', "font-family:Montserrat;font-weight:700", CW - 44, 20, 15), pitch = 3*13 + 9;
+    const cardH = 16 + 12 + 8 + hs*1.3 + 14 + 3*pitch + 6, py = rowsTop, ph = Math.max(90, Math.min(260, LBOT - cardH - 16 - CAPH - 4 - py));
+    const allC = FXS.cards(D, I.photos || []), av0 = usedCover.concat(rightIds, avoid || []);
+    let cards = FXS.pick(D, allC, 3, {avoid: av0, exactAvoid: false, noHouse: true, indoor: true});
+    if(cards.length < 3) cards = cards.concat(FXS.pick(D, allC, 3, {avoid: av0.concat(cards.map(c => c.photo)), exactAvoid: false, noHouse: true}).filter(c => !cards.includes(c))).slice(0, 3);   // the dining area or the deck takes the third slot
+    const pw = (CW - (cards.length - 1)*gap)/cards.length;
+    cards.forEach((c, i) => { h += FXS.captioned(D, c, X0 + i*(pw + gap), py, pw, ph, RLINES + 1, 'left.photo' + i, {narrow: 14, fs: 9.5, lh: 13, row: 'left.r'}); });
+    const cy = LBOT - cardH;
+    h += `<div class="bluecard" style="left:${X0}pt;top:${cy}pt;width:${CW}pt;height:${cardH}pt"></div>`;
+    h += `<div class="abs" style="left:${X0 + 22}pt;top:${cy + 16}pt">${FXS.label(box.kicker || '', 'left.box.kicker').replace('class="lbl"', 'class="lbl on"')}</div>`;
+    h += `<div class="abs" style="left:${X0 + 22}pt;top:${cy + 36}pt;width:${CW - 44}pt;height:${hs*1.3}pt;font:700 ${hs}pt/${hs*1.3}pt var(--fx-font);color:#fff;white-space:nowrap;overflow:hidden" data-slot="left.box.heading" data-lines="1">${esc(box.heading || '')}</div>`;
+    const items = (box.items || []).slice(0, 6), gy = cy + 36 + hs*1.3 + 14, colw = (CW - 44 - 26)/2;
+    h += `<div class="hr on" style="left:${X0 + 22}pt;top:${gy - 5}pt;width:${CW - 44}pt"></div>`;
+    items.forEach((it, i) => { const r = Math.floor(i/2), c = i%2, x = X0 + 22 + c*(colw + 26), y = gy + 4 + r*pitch;
+      h += `<div class="abs" style="left:${x}pt;top:${y + 4.5}pt;width:4pt;height:4pt;background:#fff"></div>`;
+      h += `<div class="abs" style="left:${x + 14}pt;top:${y}pt;width:${colw - 14}pt;height:${3*13}pt;font:400 10pt/13pt var(--fx-font);color:#fff;overflow:hidden" data-slot="left.box.t${i}" data-lines="3" data-try="3,2" data-narrow="8" data-lh="13" ${FXS.sd(it.s)}></div>`; });
+    return h;
+  };
+  // ================= INSIDE RIGHT =================
+  const right = () => {
+    const R = K.right || {}, rows = R.rows || [];
+    const hd = headR();
+    let h = hd.html;
+    const rw = (CW - gap)/2, lines = RLINES, ph = RPH, rowGap = RGAP, y0 = rowsTop;
+    let k = 0;
+    const nk = x => String(x).toLowerCase().replace(/[^a-z0-9 ]/g, '').slice(0, 40), seenS = new Set();
+    rows.slice(0, 3).forEach(r => r.slice(0, 2).forEach((c, i) => { const kept = (c.s || []).filter(x => ![].concat(x).some(a => seenS.has(nk(a)))); if(kept.length >= 2) r[i] = Object.assign({}, c, {s: kept}); (r[i].s || []).forEach(x => [].concat(x).forEach(a => seenS.add(nk(a)))); }));
+    rows.slice(0, 3).forEach((r, ri) => { r.slice(0, 2).forEach((c, i) => { h += FXS.captioned(D, c, X0 + i*(rw + gap), y0 + ri*(ph + CAPH + rowGap), rw, ph, lines, 'right.photo' + (k++), {narrow: 12, row: 'right.r' + ri}); }); });
+    h += `<div class="brule" style="left:${X0}pt;top:${RBOT + 8}pt;width:${CW}pt"></div>`;
+    h += FXS.logo(D, X0 + CW - 200, RBOT + 16, 200, 32, 'flex-end');
+    return h;
+  };
+
+  // ---------- assemble ----------
+  const pF = cover(), pR = right(), pB = back(photoIds(pF).concat(photoIds(pR))), pL = left(photoIds(pF).concat(photoIds(pR), photoIds(pB)));
+  const panels = {front: pF, back: pB, left: pL, right: pR};
+  const panel = h => `<div class="panel"><div class="bg-paper"></div>${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.back)}</div><div class="half r">${panel(panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.left)}</div><div class="half r">${panel(panels.right)}</div></div>`;
+  } else {
+    for(const id of ['front','back','left','right']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  SW.fill();
+  SW.fitLogos();
+  if(window.ContactCard) ContactCard.fit(document);
+  issues.push(...SW.focus(D));
+  document.querySelectorAll('.ph[data-slot-photo^="back.photo"]').forEach(el => { if(!FXS.OUTSIDE.test(el.dataset.photo || '')) issues.push({slot: el.dataset.slotPhoto, kind: 'interior-photo-on-outside-page', detail: `${el.dataset.photo} is not an exterior, outdoor or community photo`}); });
+  // no photo twice across all four panels (the same photo, or the same room: primary suite, game room, deck)
+  { const seen = new Map(), seenFam = new Map(); document.querySelectorAll('.panel').forEach((pn, pi) => { const here = new Set();
+      pn.querySelectorAll('.ph[data-photo]').forEach(el => { const id = el.dataset.photo; if(!id || here.has(id)) return; here.add(id);
+        const fam = SW.famOf(id), slot = el.dataset.slotPhoto || id, skipFam = fam === 'outdoor' || fam === 'front';
+        if(seen.has(id) && seen.get(id).p !== pi) issues.push({slot, kind: 'duplicate-photo-spread', detail: `${id} is on panel ${seen.get(id).p + 1} and panel ${pi + 1}`}); else seen.set(id, {p: pi});
+        if(!skipFam && seenFam.has(fam) && seenFam.get(fam).p !== pi && seenFam.get(fam).id !== id) issues.push({slot, kind: 'same-room-on-spread', detail: `${id} (panel ${pi + 1}) shows the same room as ${seenFam.get(fam).id} (panel ${seenFam.get(fam).p + 1})`}); else if(!skipFam && !seenFam.has(fam)) seenFam.set(fam, {p: pi, id}); }); }); }
+  window.brochureCheck = () => SW.check(D, (window.planIssues || []).concat(issues));
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>

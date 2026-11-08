@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · fxs-28 fold-over</title>
+<link rel="stylesheet" href="fxs28.css">
+<script src="fxs28.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/agentcard.js"></script>
+<!--
+  BrochureDesk · fxs-28 (FX28 look) · 11 x 17 fold-over: one sheet folded once down the middle into four upright 8.5 x 11 panels,
+  0.125 in (9 pt) bleed, 0.25 in safe zone. Outside spread: back (left) + cover (right). Inside spread: left + right.
+  Every panel keeps the FX28 hand (tokens: fxs28-tokens.css): the address set vertically up the left edge with the gold rule and the vertical
+  place line, square photos with gold hairline-underlined labels, Cormorant italic write-ups, the round seal, white notes cards.
+    COVER   the FX28 front: whole house, two rooms with the neighborhood seal, write-up, four-stat row, agent and the one logo.
+    BACK    the FX28 back: four outdoor / community photos (or the plan and two), About the house, the two notes cards, the standard agent card.
+    LEFT    kicker, title, intro; three captioned rooms; the feature card (heading and six labeled notes in two columns).
+    RIGHT   kicker, title, intro; three rows of captioned photos on one two-column split; the one logo at the foot.
+  Copy comes as a lead plus whole sentences (data.sw.*); fxs28.js picks the sentences that fill each box (last line at least 3/4 full).
+  Modes: proof = four panel pages 8.75 x 11.25 in; print = two spreads 17.25 x 11.25 in, each half clipped at the fold.
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const mode = D.mode || 'proof';
+  const esc = SW.esc, L = D.listing, K = D.sw || {};
+  const issues = [];
+  await SW.setup(D);
+  const X0 = 108, CW = 477, gap = 10.5, SPW = 84;
+  const usedCover = [(K.front || {}).hero || 'front'].concat(FXS.coverRooms(D));
+  const spineIn = () => { const a = FXS.rawAddr(L), t = ('INSIDE ' + ((a.match(/^\d+/) || [''])[0]) + ' ' + FXS.streetOnly(a)).trim(); return FXS.spine(D, SPW, {text: t, max: 37.5, min: 22, top: 270}).html; };
+
+  // ================= COVER =================
+  const photoIds = html => [...String(html).matchAll(/data-photo="([^"]+)"/g)].map(m => m[1]);
+  const rightIds = [].concat(...(((K.right || {}).rows) || [])).map(c => c.photo);
+  const cover = () => FXS.cover(D, {});
+  // ================= BACK (outside) =================
+  const back = (avoid, hard) => { const r = FXS.back(D, {outdoor: true, avoid, avoidHard: hard, coverText: [(K.front || {}).summary, ((D.companion || {}).flyer || {}).front && D.companion.flyer.front.intro]}); issues.push(...r.issues); return r.html; };
+  // ================= INSIDE LEFT: the spine, kicker / title / intro, the widest room, three captioned rooms, the green feature box =================
+  // both inside pages end on one bottom margin (PB): the green box ends where the last caption on the right ends
+  const RPH = 92, RGAP = 12, RLINES = 3, PB = 756;
+  const headR = () => { const R = K.right || {}; return FXS.pageHead(R.kicker || '', R.title || '', R.intro, 'right', 4); };
+  const rowsTop = headR().bottom + 18;
+  const RPH2 = Math.min(132, Math.floor((PB - 52 - rowsTop - 3*(25 + RLINES*13.5) - 2*RGAP)/3));   // owner 11/7: the rows grow to the footer rule, no empty band
+  const left = (avoid) => {
+    const I = K.left || {}, box = I.box || {};
+    const hs = FXS.fitSize(String(box.heading || '').toUpperCase(), "font-family:Oswald;font-weight:600;letter-spacing:1.2pt", CW - 44, 22, 16), pitch = 3*13 + 8.64;
+    const cardH = 12 + 13 + 6 + hs*1.25 + 8 + 3*pitch + 6, cy = PB - cardH;
+    // never a room that is on the inside right (or the cover): the same room under another number counts ("game" and "game3", "pbath" and "pbath2")
+    const rkey = id => String(id).replace(/\d+[a-z]?$/, ''), avoidIds = usedCover.concat(rightIds, avoid || []), rightKeys = new Set(rightIds.map(rkey));
+    const topicKitchen = /kitchen/i.test(box.kicker || ''), pool = FXS.cards(D, I.photos || []).filter(c => !rightKeys.has(rkey(c.photo))).filter(c => !(topicKitchen && /^(kitchen|bar|nook|pantry)/.test(c.photo)));   // a kitchen box never sits beside kitchen captions   // a kitchen feature box never sits beside kitchen captions
+    let cards0 = FXS.pick(D, pool, 4, {avoid: avoidIds, exactAvoid: true, noHouse: true, indoor: true});
+    // too few rooms left once the kitchen is held back for the kitchen box: a deck, patio or terrace photo fills the slot (never a kitchen beside the kitchen box, never a room the inside right shows)
+    if(cards0.length < 4){ const pool2 = FXS.cards(D, I.photos || []).filter(c => !rightKeys.has(rkey(c.photo))); cards0 = cards0.concat(FXS.pick(D, pool2, 4 - cards0.length, {avoid: avoidIds.concat(cards0.map(c => c.photo)), noHouse: true, outdoor: true}).filter(c => !cards0.some(x => x.photo === c.photo))); }
+    if(cards0.length < 4) cards0 = cards0.concat(FXS.pick(D, pool, 4 - cards0.length, {avoid: avoidIds.concat(cards0.map(c => c.photo)), noHouse: true, outdoor: true}).filter(c => !cards0.some(x => x.photo === c.photo)));
+    const heroC = cards0.slice().sort((p, q) => FXS.archScore(D, q.photo) - FXS.archScore(D, p.photo))[0], cards = cards0.filter(c => c !== heroC).slice(0, 3);
+    const nC = Math.max(1, cards.length), pw = (CW - (nC - 1)*gap)/nC, capBlock = 7 + 12 + 6 + 3*13;   // one photo left: it runs the full column with a full-width three-line caption, never half a row
+    const hd = FXS.pageHead(I.kicker || '', I.title || '', I.intro, 'left', 3);
+    // the trio's photos and the widest room share what the header and the box leave
+    const g1 = nC === 1 ? 8 : 14, free = cy - g1 - hd.bottom - 12 - g1, trioPh = nC === 1 ? 155 : Math.min(120, Math.max(86, Math.round(free*.34))), py = cy - g1 - capBlock - trioPh, heroTop = hd.bottom + (nC === 1 ? 8 : 10), heroH = py - g1 - heroTop;
+    let h = spineIn() + hd.html + FXS.box(D, heroC.photo, X0, heroTop, CW, heroH, 'left.hero');
+    cards.forEach((c, i) => { h += FXS.captioned(D, c, X0 + i*(pw + gap), py, pw, trioPh, 3, 'left.photo' + i, {narrow: 14, fs: 9.5, lh: 13}); });
+    h += `<div class="card" style="left:${X0}pt;top:${cy}pt;width:${CW}pt;height:${cardH}pt"></div>`;
+    h += `<div class="abs lbl onspine" style="left:${X0 + 22}pt;top:${cy + 12}pt" data-slot="left.box.kicker" data-lines="1">${esc(String(box.kicker || '').toUpperCase())}</div>`;
+    h += `<div class="abs" style="left:${X0 + 22}pt;top:${cy + 12 + 13 + 6}pt;width:${CW - 44}pt;height:${hs*1.25}pt;font:600 ${hs}pt/${hs*1.25}pt var(--fx-display);letter-spacing:1.2pt;color:#fff;white-space:nowrap;overflow:hidden" data-slot="left.box.heading" data-lines="1">${esc(String(box.heading || '').toUpperCase())}</div>`;
+    const items = (box.items || []).slice(0, 6), gy = cy + 12 + 13 + 6 + hs*1.25 + 8, colw = (CW - 44 - 26)/2;
+    items.forEach((it, i) => { const r = Math.floor(i/2), c = i%2, x = X0 + 22 + c*(colw + 26), y = gy + r*pitch;
+      h += `<div class="abs" style="left:${x}pt;top:${y + 4}pt;width:4pt;height:4pt;background:var(--fx-on-spine)"></div>`;
+      h += `<div class="abs" style="left:${x + 12}pt;top:${y}pt;width:${colw - 12}pt;height:${3*13}pt;font:400 10pt/13pt var(--fx-font);color:var(--fx-on-spine);overflow:hidden" data-slot="left.box.t${i}" data-lines="3" data-try="3,2" data-narrow="8" data-lh="13" ${FXS.sd(it.s)}></div>`; });
+    return h;
+  };
+  // ================= INSIDE RIGHT: the spine, kicker / title / intro, three rows of captioned photos on one two-column split =================
+  const right = () => {
+    const R = K.right || {}, rows = R.rows || [];
+    const hd = headR();
+    let h = spineIn() + hd.html;
+    const rw = (CW - gap)/2, lines = RLINES, ph = RPH2, rowGap = RGAP, y0 = rowsTop;
+    h += `<div class="abs" style="left:${X0}pt;top:${y0 - 10}pt;width:${CW}pt;height:1.5pt;background:var(--fx-rule-hard)"></div>`;
+    let k = 0;
+    const nk = x => String(x).toLowerCase().replace(/[^a-z0-9 ]/g, '').slice(0, 40), seenS = new Set();
+    rows.slice(0, 3).forEach(r => r.slice(0, 2).forEach((c, i) => { const kept = (c.s || []).filter(x => ![].concat(x).some(a => seenS.has(nk(a)))); if(kept.length >= 2) r[i] = Object.assign({}, c, {s: kept}); (r[i].s || []).forEach(x => [].concat(x).forEach(a => seenS.add(nk(a)))); }));
+    rows.slice(0, 3).forEach((r, ri) => { r.slice(0, 2).forEach((c, i) => { h += FXS.captioned(D, c, X0 + i*(rw + gap), y0 + ri*(ph + 25 + lines*13.5 + rowGap), rw, ph, lines, 'right.photo' + (k++), {narrow: 12}); }); });
+    h += `<div class="abs" style="left:${X0}pt;top:${PB - 40}pt;width:${CW}pt;height:1.5pt;background:var(--fx-rule-hard)"></div>`;
+    h += FXS.logo(D, X0 + CW - 190, PB - 34, 190, 34, 'flex-end');
+    return h;
+  };
+
+  // ---------- assemble ----------
+  const pF = cover(), pR = right(), pL = left(photoIds(pF).concat(photoIds(pR))), pB = back(photoIds(pF).concat(photoIds(pR), photoIds(pL)), photoIds(pF));
+  const panels = {front: pF, back: pB, left: pL, right: pR};
+  const panel = h => `<div class="panel"><div class="bg-paper"></div>${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.back)}</div><div class="half r">${panel(panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.left)}</div><div class="half r">${panel(panels.right)}</div></div>`;
+  } else {
+    for(const id of ['front','back','left','right']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
+  }
+  // the cover and the inside spread: no photo twice (the back's outdoor row may reuse an outdoor photo only when nothing else outdoor is left), and no room on both inside pages (same room under another number counts)
+  { const rk = id => String(id).replace(/\d+[a-z]?$/, ''), idsOf = h => photoIds(h), seen = new Map();
+    Object.entries(panels).filter(([pn]) => pn !== 'back').forEach(([pn, h]) => idsOf(h).forEach(id => { if(seen.has(id)) issues.push({slot: 'spread.' + pn, kind: 'duplicate-photo', detail: `${id} is on the ${seen.get(id)} and the ${pn} page`}); else seen.set(id, pn); }));
+    const lk = new Set(idsOf(panels.left).map(rk));
+    idsOf(panels.right).forEach(id => { if(lk.has(rk(id))) issues.push({slot: 'spread.right', kind: 'same-room-on-inside-spread', detail: `${id} (the same room as one on the inside left)`}); }); }
+  document.getElementById('pages').innerHTML = html;
+  { const szs = [...document.querySelectorAll('[data-page="left"] [data-size], [data-page="right"] [data-size], [data-page="inside"] [data-size]')].map(e => e.textContent.trim().replace(/\s+/g, ' ')), seenSz = new Set();
+    szs.forEach(s => { if(seenSz.has(s)) issues.push({slot: 'spread.sizes', kind: 'size-repeats-on-spread', detail: `${s} is printed twice on the inside spread`}); seenSz.add(s); }); }
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  SW.fill();
+  FXS.fixCover();
+  SW.fitLogos();
+  if(window.ContactCard) ContactCard.fit(document);
+  issues.push(...SW.focus(D));
+  document.querySelectorAll('.ph[data-slot-photo^="back.photo"]').forEach(el => { if(!FXS.OUTSIDE.test(el.dataset.photo || '')) issues.push({slot: el.dataset.slotPhoto, kind: 'interior-photo-on-outside-page', detail: `${el.dataset.photo} is not an exterior, outdoor or community photo`}); });
+  window.brochureCheck = () => SW.check(D, (window.planIssues || []).concat(issues));
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>

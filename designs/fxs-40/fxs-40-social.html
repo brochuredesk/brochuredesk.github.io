@@ -160,9 +160,10 @@ FXP.start(['400 20pt "Great Vibes"', '500 20pt Oswald', '600 20pt Oswald', '700 
   // the top block of every full-width piece: the whole house at 81% width, the pale blue column with the icon facts, the dark badge over the photo's lower edge
   const topBlock = (id, o) => { o = o || {};
     // owner 11/7: a Just Sold piece never lists the house's features: the house takes the whole width instead of the fact column
-    const jsWide = kind === 'js' && !o.noFacts; if(jsWide) o.noFacts = true;
+    const jsWide = kind === 'js' && !o.noFacts && heroFit(WP, HERO_H); if(kind === 'js') o.noFacts = true;   // full width only when the whole house still fits; else the column carries the words
     front.push(pic(id, 0, 0, p(jsWide ? WP : W1), p(HERO_H)));
     if(!jsWide) front.push(rect(p(W1), 0, p(WP - W1), p(HERO_H), 'background:var(--fx-blue)'));
+    if(!jsWide && kind === 'js'){ const cw = WP - W1, fs = Math.min(cw*.5, HERO_H*.16); mid.push(`<div class="abs" style="left:${p(W1)}pt;top:${p(18*SC)}pt;width:${p(cw)}pt;height:${p(HERO_H - 36*SC)}pt;display:flex;align-items:center;justify-content:center"><div style="transform:rotate(-90deg);white-space:nowrap;font:600 ${p(fs)}pt/1 'Oswald';letter-spacing:${p(fs*.12)}pt;color:var(--fx-ink);text-transform:uppercase" data-slot="js.word" data-lines="1">Sold</div></div>`); }
     const d = Math.round((o.d || 400)*SC), hb = FXS.houseBottom(D, id, 0, 0, W1, HERO_H), bt = Math.max(HERO_H - 110*SC, hb + 10*SC), cx = WP - d/2 - 34*SC;
     const items = FXS.statItems(L).slice(0, 3), colH = (o.noBadge ? HERO_H : bt) - 26*SC, pitch = colH/items.length, ipx = pitch*.3, np = Math.max(16, p(pitch*.27)), lp = Math.min(Math.max(F.small, p(pitch*.13)), Math.max(F.small, p(24*SC)));
     if(!o.noFacts) mid.push(FXS.iconCol(items, p(W1 + 10*SC), p(18*SC), p(WP - W1 - 20*SC), p(pitch), 'fact', {icon: p(ipx), np, lp}));

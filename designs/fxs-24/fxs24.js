@@ -8,7 +8,29 @@
   const FXS = SW;
   const esc = SW.esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const pt = px => px*72/96;
-  SW.data = () => JSON.parse(document.getElementById('brochure-data').textContent || '{}');
+  // Live orders name photos p0, p1... with the photo tagger's role and tags (order/agent.js dataFor). This template picks and
+  // labels photos by their room name (kitchen, deck, front...), so each p-photo gets a room name from its role or tags, and every
+  // reference to it in the copy follows. Sample data (room names already) passes through unchanged. Same result on every call.
+  SW.normPhotos = D => {
+    const P = D.photos || {}, ids = Object.keys(P).filter(id => /^p\d+$/.test(id)).sort((a, b) => +a.slice(1) - +b.slice(1));
+    if(!ids.length) return D;
+    const ROLE = {front: 'front', side: 'walk', back: 'yard', street: 'street', aerial: 'skyline', living: 'living', family: 'family', kitchen: 'kitchen', dining: 'dining',
+      nook: 'nook', primary: 'primary', bedroom: 'bed', bath: 'bath', office: 'flex', entry: 'foyer', stairs: 'stair', laundry: 'laundry', garage: 'garage', patio: 'patio',
+      pool: 'patio', yard: 'yard', view: 'skyline', amenity: 'park', floorplan: 'plan', other: 'room'};
+    const TAG = [[/primary (bath|shower)|ensuite|master bath/, 'pbath'], [/half bath|powder/, 'powder'], [/bath|shower/, 'bath'], [/kitchen/, 'kitchen'], [/breakfast|nook/, 'nook'],
+      [/dining/, 'dining'], [/family/, 'family'], [/living/, 'living'], [/game|media/, 'game'], [/primary|master/, 'primary'], [/bed/, 'bed'], [/office|study|flex/, 'flex'],
+      [/laundry|utility/, 'laundry'], [/closet/, 'closet'], [/stair/, 'stair'], [/foyer|entry/, 'foyer'], [/balcon/, 'balcony'], [/deck/, 'deck'], [/pergola/, 'pergola'],
+      [/patio|porch|pool/, 'patio'], [/yard|lawn/, 'yard'], [/garage/, 'garage'], [/park|community|amenit/, 'park'], [/front|exterior|street|curb/, 'front']];
+    const used = new Set(Object.keys(P).filter(id => !/^p\d+$/.test(id))), map = {};
+    ids.forEach(id => { const p = P[id] || {}, t = (String(p.role || '') + ' ' + String(p.tags || '') + ' ' + String(p.room || '')).toLowerCase();
+      const base = (p.house || p.fullHouse) ? 'front' : (p.role === 'bath' && /primary|ensuite|master/.test(t)) ? 'pbath' : (p.role === 'primary' && /bath|shower/.test(t)) ? 'pbath'
+        : ROLE[p.role] || (TAG.find(([re]) => re.test(t)) || [0, 'room'])[1];
+      let n = base, k = 2; while(used.has(n)) n = base + k++; used.add(n); map[id] = n; });
+    const re = v => typeof v === 'string' ? (map[v] || v) : Array.isArray(v) ? v.map(re) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, re(x)])) : v;
+    const NP = {}; Object.entries(P).forEach(([id, v]) => { NP[map[id] || id] = v; });
+    const out = re(Object.assign({}, D, {photos: null})); out.photos = NP; return out;
+  };
+  SW.data = () => SW.normPhotos(JSON.parse(document.getElementById('brochure-data').textContent || '{}'));
   // a phrase of 5 or more words never repeats inside one caption or paragraph
   const words5 = t => String(t).toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').split(/\s+/).filter(Boolean);
   SW.rep5 = t => { const w = words5(t), seen = new Set(); for(let i = 0; i + 5 <= w.length; i++){ const k = w.slice(i, i + 5).join(' '); if(seen.has(k)) return k; seen.add(k); } return ''; };
@@ -467,7 +489,7 @@
     return out.slice(0, max); };
   // the photo strip: n rooms across (x, y, w, h) with the room's name in tracked blue caps under each
   FXS.strip = (D, cards, x, y, w, h, gap, slot) => { const n = cards.length, pw = (w - (n - 1)*gap)/n; let out = '';
-    cards.forEach((c, i) => { const px = x + i*(pw + gap); let nm = FXS.leadLabel(c.lead).name.toUpperCase();
+    cards.forEach((c, i) => { const px = x + i*(pw + gap); let nm = (FXS.leadLabel(c.lead).name || FXS.labelFor(c.photo).replace(/\.$/, '')).toUpperCase();   // a live order's card may have no lead: the room's own name
       const full = nm; let fs = 9.75, trk = 1.2; while(FXS.width(nm, `font-family:Montserrat;font-weight:600;font-size:${fs}pt;letter-spacing:${trk}pt`) > pw - 1 && (trk > .2 || fs > 8.5)){ if(trk > .2) trk = Math.max(.2, trk - .2); else fs -= .25; }
       if(FXS.width(nm, `font-family:Montserrat;font-weight:600;font-size:${fs}pt;letter-spacing:${trk}pt`) > pw - 1) FXS.pending.push({slot: slot + '.label' + i, kind: 'strip-label-truncated', detail: `${full} does not fit its column`});
       out += FXS.box(D, c.photo, px, y, pw, h, `${slot}.photo${i}`) + `<div class="abs sl" style="left:${px}pt;top:${y + h + 7}pt;width:${pw}pt;height:14pt;font-size:${fs}pt;letter-spacing:${trk}pt" data-slot="${slot}.label${i}" data-lines="1" data-room="${esc(c.photo)}" data-full="${esc(full)}">${esc(nm)}</div>`; });
