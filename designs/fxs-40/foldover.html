@@ -60,9 +60,11 @@ window.brochureReady = (async function(){
     // too few rooms that are not on the inside right: a deck or patio photo fills the slot (never a room the inside right shows)
     if(cards0.length < 4) cards0 = cards0.concat(FXS.pick(D, pool, 4 - cards0.length, {avoid: avoidIds.concat(cards0.map(c => c.photo)), exactAvoid: true, noHouse: true, outdoor: true}).filter(c => !cards0.some(x => x.photo === c.photo)));
     const heroC = cards0.slice().sort((p, q) => FXS.archScore(D, q.photo) - FXS.archScore(D, p.photo))[0], cards = cards0.filter(c => c !== heroC).slice(0, 3);
+    // owner 11/7 (no blank space): a lone room photo never leaves half its row empty: another unused room of the listing joins it (never one the inside right shows)
+    if(cards.length === 1){ const more = FXS.pick(D, FXS.cards(D, []).filter(c => !rightKeys.has(rkey(c.photo)) && c.photo !== heroC.photo && c.photo !== cards[0].photo), 1, {avoid: avoidIds.concat(cards0.map(c => c.photo)), exactAvoid: true, noHouse: true, indoor: true}); if(more.length) cards.push(more[0]); }
     // header sits between the hero's gold rule and the captioned rooms; the row photos grow to meet the header (owner 11/7: no empty band)
     const heroH = 226, hd = FXS.pageHead('', I.title || '', I.intro, 'left', 3, heroH + 16, {w: 410});
-    const nC = Math.max(2, cards.length), pw = (CW - (nC - 1)*gap)/nC, capBlock = 7 + 12 + 6 + 3*13, ph = Math.max(nC < 3 ? 90 : 86, Math.min(170, Math.floor(cy - 14 - capBlock - (hd.bottom + 18)))), py = cy - 14 - capBlock - ph;
+    const nC = cards.length === 1 ? 1 : Math.max(2, cards.length), pw = (CW - (nC - 1)*gap)/nC, capBlock = 7 + 12 + 6 + 3*13, ph = Math.max(nC < 3 ? 90 : 86, Math.min(nC === 1 ? 190 : 170, Math.floor(cy - 14 - capBlock - (hd.bottom + 18)))),   /* owner 11/7: a lone room photo runs the full width, never half an empty row */ py = cy - 14 - capBlock - ph;
     let h = FXS.box(D, heroC.photo, -9, -9, 630, heroH + 9, 'left.hero') + FXS.titleBadge(I.kicker || '', 512, heroH, 124, 'left.badge') + hd.html;
     const slack = py - hd.bottom - 10;
     cards.forEach((c, i) => { h += FXS.captioned(D, c, X0 + i*(pw + gap), py, pw, ph, 3, 'left.photo' + i, {narrow: 14, fs: 9.5, lh: 13}); });

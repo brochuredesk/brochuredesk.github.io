@@ -515,15 +515,15 @@
   };
 
   // ---------- the plan card (IvoryPlan) at (x, y, w): returns {html, bottom, issues} ----------
-  FXS.planCard = (D, x, y, w, maxH) => {
+  FXS.planCard = (D, x, y, w, maxH, fillTo) => {   // fillTo (owner 11/7, no blank space): the card runs down to fillTo, the plan centered in it
     const iw = w - 28.8, planRot = (() => { const r0 = IvoryPlan.draw(D.plan, {x: x + 14.4, y: 0, w: iw, h: 250}, {allowRotate: false}); return (r0.issues || []).some(i => /label-wont-fit/.test(i.kind)); })();
     const fit = mh => { for(let hh = mh; hh >= 130; hh -= 6){ const big = IvoryPlan.draw(D.plan, {x: x + 14.4, y: 0, w: iw, h: hh}, {allowRotate: planRot}); if(!(big.issues || []).some(i => i.kind === 'plan-under-300ppi')) return Math.min(hh, Math.ceil(big.usedH || hh) + 6); } return 200; };
-    const ph = fit(maxH), r = IvoryPlan.draw(D.plan, {x: x + 14.4, y: y + 8, w: iw, h: ph - 4}, {allowRotate: planRot});
+    const ph = fit(maxH), ext = fillTo ? Math.max(0, fillTo - (y + ph + 36)) : 0, y0 = y + ext/2, r = IvoryPlan.draw(D.plan, {x: x + 14.4, y: y0 + 8, w: iw, h: ph - 4}, {allowRotate: planRot});
     const zs = IvoryPlan.zonesOf(D.plan);
     const leg = Object.entries(IvoryPlan.ZONES).filter(([k]) => zs.includes(k)).map(([k, z]) => `<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, var(--fx-paper))"></i>${z.label}</span>`);
     if(zs.includes('outdoor')) leg.push(`<span><i style="background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--accent) 35%, var(--fx-paper)) 0 .6pt, var(--fx-paper) .6pt 2.8pt)"></i>Outdoor</span>`);
     const note = (D.plan.source || 'The listing floor plan, placed as given.') + ' Sizes are approximate.' + ((r.angle === 90 || r.angle === 270) ? ' Turned on its side.' : '');
-    const ly = y + ph + 6, bottom = ly + 30;
+    const ly = y0 + ph + 6, bottom = ly + 30 + ext/2;
     const html = `<div class="card" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${bottom - y}pt;background:var(--fx-seal)"></div><div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt;--paper:var(--fx-seal)">${r.html}<div class="plan-legend" style="left:${x + 14}pt;top:${ly}pt">${leg.join('')}</div><div class="plan-disclosure" style="left:${x + 14}pt;width:${w - 28}pt;top:${ly + 14}pt;text-align:left" data-slot="back.plannote" data-lines="1" data-fine="1">${esc(note)}</div></div>`;
     return {html, bottom, issues: r.issues || []};
   };
@@ -632,7 +632,7 @@
     h += `<div class="abs body wrapdot" data-slot="back.about" data-lines="${aLines}" data-try="${aTry.join(',')}" data-lh="${alh}" data-narrow="3" ${sd(aPool)} style="left:${M}pt;top:${aTop}pt;width:${aw}pt;height:${aLines*alh}pt;font-size:${afs}pt;line-height:${alh}pt;--fw:${fw}pt;--fh:${fh}pt;--dr:${dotR}pt;--dx:${bcx - (M + aw - fw)}pt;--dy:${bcy - aTop}pt"></div>`;
     const leftTop = aboutY + 26 + aLines*alh + 14;
     if(hasPlan){
-      const pc = tallPlan ? FXS.planCard(D, M, Math.max(leftTop, 380), 540, Math.max(130, bottom - Math.max(leftTop, 380) - 36)) : FXS.planCard(D, M, leftTop, leftW, Math.max(130, bottom - leftTop - 36)); h += pc.html; issues.push(...pc.issues); window.planIssues = pc.issues;
+      const pc = tallPlan ? FXS.planCard(D, M, Math.max(leftTop, 380), 540, Math.max(130, bottom - Math.max(leftTop, 380) - 36)) : FXS.planCard(D, M, leftTop, leftW, Math.max(130, bottom - leftTop - 36), bottom); h += pc.html; issues.push(...pc.issues); window.planIssues = pc.issues;
     } else if(pl){
       const ph = Math.max(110, bottom - leftTop - 25 - 3*13.5 - 2);
       h += FXS.captioned(D, pl, M, leftTop, leftW, ph, 3, 'back.photo1', {narrow: 12, fs: 10, lh: 13.5});
