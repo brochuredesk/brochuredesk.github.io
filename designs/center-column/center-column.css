@@ -1,0 +1,117 @@
+/* The Center Column: dark green-slate field, serif, brass. A continuous column of big photos down the middle of each inside
+   page, room text beside it, small photos at different heights. Fold-over only for now: 11 x 17 laid 17 wide, four upright pages.
+   Lengths are pt (1/72 in). */
+:root{
+  --paper:#1e2e2d;          /* the field */
+  --ink:#ffffff;            /* titles, names */
+  --text:#e1e8e5;           /* body copy */
+  --signal:#c2a36b;         /* brass: kickers, room sizes, rules */
+  --accent:#c2a36b;
+  --muted:#b9c6c1;
+  --line:rgba(194,163,107,.62);
+  --hair:rgba(255,255,255,.24);
+  --font-display:'EB Garamond',Georgia,'Times New Roman',serif;
+  --font-body:'Mulish',Helvetica,Arial,sans-serif;
+  --cc-paper:#1e2e2d; --cc-ink:#ffffff; --cc-muted:#c9d3cf; --cc-accent:#c2a36b; --cc-line:rgba(194,163,107,.5);
+  --m:29pt;
+}
+@font-face{font-family:'EB Garamond';font-weight:400;src:url(../../fonts/pool/eb-garamond-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'EB Garamond';font-weight:500;src:url(../../fonts/pool/eb-garamond-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'EB Garamond';font-weight:600;src:url(../../fonts/pool/eb-garamond-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'EB Garamond';font-weight:700;src:url(../../fonts/pool/eb-garamond-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Mulish';font-weight:400;src:url(../../fonts/pool/mulish-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Mulish';font-weight:500;src:url(../../fonts/pool/mulish-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Mulish';font-weight:600;src:url(../../fonts/pool/mulish-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Mulish';font-weight:700;src:url(../../fonts/pool/mulish-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+/* type */
+.kicker{font:700 8pt/10pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.title{font-family:var(--font-display);font-weight:500;font-size:25pt;line-height:30pt;height:30pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.hrule{position:absolute;left:var(--m);right:var(--m);height:.8pt;background:var(--line)}
+.body{font-size:9.5pt;line-height:13.5pt;color:var(--text);overflow:hidden}
+.sect{font:700 8pt/10pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.fine{font-size:6.5pt;line-height:8pt;color:var(--muted);overflow:hidden}
+.hdr-logo{position:absolute;right:var(--m);top:26pt;height:46pt;width:190pt;display:flex;align-items:center;justify-content:flex-end;overflow:hidden}
+.hdr-logo img{display:block;width:auto;height:auto}
+
+/* photos */
+.ph{position:relative;overflow:hidden;background:#2f4341;min-height:24pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+/* layout */
+.flow{position:absolute;left:var(--m);right:var(--m);display:flex;flex-direction:column;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.row{display:flex;gap:11pt;min-height:0;align-items:stretch}
+.row .tx{flex:0 0 126pt;min-width:0;display:flex;flex-direction:column}
+.row .sd{flex:0 0 134pt;min-width:0;display:flex;flex-direction:column}
+
+/* room text beside a big photo */
+.tx .h{font-family:var(--font-display);font-weight:500;font-size:15pt;line-height:18pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.tx .d{font:700 8pt/11pt var(--font-body);letter-spacing:1pt;color:var(--signal);white-space:nowrap;overflow:hidden;margin-top:2pt}
+.tx .a{font-size:9pt;line-height:13pt;color:var(--text);overflow:hidden;margin-top:6pt;flex:none}
+.tx .big{margin-top:auto;border-top:.8pt solid var(--line);padding-top:6pt;font-family:var(--font-display);font-weight:500;font-size:22pt;line-height:22pt;color:var(--signal);white-space:nowrap;overflow:hidden}
+/* small side photo with its caption */
+.cap{flex:none;padding-top:6pt}
+.cap.top{padding-top:0;padding-bottom:6pt}
+.cap .h{font-family:var(--font-display);font-weight:500;font-size:12pt;line-height:14pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.cap .d{font:700 8pt/11pt var(--font-body);letter-spacing:.9pt;color:var(--signal);white-space:nowrap;overflow:hidden}
+.cap .a{font-size:8.5pt;line-height:11.5pt;color:var(--text);overflow:hidden;margin-top:2pt}
+
+/* cover */
+.addr{position:absolute;left:var(--m);top:34pt;font-family:var(--font-display);font-weight:500;line-height:46pt;color:var(--ink);white-space:nowrap}
+.facts{display:flex;flex:none;border-top:.8pt solid var(--line);border-bottom:.8pt solid var(--line)}
+.facts .f{flex:1;padding:7pt 0 6pt 12pt;border-left:.6pt solid var(--hair)}
+.facts .f:first-child{border-left:0;padding-left:0}
+.facts .v{font-family:var(--font-display);font-weight:500;font-size:19pt;line-height:22pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.facts .l{font:700 8pt/10pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+
+/* places */
+.places{display:flex;flex-direction:column;min-height:0}
+.places .pr{display:flex;justify-content:space-between;gap:8pt;font:600 8.5pt/13pt var(--font-body);color:var(--text);border-bottom:.5pt dotted var(--hair);white-space:nowrap;align-items:center;flex:1 1 0;min-height:14pt}
+.places .pr b{font-weight:700;color:var(--signal);flex:none}
+.places .pr span{overflow:hidden;min-width:0}
+.places .grid{display:grid;grid-template-columns:1fr 1fr;column-gap:20pt}
+
+/* room by room (the plan's place when there is no plan) */
+.rooms .fl{font:700 8pt/10pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--signal);margin-top:9pt;white-space:nowrap}
+.rooms .fl:first-child{margin-top:0}
+.rooms .rr{display:flex;justify-content:space-between;gap:8pt;font:600 9pt/15pt var(--font-body);color:var(--text);border-bottom:.5pt dotted var(--hair);white-space:nowrap}
+.rooms .rr b{font-weight:700;color:var(--ink);flex:none}
+.rooms .rr span{overflow:hidden;min-width:0}
+.rooms .a{font-size:9pt;line-height:13.5pt;color:var(--text);overflow:hidden;margin-top:6pt}
+
+/* plan on a white board */
+.planframe{flex:none;border:.7pt solid rgba(255,255,255,.6);background:#fff;position:relative}
+.planlayer{position:absolute;left:0;top:0;width:612pt;height:792pt;pointer-events:none;--paper:#fff;--ink:#1e2e2d;--signal:#7a5f22;--text:#1e2e2d;--muted:#4b5a57}
+.plan-svg{position:absolute;overflow:visible}
+.plan-room{position:absolute;text-align:center;font:400 8pt/9.5pt var(--font-body);color:#1e2e2d;white-space:nowrap}
+.plan-room b{display:block;font-weight:700;font-size:8pt;line-height:9.5pt}
+.plan-room span{display:block;color:#4b5a57;font-size:8pt;line-height:9.5pt}
+.plan-level{text-align:center;font:700 9pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:#7a5f22;white-space:nowrap;overflow:hidden}
+.plan-note{text-align:center;font:400 6.5pt/8pt var(--font-body);color:#4b5a57;white-space:nowrap;overflow:hidden}
+.pf-title{position:absolute;left:12pt;top:8pt;font:700 8pt/10pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:#7a5f22;white-space:nowrap}
+.legend{position:absolute;right:10pt;top:7pt;text-align:right;font:700 8pt/10pt var(--font-body);color:#1e2e2d;white-space:nowrap}
+.plandisc{flex:none;text-align:center;white-space:nowrap;margin-top:4pt}
+
+/* pages */
+.page{position:relative;background:var(--paper);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+.panel{position:absolute;left:9pt;top:9pt;width:612pt;height:792pt}
+.half{position:absolute;top:0;height:810pt;width:621pt;overflow:hidden;background:var(--paper)}
+.half.l{left:0}.half.r{left:621pt}
+.half.r .panel{left:0}
+
+.tx .xt{flex:1 1 0;min-height:auto;display:flex;flex-direction:column;margin-top:9pt}
+.tx .xt .cap{padding-top:5pt}
+.tx .xt .cap .a{margin-top:1pt}
+.tx .xt .cap .a{font-size:8.5pt;line-height:11.5pt}
+.tx .xt .cap .h{font-size:12pt;line-height:14pt}
+.row .tx{position:relative}

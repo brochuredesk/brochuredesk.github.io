@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Room Proportions postcards</title>
+<link rel="stylesheet" href="rp.css">
+<script src="rp.js"></script>
+<!--
+  Room Proportions · Just Listed and Just Sold postcards. data.piece.card = "listed" (default) | "sold", data.piece.size = "6x9"
+  (trim 648 x 432 pt) | "6x11" (792 x 432 pt), data.piece.side = "front" | "back"; print adds 0.125 in bleed.
+
+  Front: the whole house leads (a frame close to the photo's own shape, the house's box kept inside it); "Just Listed" / "Just Sold"
+  runs at 30 pt over the address at 24 pt, the place line, a rule and two fact rows; two interior photos are cut to the shapes of
+  the rooms they show (the 6 x 11 names each room and gives its real size under the frame); the standard contact card
+  (templates/_shared/agentcard.js, short preset) closes the card with the side's one brokerage logo. Under the house: Just Listed
+  a short write-up (data.companion.postcard.master); Just Sold a call to action and the agent's note (data.companion.sold).
+  Back: status line, room-shaped photos that never repeat the front, each with its room name and real size, a short write-up
+  (Just Listed data.companion.postcard.back, Just Sold data.companion.sold.back) and the standard contact card (band preset).
+  The right 289.5 pt (4.02 in) is the mail vendor's panel: return address, postage and address zones from data.mailVendor;
+  until one is chosen they are drawn as guides on proofs and left clear in print.
+  No price, no QR, no photo numbers, no "virtually staged", no sale price or days on market. Write-ups fill from the writer's
+  master sentences and never repeat a fact the card shows.
+-->
+<style>
+  .pc-status{font-family:var(--font-display);font-weight:600;font-size:30pt;line-height:34pt;color:var(--accent);white-space:nowrap;overflow:hidden;letter-spacing:-.6pt}
+  .pc-addr{font-family:var(--font-display);font-weight:500;font-size:24pt;line-height:27pt;color:var(--ink);overflow:hidden;letter-spacing:-.4pt}
+  .pc-fact{font:600 11.5pt/16pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
+  .pc-fact span{color:var(--gold);padding:0 .3em}
+  .pc-cta{font-family:var(--font-display);font-weight:600;color:var(--accent);white-space:nowrap;overflow:hidden;letter-spacing:-.4pt}
+  .pc-bst{display:flex;align-items:center;white-space:nowrap;overflow:hidden}
+  .pc-bst .st{font:600 17pt/22pt var(--font-display);letter-spacing:-.3pt;color:var(--accent)}
+  .pc-bst .ln{flex:1;height:.8pt;background:var(--accent);opacity:.45;margin:0 10pt;min-width:20pt}
+  .pc-bst .ad{font:600 8.5pt/22pt var(--font-body);letter-spacing:1.6pt;color:var(--muted);text-transform:uppercase}
+  .pc-disc{font-size:6pt;line-height:7.5pt;color:var(--muted);overflow:hidden}
+  .pc-bst .ret{font:400 8pt/10pt var(--font-body);color:#444;text-align:right;white-space:nowrap}
+  .pc-bst .ret b{font-weight:600;letter-spacing:.45pt;text-transform:uppercase}
+  .pc-fx{display:flex;flex-direction:column;justify-content:space-around}
+  .pc-gr{flex:1;display:flex}
+  .pc-cell{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;min-width:0}
+  .pc-cell.sep{border-left:.7pt solid var(--line)}
+  .pc-cell .v{font:600 22pt/24pt var(--font-display);color:var(--accent);letter-spacing:-.4pt;white-space:nowrap}
+  .pc-cell .l{font:600 8pt/10pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--muted);white-space:nowrap;margin-top:1pt}
+  .mailg{position:absolute}
+  .mailg .guide{position:absolute;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#9a958b;text-transform:uppercase;white-space:nowrap}
+  .mailg.stamp{border:.75pt dashed #b9b4aa;text-align:center;padding-top:36pt;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#9a958b;text-transform:uppercase}
+  .mailg .aline{position:absolute;height:.75pt;background:#d9d5cc}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+RP.whenFonts(async function(){
+  // the display weights this piece sets in (the shared loader preloads the regular weight only), so every measurement uses the real type
+  await Promise.all(['500 24pt var(--font-display)', '600 30pt var(--font-display)'].map(f => document.fonts.load(f.replace('var(--font-display)', getComputedStyle(document.documentElement).getPropertyValue('--font-display')))));
+  const D = RP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = RP.esc, b = D.brand || {}, A = D.agent || {}, L = D.listing, C = D.companion || {};
+  const sold = D.piece.card === 'sold', PC = C.postcard || {}, SC = C.sold || {};
+  document.body.dataset.mode = D.mode || 'email';
+  RP.applyBrand(b);
+  const big = D.piece.size === '6x11', front = D.piece.side === 'front';
+  const W = big ? 792 : 648, H = 432;
+  const byId = RP.byId(D);
+  const ids = (PC.photos || []).filter(id => RP.src(D, id)), hero = ids[0], pics = ids.slice(1, 3);
+  const ph = (id, x, y, w, h) => RP.pframe(D, id, `left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt`);
+  const statusWord = sold ? 'Just Sold' : 'Just Listed';
+  const name = id => { const t = RP.T(D, id).t || RP.caption(D, id).name; return t; };
+  const dims = id => { const it = byId[id]; return it && it.sz ? RP.dimsText(it.sz[0], it.sz[1]) : ''; };
+  const ratio = id => RP.frameRatio(byId[id] || {});
+  // one-line room caption: the name over its real size
+  const roomCap = (id, slot, x, y, w) => `<div class="abs cap" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="t" data-slot="${slot}.name" data-lines="1">${esc(name(id))}</div>`
+    + (dims(id) ? `<div class="t" data-slot="${slot}.size" data-lines="1" style="font-weight:600;color:var(--accent)">${esc(dims(id))}</div>` : '') + `</div>`;
+  // frames in the rooms' own shapes, one common height, the leftover width shared out between them
+  const row = (list, x0, y, w, gap, cap) => {
+    const sum = list.reduce((a, id) => a + ratio(id), 0), RH = Math.min(cap, (w - gap*(list.length - 1)) / sum);
+    const ws = list.map(id => ratio(id)*RH), extra = list.length > 1 ? (w - ws.reduce((a, c) => a + c, 0)) / (list.length - 1) : 0;
+    let x = x0; const out = {RH, items: []};
+    list.forEach((id, i) => { out.items.push({id, x, w: ws[i], gap: extra}); x += ws[i] + extra; });
+    return out;
+  };
+  const fine = [C.fineprint || 'Information deemed reliable but not guaranteed.',
+    'If your property is currently listed with a broker, please disregard this notice. It is not intended to solicit listed property.'].join(' ');
+  let h = '';
+
+  // the tallest frame of this width that still shows the house box side to side (the frame fills by height, cropping the sides)
+  const houseH = (id, w) => { const p = (D.photos || {})[id] || {}, bx = p.box;
+    return bx && p.w && p.h ? Math.floor(w*p.h / ((bx[2] - bx[0])*p.w*1.01)) : Infinity; };
+  if(front){
+    // ---------- front ----------
+    const heroW = big ? 480 : 417, noCard = !big && D.frontCard !== true, heroH = big ? 264 : (noCard ? Math.min(333, houseH(hero, heroW)) : 261), X = big ? 489 : 426, CW = big ? 279 : 198;
+    // 6 x 9 front: no contact block by default (owner 10/30, Book 3 Follow-up Q1); photos and copy grow into its space (data.frontCard = true brings it back)   // the 6 x 11 house frame stays tall enough (about 1.8:1) for a tall townhome's whole box
+    h += ph(hero, -9, -9, heroW, heroH);
+    const underY = heroH - 9 + (big ? 11 : 12);   // the first line under the house
+    if(!sold){
+      h += big ? RP.sentBox('pc.about', 24, underY, 447, 5, 15, 10.8, PC.master || [], 'color:var(--ink)')
+               : RP.sentBox('pc.about', 24, underY, 384, 5, 14, 9.8, PC.master || [], 'color:var(--ink)');
+    } else {
+      const ny = underY + (big ? 30 : 28);
+      h += `<div class="abs pc-cta" style="left:24pt;top:${underY - 1}pt;width:${big ? 447 : 384}pt;height:28pt;font-size:${big ? 23 : 22}pt;line-height:28pt" data-slot="sold.cta" data-lines="1">${esc(SC.cta || 'Thinking of selling? Let’s talk.')}</div>`;
+      h += RP.sentBox('pc.note', 24, ny, big ? 447 : 384, 3, 14, 9.8, SC.about || [], 'color:var(--ink)');
+    }
+    // right column
+    h += `<div class="abs pc-status" style="left:${X}pt;top:${big ? 12 : 20}pt;width:${CW}pt;height:${big ? 44 : 34}pt;${big ? 'font-size:40pt;line-height:44pt;letter-spacing:-.9pt' : ''}" data-slot="pc.status" data-lines="1">${statusWord}</div>`;
+    const aLines = 2;   // two lines drawn; a one-line address pulls the rows under it up (after layout, below)
+    const aH = aLines*27 + 3, pY = 58 + aH + 3;
+    h += `<div class="abs pc-addr" style="left:${X}pt;top:58pt;width:${CW}pt;height:${aH}pt" data-slot="address" data-lines="${aLines}">${esc(L.address)}</div>`;
+    h += `<div class="abs place dy" style="left:${X}pt;top:${pY}pt;width:${CW}pt;height:9pt" data-slot="place" data-lines="1" data-fine="1">${esc([L.neighborhood, RP.placeZip(L)].filter(Boolean).join(' · '))}</div>`;
+    h += `<div class="rule dy" style="left:${X}pt;width:${CW}pt;top:${pY + 16}pt;background:var(--accent);opacity:.6"></div>`;
+    const st = RP.stats(L);
+    if(!big){
+      const rows = [st.slice(0, 2), st.slice(2, 4)].filter(r => r.length), fl = 17;
+      rows.forEach((r, i) => { h += `<div class="abs pc-fact dy" style="left:${X}pt;top:${pY + 24 + i*fl}pt;width:${CW}pt;height:${fl - 1}pt" data-slot="pc.fact${i}" data-lines="1">${r.map(esc).join('<span>&#9632;</span>')}</div>`; });
+      const pw = (CW - 8) / 2;
+      pics.forEach((id, i) => { h += ph(id, X + i*(pw + 8), 184, pw, noCard ? 224 : 156); });
+    } else {
+      // two rooms in their own shapes, each named under the frame (no sizes on the front, 10/29 review)
+      const r = row(pics, X, 0, CW, 8, 118), capY = 328, top = capY - 4 - r.RH;
+      r.items.forEach((it, i) => { h += ph(it.id, it.x, top, it.w, r.RH)
+        + `<div class="abs cap" style="left:${it.x}pt;top:${capY}pt;width:${it.w + it.gap - 4}pt"><div class="t" data-slot="pc.room${i}.name" data-lines="1">${esc(name(it.id))}</div></div>`; });
+      // the facts fill the space between the rule and the photos (the box grows by the 27 pt a one-line address gives back, below)
+      const y0 = pY + 16 + 11, y1 = top - 10;
+      if(!sold){
+        const rows = [st.slice(0, 2), st.slice(2, 4), st.slice(4, 5)].filter(r => r.length);
+        h += `<div class="abs pc-fx dy" data-grow="1" style="left:${X}pt;top:${y0}pt;width:${CW}pt;height:${y1 - y0}pt">`
+          + rows.map((r, i) => `<div class="pc-fact" style="font-size:20pt;line-height:1.1" data-slot="pc.fact${i}" data-lines="1">${r.map(esc).join('<span>&#9632;</span>')}</div>`).join('') + '</div>';
+      } else {
+        // Just Sold: a centered grid of big numbers over small labels, two rows
+        const lot = String(L.lotSize || '').match(/([\d,.]+)\s*(acres?|sq\.? ?ft)/i);
+        const cells = [];
+        if(L.beds) cells.push([L.beds, L.beds == 1 ? 'Bedroom' : 'Bedrooms']);
+        if(L.baths) BD.bathCells(L).forEach(c => cells.push([c[0], c[1]]));
+        if(L.sqft) cells.push([Number(L.sqft).toLocaleString('en-US'), 'Square Feet']);
+        if(L.yearBuilt) cells.push([L.yearBuilt, 'Year Built']);
+        if(lot) cells.push([lot[1], /acre/i.test(lot[2]) ? 'Acres' : 'Lot Sq Ft']);
+        if(L.stories) cells.push([L.stories, L.stories == 1 ? 'Story' : 'Stories']);
+        const cs = cells.slice(0, 6), n1 = Math.ceil(cs.length / 2), rowsC = [cs.slice(0, n1), cs.slice(n1)].filter(r => r.length);
+        h += `<div class="abs pc-fx dy" data-grow="1" style="left:${X}pt;top:${y0}pt;width:${CW}pt;height:${y1 - y0}pt">`
+          + rowsC.map((r, ri) => `<div class="pc-gr">` + r.map((c, ci) => `<div class="pc-cell${ci ? ' sep' : ''}"><div class="v" data-slot="pc.cell${ri}${ci}.v" data-lines="1">${esc(c[0])}</div><div class="l" data-slot="pc.cell${ri}${ci}.l" data-lines="1">${esc(c[1])}</div></div>`).join('') + `</div>`).join('') + '</div>';
+      }
+    }
+    if(!noCard) h += ContactCard.html([24, 348, 600 + (big ? 144 : 0), 64], A, b, {layout: 'panel', size: 'short', grow: 0, bottomGap: 0.5});
+  } else {
+    // ---------- back ----------
+    // The design runs across the whole back. Mail zones are the Just Listed library's (templates/jl-library/jllib.js zones(), px x 0.75):
+    // postage, the address block above the card, the barcode strip under it. Everything else is the design's.
+    const X = 22.5, cw = W - 2*X, zP = [W - 96, 12, 84, 98.25], zA = [W - 243, 187.5, 240, 112.5], zB = [W - 342, 387, 342, 45];
+    const short = String(L.address || '').replace(/\s+(street|st\.?|avenue|ave\.?|drive|dr\.?|road|rd\.?|lane|ln\.?|boulevard|blvd\.?|court|ct\.?|way|place|pl\.?)$/i, '');
+    const rowW = zP[0] - 12 - X;   // the header row and the photo row run right up to the postage box
+    const ret = [].concat(b.address || []).flatMap(a => String(a).split('\n')).map(s => s.trim()).filter(Boolean).slice(0, 2);
+    h += `<div class="abs pc-bst" style="left:${X}pt;top:14pt;width:${rowW}pt;height:30pt" data-slot="status" data-lines="1"><span class="st">${statusWord}</span><span class="ln"></span><span class="ad">${esc(short)}</span>
+      <span class="ln" style="max-width:34pt"></span><span class="ret">${b.brokerage ? '<b>' + esc(b.brokerage) + '</b>' : ''}${ret.map(r => '<br>' + esc(r)).join('')}</span></div>`;
+    // photos: rooms not shown on the front, those with a real size first, then by how much a buyer cares (RP.PRIORITY)
+    const front2 = new Set([hero].concat(pics));
+    const pool = RP.rooms(D).filter(it => !front2.has(it.id) && RP.src(D, it.id) && !['front', 'outdoor'].includes(it.kind) && !D.photos[it.id].fullHouse)
+      .sort((a, c) => (c.sz ? 1 : 0) - (a.sz ? 1 : 0) || a.pr - c.pr || a.order - c.order);
+    // every caption in the row carries a name and a real size (same line count), so rooms without a listed size only fill in when the listing has too few sized ones
+    { const sized = pool.filter(it => it.sz); if(sized.length >= 3){ pool.length = 0; pool.push(...sized); } }
+    // the fewest frames that bring the row's height down to 122 pt, so the row fills the width with an even 10 pt gap
+    let r = null, bp = [];
+    for(let n = 2; n <= Math.min(pool.length, 6); n++){ bp = pool.slice(0, n).map(it => it.id); r = row(bp, X, 0, rowW, 10, 400); if(r.RH <= 122) break; }
+    if(r.RH > 122) r = row(bp, X, 0, rowW, 10, 122);
+    const pTop = 52, capY = pTop + r.RH + 4;
+    r.items.forEach((it, i) => { h += ph(it.id, it.x, pTop, it.w, r.RH) + roomCap(it.id, `back${i}`, it.x, capY, it.w + it.gap - 4); });
+    // the card: full width, above the barcode strip and under the address block
+    const cardH = 85, cardY = zA[1] + zA[3] + 1.5;
+    const kickY = capY + 24 + 8, txtY = kickY + 14, lh = 14, tw = zA[0] - 9 - X, lines = Math.floor((cardY - 5 - txtY - 1.5) / lh);
+    h += `<div class="abs kick" style="left:${X}pt;top:${kickY}pt;width:${tw}pt;height:9pt" data-slot="back.label" data-lines="1">${esc(sold ? (SC.label || 'Thinking of selling?') : 'About this home')}</div>`;
+    h += RP.sentBox('back.about', X, txtY, tw, lines, lh, 9.8, sold ? (SC.back || []) : (PC.back || []), 'color:var(--ink)').replace('data-fill=', `data-fillmin="${lines - 2}" data-avail="${lines*lh}" data-fill=`);
+    h += ContactCard.html([X, cardY, cw, cardH], A, Object.assign({}, b, {web: ''}), {postcard: true, fine: '', s: Object.assign({inlineLabel: true, pad: [10, 20, 8], panelPad: [5, 14], logo: {wide: [150, 42], square: [46, 46], tall: [50, 50]}}, big ? {} : {name: 26, nameFloor: 18, phone: 16, line: 9.5, rowGap: 12, panelW: 184, hsW: 80, hsGap: 14, pad: [10, 14, 8], logo: {wide: [140, 38], square: [44, 44], tall: [48, 48]}})});
+    const fineW = zB[0] - 10 - X, fineH = Math.ceil(RP.measure(`<div style="font:400 6pt/7.5pt var(--font-body)">${esc(fine)}</div>`, fineW) / 7.5) * 7.5;
+    h += `<div class="abs pc-disc" style="left:${X}pt;top:${432 - 12 - fineH}pt;width:${fineW}pt;height:${fineH}pt" data-slot="fineprint" data-lines="${fineH/7.5}" data-fine="1">${esc(fine)}</div>`;
+    // mail zones: drawn as guides on proofs, left clear in print
+    const V = D.mailVendor || {}, guide = (D.mode || 'email') !== 'print';
+    if(guide) h += `<div class="mailg stamp" style="left:${zP[0]}pt;top:${zP[1]}pt;width:${zP[2]}pt;height:${zP[3]}pt">Postage<br><span style="text-transform:none">mail vendor</span></div>
+      <div class="mailg" style="left:${zA[0]}pt;top:${zA[1]}pt;width:${zA[2]}pt;height:${zA[3]}pt">${[0,1,2,3].map(i => `<div class="aline" style="left:22pt;right:22pt;top:${24 + i*17.25}pt"></div>`).join('')}<div class="guide" style="left:22pt;top:${97}pt">${esc(V.name ? 'Address block · ' + V.name : 'Address block · mail vendor')}</div></div>
+      <div class="mailg" style="left:${zB[0]}pt;top:${zB[1]}pt;width:${zB[2]}pt;height:${zB[3]}pt;border:.75pt dashed #c9c5bb"><div class="guide" style="left:10pt;top:17pt">Barcode strip · keep clear</div></div>`;
+  }
+
+  const f = RP.frame(D, W, H, h);
+  document.getElementById('pages').innerHTML = f.html;
+  RP.shapeLogos();
+  // a long neighborhood line tightens its letter spacing (down to 0.4 pt) before it would overflow
+  document.querySelectorAll('[data-slot="place"]').forEach(el => { let ls = 1.6; while(el.scrollWidth > el.clientWidth + 1 && ls > 0.4){ ls -= 0.1; el.style.letterSpacing = ls + 'pt'; } });
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  ContactCard.fit(document);
+  // a one-line address: the place line, rule and fact rows come up a line (27 pt) so no gap opens under the address
+  const ad = document.querySelector('.pc-addr');
+  const keepH = ad && ad.style.height; if(ad) ad.style.height = 'auto';
+  const nl = ad ? Math.round(ad.offsetHeight / parseFloat(getComputedStyle(ad).lineHeight)) : 2; if(ad) ad.style.height = keepH;
+  if(ad && nl < 2){ ad.style.height = '30pt'; ad.dataset.lines = '1';
+    document.querySelectorAll('.dy').forEach(e => { e.style.top = (parseFloat(e.style.top) - 27) + 'pt'; if(e.dataset.grow) e.style.height = (parseFloat(e.style.height) + 27) + 'pt'; }); }
+  { const fx = [...document.querySelectorAll('.pc-fx .pc-fact')]; let z = 20; fx.forEach(e => { let q = parseFloat(e.style.fontSize); e.style.fontSize = q + 'pt'; while(e.scrollWidth > e.clientWidth + .5 && q > 12){ q -= .25; e.style.fontSize = q + 'pt'; } z = Math.min(z, q); }); fx.forEach(e => { e.style.fontSize = z + 'pt'; }); }
+  RP.fillAll();
+  // a back write-up that filled fewer lines than its box spreads its lines over the box (line height up to 18 pt) so no gap opens above the card
+  document.querySelectorAll('[data-slot="back.about"][data-avail]').forEach(el => { const n = +el.dataset.lines, av = +el.dataset.avail;
+    const nn = RP.lineCount(el); if(nn && nn < av / 14 - .01){ const lh = Math.min(18, av / nn); el.style.lineHeight = lh + 'pt'; el.style.height = (nn*lh + 1.5) + 'pt'; } });
+  window.brochureCheck = () => RP.check(RP.emptyChecks());
+  // frames settle once the photos have loaded (the renderer waits for this promise)
+  return Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; }))).then(() => { RP.fitFrames(); ContactCard.fit(document); });
+});
+</script>
+</body>
+</html>

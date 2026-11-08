@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Midnight Residence fold-over</title>
+<link rel="stylesheet" href="midnight.css">
+<script src="midnight.js"></script>
+<!--
+  Midnight Residence · 11 x 17 fold-over
+  11 x 17 sheet folded once across the middle: four landscape 11 x 8.5 panels (792 x 612 pt), 0.125 in (9 pt) bleed.
+    outside spread: back (turned 180, on top) over cover      inside spread: inside top over inside bottom
+  Deep navy on every panel, thin gold rules, gold small-caps kickers, white serif headings. Photo-led: the cover is one
+  whole-house photo across the panel; the inside rooms run big lead photos beside smaller ones, tight to each other.
+
+  Modes (data.mode):  proof  four panel pages, 810 x 630 pt each (trim + bleed)
+                      print  two spreads, 810 x 1242 pt, each half clipped at the fold
+
+  The floor plan is the agent's own drawing, placed as given (no redraw), on a white board: data.plan.levels =
+  [{name, photo, w, h}]. With no plan the board's column holds two more photos with captions (copy.back.extra).
+  The one brokerage logo of the outside spread is on the standard contact card; the inside spread's is upper right of the top panel.
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = MN.data(), esc = MN.esc; MN.fitMode = !!D.fit;
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  await MN.cardReady;
+  const mode = D.mode || 'proof', L = D.listing, A = D.agent || {}, C = D.copy || {}, issues = [];
+  const b = Object.assign({}, D.brand || {}); if(b.logoOnDark) b.logo = b.logoOnDark; D.brand = b;   // the logo on a dark field
+  await Promise.all(['400 10pt','500 10pt','600 10pt'].map(w => document.fonts.load(`${w} 'Newsreader'`)).concat(['400 10pt','600 10pt','700 10pt'].map(w => document.fonts.load(`${w} 'Source Sans 3'`))));
+  document.body.dataset.mode = mode;
+  const hasPlan = !!(D.plan && D.plan.levels && D.plan.levels.length);
+  const nLev = hasPlan ? D.plan.levels.length : 0;
+  const hs = (D.photos||{})[A.headshot] ? D.photos[A.headshot].src : (A.headshot || '');
+  const G = 8;   // the gap between photos
+  const mn = s => ((C.lines || {})[s]) || 3;   // every caption sets in exactly this many lines (3 unless the copy says 4): a row never has a short box
+
+  // ================= COVER =================
+  function cover(){
+    const K = C.front || {}, ph = (D.photos||{})[K.photo] || {};
+    let h = MN.photo(D, K.photo, -9, -9, 810, 489);
+    const x2 = 456, w2 = 312;
+    h += `<div class="abs addr" style="left:24pt;top:498pt;width:420pt;height:40pt" data-slot="front.address" data-lines="1">${esc(L.address)}</div>`;
+    h += MN.kick(K.kicker, 'front.kicker', 24, 542, 420);
+    h += MN.rule(24, 559, 420);
+    const f = [];
+    if(L.beds) f.push([L.beds, `Bedroom${L.beds == 1 ? '' : 's'}`, 0]);
+    if(L.baths) BD.bathCells(L).forEach(c => f.push([c[0], c[1], 0]));
+    if(L.sqft) f.push([Number(L.sqft).toLocaleString('en-US'), 'Sq Ft', 0]);
+    if(L.yearBuilt || L.year) f.push([L.yearBuilt || L.year, 'Built in', 1]);
+    else if(L.stories) f.push([L.stories, +L.stories === 1 ? 'Story' : 'Stories', 0]);   // no year in the listing: show the stories
+    h += `<div class="abs facts" style="left:24pt;top:568pt;width:420pt;height:20pt" data-slot="front.facts">${f.map((x, i) => `<div data-slot="front.fact${i}" data-lines="1">${x[2] ? `${esc(x[1])} <b style="margin:0 0 0 3pt">${esc(x[0])}</b>` : `<b>${esc(x[0])}</b> ${esc(x[1])}`}</div>`).join('')}</div>`;
+    h += MN.kick(K.introHead, 'front.introhead', x2, 494, w2);
+    h += `<div class="abs body" style="left:${x2}pt;top:508pt;width:${w2}pt;height:81pt;line-height:13.5pt" data-slot="front.intro" data-lines="6" data-cap="1">${esc(MN.txt(K.intro))}</div>`;
+    return h;
+  }
+
+  // ================= BACK =================
+  function back(){
+    const B = C.back || {};
+    let h = MN.kick(B.kicker, 'back.kicker', 24, 26, 700) + MN.title(B.title, 'back.title', 24, 36) + MN.rule(24, 71, 744);
+    const y0 = 82, H = 374, bw = B.boardW;
+    const mx = 24 + bw + G, cw = Math.floor((744 - bw - 2*G)/2), rx = mx + cw + G;
+    const caps = (list, x, w, slot) => {   // two photos stacked, each with its caption
+      const n = Math.max(...list.map((c, i) => mn(`${slot}${i}`)), ...list.map(c => MN.need(c.text, w)));
+      const ph = Math.floor((H - G - 2*(6 + MN.capH(n)))/2); let y = y0, out = '';
+      list.forEach((c, i) => { out += MN.photo(D, c.id, x, y, w, ph) + MN.cap(c, `${slot}${i}`, x, y + ph + 6, w, {lines: n, min: mn(`${slot}${i}`), max: mn(`${slot}${i}`)}); y += ph + 6 + MN.capH(n) + G; });
+      return {html: out, ph};
+    };
+    // left: the plan on a white board, or two more photos
+    if(hasPlan){
+      h += `<div class="board" style="left:24pt;top:${y0}pt;width:${bw}pt;height:${H}pt"></div>`;
+      const pl = MN.plan(D, {x: 24 + 10, y: y0 + 10, w: bw - 20, h: H - 10 - 20});
+      issues.push(...pl.issues); h += pl.html;
+      h += `<div class="abs" style="left:24pt;top:${y0 + H - 15}pt;width:${bw}pt;height:8pt"><div class="pnote" style="top:0" data-slot="back.plannote" data-fine="1" data-lines="1">${esc(B.planNote || 'Approximate; not to scale.')}</div></div>`;
+    } else {
+      h += caps(B.extra || [], 24, bw, 'back.extra').html;
+    }
+    // middle: two outdoor photos stacked
+    const mid = caps((B.photos || []).slice(0, 2), mx, cw, 'back.photo');
+    h += mid.html;
+    // right: one outdoor photo, then the improvements block and what is around
+    const P = B.photos && B.photos[2] ? B.photos[2] : {};
+    const n3 = mn('back.photo2'), around = (B.around || []).slice(0, 3), noAround = !around.length;
+    const PL = B.paraLines || (noAround ? 6 : 5), used = 18 + 28 + PL*13 + (noAround ? 0 : 14 + around.length*15 + 6);
+    const ph = mid.ph, capH3 = MN.capH(n3);
+    // with no Around list the photo runs taller, so the column still fills to the card
+    const phR = noAround ? Math.floor(H - capH3 - 6 - used - 2*8) : ph;
+    h += MN.photo(D, P.id, rx, y0, cw, phR) + MN.cap(P, 'back.photo2', rx, y0 + phR + 6, cw, {lines: n3, min: mn('back.photo2'), max: mn('back.photo2')});
+    let y = y0 + phR + 6 + capH3;
+    const gap = noAround ? 8 : Math.floor((y0 + H - y - used + 6)/3) ;
+    y += gap;
+    h += MN.kick(B.head, 'back.head', rx, y, cw) + MN.rule(rx, y + 12, cw);
+    y += 18;
+    h += `<div class="abs big" style="left:${rx}pt;top:${y}pt;width:${cw}pt;height:24pt" data-slot="back.big" data-lines="1">${esc(B.big)}</div>`;
+    y += 28;
+    h += `<div class="abs body" style="left:${rx}pt;top:${y}pt;width:${cw}pt;height:${PL*13}pt;font-size:10pt;line-height:13pt" data-slot="back.para" data-lines="${PL}" data-cap="1">${esc(MN.txt(B.para))}</div>`;
+    y += PL*13 + gap;
+    if(!noAround){
+      h += MN.kick(B.aroundHead || 'Around', 'back.aroundhead', rx, y, cw);
+      h += `<div class="abs around" style="left:${rx}pt;top:${y + 14}pt;width:${cw}pt">${around.map((x, i) => `<div class="r"><div class="d" data-slot="back.around${i}.d" data-lines="1">${esc(x.d)}${x.u === '' || x.u == null ? '' : `<small>${esc(x.u)}</small>`}</div><div class="p" data-slot="back.around${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}</div>`;
+    }
+    // standard contact card + footer, in the set's colors
+    h += MN.rule(24, 462, 744);
+    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', fine: B.footnote || ''});
+    return h;
+  }
+
+  // ================= INSIDE TOP =================
+  function leadRow(y0, hRow, l1, l2, w1, slot, kicks){
+    // two lead photos side by side with big captions beneath; hRow = the row's full height including captions
+    const w2 = 744 - w1 - G, n = Math.max(mn(`${slot}0`), mn(`${slot}1`), MN.need(l1.text, w1, 'l'), MN.need(l2.text, w2, 'l')), ph = hRow - 6 - MN.capH(n, 'l');
+    return MN.photo(D, l1.id, 24, y0, w1, ph) + MN.cap(l1, `${slot}0`, 24, y0 + ph + 6, w1, {lines: n, min: mn(`${slot}0`), max: mn(`${slot}0`), kind: 'l'})
+      + MN.photo(D, l2.id, 24 + w1 + G, y0, w2, ph) + MN.cap(l2, `${slot}1`, 24 + w1 + G, y0 + ph + 6, w2, {lines: n, min: mn(`${slot}1`), max: mn(`${slot}1`), kind: 'l'});
+  }
+  function detailRow(y, ph, items, slot){
+    const k = items.length, w = (744 - (k-1)*G)/k, n = Math.max(...items.map((c, i) => mn(`${slot}${i}`)), ...items.map(c => MN.need(c.text, w)));
+    let h = '';
+    items.forEach((c, i) => { const x = 24 + i*(w+G); h += MN.photo(D, c.id, x, y, w, ph) + MN.cap(c, `${slot}${i}`, x, y + ph + 6, w, {lines: n, min: mn(`${slot}${i}`), max: mn(`${slot}${i}`)}); });
+    return {html: h, h: ph + 6 + MN.capH(n), n};
+  }
+  function head(T, slot, logo){
+    return MN.kick(T.kicker, `${slot}.kicker`, 24, 26, 560) + MN.title(T.title, `${slot}.title`, 24, 36, 600) + (logo ? MN.logo(D, 588, 26, 180, 26, 'flex-end') : '') + MN.rule(24, 71, 744);
+  }
+  function top(){
+    const T = C.top || {}, y0 = 82, HT = 522;
+    const dn = Math.max(...(T.details || []).map((c, i) => mn(`top.d${i}`)), ...(T.details || []).map(c => MN.need(c.text, (744 - 3*G)/4)));
+    const row2h = 104 + 6 + MN.capH(dn), row1h = HT - row2h - 12;
+    let h = head(T, 'top', true);
+    h += leadRow(y0, row1h, T.leads[0], T.leads[1], 400, 'top.lead');
+    h += detailRow(y0 + row1h + 12, 104, T.details, 'top.d').html;
+    return h;
+  }
+
+  // ================= INSIDE BOTTOM =================
+  function bottom(){
+    const T = C.bottom || {}, y0 = 82, HT = 522, w1 = 496, w2 = 744 - w1 - G, row = T.row || [];
+    const rn = Math.max(...row.map((c, i) => mn(`bottom.r${i}`)), ...row.map(c => MN.need(c.text, (744 - 2*G)/3)));
+    const row2h = 108 + 6 + MN.capH(rn), row1h = HT - row2h - 12;
+    let h = head(T, 'bottom', false);
+    const ln = Math.max(mn('bottom.lead'), MN.need(T.lead.text, w1, 'l')), pph = row1h - 6 - MN.capH(ln, 'l');
+    h += MN.photo(D, T.lead.id, 24, y0, w1, pph) + MN.cap(T.lead, 'bottom.lead', 24, y0 + pph + 6, w1, {lines: ln, min: mn('bottom.lead'), max: mn('bottom.lead'), kind: 'l'});
+    const bn = Math.max(...T.baths.map((c, i) => mn(`bottom.bath${i}`)), ...T.baths.map(c => MN.need(c.text, w2))), blk = (row1h - G)/2, bph = Math.floor(blk - 6 - MN.capH(bn));
+    T.baths.forEach((c, i) => { const y = y0 + i*(blk + G); h += MN.photo(D, c.id, 24 + w1 + G, y, w2, bph) + MN.cap(c, `bottom.bath${i}`, 24 + w1 + G, y + bph + 6, w2, {lines: bn, min: mn(`bottom.bath${i}`), max: mn(`bottom.bath${i}`)}); });
+    h += detailRow(y0 + row1h + 12, 108, row, 'bottom.r').html;
+    return h;
+  }
+
+  const panels = {front: cover(), back: back(), top: top(), bottom: bottom()};
+  const panel = (cls, h) => `<div class="panel ${cls||''}">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside"><div class="half top">${panel('flip', panels.back)}</div><div class="half bottom">${panel('', panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside"><div class="half top">${panel('', panels.top)}</div><div class="half bottom">${panel('', panels.bottom)}</div></div>`;
+  } else {
+    for(const id of ['front','top','bottom','back']) html += `<div class="page" data-page="${id}">${panel('', panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  MN.fitLogos();
+  ContactCard.fit(document);
+  document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  window.brochureCheck = () => MN.check(D, issues);
+})();
+</script>
+</body>
+</html>

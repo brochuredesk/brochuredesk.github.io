@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · The Split Edition open house flyer</title>
+<link rel="stylesheet" href="split-edition.css">
+<script src="../engine/baths.js"></script>
+<script src="../engine/setpieces.js"></script>
+<!--
+  The Split Edition · Open House flyer (trim 612 x 792 pt; print: 0.25 in white margin around the page).
+  The fold-over's split: identity above a burgundy rule, the story below it. Above the rule the event: the label in tracked
+  burgundy caps, the date in the serif as the largest type on the page, the time under it, and the broker / REALTOR(R)
+  lines (only on those opens, only when filled) right of the time. Under the rule the address in the serif with city,
+  state and ZIP, then the cover's split: the fact grid (serif values over burgundy small caps, hairline cross) on the left
+  and the whole house on the right. Below, a burgundy kicker, a serif line and a write-up beside two interiors with the
+  fold-over's serif captions, then the standard contact card (templates/_shared/agentcard.js, Right panel), which carries
+  the one logo. Open House rules (templates/_shared/ohstandard.js): city, state and ZIP, no RSVP, no QR, no price.
+  Copy: data.copy.pc.oh.a.
+-->
+<style>
+  .cc{--cc-paper:#ffffff;--cc-ink:#201c1d;--cc-muted:#76696c;--cc-accent:#8f2430;--cc-line:rgba(143,36,48,.38)}
+  .oh-lbl{font:700 20pt/22pt var(--font-body);letter-spacing:3.2pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+  .oh-date{font:400 58pt/64pt var(--font-display);letter-spacing:-.9pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+  .oh-time{font:600 24pt/28pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
+  .oh-strong{font:600 10.5pt/14pt var(--font-body);color:var(--ink);text-align:right}
+  .oh-note{font:400 10.5pt/14pt var(--font-body);color:var(--text);text-align:right}
+  .addr{font:400 33pt/38pt var(--font-display);letter-spacing:-.3pt;color:var(--ink);white-space:nowrap;overflow:hidden;font-variant-numeric:oldstyle-nums}
+  .fcell{position:absolute;overflow:hidden}
+  .fv{font:400 30pt/34pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.3pt}
+  .fl{font:700 8pt/10pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden;margin-top:2pt}
+  .sub{font:400 19pt/23pt var(--font-display);letter-spacing:-.15pt;color:var(--ink);overflow:hidden}
+  .ab{font-size:10.5pt;line-height:15pt;color:var(--text)}
+  .cap .nm{height:17pt;white-space:nowrap;overflow:hidden;font:500 12.5pt/17pt var(--font-display);color:var(--ink);letter-spacing:-.05pt}
+  .ctx{font-size:9pt;line-height:11.5pt;color:var(--text)}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const esc = SP.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), C = (PC.oh || {}).a || {};
+  const issues = await SP.ready(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const O = SP.openHouse(D), X = 36, W = 540;
+  let h = '';
+
+  // above the split: the event
+  h += `<div class="abs oh-lbl" style="left:${X}pt;top:30pt;width:${W}pt;height:22pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
+  h += `<div class="abs oh-date" style="left:${X - 2}pt;top:54pt;width:${W + 2}pt;height:64pt" data-slot="oh.date" data-lines="1" data-fit="36">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X}pt;top:120pt;width:250pt;height:28pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  let dy = 0;   // the broker / REALTOR(R) lines sit right of the time; past two lines the header grows and the photo gives up the difference
+  { const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note']].filter(l => l[0]);
+    if(ls.length){ const pre = SP.eventLines(ls, 300, 0, 276, 14, 0); dy = Math.max(0, pre.h - 28); h += SP.eventLines(ls, 300, 148 - pre.h + dy, 276, 14, 0).html; } }
+  h += `<div class="rule" style="left:${X}pt;top:${158 + dy}pt;width:${W}pt;height:1.2pt;background:var(--accent)"></div>`;
+
+  // under it: the address and its city line
+  h += `<div class="abs addr" style="left:${X - 1}pt;top:${170 + dy}pt;width:${W}pt;height:38pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
+  h += `<div class="abs kick" style="left:${X}pt;top:${211 + dy}pt;width:${W}pt;height:12pt;font-size:10pt;line-height:12pt" data-slot="place" data-lines="1">${esc([L.neighborhood, SP.placeZip(L)].filter(Boolean).join(' · ').toUpperCase())}</div>`;
+
+  // the cover's split: the fact grid left, the whole house right
+  const top = 236 + dy, bot = 466, gh = bot - top, gw = 200;
+  h += SP.photo(D, C.hero || 'front', X + gw + 16, top, W - gw - 16, gh, 'oh.hero');
+  const B = BD.bathNum(L), lot = String(SP.lotText(L)).match(/^([\d,.]+)\s*(.*)$/), F = [];
+  if(L.beds) F.push([L.beds, L.beds == 1 ? 'Bedroom' : 'Bedrooms']);
+  if(L.baths) F.push([B.num, B.label]);
+  if(B.half) F.push([L.halfBaths, 'Half Baths']);
+  if(L.sqft) F.push([Number(L.sqft).toLocaleString('en-US'), 'Square Feet']);
+  if(L.yearBuilt || L.year) F.push([L.yearBuilt || L.year, 'Year Built']);
+  if(L.stories) F.push([L.stories, L.stories == 1 ? 'Story' : 'Stories']);
+  if(lot) F.push([lot[1], lot[2] || 'Sq Ft Lot']);
+  const fs = F.slice(0, 6), rows = Math.ceil(fs.length/2), rh = gh/rows;
+  fs.forEach((f, i) => {
+    const r = Math.floor(i/2), c = i % 2, last = i === fs.length - 1 && fs.length % 2 === 1, cw = last ? gw : gw/2;
+    if(last){   // an odd fact closes the grid on a full-width rose block under a burgundy rule (the fold-over's claim block)
+      h += `<div class="fcell" style="left:${X}pt;top:${top + r*rh}pt;width:${gw}pt;height:${rh}pt;background:var(--soft);border-top:1.4pt solid var(--accent);display:flex;align-items:center;gap:12pt;padding:0 0 0 14pt">`
+        + `<div class="fv" data-slot="oh.fact${i}.v" data-lines="1">${f[0]}</div><div class="fl" style="margin:0" data-slot="oh.fact${i}.l" data-lines="1">${esc(f[1])}</div></div>`;
+      return; }
+    h += `<div class="fcell" style="left:${X + c*gw/2}pt;top:${top + r*rh}pt;width:${cw}pt;height:${rh}pt;padding:${Math.max(6, (rh - 46)/2)}pt 0 0 ${c ? 14 : 0}pt;${c ? 'border-left:.7pt solid var(--line);' : ''}border-top:.7pt solid var(--line)">`
+      + `<div class="fv" data-slot="oh.fact${i}.v" data-lines="1">${f[0]}</div><div class="fl" data-slot="oh.fact${i}.l" data-lines="1">${esc(f[1])}</div></div>`;
+  });
+  h += `<div class="rule" style="left:${X}pt;top:${bot}pt;width:${gw}pt;height:1.2pt;background:var(--accent)"></div>`;
+
+  // the story: a kicker, a serif line, the write-up, and two interiors with the fold-over's captions
+  const y0 = 484, cx = X, cw = 214, px = cx + cw + 18, pw = (X + W - px - 10)/2;
+  h += `<div class="abs kick" style="left:${cx}pt;top:${y0}pt;width:${cw}pt;height:10pt" data-slot="oh.kicker" data-lines="1">On the tour</div>`;
+  h += `<div class="abs sub" style="left:${cx}pt;top:${y0 + 15}pt;width:${cw}pt;height:46pt" data-slot="oh.sub" data-lines="2">${esc(C.sub || '')}</div>`;
+  h += `<div class="abs ab" style="left:${cx}pt;top:${y0 + 66}pt;width:${cw}pt;height:105pt" data-slot="oh.blurb" data-para="1" data-min="4" data-fillbox="1">${esc(C.text || '')}</div>`;
+  const caps = (C.caps || []).slice(0, 2), ph = 108;
+  h += `<div class="abs" data-gapcheck="oh.photos" style="left:0;top:0">${caps.map((c, i) => SP.photo(D, c.id, px + i*(pw + 10), y0, pw, ph, 'oh.photo' + i)).join('')}</div>`;
+  caps.forEach((c, i) => { const x = px + i*(pw + 10);
+    h += `<div class="abs cap" style="left:${x}pt;top:${y0 + ph + 5}pt;width:${pw}pt"><div class="nm" data-slot="oh.cap${i}.t" data-lines="1">${esc(c.t)}</div></div>`;
+    h += `<div class="abs ctx" style="left:${x}pt;top:${y0 + ph + 23}pt;width:${pw}pt" data-slot="oh.cap${i}" data-cap="1" data-row="oh" data-para="1" data-min="3">${esc(c.a)}</div>`; });
+
+  h += SP.card(D, [X, 674, W, 88], {layout: 'panel', fieldAccent: true});
+  h += `<div class="abs" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  await SP.finish(D, 612, 792, h, issues);
+})();
+</script>
+</body>
+</html>

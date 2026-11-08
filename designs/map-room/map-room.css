@@ -1,0 +1,95 @@
+/* The Map Room: set style file. White, navy serif headings, mid-blue labels. The plan is the map; the rooms are the legend.
+   Landscape 11 x 17 half-fold (fold "horizontal": panels stack). Lengths are pt (1/72 in). */
+:root{
+  --paper:#ffffff;
+  --ink:#1d3557;            /* serif headings, names, facts */
+  --text:#2f3f58;           /* body copy */
+  --muted:#5b6b82;
+  --accent:#1f6391;         /* mid-blue labels and size lines */
+  --band:#eef3f8;
+  --line:rgba(29,53,87,.22);
+  --font-display:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --font-body:'Public Sans',Helvetica,Arial,sans-serif;
+  --m:24pt;
+}
+@font-face{font-family:'Source Serif 4';font-weight:400;src:url(../../fonts/pool/source-serif-4-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Serif 4';font-weight:600;src:url(../../fonts/pool/source-serif-4-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Public Sans';font-weight:400;src:url(../../fonts/pool/public-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Public Sans';font-weight:500;src:url(../../fonts/pool/public-sans-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Public Sans';font-weight:600;src:url(../../fonts/pool/public-sans-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Public Sans';font-weight:700;src:url(../../fonts/pool/public-sans-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+.page{position:relative;background:var(--paper);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+body[data-mode=proof] .page{width:810pt;height:630pt}
+body[data-mode=print] .page{width:810pt;height:1242pt}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+@media print{body[data-mode=proof] .page{page:proof}body[data-mode=print] .page{page:spread}}
+@page proof{size:810pt 630pt}
+@page spread{size:810pt 1242pt}
+.panel{position:absolute;width:792pt;height:612pt;left:9pt;top:9pt}
+.half{position:absolute;left:0;width:810pt;height:621pt;overflow:hidden}
+.half.top{top:0}.half.bottom{top:621pt}
+.half.top .panel{top:9pt}.half.bottom .panel{top:0}
+.half .panel.flip{transform:rotate(180deg);transform-origin:396pt 306pt}
+
+/* type */
+.kick{font:700 8.5pt/10pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+.title{font:400 28pt/34pt var(--font-display);letter-spacing:-.2pt;color:var(--ink);overflow:hidden}
+.title.one{white-space:nowrap}
+.rule{position:absolute;height:.8pt;background:var(--accent);opacity:.75}
+.body{font-size:9.5pt;line-height:13pt;color:var(--text);overflow:hidden}
+
+/* photos */
+.ph{position:absolute;overflow:hidden;background:#dde3ea;flex:none}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.logo{position:absolute;display:flex;align-items:center;justify-content:flex-end}
+.logo img{display:block}
+
+/* captions: serif title, blue bold size line, 9 pt paragraph */
+.cap{overflow:hidden}
+.cap .nm{font:400 13pt/17pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;height:17pt}
+.cap .sz{font:700 9pt/13pt var(--font-body);letter-spacing:.2pt;color:var(--accent);white-space:nowrap;overflow:hidden;height:13pt}
+.cap .tx{font-size:9pt;line-height:12pt;color:var(--text);overflow:hidden;margin-top:3pt}
+.cap.wide .nm{font-size:15pt;line-height:19pt;height:19pt}
+.cap.wide .tx{font-size:9.5pt;line-height:13pt}
+
+/* cover */
+.addr{font:400 38pt/42pt var(--font-display);letter-spacing:-.5pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.facts{display:flex}
+.facts .f{flex:1;border-left:.8pt solid var(--line);padding-left:9pt;min-width:0}
+.facts .f:first-child{border-left:0;padding-left:0}
+.facts .v{font:400 25pt/28pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden}
+.facts .l{font:700 8pt/10pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+/* five cells (two or more half baths add a Half Baths cell): each cell as wide as its words, labels tracked tighter */
+.facts.five .f{flex:1 1 auto;padding-left:7pt}
+.facts.five .f:first-child{padding-left:0}
+.facts.five .l{letter-spacing:.5pt}
+.tag{display:inline-block;background:var(--ink);color:#fff;font:700 8.5pt/16pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;padding:0 9pt;height:16pt;white-space:nowrap}
+.checks{display:grid;grid-auto-flow:column;grid-template-rows:repeat(3,auto);gap:6pt 14pt}
+.checks div{font:600 9.5pt/13pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden;padding-left:11pt;position:relative}
+.checks div:before{content:"";position:absolute;left:0;top:4.5pt;width:5pt;height:5pt;background:var(--accent)}
+
+/* the legend beside the map (no-plan centre) */
+.legend{position:absolute}
+.legend table{width:100%;border-collapse:collapse}
+.legend td{font:500 9pt/12pt var(--font-body);padding:2.2pt 0;border-top:.6pt solid var(--line);color:var(--text);white-space:nowrap}
+.legend tr:first-child td{border-top:1.2pt solid var(--accent)}
+.legend td:first-child{font-weight:700;color:var(--ink);overflow:hidden}
+.legend td:last-child{text-align:right;font-variant-numeric:tabular-nums;color:var(--accent);font-weight:700}
+
+/* back */
+.around .d{font:400 19pt/22pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden}
+.around .d small{font:700 8pt/10pt var(--font-body);letter-spacing:1pt;text-transform:uppercase;color:var(--accent);margin-left:3pt}
+.around .p{font:600 9pt/12pt var(--font-body);color:var(--text);white-space:nowrap;overflow:hidden}
+.plan{position:absolute}
+.plan.lv{position:absolute;overflow:visible}
+.plan.lv .in{position:absolute}
+.plan.lv img{display:block;width:100%;height:100%}
+.plan.flr{position:absolute;text-align:center;font:700 8pt/10pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;overflow:hidden}

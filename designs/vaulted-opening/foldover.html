@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Vaulted Opening fold-over</title>
+<link rel="stylesheet" href="vaulted-opening.css">
+<script src="../engine/baths.js"></script>
+<script src="vaulted-opening.js"></script>
+<script src="plan.js"></script>
+<!--
+  The Vaulted Opening · 11 x 17 fold-over, four upright 8.5 x 11 pages that open like a book (0.125 in bleed, 0.25 in safe zone).
+    outside spread: back (left) + cover (right)        inside spread: front rooms (left) + bedrooms and baths (right)
+  Midnight field, white type, a white keyline frame on the inset photo. The cover leads with the whole-house front, full bleed,
+  with a framed inset of a signature room, then the address, four facts, the write-up and a second exterior.
+  Inside left: the Living Room wide beside a narrow Kitchen, a row of three, nearby places. Inside right: unequal vertical
+  groups (Primary and its bath on the left; Bedrooms 2 and 3 and a pair of small rooms on the right).
+  Back: the listing's own floor plan on a white board (placed as given, every floor), the garage and patio, the standard
+  contact card. With no plan, two more captioned photos take the board's place. Nothing crosses the crease.
+  data.mode: proof (four 8.75 x 11.25 in pages) or print (two 17.25 x 11.25 in spreads).
+-->
+<style>
+  .kick{position:absolute;left:var(--m);top:31pt;width:380pt}
+  .ttl{position:absolute;left:var(--m);top:43pt}
+  .col{display:flex;flex-direction:column;min-width:0;min-height:0}
+  .lower{flex:none;padding:15pt 38pt 38pt;display:flex;flex-direction:column}
+  .c2{display:flex;gap:16pt}
+  .c2 .l{flex:1;min-width:0;display:flex;flex-direction:column}
+  .c2 .r{flex:0 0 266pt;display:flex;flex-direction:column;min-width:0}
+  .c2 .r .item{flex:1 1 auto;min-height:auto}
+  .c2 .r .ph{min-height:128pt}
+  .places{flex:none;border-top:1pt solid rgba(255,255,255,.8);padding-top:9pt;margin-top:10pt}
+  .places .sect{margin-bottom:4pt}
+  .places .pg{display:flex;gap:18pt}
+  .places .pg > div{flex:1;min-width:0}
+  .body[data-big]{font-size:10.5pt;line-height:15pt}
+  .body[data-big="2"]{font-size:11.5pt;line-height:16.5pt}
+  .rl{position:absolute;display:flex;flex-direction:column;gap:10pt}
+  .rl .fl{display:flex;flex-direction:column;min-height:0}
+  .rl .fl .sect{padding-bottom:3pt;border-bottom:1.1pt solid var(--signal)}
+  .rl .rows{flex:1;display:flex;flex-direction:column;min-height:0}
+  .rr{flex:1 1 0;min-height:17pt;display:flex;align-items:center;border-bottom:.6pt dotted rgba(31,43,69,.4);white-space:nowrap}
+  .rr .n{font:400 10.5pt/13pt var(--font-display);color:var(--ink)}
+  .rr .d{margin-left:auto;font:500 8.5pt/12pt var(--font-body);color:var(--signal)}
+  .rr.stack{flex-direction:column;align-items:flex-start;justify-content:center;gap:1pt}
+  .rr.stack .d{margin-left:0}
+  .rl .notes{flex:none}
+  .rl .notes .body{font-size:8.75pt;line-height:12pt}
+  .rl.band .cols{flex:1;display:flex;gap:14pt;min-height:0}
+  .rl.band .fl{flex:1 1 0;min-width:0}
+  .rl.band .notes{display:flex;gap:14pt}
+  .rl.band .notes .body{flex:1 1 0;margin:0}
+  .rl .notes .body + .body{margin-top:6pt}
+  .facts.col{flex-direction:column;border-bottom:0}
+  .facts.col div{border-left:0;padding:9pt 0 9pt 0;border-top:.6pt solid var(--line);display:flex;align-items:baseline;gap:9pt}
+  .facts.col b{font-size:19pt;line-height:22pt;min-width:78pt}
+  .facts.five div{padding-left:6pt}
+  .facts.five div:first-child{padding-left:0}
+  .facts.five span{letter-spacing:.5pt}
+  .facts.two{flex-wrap:wrap}
+  .facts.two div{flex:0 0 50%}
+  .facts.two div:nth-child(3){border-left:0;padding-left:0;border-top:.6pt solid var(--line)}
+  .facts.two div:nth-child(4){border-top:.6pt solid var(--line)}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+
+<script>
+window.brochureReady = (async function(){
+  const D = AT.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const mode = D.mode || 'proof';
+  const pt = AT.pt, esc = AT.esc, L = D.listing;
+  const issues = [];
+  document.body.dataset.version = D.version || '';
+  await AT.cardReady;
+  issues.push(...await AT.applyFonts(D, D.fontSpec || null));
+  await Promise.all(['400 10pt "DM Serif Display"','400 10pt "DM Sans"','500 10pt "DM Sans"','600 10pt "DM Sans"','700 10pt "DM Sans"'].map(f => document.fonts.load(f)));
+
+  const C = D.copy || {};
+  const planOK = AT.planOK(D);
+  window.proofNotes = [{planOK}];
+  const kick = (t, slot) => `<div class="kicker kick" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
+  const title = (t, slot, w) => `<div class="title ttl" style="width:${w}pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
+  const cap = (it, slot) => `<div class="cap"><div class="h" data-slot="${slot}.h" data-lines="1">${esc(it.title)}${it.dims ? `<i>${esc(it.dims)}</i>` : ''}</div>
+      <div class="a" data-slot="${slot}.a" data-para="1" data-min="2">${esc(it.body)}</div></div>`;
+  const item = (it, slot, style, cls) => `<div class="item" style="${style||''}">${AT.photo(D, it.photo, '', slot, cls || '')}${cap(it, slot)}</div>`;
+  const header = (P, which) => `${kick(P.kicker, which + '.kicker')}${title(P.title, which + '.title', 554)}<div class="hr2" style="top:80pt"></div>`;
+  const fmt = n => Number(n).toLocaleString('en-US');
+
+  // ================= COVER =================
+  function cover(){
+    const K = C.cover || {}, hp = (D.photos||{})[K.photo] || {w:3, h:2}, aspect = hp.w / hp.h, tall = aspect < 1;
+    const sec = K.second, ins = K.inset;
+    const facts = [];
+    if(L.beds) facts.push([L.beds, L.beds == 1 ? 'Bedroom' : 'Bedrooms']);
+    if(L.baths) facts.push(...AT.factBath(L));   // bath wording rule (the owner 11/1)
+    if(L.sqft) facts.push([fmt(L.sqft), 'Sq ft']);
+    if(L.yearBuilt) facts.push([L.yearBuilt, 'Year built']);
+    const factsHTML = `<div class="facts${facts.length > 4 ? ' five' : ''}" data-slot="cover.facts" data-lines="2">${facts.map(f => `<div><b>${AT.halfy(f[0])}</b> <span>${esc(f[1])}</span></div>`).join('')}</div>`;
+    const placeLine = [L.neighborhood, L.city, [L.state, L.zip].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+    const para = (t, slot, mt, min) => `<div class="body" style="margin-top:${mt}pt;overflow:visible" data-slot="${slot}" data-para="1" data-min="${min}">${esc(t)}</div>`;
+    const addrBlock = size => `<div class="kicker" data-slot="cover.kicker" data-lines="1">${esc(placeLine.toUpperCase())}</div>
+        <div class="addr" id="addr" style="font-size:${size}pt;margin-top:3pt" data-slot="cover.address" data-lines="1">${esc(L.address)}</div>`;
+    if(!tall){
+      return `<div class="cvr"><div style="position:relative;flex:1 1 0;min-height:250pt">
+          ${AT.photo(D, K.photo, 'position:absolute;inset:0', 'cover.photo', 'hero')}
+          <div class="inset" style="width:${ins.w || 190}pt;height:${ins.h || 126}pt">${AT.photo(D, ins.photo, '', 'cover.inset')}<div class="lbl" data-slot="cover.inset.label" data-lines="1">${esc(ins.title)}${ins.dims ? '  ·  ' + esc(ins.dims) : ''}</div></div></div>
+        <div class="lower"><div class="c2">
+          <div class="l">${addrBlock(36)}<div style="margin-top:10pt">${factsHTML}</div>${para(K.house, 'cover.house', 11, 4).replace('class="body"', 'class="body" data-big="1"')}${para(K.house2, 'cover.house2', 8, 3).replace('class="body"', 'class="body" data-big="1"')}</div>
+          <div class="r">${(() => { const sp = (D.photos||{})[sec.photo] || {w:3,h:2}; return `<div class="item" style="flex:none">${AT.photo(D, sec.photo, 'flex:none;aspect-ratio:' + (sp.w/sp.h*0.97).toFixed(3), 'cover.second')}${cap(sec, 'cover.second')}</div>`; })()}</div></div></div></div>`;
+    }
+    // a tall whole-house photo: a full-bleed column on the left (the keyline inset over its lower corner), the write-up beside it,
+    // the second exterior and the second paragraph across the foot
+    const hw = Math.round((810 - 258) * aspect);
+    return `<div class="cvr"><div style="flex:1 1 0;min-height:0;display:flex">
+        <div style="position:relative;flex:none;width:${hw}pt">${AT.photo(D, K.photo, 'position:absolute;inset:0', 'cover.photo', 'hero tallhero')}
+          <div class="inset" style="right:14pt;bottom:16pt;width:${ins.w || 156}pt;height:${ins.h || 104}pt">${AT.photo(D, ins.photo, '', 'cover.inset')}<div class="lbl" data-slot="cover.inset.label" data-lines="1">${esc(ins.title)}${ins.dims ? '  ·  ' + esc(ins.dims) : ''}</div></div></div>
+        <div style="flex:1;min-width:0;padding:38pt 38pt 0 18pt;display:flex;flex-direction:column">
+          ${addrBlock(26)}<div style="margin-top:10pt">${factsHTML.replace(/class="facts( five)?"/, 'class="facts col"').replace('data-lines="2"', 'data-lines="' + facts.length*3 + '"')}</div>${para(K.house, 'cover.house', 14, 4).replace('class="body"', 'class="body" data-big="2"')}${para(K.house2, 'cover.house2', 10, 3).replace('class="body"', 'class="body" data-big="2"')}</div></div>
+        <div style="flex:none;padding:14pt 38pt 38pt"><div class="row" style="height:200pt;gap:16pt">${item(sec, 'cover.second', 'flex:1 1 0')}${item(K.third, 'cover.third', 'flex:1 1 0')}</div></div></div>`;
+  }
+
+  // ================= INSIDE LEFT: the front rooms =================
+  function left(){
+    const P = C.left || {}, ph = P.photos || [];
+    const places = `<div class="places"><div class="sect" data-slot="left.placesTitle" data-lines="1">${esc(P.placesTitle || 'Around the neighborhood')}</div><div class="pg">${[0, 1].map(c => `<div>${(P.places || []).slice(c*2, c*2 + 2).map((p, i) => `<div class="pl-row"><div class="nm" data-slot="left.place${c*2+i}.n" data-lines="1">${esc(p.n)}</div><div class="ds" data-slot="left.place${c*2+i}.d" data-lines="1">${esc(p.d)}</div></div>`).join('')}</div>`).join('')}</div></div>`;
+    return header(P, 'left') + `<div class="flow" style="left:29pt;right:29pt;top:92pt;bottom:29pt;gap:10pt">
+      <div class="row" style="flex:1.32 1 0">${item(ph[0], 'left.photo0', 'flex:1.9 1 0')}${item(ph[1], 'left.photo1', 'flex:1 1 0')}</div>
+      <div class="row" style="flex:1 1 0">${ph.slice(2, 5).map((it, i) => item(it, `left.photo${i+2}`, 'flex:1 1 0')).join('')}</div>
+      ${places}</div>`;
+  }
+
+  // ================= INSIDE RIGHT: unequal vertical groups =================
+  function right(){
+    const P = C.right || {}, ph = P.photos || [];
+    return header(P, 'right') + `<div class="flow row" style="left:29pt;right:29pt;top:92pt;bottom:29pt;gap:10pt;flex-direction:row">
+      <div class="col" style="flex:1 1 0;gap:10pt">${item(ph[0], 'right.photo0', 'flex:1 1 0')}${item(ph[1], 'right.photo1', 'flex:1.2 1 0')}</div>
+      <div class="col" style="flex:1 1 0;gap:10pt">${item(ph[2], 'right.photo2', 'flex:1 1 0')}${item(ph[3], 'right.photo3', 'flex:1 1 0')}
+        <div class="row" style="flex:1 1 0">${item(ph[4], 'right.photo4', 'flex:1 1 0')}${item(ph[5], 'right.photo5', 'flex:1 1 0')}</div></div></div>`;
+  }
+
+  // ================= BACK: the plan on a white board, the garage and the patio =================
+  function back(){
+    const P = C.back || {}, ph = (P.photos || []).slice(0, 2);
+    const hasPlan = planOK, levels = AT.levels(D);
+    const multi = hasPlan ? levels.length > 1 : (P.roomList || []).length > 1;
+    const T = 92, B = 604;
+    let html = header(hasPlan ? P : Object.assign({}, P, {title: P.titleNoPlan || P.title}), 'back') + `<div class="abs kicker" style="right:29pt;top:31pt;text-align:right;width:260pt" data-slot="back.address" data-lines="1">${esc((L.address + ' · ' + L.city + ', ' + (L.stateAbbr || 'TX')).toUpperCase())}</div>`;
+    const drawPlan = (bx, by, bw, bh) => AtlasPlan.draw(D.plan, {x: bx + 8, y: by + 26, w: bw - 16, h: bh - 26 - 46}, {allowRotate: true});
+    const board = (bx, by, bw, bh) => {
+      const plan = drawPlan(bx, by, bw, bh);
+      issues.push(...plan.issues);
+      const zs = AtlasPlan.zonesOf(D.plan), Z = AtlasPlan.ZONES;
+      const legend = Object.keys(Z).filter(k => zs.includes(k)).map(k => `<span style="display:inline-flex;align-items:center;margin:0 7pt"><i style="display:inline-block;width:9pt;height:9pt;margin-right:4pt;border:.6pt solid rgba(31,43,69,.4);background:color-mix(in srgb, ${Z[k].fill} ${Math.round(Z[k].op*100)}%, var(--paper))"></i>${esc(Z[k].label)}</span>`).join('');
+      return `<div class="board"><div class="planframe" style="left:${bx}pt;top:${by}pt;width:${bw}pt;height:${bh}pt"></div>
+        <div class="abs sect" style="left:${bx + 12}pt;top:${by + 10}pt" data-slot="back.planTitle" data-lines="1">${esc(P.planTitle || 'Floor plan')}</div>
+        ${plan.html}
+        <div class="abs" style="left:${bx}pt;top:${by + bh - 36}pt;width:${bw}pt;text-align:center;font:600 8pt/10pt var(--font-body);color:var(--ink);white-space:nowrap">${legend}</div>
+        <div class="abs fine" style="left:${bx}pt;top:${by + bh - 20}pt;width:${bw}pt;text-align:center;white-space:nowrap;color:#4f5a6b" data-slot="back.planDisc" data-fine="1" data-lines="1">${esc(P.planDisc || 'Approximate; not to scale. Buyer to verify.')}</div></div>`;
+    };
+    // the plan's space with no plan: the floor-by-floor room sizes with the write-up, on the same white board
+    const roomBoard = (bx, by, bw, bh, band) => {
+      const fl = P.roomList || []; let k = 0;
+      const rows = f => f.rows.map(r => `<div class="rr${band ? ' stack' : ''}"><span class="n" data-slot="back.room${k++}.n" data-lines="1">${esc(r[0])}</span><span class="d" data-slot="back.room${k - 1}.d" data-lines="1">${esc(r[1])}</span></div>`).join('');
+      const notes = (P.notes || []).map((t, i) => `<div class="body" data-slot="back.note${i}" data-para="1" data-min="2">${esc(t)}</div>`).join('');
+      return `<div class="board"><div class="planframe" style="left:${bx}pt;top:${by}pt;width:${bw}pt;height:${bh}pt"></div>
+        <div class="rl${band ? ' band' : ''}" style="left:${bx + 14}pt;top:${by + 12}pt;width:${bw - 28}pt;height:${bh - 24}pt">
+          ${band ? `<div class="cols">${fl.map((f, i) => `<div class="fl"><div class="sect" data-slot="back.floor${i}" data-lines="1">${esc(f.floor)}</div><div class="rows">${rows(f)}</div></div>`).join('')}</div>`
+                 : fl.map((f, i) => `<div class="fl" style="flex:${f.rows.length + 1} 1 0"><div class="sect" data-slot="back.floor${i}" data-lines="1">${esc(f.floor)}</div><div class="rows">${rows(f)}</div></div>`).join('')}
+          <div class="notes">${notes}</div></div></div>`;
+    };
+    const photoRow = (rt) => `<div class="flow row" style="left:29pt;right:29pt;top:${rt}pt;height:${B - rt}pt;flex-direction:row;gap:10pt">${ph.map((it, i) => item(it, `back.photo${i}`, 'flex:1 1 0', 'key')).join('')}</div>`;
+    if(multi){
+      let bh = 296;
+      if(hasPlan){ const probe = drawPlan(29, T, 554, 360); bh = Math.min(330, Math.round(probe.usedH + 26 + 46 + 12)); html += board(29, T, 554, bh); }
+      else { bh = Math.min(300, Math.max(...(P.roomList || []).map(f => f.rows.length)) * 34 + 92); html += roomBoard(29, T, 554, bh, true); }
+      html += photoRow(T + bh + 12);
+    } else {
+      const lw = 262;
+      html += hasPlan ? board(29, T, lw, B - T) : roomBoard(29, T, lw, B - T, false);
+      html += `<div class="flow" style="left:${29 + lw + 10}pt;right:29pt;top:${T}pt;height:${B - T}pt;gap:10pt">${ph.map((it, i) => item(it, `back.photo${i}`, 'flex:1 1 0', 'key')).join('')}</div>`;
+    }
+    return html + AT.card(D, [29, 616, 554, 140], C.footnote || '');
+  }
+
+  const panels = {front: cover(), left: left(), right: right(), back: back()};
+  const panel = h => `<div class="panel">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.back)}</div><div class="half r">${panel(panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.left)}</div><div class="half r">${panel(panels.right)}</div></div>`;
+  } else {
+    for(const id of ['front','left','right','back']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+
+  // ---------- layout passes ----------
+  document.querySelectorAll('#addr').forEach(el => { for(let fs = parseFloat(el.style.fontSize); fs >= 24; fs -= 1){ el.style.fontSize = fs + 'pt'; if(el.scrollWidth <= el.clientWidth) break; } });
+  document.querySelectorAll('[data-para]').forEach(el => AT.balance(el));
+  document.querySelectorAll('.row').forEach(row => {   // captions in one row share a height so the photos line up
+    const caps = [...row.children].map(it => it.querySelector(':scope > .cap')).filter(Boolean);
+    if(caps.length < 2) return;
+    const h = Math.max(...caps.map(c => c.offsetHeight)); caps.forEach(c => c.style.height = h + 'px');
+  });
+  issues.push(...AT.fitHouse(D));
+  window.proofNotes.push({paragraphs: [...document.querySelectorAll('[data-para]')].map(el => {
+    const ls = AT.lineBoxes(el), w = el.getBoundingClientRect().width, last = ls[ls.length-1];
+    return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, wPt: +el.dataset.w0 || Math.round(pt(w))};
+  })});
+  ContactCard.fit(document);
+  window.brochureCheck = () => AT.check(D, [...issues, ...AT.repeatChecks()]);
+  window.photoPlacements = AT.placements;
+})();
+</script>
+</body>
+</html>

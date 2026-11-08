@@ -1,0 +1,74 @@
+/* The Plan and the Rooms: Open House flyer and postcards (single pages). Loads after plan-and-rooms.css. White paper, crimson small caps,
+   condensed sans titles, and the room-dimension list (room left, size in crimson right, hairline between) as the fold-over sets it. */
+.spage{background:#fff}
+.field{position:absolute;background:#fff}
+.sheet{position:absolute}
+.logo{display:flex;align-items:center;justify-content:flex-end;overflow:hidden}
+.logo img{display:block;width:auto;height:auto}
+.oh-lbl{font:600 22pt/26pt var(--font-body);letter-spacing:3.2pt;text-transform:uppercase;color:var(--crimson);white-space:nowrap;overflow:hidden}
+.oh-date{font-family:var(--font-display);font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.4pt}
+.oh-time{font:600 22pt/30pt var(--font-body);letter-spacing:.4pt;color:var(--crimson);white-space:nowrap;overflow:hidden}
+.oh-strong{font:600 11pt/14pt var(--font-body);color:var(--ink);overflow:hidden;letter-spacing:.2pt}
+.oh-note{font:500 11pt/14pt var(--font-body);color:var(--text);overflow:hidden;letter-spacing:.2pt}
+.oh-box{border:.8pt solid var(--crimson);background:#fff;padding:3pt 8pt;box-sizing:border-box}
+.dsp{font-family:var(--font-display);font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.3pt}
+.ptxt{font-size:9.5pt;line-height:13.5pt;color:var(--text);overflow:hidden}
+.jt{text-align:justify;text-align-last:left;hyphens:none}
+.hrule{position:absolute;height:.8pt;background:var(--line)}
+/* the facts, as the fold-over cover sets them: small caps with a hairline above and below */
+.fline{display:flex;justify-content:space-between;gap:8pt;border-top:.8pt solid var(--line);border-bottom:.8pt solid var(--line);padding:5pt 0 4pt}
+.fline div{font:600 9pt/12pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;overflow:hidden}
+.fcol{display:flex;flex-direction:column}
+.fcol .r{display:flex;justify-content:space-between;align-items:baseline;border-top:.7pt solid var(--line);padding:2.5pt 0;white-space:nowrap}
+.fcol .r b{font-family:var(--font-display);font-weight:600;font-size:13pt;line-height:16pt;color:var(--ink)}
+.fcol .r i{font:600 8pt/10pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--crimson);font-style:normal}
+/* the room-dimension list */
+.rd{display:flex;flex-direction:column;overflow:hidden}
+.rd .k{font:600 9pt/11pt var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;color:var(--crimson);white-space:nowrap;overflow:hidden;padding-bottom:4pt}
+.rd .lr{flex:1 1 0;min-height:0;border-top:.7pt solid var(--line);padding-top:3pt;display:flex;flex-direction:column;overflow:hidden}
+.rd .t{display:flex;justify-content:space-between;align-items:baseline;gap:8pt;white-space:nowrap}
+.rd .n{font-family:var(--font-display);font-weight:600;font-size:12pt;line-height:14pt;color:var(--ink);overflow:hidden}
+.rd .z{font:600 9.5pt/14pt var(--font-body);letter-spacing:.7pt;color:var(--crimson)}
+.rd .s{font-size:8.5pt;line-height:10.5pt;color:var(--text);overflow:hidden;white-space:nowrap}
+/* a photo beside its text */
+.pr2{position:absolute;display:flex;gap:9pt}
+.pr2 .pw{flex:none;position:relative}
+.pr2 .bt{flex:1;min-width:0}
+.pr2 .bt .h,.bcap .h{font-family:var(--font-display);font-weight:600;font-size:12pt;line-height:14pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.pr2 .bt .a,.bcap .a{font-size:9pt;line-height:11.5pt;color:var(--text);overflow:hidden;margin-top:2pt}
+.mailg{position:absolute}
+.mailg .guide{position:absolute;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#9a958b;text-transform:uppercase;white-space:nowrap}
+.mailg.stamp{border:.75pt dashed #b9b4aa;text-align:center;padding-top:36pt;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#9a958b;text-transform:uppercase}
+.mailg .aline{position:absolute;height:.75pt;background:#d9d5cc}
+.bnd{position:absolute;background:var(--crimson)}
+.bst{display:flex;align-items:center;white-space:nowrap;overflow:hidden;color:var(--ink)}
+.bst .st{font-family:var(--font-display);font-weight:600;font-size:25pt;line-height:30pt;letter-spacing:-.4pt}
+.bst .ln{flex:1;height:.8pt;background:var(--line);margin:0 10pt;min-width:12pt}
+.bst .ad{font:600 9pt/10pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--crimson)}
+.bst .ret{font:400 8pt/9.5pt var(--font-body);color:var(--text);white-space:nowrap}
+.bst .ret b{font-weight:600;letter-spacing:.5pt;text-transform:uppercase;color:var(--ink)}
+.slab{position:absolute;background:var(--crimson);color:#fff;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.slab .big{font-family:var(--font-display);font-weight:600;font-size:15pt;line-height:18pt}
+.slab .sub{font:600 8.5pt/10.5pt var(--font-body);color:#fbe7e6;margin-top:3pt;letter-spacing:.2pt}
+.head{font-family:var(--font-display);font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.8pt}
+.rc{display:flex;flex-direction:column;justify-content:space-between}
+.cap2 .h{font-family:var(--font-display);font-weight:600;font-size:12.5pt;line-height:15pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.cap2{flex:none;padding-top:5pt}
+.cap2 .a{font-size:9pt;line-height:11.5pt;color:var(--text);overflow:hidden;margin-top:1pt}
+.cap .a,.cap2 .a,.bcap .a,.jt{text-wrap:balance}
+
+.pr2 .bt .a{font-size:10pt;line-height:13.5pt}
+.rd.svc .n{font-size:13.5pt;line-height:16pt}
+.rd.svc .s{font-size:9.5pt;line-height:12pt;margin-top:2pt}
+.rd.dense .lr{padding-top:1.5pt}
+.rd.dense .n{font-size:10.5pt;line-height:12pt}
+.rd.dense .z{font-size:10pt;line-height:12pt}
+.rd.roomy .n{font-size:13pt;line-height:16pt}
+.rd.roomy .z{font-size:11pt;line-height:16pt}
+.rd.dense .k{padding-bottom:2pt}
+.oh-write .a{color:var(--text);overflow:visible}
+.rd.mini .n,.rd.mini .z{font-size:var(--mf);line-height:calc(var(--mf)*1.25)}
+.rd.mini .k{font-size:8pt;line-height:10pt;padding-bottom:3pt}
+.rd.mini .lr{padding-top:1pt}
+.rd.svc.b11 .n{font-size:14.2pt;line-height:16.5pt}
+.rd.svc.b11 .s{font-size:10pt;line-height:12.5pt;margin-top:2pt}

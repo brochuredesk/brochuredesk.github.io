@@ -1,0 +1,90 @@
+/* Rooms and Their Connections: the single pieces (Open House flyer, Just Listed and Just Sold postcards).
+   Same palette and type as the fold-over: a deep slate-teal field, serif titles over a thin sand rule, small caps kickers in sand,
+   rooms named in serif with their sizes in sand caps. Postcard backs carry the design onto a paper-colored mail side:
+   a dark band across the top, a dark edge strip, the rooms strung along a sand line, and a dark band behind the contact card. */
+:root{--paperb:#f5f1e8;--textb:#2b3a3f;--sandd:#6b5a33;}
+.spage{margin:0 auto}
+.spage .field{position:absolute;background:var(--field)}
+.spage .sheet{position:absolute}
+.dsp{font-family:var(--font-display);font-weight:600;color:var(--on);white-space:nowrap;overflow:hidden;letter-spacing:-.2pt}
+.sheet .cc{--cc-paper:var(--field);--cc-ink:#fff;--cc-muted:#dbe3e1;--cc-accent:var(--sand);--cc-line:rgba(255,255,255,.4)}
+.sheet .cc .cc-fine{font-size:6.5pt;line-height:8pt;color:#dbe3e1}
+.sheet .cc .cc-name{font-weight:600}
+
+/* Open House flyer */
+.oh-lbl{font:600 22pt/26pt var(--font-body);letter-spacing:4.2pt;text-transform:uppercase;color:var(--sand);white-space:nowrap;overflow:hidden}
+.oh-date{font-family:var(--font-display);font-weight:600;color:var(--on);white-space:nowrap;overflow:hidden;letter-spacing:-.5pt}
+.oh-time{font:600 26pt/30pt var(--font-body);letter-spacing:.3pt;color:var(--on);white-space:nowrap;overflow:hidden}
+.oh-time i{font-style:normal;color:var(--sand)}
+.oh-note{font:500 10.5pt/13.5pt var(--font-body);color:var(--soft);text-align:right;overflow:hidden}
+.oh-refresh{font:600 10.5pt/13.5pt var(--font-body);color:var(--ink);background:#fff;padding:4pt 8pt;text-align:left;overflow:hidden}
+.hrule{position:absolute;height:.7pt;background:var(--line)}
+.stk div{font:600 9.5pt/12pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--on);white-space:nowrap;text-align:right}
+.stk div + div{border-top:.5pt solid rgba(216,198,161,.4);padding-top:1pt;margin-top:1pt}
+.cap2 .h{font-family:var(--font-display);font-weight:600;font-size:15pt;line-height:18pt;color:var(--on);white-space:nowrap;overflow:hidden}
+.cap2 .h i{font:600 8.5pt/18pt var(--font-body);font-style:normal;letter-spacing:1.1pt;color:var(--sand);margin-left:9pt;text-transform:uppercase}
+
+/* the rooms strung on a sand line */
+.path{position:absolute;display:flex}
+.path .nd{position:relative;flex:1;min-width:0;padding-top:12pt}
+.path .nd:before{content:"";position:absolute;left:0;top:0;width:5.5pt;height:5.5pt;border-radius:50%;background:var(--sand)}
+.path .nd:after{content:"";position:absolute;left:8pt;right:6pt;top:2.4pt;height:.7pt;background:var(--line)}
+.path .nd:last-child:after{display:none}
+.path .nn{font-family:var(--font-display);font-weight:600;font-size:14.5pt;line-height:17pt;color:var(--on);white-space:nowrap;overflow:hidden}
+.path .nz{font:600 8.5pt/11pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--sand);white-space:nowrap;overflow:hidden}
+.path.v{flex-direction:column}
+.path.v .nd{flex:1 1 0;padding:0 0 0 17pt}
+.path.v .nd:before{left:0;top:5pt}
+.path.v .nd:after{left:2.4pt;right:auto;top:13pt;bottom:-5pt;width:.7pt;height:auto;background:rgba(107,90,51,.55)}
+.path.v .nn,.back .path .nn{color:var(--ink2)}
+
+/* postcard fronts */
+.rc{display:flex;flex-direction:column;justify-content:space-between}
+.head{font-family:var(--font-display);font-weight:600;color:var(--on);white-space:nowrap;overflow:hidden;letter-spacing:-.6pt}
+.ptxt2{font-size:10.5pt;line-height:14.5pt;color:var(--soft);overflow:hidden}
+.pst div{font:600 9.5pt/13pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--on);white-space:nowrap;overflow:hidden}
+.pst div + div{border-top:.5pt solid rgba(216,198,161,.4);padding-top:2pt;margin-top:2pt}
+
+/* postcard backs: a paper-colored mail side */
+.back-paper{position:absolute;left:-9pt;top:-9pt;right:-9pt;bottom:-9pt;background:var(--paperb)}
+.bnd{position:absolute;background:var(--field)}
+.bst{display:flex;align-items:center;white-space:nowrap;overflow:hidden;color:#fff}
+.bst .k{font:600 8.5pt/10pt var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;color:var(--sand)}
+.bst .st{font-family:var(--font-display);font-weight:600;font-size:26pt;line-height:30pt;letter-spacing:-.2pt;margin-left:10pt}
+.bst .ln{flex:1;height:.7pt;background:var(--line);margin:0 10pt;min-width:12pt}
+.bst .ad{font:600 8.5pt/10pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:var(--sand)}
+.bst .ret{font:400 8pt/9.5pt var(--font-body);color:#fff;white-space:nowrap;text-align:right}
+.bst .ret b{font-weight:600;letter-spacing:.5pt;text-transform:uppercase}
+.bcap .h{font-family:var(--font-display);font-weight:600;font-size:13pt;line-height:16pt;color:var(--field);white-space:nowrap;overflow:hidden;padding-top:5pt}
+.bcap .h i{font:600 8pt/16pt var(--font-body);font-style:normal;letter-spacing:1pt;color:var(--sandd);margin-left:7pt;text-transform:uppercase}
+.bcap .a{font-size:9.5pt;line-height:12pt;color:var(--textb);overflow:hidden}
+.bk{font:600 8.5pt/10pt var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;color:var(--sandd);white-space:nowrap;overflow:hidden}
+.bk2{border-bottom:.7pt solid rgba(107,90,51,.5);padding-bottom:4pt}
+.slab{position:absolute;background:var(--sand);color:var(--field);display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.slab .big{font-family:var(--font-display);font-weight:600;font-size:15pt;line-height:16.5pt}
+.slab .sub{font:600 8.5pt/10.5pt var(--font-body);margin-top:4pt}
+.svc{display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.svc .it{display:flex;gap:6pt;align-items:baseline;font:500 9.5pt/12pt var(--font-body);color:var(--textb)}
+.svc .bx{width:4.5pt;height:4.5pt;background:var(--field);flex:none;transform:translateY(-1.2pt)}
+.jt{text-align:justify;text-align-last:left;hyphens:none}
+.mailg{position:absolute}
+.mailg .guide{position:absolute;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#9a958b;text-transform:uppercase;white-space:nowrap}
+.mailg.stamp{border:.75pt dashed #b9b4aa;text-align:center;padding-top:36pt;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#9a958b;text-transform:uppercase}
+.mailg .aline{position:absolute;height:.75pt;background:#d9d5cc}
+.back .path.v .nn{color:var(--field)}
+.back{--ink2:var(--field)}
+.cap2 .a{font-size:10pt;line-height:13pt}
+.bcap{padding-top:0}
+.pcpara{overflow:hidden}
+.back .path .nz{color:var(--sandd)}
+.back .path.v .nd:before{background:var(--field)}
+
+/* 6x11 front (owner 11/1): both cards are 6 in tall, so type runs about 1.1x the 6x9 and the photo and blocks take the extra width */
+body.big .page:not(.back) .pst div{font-size:11pt;line-height:14pt;letter-spacing:1.3pt}
+body.big .page:not(.back) .pst div + div{padding-top:1.5pt;margin-top:1.5pt}
+body.big .page:not(.back) .path .nn{font-size:16.5pt;line-height:19pt}
+body.big .page:not(.back) .path .nz{font-size:9.5pt;line-height:12pt}
+body.big .page.back .bcap .a{font-size:10.4pt;line-height:13.5pt}
+body.big .page.back .bcap .h{font-size:14.5pt}
+body.big .page.back .path .nn{font-size:14.5pt}
+body.big .page.back .path .nz{font-size:9.5pt}

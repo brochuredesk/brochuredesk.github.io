@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Midnight Residence open house flyer · Gold Invitation</title>
+<link rel="stylesheet" href="midnight.css">
+<script src="midnight.js"></script>
+<script src="../engine/setpieces.js"></script>
+<!--
+  Midnight Residence · Open House flyer a "Gold Invitation" (trim 612 x 792 pt; print: 0.25 in white margin around the navy field).
+  A centered, formal page. The event leads: the label in tracked gold caps between two gold hairlines, the date in the
+  serif as the largest type on the page, the time under it, and the broker / REALTOR(R) lines (only on those opens, only when
+  filled) centered below. Then the whole house inside a thin gold frame, the address centered in the serif with city, state
+  and ZIP under it in gold, the facts row (serif numbers, gold small caps) between gold rules, and a centered write-up
+  between two interiors. The standard contact card (templates/_shared/agentcard.js, Right panel) carries the one logo.
+  Open House rules (templates/_shared/ohstandard.js): city, state and ZIP, no RSVP, no QR, no price. Copy: data.copy.pc.oh.a.
+-->
+<style>
+  .cc{--cc-paper:#121a2b;--cc-ink:#ffffff;--cc-muted:#c3cad8;--cc-accent:#c9a96a;--cc-line:rgba(201,169,106,.55);--cc-display:'Newsreader',Georgia,serif}
+  .lblrow{display:flex;align-items:center;gap:16pt;overflow:hidden}
+  .lblrow i{flex:1;height:.7pt;background:var(--line)}
+  .oh-lbl{font:700 20pt/22pt var(--font-body);letter-spacing:3.2pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;flex:none}
+  .oh-date{font:500 54pt/60pt var(--font-display);letter-spacing:-.6pt;color:var(--ink);white-space:nowrap;overflow:hidden;text-align:center}
+  .oh-time{font:500 24pt/28pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;text-align:center;letter-spacing:.2pt}
+  .oh-strong{font:600 10.5pt/14pt var(--font-body);color:var(--ink);text-align:center}
+  .oh-note{font:400 10.5pt/14pt var(--font-body);color:var(--text);text-align:center}
+  .oaddr{font:500 34pt/38pt var(--font-display);letter-spacing:-.3pt;color:var(--ink);white-space:nowrap;overflow:hidden;text-align:center}
+  .oplace{text-align:center;letter-spacing:2.2pt}
+  .facts5{display:flex;justify-content:space-between;align-items:baseline}
+  .facts5 div{font:600 8pt/22pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+  .facts5 div b{font:500 17pt/22pt var(--font-display);letter-spacing:0;color:var(--ink);margin-right:3pt;text-transform:none}
+  .ab{font-size:10.5pt;line-height:16pt;color:var(--text);text-align:center}
+  .hframe{outline:.7pt solid var(--accent);outline-offset:4pt}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = SP.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), C = (PC.oh || {}).a || {};
+  const issues = await SP.ready(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const O = SP.openHouse(D), X = 40, W = 532;
+  let h = '';
+
+  // the event, centered
+  h += `<div class="abs lblrow" style="left:${X}pt;top:34pt;width:${W}pt;height:22pt"><i></i><span class="oh-lbl" data-slot="oh.label" data-lines="1">${esc(O.label)}</span><i></i></div>`;
+  h += `<div class="abs oh-date" style="left:${X}pt;top:60pt;width:${W}pt;height:60pt" data-slot="oh.date" data-lines="1" data-fit="36">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X}pt;top:122pt;width:${W}pt;height:28pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  let dy = 0;   // the broker / REALTOR(R) lines sit centered under the time; they stack, and the photo gives up the difference
+  { const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note']].filter(l => l[0]);
+    if(ls.length){ const e = SP.eventLines(ls, X + 40, 154, W - 80, 14, 0); dy = e.h + 6; h += e.html; } }
+  h += `<div class="rule" style="left:${X}pt;top:${160 + dy}pt;width:${W}pt"></div>`;
+
+  // the whole house inside a gold frame, then the address and the facts
+  h += SP.photo(D, C.hero || 'front', X + 4, 174 + dy, W - 8, 296 - dy, 'oh.hero', '', 'hframe');
+  h += `<div class="abs oaddr" style="left:${X}pt;top:486pt;width:${W}pt;height:40pt" data-slot="address" data-lines="1" data-fit="24">${esc(L.address)}</div>`;
+  h += `<div class="abs kick oplace" style="left:${X}pt;top:528pt;width:${W}pt;height:10pt" data-slot="place" data-lines="1">${esc(SP.placeZip(L).toUpperCase())}</div>`;
+  const short = {'Square Feet': 'Sq Ft', 'Year Built': 'Built', 'Full Baths': 'Baths', 'Full Bath': 'Bath', 'Half Baths': 'Half Baths'};
+  const fp = SP.factPairs(L, 5);
+  h += `<div class="rule" style="left:${X}pt;top:546pt;width:${W}pt"></div>`;
+  h += `<div class="abs facts5" style="left:${X}pt;top:549pt;width:${W}pt;height:22pt">${fp.map((p, i) => `<div data-slot="oh.fact${i}" data-lines="1"><b>${esc(p[0])}</b>${esc(short[p[1]] || p[1])}</div>`).join('')}</div>`;
+  h += `<div class="rule" style="left:${X}pt;top:574pt;width:${W}pt"></div>`;
+
+  // a centered write-up between two interiors
+  const ps = (C.photos || []).slice(0, 2), pw = 118, ty = 590, hh = 64, tx = X + pw + 18;
+  h += `<div class="abs ab" style="left:${tx}pt;top:${ty}pt;width:${W - 2*pw - 36}pt;height:${hh}pt" data-slot="oh.blurb" data-para="1" data-min="4" data-fillbox="1">${esc(C.text || '')}</div>`;
+  h += `<div class="abs" data-gapcheck="oh.photos" style="left:0;top:0">${ps.map((id, i) => SP.photo(D, id, i ? X + W - pw : X, ty, pw, hh, 'oh.photo' + i)).join('')}</div>`;
+
+  h += SP.card(D, [X, 668, W, 90], {layout: 'panel', fieldAccent: true});
+  h += `<div class="abs" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  await SP.finish(D, 612, 792, h, issues);
+})();
+</script>
+</body>
+</html>

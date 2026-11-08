@@ -1,0 +1,86 @@
+/* Room Proportions: shared style file.
+   Every piece of this design (fold-over, Open House flyers, Just Listed postcard) loads this file, so fonts, colors,
+   captions, the scale boxes and the contact card look the same everywhere. Geometry lives in each piece. Lengths are pt. */
+
+:root{
+  --accent:#2f4a3a;        /* agent brand color token: kickers' rule, callout band, card stripe */
+  --paper:#ffffff;         /* white paper field (owner 10/29/2026) */
+  --ink:#16252b;           /* titles, names, facts */
+  --muted:#4a5557;         /* body copy, captions */
+  --warm:#b4502f;          /* small uppercase kickers (rust) */
+  --gold:#d3a640;          /* fact-bar squares, callout figures */
+  --line:rgba(22,37,43,.22);
+  --ghost:rgba(22,37,43,.09);
+  --font-display:'Space Grotesk',Helvetica,Arial,sans-serif;
+  --font-body:'Source Sans 3',Helvetica,Arial,sans-serif;
+}
+@font-face{font-family:'Space Grotesk';font-weight:400;src:url(../../fonts/pool/space-grotesk-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Space Grotesk';font-weight:500;src:url(../../fonts/pool/space-grotesk-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Space Grotesk';font-weight:600;src:url(../../fonts/pool/space-grotesk-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Space Grotesk';font-weight:700;src:url(../../fonts/pool/space-grotesk-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:400;src:url(../../fonts/pool/source-sans-3-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:500;src:url(../../fonts/pool/source-sans-3-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:600;src:url(../../fonts/pool/source-sans-3-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:700;src:url(../../fonts/pool/source-sans-3-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+
+/* ---------- type ---------- */
+.abs{position:absolute}
+.kick{font:600 8.5pt/1 var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--warm);white-space:nowrap;overflow:hidden}
+.acc{color:var(--accent)}
+.display{font-family:var(--font-display);font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.3pt}
+.body{color:var(--muted);overflow:hidden}
+.place{font:600 8pt/1 var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden}
+.rule{position:absolute;height:.8pt;background:var(--line)}
+.hair{position:absolute;height:.6pt;background:var(--line)}
+
+/* captions: bold room name with its size in the accent color, then the text */
+.cap{display:flex;flex-direction:column;min-width:0}
+.cap .t{font:700 9.4pt/11.4pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
+.cap .t i{font-style:normal;font-weight:600;color:var(--accent);margin-left:5pt}
+.cap .b{font:400 8.6pt/11.2pt var(--font-body);color:var(--muted);overflow:hidden;margin-top:1.5pt}
+.cap.big .t{font-size:10.6pt;line-height:13pt}
+.cap.big .b{font-size:9.4pt;line-height:12.4pt}
+
+/* fact bar: values separated by gold squares */
+.facts{display:flex;justify-content:space-between;align-items:center;border-top:.8pt solid var(--line);border-bottom:.8pt solid var(--line)}
+.facts .f{font:600 12pt/1 var(--font-display);color:var(--ink);white-space:nowrap;letter-spacing:-.1pt}
+.facts .sq{width:5pt;height:5pt;background:var(--gold);flex:none}
+
+/* faint text lines that stand in for copy until the package is created */
+.ghost{position:absolute;overflow:hidden}
+.ghost i{display:block;height:3.2pt;border-radius:2pt;background:var(--ghost)}
+
+/* ---------- photos and logos ---------- */
+.photo{position:absolute;overflow:hidden;background:#ddd}
+.photo img{width:100%;height:100%;object-fit:cover}
+.logo{position:absolute;display:flex;align-items:center;justify-content:flex-end}
+.logo img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+.logo .text{font:700 14pt/1.1 var(--font-body);color:var(--ink);letter-spacing:.5pt;text-transform:uppercase;white-space:nowrap}
+
+/* ---------- single-page pieces ---------- */
+.page{position:relative;background:#fff;overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+.field{position:absolute;background:var(--paper)}
+.sheet{position:absolute}
+
+/* ---------- scale boxes: rooms drawn to one scale ---------- */
+.sb{position:absolute;border:.9pt solid var(--ink);background:rgba(255,255,255,.7)}
+.sb.alt{background:color-mix(in srgb, var(--accent) 14%, #fff)}
+.sb.out{background:repeating-linear-gradient(135deg, rgba(22,37,43,.14) 0 .6pt, transparent .6pt 3.4pt);background-color:#fff}
+.sbl{position:absolute;font:600 8pt/9.6pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
+.sbl span{display:block;font-weight:400;color:var(--muted)}
+.sbar{position:absolute;height:5pt;border:.8pt solid var(--ink);border-top:0}
+
+/* ---------- floor plan (plan.js) ---------- */
+.plan-svg{position:absolute;overflow:visible}
+.plan-room{position:absolute;text-align:center;font:400 8pt/9.5pt var(--font-body);color:var(--ink);white-space:nowrap}
+.plan-room b{display:block;font-weight:600;font-size:8pt;line-height:9.5pt}
+.plan-room span{display:block;color:var(--muted);font-size:8pt;line-height:9.5pt}
+.plan-level{text-align:center;font:600 10pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--warm);white-space:nowrap;overflow:hidden}
+.plan-note{text-align:center;font:400 6.5pt/8pt var(--font-body);color:var(--muted);white-space:nowrap;overflow:hidden}

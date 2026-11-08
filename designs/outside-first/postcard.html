@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Outside First postcard</title>
+<link rel="stylesheet" href="outside-first.css">
+<link rel="stylesheet" href="outside-first-cards.css">
+<script src="outside-first.js"></script>
+<script src="outside-first-cards.js"></script>
+<!--
+  Outside First · Just Listed and Just Sold postcards, 6 x 9 (trim 648 x 432 pt) and 6 x 11 (792 x 432 pt), front and back.
+  data.piece = {card: "listed" | "sold", size: "6x9" | "6x11", side: "front" | "back"}. Print mode adds 0.125 in (9 pt) bleed on every edge.
+  10/29 round-2 review (owner): fronts re-set (bigger facts table to the photo's bottom, bigger agent, smaller logo lined up with the
+  left text, 6x11 Just Listed with 3 or 4 small interiors beside the photo: data.piece.strip = 3 | 4); every back carries the design
+  across the whole card (copper edge stripe, a full-width tan band under the address block that the standard postcard card sits on),
+  the mail zones kept clear (postage, address block, barcode strip: same sizes as templates/jl-library, in pt) and the open space used.
+  Front: the whole-house photo (roof to steps, checked) top left, bleeding off the top and left edges; below it the address,
+  city, state and ZIP, and a short paragraph (Just Sold: the call to action). Right column: "Just Listed" / "Just Sold" in two
+  big lines, a copper rule, then the key-facts table (Just Listed) or the agent's note (Just Sold), the agent, and the
+  brokerage logo (the front's one logo).
+  Back: a chapter heading with the status and street, photos that never repeat the front with captions, and the write-up
+  (Just Listed) or the photos beside the "here's how I'd start" steps (Just Sold); a rule; the standard Right panel contact
+  card (band layout, which carries the back's one logo); fine print. The right 289.5 pt (4.02 in) is the mail vendor's panel:
+  return address, postage and address zones from data.mailVendor; until one is chosen they are drawn as guides on proofs and
+  left clear in print. No price, no QR, no "virtually staged".
+  Copy: data.cards.jl / data.cards.js = {front: {...}, back: {...}} (see the sample data).
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  // owner 10/30 (Book 3): Outside First postcards are white front and back, footer included (these four cards only, not the fold-over or flyers)
+  document.documentElement.style.setProperty('--paper', '#fff');
+  const D = OF.data(), esc = OF.esc, L = D.listing || {}, A = D.agent || {}, b = D.brand || {}, P = D.piece || {};
+  const sold = P.card === 'sold', big = P.size === '6x11', front = P.side === 'front';
+  const K = ((D.cards || {})[sold ? 'js' : 'jl']) || {};
+  await OFC.boot(D, () => {
+    const W = big ? 792 : 648, H = 432, status = sold ? ['Just', 'Sold'] : ['Just', 'Listed'];
+    let h = '';
+    if(front){
+      const F = K.front || {};
+      // geometry per size: photo w/h, column x/w, title pt, address y/pt
+      const G = big ? {pw: 392, ph: 261, cx: 540, cw: 228, tp: 54, ay: 280, ap: 34}
+                    : {pw: 392, ph: 261, cx: 416, cw: 208, tp: 50, ay: 280, ap: 30};
+      if(sold && big) Object.assign(G, {pw: 450, ph: 300, cx: 480, cw: 288, tp: 60, ay: 318, ap: 34});
+      const strip = (!sold && big) ? (+P.strip === 4 ? 4 : 3) : 0, SX = G.pw + 6, SW = 124.5;
+      h += OFC.photo(D, F.photo || 'front', -9, -9, G.pw + 9, G.ph + 9);
+      if(strip){
+        const ids = (F.strip || []).slice(0, strip), hv = (G.ph - 6*(strip - 1))/strip;
+        ids.forEach((id, i) => { const y = i*(hv + 6); h += OFC.photo(D, id, SX, i ? y : -9, SW, i ? hv : hv + 9); });
+      }
+      const tl = G.tp * 0.97;
+      h += `<div class="abs pc-title" style="left:${G.cx}pt;top:22pt;width:${G.cw}pt;height:${tl}pt;font-size:${G.tp}pt;line-height:${tl}pt" data-slot="status" data-lines="1">${status[0]}</div>`;
+      h += `<div class="abs pc-title o" style="left:${G.cx}pt;top:${22 + tl}pt;width:${G.cw}pt;height:${tl}pt;font-size:${G.tp}pt;line-height:${tl}pt" data-slot="status2" data-lines="1">${status[1]}</div>`;
+      const ruleY = 22 + 2*tl + 8;
+      h += `<div class="copper-rule" style="left:${G.cx}pt;width:${G.cw}pt;top:${ruleY}pt"></div>`;
+      h += `<div class="abs pc-addr" style="left:24pt;top:${G.ay}pt;width:${G.pw - 24}pt;height:${G.ap + 6}pt;font-size:${G.ap}pt;line-height:${G.ap + 6}pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
+      const plY = G.ay + G.ap + 8, tw = strip ? SX + SW - 24 : G.pw - 24;
+      h += `<div class="abs fl-place" style="left:24pt;top:${plY}pt;width:${G.pw - 24}pt;height:12pt" data-slot="front.place" data-lines="1">${esc(OFC.placeZip(L))}</div>`;
+      const LOGO = 40;                       // the brokerage logo, smaller than before (was 52)
+      let textBottom, logoX = G.cx, logoAlign = 'flex-start';
+      if(!sold){
+        // left text: the paragraph; its last line sets the bottom the logo lines up with
+        const n = big ? 4 : 5, lh = big ? 17 : 14.5, fs = big ? 11 : 10, py = plY + 18;
+        h += OFC.para('front.para', F.para || [], 24, py, tw, n, fs, lh, 'color:var(--text)');
+        textBottom = py + n*lh;
+        // key facts: rows share the height from the rule down to the bottom of the photo
+        const rows = OFC.specRows(L), sy = ruleY + 12, rh = (G.ph - sy)/rows.length;
+        h += `<div class="abs pc-specs lg" style="left:${G.cx}pt;top:${sy}pt;width:${G.cw}pt;height:${G.ph - sy}pt">${rows.map((r, i) => `<div class="r" style="height:${rh}pt"><span class="l" data-slot="front.spec${i}.l" data-lines="1">${esc(r[0])}</span><span class="v" data-slot="front.spec${i}.v" data-lines="1">${esc(r[1])}</span></div>`).join('')}</div>`;
+        if(big){ logoAlign = 'flex-end'; }
+        const logoTop = textBottom - 2 - LOGO, bot = logoTop - 12, ah = 66, at = bot - ah;
+        h += `<div class="abs pc-lab" style="left:${G.cx}pt;top:${at}pt;width:${G.cw}pt;height:10pt" data-slot="front.presented" data-lines="1">Presented by</div>`;
+        h += `<div class="abs pc-name lgn" style="left:${G.cx}pt;top:${at + 14}pt;width:${G.cw}pt;height:30pt" data-slot="agent.name" data-lines="1">${esc(A.name)}</div>`;
+        h += `<div class="abs pc-phone lgp" style="left:${G.cx}pt;top:${at + 44}pt;width:${G.cw}pt;height:22pt" data-slot="agent.phone" data-lines="1">${esc(A.phone)}</div>`;
+      } else {
+        const ln = big ? 8 : 7, fs = big ? 12.5 : 12, lh = big ? 17 : 17.5, bottomY = G.ph + (big ? 0 : 2.5), ly = bottomY - ln*lh;
+        h += OFC.para('front.lead', F.lead || [], G.cx, ly, G.cw, ln, fs, lh, 'color:var(--text)');
+        const ctaY = Math.max(plY + 18, big ? 408 - 28 : 408 - 46);
+        h += `<div class="abs pc-cta" style="left:24pt;top:${ctaY}pt;width:${G.pw - 24}pt;height:28pt" data-slot="sold.cta" data-lines="1">${esc(F.cta || "Thinking of selling? Let's talk.")}</div>`;
+        if(!big) h += `<div class="abs pc-sub" style="left:24pt;top:${ctaY + 32}pt;width:${G.pw - 24}pt;height:14pt" data-slot="sold.ctaSub" data-lines="1">${esc(F.ctaSub || 'Call or text anytime. I am happy to help.')}</div>`;
+        textBottom = big ? ctaY + 28 : ctaY + 32 + 14;
+        const logoTop = textBottom - 2 - LOGO, bot = logoTop - 12;
+        if(big){
+          logoAlign = 'center';
+          const at = bot - 50, desig = /^realtor/i.test(A.designation || (A.nar ? 'Realtor' : '')) ? 'REALTOR®' : esc(A.designation || 'Agent');
+          h += `<div class="abs pc-name lgn" style="left:${G.cx}pt;top:${at}pt;width:${G.cw}pt;height:28pt;font-size:24pt;line-height:28pt;text-align:center" data-slot="agent.name" data-lines="1">${esc(A.name)}</div>`;
+          h += `<div class="abs" style="left:${G.cx}pt;top:${at + 29}pt;width:${G.cw}pt;height:21pt;display:flex;justify-content:center;align-items:baseline;gap:8pt;white-space:nowrap"><span class="pc-lab" style="height:auto" data-slot="front.desig" data-lines="1">${desig}</span><span class="pc-phone lgp" style="font-size:17pt;line-height:21pt;width:auto" data-slot="agent.phone" data-lines="1">${esc(A.phone)}</span></div>`;
+        } else {
+          const ah = 64, at = bot - ah;
+          h += `<div class="abs pc-name lgn" style="left:${G.cx}pt;top:${at}pt;width:${G.cw}pt;height:30pt" data-slot="agent.name" data-lines="1">${esc(A.name)}</div>`;
+          h += `<div class="abs pc-lab" style="left:${G.cx}pt;top:${at + 31}pt;width:${G.cw}pt;height:10pt" data-slot="front.desig" data-lines="1">${/^realtor/i.test(A.designation || (A.nar ? 'Realtor' : '')) ? 'REALTOR®' : esc(A.designation || 'Agent')}</div>`;
+          h += `<div class="abs pc-phone lgp" style="left:${G.cx}pt;top:${at + 42}pt;width:${G.cw}pt;height:22pt" data-slot="agent.phone" data-lines="1">${esc(A.phone)}</div>`;
+        }
+      }
+      // the brokerage logo: bottom of the column, its bottom on the left text's last line
+      h += OF.logo(D, G.cx, textBottom - 2 - LOGO, G.cw, LOGO, logoAlign);
+    } else {
+      // ---------------- back ----------------
+      // the design runs across the whole card: a copper edge stripe on top, and a full-width tan band under the address block
+      // that the standard postcard card sits on (no white seam). Mail zones (pt, the Just Listed library's, jllib.js zones):
+      // postage, address block and barcode strip stay clear.
+      const B = K.back || {}, X = 22.5, mx = W - 243, colW = mx - 14 - X, ZP = [W - 96, 12, 84, 98], ZA = [W - 243, 187.5, 240, 112.5], ZB = [W - 342, 387, 342, 45];
+      const bandY = 301, bandH = 84, cardY = 303, cardH = 80, bot = 292;
+      // the card gets a little less padding than the shared 'post' size so it fits between the address block and the barcode strip (80 pt)
+      const CARD_S = {inlineLabel: true, officeLH: 1.15, office: 9.5, name: 26, phone: 19, pad: [8, 20, 6], panelPad: [4, 14], panelGap: 5, logo: {wide: [128, 34], square: [40, 40], tall: [44, 44]}, lock: 12};
+      // 6 x 9 with a headshot: the agent column is narrower, so the photo, panel and gaps give a little
+      if(!big && OFC.headshot(D)) Object.assign(CARD_S, {hsW: 70, hsGap: 14, phone: 17, rowGap: 14, name: 24, panelW: 168, logo: {wide: [118, 32], square: [40, 40], tall: [44, 44]}});
+      h += `<div class="abs" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:14pt;background:var(--accent)"></div>`;
+      // owner 10/30: no tan band behind the contact card; white behind the brokerage footer, no highlight
+      // the right side: return address (left of the postage box), the title, a rule, the street
+      const rw = ZP[0] - 12 - mx, tp = 36, tl = tp*0.97, rx = W - 22.5 - mx;
+      h += `<div class="abs ret" style="left:${mx}pt;top:20pt;width:${rw}pt"><b>${esc(b.brokerage || '')}</b>${[].concat(b.address || []).length ? '<br>' + esc([].concat(b.address).join(', ')) : ''}</div>`;
+      h += `<div class="abs pc-title" style="left:${mx}pt;top:58pt;width:${rw}pt;height:${tl}pt;font-size:${tp}pt;line-height:${tl}pt" data-slot="back.status" data-lines="1">${status[0]}</div>`;
+      h += `<div class="abs pc-title o" style="left:${mx}pt;top:${58 + tl}pt;width:${rw}pt;height:${tl}pt;font-size:${tp}pt;line-height:${tl}pt" data-slot="back.status2" data-lines="1">${status[1]}</div>`;
+      h += `<div class="copper-rule" style="left:${mx}pt;width:${rx}pt;top:136pt"></div>`;
+      h += `<div class="abs pc-st" style="left:${mx}pt;top:143pt;width:${rx}pt;height:20pt" data-slot="back.street" data-lines="1">${esc(L.address)}</div>`;
+      h += `<div class="abs fl-place" style="left:${mx}pt;top:166pt;width:${rx}pt;height:12pt" data-slot="back.place" data-lines="1">${esc(OFC.placeZip(L))}</div>`;
+      if(!sold){
+        const n = big ? 3 : 2, gw = 12, pw = (colW - gw*(n - 1))/n, ps = (B.photos || []).slice(0, n), lh = big ? 15.5 : 15, fs = big ? 10.5 : 10;
+        // line counts follow the copy: the captions of one row share a line count (2, else 3, else 1); the write-up takes the most
+        // lines its sentences can fill (the photos give the rest of the height back)
+        const CS = 'font-size:8.5pt;line-height:11pt;margin:0';
+        const cn = [2, 3, 1].find(k => ps.every(c => OFC.pickN(c.text, pw, CS, [k]))) || 2;
+        const nn = OFC.pickN(B.about || [], colW, `font-size:${fs}pt;line-height:${lh}pt`, big ? [7, 6, 5, 4] : [8, 7, 6, 5, 4]) || 5;
+        const capH = 12 + cn*11, phh = bot - 22 - 6 - capH - 12 - nn*lh;
+        ps.forEach((c, i) => { const x = X + i*(pw + gw);
+          h += OFC.photo(D, c.id, x, 22, pw, phh);
+          h += OFC.cap(c, `back.cap${i}`, x, 22 + phh + 6, pw, cn); });
+        h += OFC.para('back.about', B.about || [], X, 22 + phh + 6 + capH + 12, colW, nn, fs, lh, 'color:var(--text)');
+      } else {
+        const pw = big ? 150 : 124, gap = 6, sh = (bot - 22 - 2*gap)/3;
+        (B.photos || []).slice(0, 3).forEach((c, i) => { h += OFC.photo(D, c.id, X, 22 + i*(sh + gap), pw, sh); });
+        const lx = X + pw + 14, lw = colW - pw - 14, fs = big ? 14 : 11.5, lh = big ? 19 : 15.5;
+        const steps = B.steps || [];
+        const lines = steps.map(s => OFC.linesFor(`font:400 ${fs}pt/${lh}pt var(--font-body)`, s, lw - 12.5, lh));
+        const cf = big ? 20 : 16, cl = big ? 24 : 20;
+        const callN = OFC.linesFor(`font:700 ${cf}pt/${cl}pt var(--font-display)`, B.call || '', lw, cl);
+        const callH = callN*cl, top = 22, hgt = bot - top;
+        h += `<div class="abs pc-lab" style="left:${lx}pt;top:${top}pt;width:${lw}pt;height:10pt" data-slot="back.stepsLabel" data-lines="1">${esc(B.stepsLabel || "Here's how I'd start")}</div>`;
+        h += `<div class="abs pc-steps" style="left:${lx}pt;top:${top + 20}pt;width:${lw}pt;height:${hgt - 20 - callH - 12}pt;display:flex;flex-direction:column;justify-content:space-between">${steps.map((s, i) => `<div class="it" style="font:400 ${fs}pt/${lh}pt var(--font-body);color:var(--text)"><span class="bx"></span><span style="flex:1;text-wrap:balance" data-slot="back.step${i}" data-lines="${lines[i]}">${esc(s)}</span></div>`).join('')}</div>`;
+        h += `<div class="abs" style="left:${lx}pt;top:${bot - callH}pt;width:${lw}pt;height:${callH}pt;font:700 ${cf}pt/${cl}pt var(--font-display);color:var(--accent)" data-slot="back.call" data-lines="${callN}">${esc(B.call || '')}</div>`;
+      }
+      // the standard postcard card, full width, straight on the band's color
+      h += `<div class="abs" style="left:0;top:0;width:0;height:0;--cc-paper:#fff">${OFC.card(D, [X, cardY, W - 2*X, cardH], {postcard: true, fine: '', s: CARD_S})}</div>`;
+      const fine = [(D.cards || {}).fineprint || 'Information deemed reliable but not guaranteed.', 'If your property is currently listed with a broker, please disregard this notice. It is not intended to solicit listed property.'].join(' ');
+      h += `<div class="abs pc-disc" style="left:${X}pt;top:391pt;width:${ZB[0] - 12 - X}pt;height:24pt" data-slot="fineprint" data-lines="3" data-fine="1">${esc(fine)}</div>`;
+      // proof guides for the mail zones (print leaves them clear)
+      if((D.mode || 'email') !== 'print'){
+        const V = D.mailVendor || {};
+        h += `<div class="mailg stamp" style="left:${ZP[0]}pt;top:${ZP[1]}pt;width:${ZP[2]}pt;height:${ZP[3]}pt">Postage<br><span style="text-transform:none">mail vendor</span></div>`;
+        h += `<div class="mailg box" style="left:${ZA[0]}pt;top:${ZA[1]}pt;width:${ZA[2]}pt;height:${ZA[3]}pt"><div class="g" style="left:14pt;bottom:8pt">${esc(V.name ? 'Address block · ' + V.name + "'s template" : 'Address block · filled by the mail vendor')}</div>${[0,1,2,3].map(i => `<div class="aline" style="left:14pt;right:14pt;top:${22 + i*17}pt"></div>`).join('')}</div>`;
+        h += `<div class="mailg box" style="left:${ZB[0]}pt;top:${ZB[1]}pt;width:${ZB[2]}pt;height:${ZB[3]}pt;border-style:dashed"><div class="g" style="left:0;right:0;top:18pt;text-align:center">Barcode strip · keep clear</div></div>`;
+      }
+    }
+    return {html: OFC.frame(D, W, H, h), after: () => { OFC.fitWidth('.pc-addr', 24); OFC.fitWidth('.pc-name', 17); OFC.fitWidth('.pc-st', 12); }};
+  });
+})();
+</script>
+</body>
+</html>

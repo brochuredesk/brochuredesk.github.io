@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The House in Sections fold-over</title>
+<link rel="stylesheet" href="in-sections.css">
+<script src="in-sections.js"></script>
+<!--
+  The House in Sections · 11 x 17 portrait book-fold
+  11 x 17 sheet laid 17 wide, folded once down the middle: four upright 8.5 x 11 pages (612 x 792 pt), 0.125 in (9 pt) bleed.
+    outside spread: back (left) + cover (right)        inside spread: left page + right page
+  Pale gray page; the inside pages are cut into sections, each a column with a red small-caps head: Cook and Gather on the left
+  page, Primary suite and Baths and bedrooms on the right. Cook and Primary suite sit on a tinted column. The cover is a
+  full-bleed house band with the facts under it, two photos and the paragraph. The back holds the agent's own plan (placed as given,
+  no redraw) with the places around the house under it, and two outdoor photos beside it; with no plan the plan's column holds
+  two more photos. The contact card carries the outside spread's one logo.
+
+  Modes (data.mode):  proof  four panel pages, 630 x 810 pt each (trim + bleed)
+                      print  two spreads, 1242 x 810 pt, each half clipped at the fold
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = PG.data(), esc = PG.esc; PG.fitMode = !!D.fit;
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  await PG.cardReady;
+  const mode = D.mode || 'proof', L = D.listing, A = D.agent || {}, C = D.copy || {}, issues = [];
+  const b = Object.assign({}, D.brand || {}); D.brand = b;
+  await Promise.all(['400 10pt','500 10pt','600 10pt','700 10pt'].map(w => document.fonts.load(`${w} 'Hanken Grotesk'`)));
+  document.body.dataset.mode = mode;
+  PG.cfg = {lh: 13, nm: 15, lead: {lh: 15, nm: 20}};
+  const hasPlan = !!(D.plan && D.plan.levels && D.plan.levels.length);
+  const hs = (D.photos||{})[A.headshot] ? D.photos[A.headshot].src : (A.headshot || '');
+  const G = 8, M = 29, W = 554, BOT = 763, Y0 = 92, HWIDTH = 232;
+  const ln = (slot, d) => PG.lines(D, slot, d);
+  const cp = (c, slot, x, y, w, n) => PG.cap(c, slot, x, y, w, {lines: n});
+
+  const head = (T, slot) => PG.kick(T.kicker, `${slot}.kicker`, M, 30) + `<div class="abs title" style="left:${M}pt;top:42pt;width:${W}pt;height:32pt" data-slot="${slot}.title" data-lines="1">${esc(T.title)}</div>` + PG.rule(M, 80, W);
+  const sec = (t, slot, x, y, w) => `<div class="abs sechead" style="left:${x}pt;top:${y}pt;width:${w}pt;height:10pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
+  // a column of single photos with captions: heights share what is left after the captions
+  function column(items, slot, x, y, w, ratios, bottom){
+    const N = items.map((c, i) => ln(`${slot}${i}`, 5)), cap = N.reduce((a, n) => a + 6 + PG.capH(n), 0), gaps = 12*(items.length - 1);
+    const total = bottom - y - cap - gaps, sum = ratios.reduce((a, r) => a + r, 0); let h = '';
+    items.forEach((c, i) => { const ph = Math.round(total*ratios[i]/sum); h += PG.photo(D, c.id, x, y, w, ph) + cp(c, `${slot}${i}`, x, y + ph + 6, w, N[i]); y += ph + 6 + PG.capH(N[i]) + 12; });
+    return h;
+  }
+  // rows of photos side by side: each row's captions end together
+  function rows(list, slot, x, y, w, bottom, per){
+    const rs = []; for(let i = 0; i < list.length; i += per) rs.push(list.slice(i, i + per));
+    const N = list.map((c, i) => ln(`${slot}${i}`, 5)), cw = (w - G*(per - 1))/per, wide = 0.58*(w - G), narrow = w - G - wide, gaps = 14*(rs.length - 1);
+    const mx = rs.map((r, ri) => Math.max(...r.map((c, k) => N[ri*per + k])));
+    const total = bottom - y - mx.reduce((a, n) => a + 6 + PG.capH(n), 0) - gaps, hp = Math.floor(total/rs.length); let h = '';
+    rs.forEach((r, ri) => {
+      // two photos a row: the wide one swaps sides row to row, so a 2 x 2 is never four equal frames
+      r.forEach((c, k) => { const n = N[ri*per + k], ph = hp + (mx[ri] - n)*PG.cfg.lh, ww = per === 2 ? ((ri % 2 === 0) === (k === 0) ? wide : narrow) : cw,
+          xx = x + (k === 0 ? 0 : (per === 2 ? ((ri % 2 === 0) ? wide : narrow) + G : cw + G));
+        h += PG.photo(D, c.id, xx, y, ww, ph) + cp(c, `${slot}${ri*per + k}`, xx, y + ph + 6, ww, n); });
+      y += hp + 6 + PG.capH(mx[ri]) + 14;
+    });
+    return h;
+  }
+
+  // ================= COVER =================
+  function cover(){
+    const K = C.front || {};
+    let h = PG.kick((K.kicker || '').toUpperCase(), 'front.kicker', M, 30);
+    h += `<div class="abs addr" id="addr" style="left:${M}pt;top:42pt;width:${W}pt;height:48pt" data-slot="front.address" data-lines="1">${esc(L.address)}</div>`;
+    const pl = 14.5, c = K.caps || [], f = PG.facts(L), factsH = 0, w0 = 210, w1 = W - w0 - G, HW = 204;
+    const ph0 = (D.photos||{})[K.photo] || {w:3, h:2}, need = ph0.box ? (ph0.box[3] - ph0.box[1]) + 0.03 : 0.6, Hmin = Math.ceil(need*630*ph0.h/ph0.w);
+    // the facts sit in the header, to the right of the address (the address sets smaller to leave them the room)
+    h += `<div class="abs hfacts" style="left:${M + W - HW}pt;top:30pt;width:${HW}pt;height:58pt;grid-template-columns:repeat(${f.length <= 4 ? 2 : 3}, auto)" data-slot="front.facts">${f.map((x, i) => `<div class="f"><b data-slot="front.fact${i}" data-lines="1">${esc(x[0])}</b><span data-slot="front.fact${i}.l" data-lines="1">${esc(x[1])}</span></div>`).join('')}</div>`;
+    const facts = y => '';
+    if(K.alt){
+      // a house photo that needs a tall band: one photo beside the paragraph instead of a pair under the band
+      const pn = ln('front.intro', 10), rowH = pn*pl, n = ln('front.cap0', 3), H1 = BOT - 94 - 12 - rowH - 12;
+      h += PG.photo(D, K.photo, -9, 94, 630, H1);
+      let y = 94 + H1 + 12;
+      const pph = rowH - 6 - PG.capH(n);
+      h += PG.photo(D, c[0].id, M, y, w0, pph) + cp(c[0], 'front.cap0', M, y + pph + 6, w0, n);
+      h += PG.para(K.intro, 'front.intro', M + w0 + G + 8, y, w1 - 8, pn, pl);
+      return h;
+    }
+    const pn = ln('front.intro', 4), n = Math.max(ln('front.cap0', 3), ln('front.cap1', 3)), capb = 6 + PG.capH(n), paraH = pn*pl;
+    const total = BOT - 94 - 12 - 6 - capb - 14 - paraH, H1 = Math.max(Math.round(total*0.66), Hmin), hp = total - H1;
+    h += PG.photo(D, K.photo, -9, 94, 630, H1);
+    let y = 94 + H1 + 12;
+    const ns = [ln('front.cap0', 3), ln('front.cap1', 3)], mx = Math.max(...ns), wd = [w0, w1];
+    wd.forEach((w, k) => { const ph = hp + (mx - ns[k])*PG.cfg.lh, x = M + (k ? w0 + G : 0);
+      h += PG.photo(D, c[k].id, x, y, w, ph) + cp(c[k], `front.cap${k}`, x, y + ph + 6, w, ns[k]); });
+    y += hp + 6 + PG.capH(mx) + 14;
+    h += PG.para(K.intro, 'front.intro', M, y, W, pn, pl);
+    return h;
+  }
+
+  // ================= INSIDE LEFT: Cook, Gather =================
+  function left(){
+    const T = C.left || {}, TW = 196, cx = M + TW + 16, cw = W - TW - 16, yy = Y0 + 32;
+    let h = head(T, 'left');
+    h += `<div class="tint" style="left:${M}pt;top:${Y0}pt;width:${TW}pt;height:${801 - Y0}pt"></div>`;
+    h += sec(T.cook, 'left.cookhead', M + 10, Y0 + 12, TW - 20) + column(T.cookItems, 'left.cook', M + 10, yy, TW - 20, [1.5, 1], BOT);
+    h += sec(T.gather, 'left.gatherhead', cx, Y0 + 12, cw);
+    const g = T.gatherItems, nl = ln('left.gather0', 4), np = [1, 2].map(i => ln(`left.gather${i}`, 5)), mp = Math.max(...np);
+    const total = BOT - yy - (6 + PG.capH(nl)) - 14 - (6 + PG.capH(mp)), hl = Math.round(total*0.6), hp = total - hl, pw = (cw - G)/2;
+    h += PG.photo(D, g[0].id, cx, yy, cw, hl) + cp(g[0], 'left.gather0', cx, yy + hl + 6, cw, nl);
+    const y2 = yy + hl + 6 + PG.capH(nl) + 14;
+    [1, 2].forEach((i, k) => { const ph = hp + (mp - np[k])*PG.cfg.lh; h += PG.photo(D, g[i].id, cx + k*(pw + G), y2, pw, ph) + cp(g[i], `left.gather${i}`, cx + k*(pw + G), y2 + ph + 6, pw, np[k]); });
+    return h;
+  }
+
+  // ================= INSIDE RIGHT: Primary suite, Baths and bedrooms =================
+  function right(){
+    const T = C.right || {}, TW = 196, cx = M + TW + 16, cw = W - TW - 16, yy = Y0 + 32;
+    let h = head(T, 'right');
+    h += `<div class="tint" style="left:${M}pt;top:${Y0}pt;width:${TW}pt;height:${801 - Y0}pt"></div>`;
+    h += sec(T.prim, 'right.primhead', M + 10, Y0 + 12, TW - 20) + column(T.primItems, 'right.prim', M + 10, yy, TW - 20, [1.5, 1], BOT);
+    h += sec(T.bb, 'right.bbhead', cx, Y0 + 12, cw) + rows(T.bbItems, 'right.bb', cx, yy, cw, BOT, 2);
+    return h;
+  }
+
+  // ================= BACK =================
+  function back(){
+    const bp = hasPlan ? 'back.photo' : 'back.nphoto';
+    const B = C.back || {}, y1 = 602, H = y1 - Y0, around = B.around || [], ph0 = (B.photos || []).slice(0, 2);
+    let h = head(B, 'back'), BW = 300;
+    const rowH = 21, placesH = 18 + around.length*rowH + 4, boardH = H - placesH - 30;
+    if(hasPlan){ const pr = PG.plan(D, {x: 0, y: 0, w: 340, h: boardH - 26}); BW = Math.max(180, Math.min(340, Math.ceil(pr.used.w) + 16)); }
+    const TW = W - BW - 14, rx = M + TW + 14, px = M + 10, pw = TW - 20;
+    // left: the tinted Outside column, run to the bottom of the page behind the agent card, as on the inside pages (the owner 10/31)
+    h += `<div class="tint" style="left:${M}pt;top:${Y0}pt;width:${TW}pt;height:${801 - Y0}pt"></div>` + sec(B.outside || 'Outside', 'back.outsidehead', px, Y0 + 12, pw);
+    const ns = ph0.map((c, i) => ln(`${bp}${i}`, 5)), yy = Y0 + 32, avail = Y0 + H - 10 - yy;
+    const ph = ph0.length === 1 ? avail - 6 - PG.capH(ns[0]) : Math.floor((avail - 12 - ns.reduce((a, n) => a + 6 + PG.capH(n), 0))/2); let y = yy;
+    ph0.forEach((c, i) => { h += PG.photo(D, c.id, px, y, pw, ph) + cp(c, `${bp}${i}`, px, y + ph + 6, pw, ns[i]); y += ph + 6 + PG.capH(ns[i]) + 12; });
+    // right: the plan (a board as wide as the plan needs) or the room list, then the places around the house
+    h += sec(hasPlan ? B.planHead || 'Floor plan' : 'The rooms', 'back.planhead', rx, Y0 + 12, BW);
+    if(hasPlan){
+      h += `<div class="board" style="left:${rx}pt;top:${Y0 + 28}pt;width:${BW}pt;height:${boardH}pt"></div>`;
+      const pl = PG.plan(D, {x: rx + 6, y: Y0 + 34, w: BW - 12, h: boardH - 24});
+      issues.push(...pl.issues); h += pl.html;
+      h += `<div class="abs" style="left:${rx}pt;top:${Y0 + 28 + boardH - 14}pt;width:${BW}pt;height:10pt"><div class="pnote" data-slot="back.plannote" data-fine="1" data-lines="1">${esc(B.planNote || 'Approximate; not to scale.')}</div></div>`;
+    } else {
+      const rl = PG.roomList(D, B.rooms, 'back.floor', rx, Y0 + 30, BW, boardH - 20); h += rl.html;
+      if(rl.over) issues.push({slot: 'back.rooms', kind: 'room-list-overflow'});
+    }
+    const py = Y0 + 28 + boardH + 12;
+    h += sec(B.aroundHead, 'back.aroundhead', rx, py, BW) + PG.places(around, 'back.around', rx, py + 16, BW, rowH);
+    h += ContactCard.html([M, 616, W, 140], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', fine: B.footnote || ''});
+    return h;
+  }
+
+  const panels = {front: cover(), back: back(), left: left(), right: right()};
+  const panel = h => `<div class="panel">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.back)}</div><div class="half r">${panel(panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.left)}</div><div class="half r">${panel(panels.right)}</div></div>`;
+  } else {
+    for(const id of ['front','back','left','right']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  PG.fitTags();
+  document.querySelectorAll('#addr').forEach(el => { for(let fs = 40; fs >= 28; fs -= 1){ el.style.fontSize = fs + 'pt'; if(PG.textWidth(el) <= W - HWIDTH) break; } });
+  if(!D.fit) document.querySelectorAll('[data-cap]').forEach(PG.balance);
+  issues.push(...PG.fitPhotos(D));
+  ContactCard.fit(document);
+  document.body.dataset.version = D.version || `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  window.brochureCheck = () => PG.check(D, issues);
+})();
+</script>
+</body>
+</html>

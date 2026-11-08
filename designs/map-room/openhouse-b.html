@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · The Map Room open house flyer · Legend Band</title>
+<link rel="stylesheet" href="map-room.css">
+<script src="map-room.js"></script>
+<script src="../engine/setpieces.js"></script>
+<!--
+  The Map Room · Open House flyer b "Legend Band" (trim 612 x 792 pt; print: white margin around the white field).
+  The event in a navy band across the top (the label in tracked pale-blue caps, the date in the white serif as the largest type
+  on the page, the time, the broker / REALTOR(R) lines bottom right, only when filled). Under it the address with city, state and
+  ZIP, then the map-room legend: the whole house on the left, and beside it the fact numbers in a two by two grid, the square
+  bullet list "Worth a look" and the blue tag. A row of three captioned rooms (serif name, blue size line, a short caption)
+  closes the page above the standard contact card (Right panel), which carries the one logo.
+  Open House rules (templates/_shared/ohstandard.js): city, state and ZIP, no RSVP, no QR, no price. Copy: data.copy.pc.oh.b.
+-->
+<style>
+  .cc{--cc-paper:#ffffff;--cc-ink:#1d3557;--cc-muted:#5b6b82;--cc-accent:#1f6391;--cc-line:rgba(29,53,87,.22)}
+  .band{position:absolute;background:var(--ink)}
+  .oh-lbl{font:700 20pt/22pt var(--font-body);letter-spacing:3pt;text-transform:uppercase;color:#9cc4e6;white-space:nowrap;overflow:hidden}
+  .oh-date{font:400 50pt/56pt var(--font-display);letter-spacing:-.8pt;color:#fff;white-space:nowrap;overflow:hidden}
+  .oh-time{font:600 22pt/26pt var(--font-body);color:#fff;white-space:nowrap;overflow:hidden}
+  .oh-strong{font:600 10pt/13pt var(--font-body);color:#fff;text-align:right}
+  .oh-note{font:400 10pt/13pt var(--font-body);color:#cfe0f0;text-align:right}
+  .g2{position:absolute;display:grid;grid-template-columns:1fr 1fr;gap:10pt 0}
+  .g2 .f{border-left:.8pt solid var(--line);padding-left:10pt;min-width:0}
+  .g2 .f:nth-child(odd){border-left:0;padding-left:0}
+  .g2 .v{font:400 28pt/30pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden}
+  .g2 .l{font:700 8pt/10pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+  .blist div{font:600 9.5pt/13pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden;padding-left:11pt;position:relative}
+  .blist div:before{content:"";position:absolute;left:0;top:4pt;width:5pt;height:5pt;background:var(--accent)}
+  .tx9{font-size:9pt;line-height:11.5pt;color:var(--text)}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const esc = SP.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), C = (PC.oh || {}).b || {};
+  const issues = await SP.ready(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const O = SP.openHouse(D), X = 36, W = 540, bx = X + 18, bw = W - 36;
+  let h = '';
+
+  // the event in the navy band
+  let dy = 0;
+  const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note']].filter(l => l[0]);
+  let ev = '';
+  if(ls.length){ const pre = SP.eventLines(ls, 0, 0, 260, 13, 0); dy = Math.max(0, pre.h - 28); ev = SP.eventLines(ls, bx + bw - 260, 152 - pre.h + dy, 260, 13, 0).html; }
+  h += `<div class="band" data-blk="1" style="left:${X}pt;top:${X}pt;width:${W}pt;height:${126 + dy}pt"></div>`;
+  h += `<div class="abs oh-lbl" style="left:${bx}pt;top:48pt;width:${bw}pt;height:22pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
+  h += `<div class="abs oh-date" style="left:${bx - 2}pt;top:70pt;width:${bw + 2}pt;height:56pt" data-slot="oh.date" data-lines="1" data-fit="34">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${bx}pt;top:128pt;width:240pt;height:26pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  h += ev;
+
+  // the address, city, state and ZIP under it
+  const ay = 172 + dy;
+  h += `<div class="abs addr" style="left:${X - 1}pt;top:${ay}pt;width:${W}pt;height:38pt;font-size:34pt;line-height:38pt" data-slot="address" data-lines="1" data-fit="24">${esc(L.address)}</div>`;
+  h += `<div class="abs kick" style="left:${X}pt;top:${ay + 40}pt;width:${W}pt;height:10pt" data-slot="place" data-lines="1">${esc(SP.placeZip(L).toUpperCase())}</div>`;
+  h += `<div class="rule" style="left:${X}pt;top:${ay + 58}pt;width:${W}pt"></div>`;
+
+  // the legend: the whole house, and beside it the facts, the list and the tag
+  const T = ay + 70, HH = 266 - dy, HW = 330, rx = X + HW + 22, rw = W - HW - 22;
+  h += SP.photo(D, C.hero || 'front', X, T, HW, HH, 'oh.hero');
+  const fp = SP.factPairs(L, 6).filter(f => !/^Stor/.test(f[1]) && !/^Half/.test(f[1])).slice(0, 4);
+  h += `<div class="g2" style="left:${rx}pt;top:${T}pt;width:${rw}pt">${fp.map((f, i) => `<div class="f"><div class="v" data-slot="oh.fact${i}.v" data-lines="1">${esc(f[0])}</div><div class="l" data-slot="oh.fact${i}.l" data-lines="1">${esc(f[1])}</div></div>`).join('')}</div>`;
+  const ly = T + 104;
+  h += `<div class="rule" style="left:${rx}pt;top:${ly}pt;width:${rw}pt"></div>`;
+  h += `<div class="abs kick" style="left:${rx}pt;top:${ly + 8}pt;width:${rw}pt;height:10pt" data-slot="oh.listhead" data-lines="1">Worth a look</div>`;
+  h += `<div class="abs blist" style="left:${rx}pt;top:${ly + 24}pt;width:${rw}pt">${(C.items || []).slice(0, 5).map((t, i) => `<div style="margin-bottom:3pt" data-slot="oh.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div>`;
+  if(C.tag) h += `<div class="abs" style="left:${rx}pt;top:${T + HH - 16}pt;height:16pt"><span class="tag" data-slot="oh.tag" data-lines="1">${esc(C.tag)}</span></div>`;
+
+  // three captioned rooms
+  const cs = (C.caps || []).slice(0, 3), g = 10, pw = (W - 2*g)/3, py = T + HH + 14, pH = 70, LN = 4;
+  let row = '';
+  cs.forEach((c, i) => { const x = X + i*(pw + g);
+    row += SP.photo(D, c.id, x, py, pw, pH, 'oh.photo' + i);
+    row += `<div class="abs cap" style="left:${x}pt;top:${py + pH + 5}pt;width:${pw}pt"><div class="nm" style="font-size:12.5pt;line-height:15pt;height:15pt" data-slot="oh.cap${i}.t" data-lines="1">${esc(c.t)}</div><div class="sz" style="font-size:8.5pt;line-height:11pt;height:11pt" data-slot="oh.cap${i}.sz" data-lines="1">${esc(c.sz || '')}</div></div>`;
+    row += `<div class="abs tx9" style="left:${x}pt;top:${py + pH + 5 + 29}pt;width:${pw}pt" data-slot="oh.cap${i}" data-cap="1" data-row="oh" data-para="1" data-min="3">${esc(c.a)}</div>`; });
+  h += `<div class="abs" data-gapcheck="oh.row" style="left:0;top:0">${row}</div>`;
+
+  h += SP.card(D, [X, 682, W, 86], {layout: 'panel', fieldAccent: true});
+  h += `<div class="abs" style="left:${X}pt;top:773pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  await SP.finish(D, 612, 792, h, issues);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+/* Built-In Details: white paper, brick-red small caps and room sizes, serif titles over a hairline.
+   Fold-over only for now: 11 x 17 laid 17 wide, folding into four upright 8.5 x 11 pages. Lengths are pt (1/72 in). */
+:root{
+  --paper:#ffffff;
+  --ink:#222222;            /* titles, names */
+  --text:#3b3b3b;           /* body copy */
+  --signal:#a8322a;         /* brick: kickers, room sizes, section heads */
+  --accent:#a8322a;         /* contact card accent, plan tints */
+  --muted:#5a5a5a;
+  --line:rgba(168,50,42,.55);
+  --hair:rgba(34,34,34,.22);
+  --font-display:'Libre Baskerville',Georgia,'Times New Roman',serif;
+  --font-body:'Work Sans',Helvetica,Arial,sans-serif;
+  --cc-paper:#ffffff; --cc-ink:#222222; --cc-muted:#555555; --cc-accent:#a8322a; --cc-line:rgba(168,50,42,.45);
+  --m:29pt;
+}
+@font-face{font-family:'Libre Baskerville';font-weight:400;src:url(../../fonts/pool/libre-baskerville-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Libre Baskerville';font-weight:500;src:url(../../fonts/pool/libre-baskerville-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Libre Baskerville';font-weight:600;src:url(../../fonts/pool/libre-baskerville-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Libre Baskerville';font-weight:700;src:url(../../fonts/pool/libre-baskerville-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Work Sans';font-weight:400;src:url(../../fonts/pool/work-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Work Sans';font-weight:500;src:url(../../fonts/pool/work-sans-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Work Sans';font-weight:600;src:url(../../fonts/pool/work-sans-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Work Sans';font-weight:700;src:url(../../fonts/pool/work-sans-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+/* type */
+.kicker{font:600 8pt/10pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.title{font-family:var(--font-display);font-weight:400;font-size:21pt;line-height:27pt;height:27pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.hrule{position:absolute;left:var(--m);right:var(--m);height:.8pt;background:var(--line)}
+.body{font-size:9.5pt;line-height:13.5pt;color:var(--text);overflow:hidden}
+.sect{font:600 8pt/10pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.fine{font-size:6.5pt;line-height:8pt;color:var(--muted);overflow:hidden}
+
+/* photos */
+.ph{position:relative;overflow:hidden;background:#e6e3de;min-height:24pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+/* layout */
+.flow{position:absolute;left:var(--m);right:var(--m);display:flex;flex-direction:column;min-height:0}
+.row{display:flex;gap:8pt;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.spread{display:flex;gap:12pt;min-width:0;min-height:0;align-items:stretch}
+.spread > .ph{flex:none}
+.spread .txt{flex:1;min-width:0;display:flex;flex-direction:column}
+
+/* captions */
+.cap{flex:none;padding-top:6pt}
+.cap .h{font-family:var(--font-display);font-weight:400;font-size:11pt;line-height:14pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.cap .h i{font-family:var(--font-body);font-style:normal;font-weight:600;font-size:8pt;letter-spacing:.6pt;color:var(--signal);margin-left:7pt}
+.cap .a{font-size:8.5pt;line-height:11.5pt;color:var(--text);overflow:hidden;margin-top:2pt}
+.txt .h{font-family:var(--font-display);font-weight:400;font-size:15pt;line-height:19pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.txt .d{font:600 8pt/11pt var(--font-body);letter-spacing:.8pt;color:var(--signal);white-space:nowrap;overflow:hidden;margin-top:1pt}
+.txt .a{font-size:9pt;line-height:12.5pt;color:var(--text);overflow:hidden;margin-top:6pt}
+.txt .sh{font:600 8pt/11pt var(--font-body);letter-spacing:.8pt;color:var(--signal);white-space:nowrap;overflow:hidden;margin-top:12pt}
+.txt .a2{font-size:9pt;line-height:12.5pt;color:var(--text);overflow:hidden;margin-top:3pt}
+
+/* cover */
+.addr{position:absolute;left:var(--m);top:36pt;font-family:var(--font-display);font-weight:400;line-height:44pt;color:var(--ink);white-space:nowrap}
+.facts{display:flex;flex:none;border-top:.8pt solid var(--line);border-bottom:.8pt solid var(--line);margin-top:10pt}
+.facts .f{flex:1;padding:7pt 0 6pt 12pt;border-left:.6pt solid var(--hair)}
+.facts .f:first-child{border-left:0;padding-left:0}
+.facts .v{font-family:var(--font-display);font-size:16pt;line-height:20pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.facts .l{font:600 8pt/10pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+
+/* places */
+.places{flex:none;margin-top:9pt;border-top:.8pt solid var(--line);padding-top:6pt}
+.places .grid{display:grid;grid-template-columns:1fr 1fr 1fr;column-gap:16pt;margin-top:3pt}
+.places .pr{display:flex;justify-content:space-between;gap:8pt;font:500 8.5pt/13pt var(--font-body);color:var(--text);border-bottom:.5pt dotted var(--hair);white-space:nowrap}
+.places .pr b{font-weight:600;color:var(--signal);flex:none}
+.places .pr span{overflow:hidden}
+
+/* plan */
+.planframe{flex:none;border:.7pt solid var(--hair);background:#fff;position:relative}
+.planlayer{position:absolute;left:0;top:0;width:612pt;height:792pt;pointer-events:none;--paper:#fff;--ink:#222}
+.plan-svg{position:absolute;overflow:visible}
+.plan-room{position:absolute;text-align:center;font:400 8pt/9.5pt var(--font-body);color:var(--ink);white-space:nowrap}
+.plan-room b{display:block;font-weight:600;font-size:8pt;line-height:9.5pt}
+.plan-room span{display:block;color:var(--muted);font-size:8pt;line-height:9.5pt}
+.plan-level{text-align:center;font:600 9pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.plan-note{text-align:center;font:400 6.5pt/8pt var(--font-body);color:var(--muted);white-space:nowrap;overflow:hidden}
+.legend{position:absolute;right:10pt;top:7pt;text-align:right;font:600 8pt/10pt var(--font-body);color:var(--ink);white-space:nowrap}
+.plandisc{flex:none;text-align:center;white-space:nowrap;margin-top:4pt}
+
+/* pages */
+.page{position:relative;background:var(--paper);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+.panel{position:absolute;left:9pt;top:9pt;width:612pt;height:792pt}
+.half{position:absolute;top:0;height:810pt;width:621pt;overflow:hidden}
+.half.l{left:0}.half.r{left:621pt}
+.half.r .panel{left:0}
+
+/* tighter nearby-places table inside a text column; room-size table */
+.places.col{margin-top:10pt;padding-top:5pt}
+.places.col .grid{grid-template-columns:1fr;margin-top:2pt}
+.places.col .pr{font:500 8pt/11.5pt var(--font-body)}
+.places.sizes .pr{font:500 8.5pt/13pt var(--font-body)}

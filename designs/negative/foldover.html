@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Architectural Negative fold-over</title>
+<link rel="stylesheet" href="negative.css">
+<script src="negative.js"></script>
+<!--
+  BrochureDesk · Architectural Negative · 11 x 17 fold-over
+  11 x 17 sheet folded once across the middle: four landscape 11 x 8.5 panels (792 x 612 pt), 0.125 in (9 pt) bleed.
+    outside spread: back (turned 180, on top) over cover      inside spread: inside top over inside bottom
+  Black and white only: a solid black address band over the cover, black caption blocks under the small photos, bold grotesk headings.
+
+  Modes (data.mode):  proof  four panel pages, 810 x 630 pt each (trim + bleed)
+                      print  two spreads, 810 x 1242 pt, each half clipped at the fold
+
+  The floor plan is the agent's own drawing, placed as given (no redraw): data.plan.levels = [{name, src, w, h}].
+  With no plan the back's center column carries two more photos with captions (copy.back.center).
+  The cover photo keeps its own shape (3:2) so the whole house shows; the two stacked photos fill the space beside it.
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = NG.data(), esc = NG.esc; NG.fitMode = !!D.fit; NG.track = (D.copy || {}).track || {};
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  await NG.cardReady;
+  const mode = D.mode || 'proof', L = D.listing, A = D.agent || {}, b = D.brand || {}, C = D.copy || {}, issues = [];
+  await Promise.all(['700 10pt','800 10pt','900 10pt'].map(w => document.fonts.load(`${w} 'Archivo'`)).concat(['400 10pt','500 10pt','600 10pt'].map(w => document.fonts.load(`${w} 'Inter'`))));
+  document.body.dataset.mode = mode;
+  const hasPlan = !!(D.plan && D.plan.levels && D.plan.levels.length);
+  const hs = (D.photos||{})[A.headshot] ? D.photos[A.headshot].src : (A.headshot || '');
+  // line counts of the caption groups (the fit pass picks them with the copy; every caption of a group sets in the same number of lines)
+  const RANGE = {lead:[4,5], small:[3,5], row:[3,5], back:[3,5], bath:[4,8]}, LN = Object.assign({lead:4, small:4, row:4, back:4, bath:7}, C.lines || {});
+  const rg = g => D.fit ? RANGE[g] : null;
+  const fact = (v, l, i) => `<div class="f"><div class="v" data-slot="front.facts.${i}.v" data-lines="1">${esc(v)}</div><div class="l" data-slot="front.facts.${i}.l" data-lines="1">${esc(l)}</div></div>`;
+  const para = (slot, text, x, y, w, lines, fs, lh) => `<div class="abs body" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${lines*lh}pt;font-size:${fs}pt;line-height:${lh}pt${NG.tr(slot)}" data-slot="${slot}" data-lines="${lines}" data-cap="1">${esc(NG.txt(text))}</div>`;
+
+  // ================= COVER =================
+  function cover(){
+    const K = C.front || {}, st = K.stack || [];
+    let h = `<div class="band0"></div>`;
+    h += `<div class="abs addr" style="left:24pt;top:8pt;width:744pt;height:36pt" data-slot="front.address" data-lines="1">${esc(L.address)}</div>`;
+    h += `<div class="abs bandsub" style="left:24pt;top:46pt;width:744pt;height:11pt" data-slot="front.kicker" data-lines="1">${esc(K.kicker)}</div>`;
+    // one whole-house photo at its own shape, two photos stacked beside it; one full-width paragraph in L lines, the photos take the rest
+    const Ln = K.lines || 3, textTop = 598 - Ln*14, factsY = textTop - 67, phH = factsY - 10 - 72, bigW = Math.min(phH*1.5, 576), sx = bigW - 9;
+    h += NG.photo(D, K.photo, -9, 72, bigW, phH);
+    h += NG.photo(D, st[0], sx + 6, 72, 801 - sx - 6, (phH - 6)/2) + NG.photo(D, st[1], sx + 6, 72 + (phH - 6)/2 + 6, 801 - sx - 6, (phH - 6)/2);
+    const f = NG.facts(L);
+    h += `<div class="facts" style="left:24pt;top:${factsY}pt;width:744pt;height:40pt">${f.map((x, i) => fact(x.v, x.l, i)).join('')}</div>`;
+    h += NG.kick(K.introHead || 'About the house', 'front.introhead', 24, textTop - 15, 744) + para('front.intro', K.intro, 24, textTop, 744, Ln, 10, 14);
+    return h;
+  }
+
+  // ================= BACK =================
+  function back(){
+    const B = C.back || {}, R = B.right || {};
+    let h = NG.kick(B.kicker, 'back.kicker', 24, 26, 700) + NG.title(B.title, 'back.title', 24, 36) + NG.rule(24, 71, 744);
+    const nb = LN.back, bph = 182 - 6 - NG.capH(nb, 'plain'), bpitch = 182 + 8;
+    (B.left || []).slice(0, 2).forEach((c, i) => { const y = 84 + i*bpitch;
+      h += NG.photo(D, c.id, 24, y, 226, bph) + NG.cap(c, `back.left${i}`, 24, y + bph + 6, 226, nb, 'plain', rg('back')); });
+    // center: the agent's plan as given; with no plan, two more photos
+    if(hasPlan){
+      const pl = NG.plan(D, {x:258, y:84, w:270, h:346});
+      issues.push(...pl.issues); h += pl.html;
+      h += `<div class="abs body" style="left:258pt;top:436pt;width:270pt;height:22pt;font-size:8.5pt;line-height:11pt${NG.tr('back.plannote')}" data-slot="back.plannote" data-lines="2" data-cap="1">${esc(NG.txt(B.planNote))}</div>`;
+    } else {
+      (B.center || []).slice(0, 2).forEach((c, i) => { const y = 84 + i*bpitch;
+        const cph = 182 - 6 - NG.capH(3, 'plain');
+        h += NG.photo(D, c.id, 258, y, 270, cph) + NG.cap(c, `back.center${i}`, 258, y + cph + 6, 270, 3, 'plain'); });
+    }
+    // right: a front angle, the improvements headline and paragraph, the places nearby
+    const cx = 536, cw = 232, ph = R.photoH || 154, hy = 84 + ph + 6, ty = hy + 24, ky = ty + (R.textLines || 4)*12 + 10;
+    h += NG.photo(D, R.photo, cx, 84, cw, ph);
+    h += `<div class="abs hl" style="left:${cx}pt;top:${hy}pt;width:${cw}pt;height:20pt" data-slot="back.head" data-lines="1">${esc(R.head)}</div>`;
+    const tl = R.textLines || 4; h += para('back.text', R.text, cx, ty, cw, tl, 9, 12);
+    h += NG.kick(R.aroundHead || 'Around the neighborhood', 'back.nearhead', cx, ky, cw);
+    if(R.aroundText){ const al = Math.floor((456 - (ky + 14))/12); h += para('back.around', R.aroundText, cx, ky + 14, cw, al, 9, 12); }
+    else h += `<div class="abs nearby" style="left:${cx}pt;top:${ky + 14}pt;width:${cw}pt">${(R.nearby||[]).slice(0,3).map((x,i)=>`<div style="height:38pt"><div class="d${x.u === '' ? ' nm' : ''}" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}${x.u === '' ? '' : `<small>${esc(x.u || 'miles')}</small>`}</div><div class="p" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}</div>`;
+    // standard contact card and footer; it carries the one brokerage logo of the outside spread
+    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', brokerage: true, fine: B.footnote || ''});
+    return h;
+  }
+
+  // ================= INSIDE TOP =================
+  function top(){
+    const T = C.top || {}, ls = (T.leads || []).slice(0, 2), sm = (T.smalls || []).slice(0, 4);
+    let h = NG.kick(T.kicker || `${L.address} / ${T.kickerWord}`, 'top.kicker', 24, 26, 560) + NG.title(T.title, 'top.title', 24, 36, 560) + NG.logo(D, 588, 26, 180, 26, 'flex-end') + NG.rule(24, 71, 744);
+    const w = (744 - 8)/2;
+    const Hs = 118, cl = NG.capH(LN.lead, 'lead'), cs = NG.capH(LN.small, 'black'), H1 = 604 - 82 - 6 - cl - 10 - Hs - cs;
+    ls.forEach((c, i) => { const x = 24 + i*(w + 8);
+      h += NG.photo(D, c.id, x, 82, w, H1) + NG.cap(c, `top.lead${i}`, x, 82 + H1 + 6, w, LN.lead, 'lead', rg('lead')); });
+    const sw = (744 - 3*6)/4, sy = 82 + H1 + 6 + cl + 10;
+    sm.forEach((c, i) => { const x = 24 + i*(sw + 6);
+      h += NG.photo(D, c.id, x, sy, sw, Hs) + NG.cap(c, `top.small${i}`, x, sy + Hs, sw, LN.small, 'black', rg('small')); });
+    return h;
+  }
+
+  // ================= INSIDE BOTTOM =================
+  function bottom(){
+    const T = C.bottom || {}, P = T.primary || {}, bs = (T.baths || []).slice(0, 2), rw = (T.row || []).slice(0, 3);
+    let h = NG.kick(T.kicker || `${L.address} / ${T.kickerWord}`, 'bottom.kicker', 24, 26, 600) + NG.title(T.title, 'bottom.title', 24, 36, 744) + NG.rule(24, 71, 744);
+    const A_ = 236;
+    h += NG.photo(D, P.id, 24, 82, 322, A_);
+    h += `<div class="pblock" style="left:352pt;top:82pt;width:168pt;height:${A_}pt"><div class="pn" data-slot="bottom.primary.name" data-lines="1">${esc(P.name)}</div><div class="pd" data-slot="bottom.primary.tag" data-lines="1">${esc(P.tag)}</div><div class="pr"></div><div class="tx" data-slot="bottom.primary.text" data-lines="10" data-cap="1" style="height:150pt${NG.tr('bottom.primary.text')}">${esc(NG.txt(P.text))}</div></div>`;
+    const bh = (A_ - 8)/2;
+    bs.forEach((c, i) => { const y = 82 + i*(bh + 8);
+      h += NG.photo(D, c.id, 528, y, 96, bh) + NG.cap(c, `bottom.bath${i}`, 632, y, 136, LN.bath, 'side', rg('bath')); });
+    const w = (744 - 12)/3, y0 = 82 + A_ + 8, ph = 604 - NG.capH(LN.row, 'plain') - 6 - y0;
+    rw.forEach((c, i) => { const x = 24 + i*(w + 6);
+      h += NG.photo(D, c.id, x, y0, w, ph) + NG.cap(c, `bottom.row${i}`, x, y0 + ph + 6, w, LN.row, 'plain', rg('row')); });
+    return h;
+  }
+
+  const panels = {front: cover(), back: back(), top: top(), bottom: bottom()};
+  const panel = (cls, h) => `<div class="panel ${cls||''}">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside"><div class="half top">${panel('flip', panels.back)}</div><div class="half bottom">${panel('', panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside"><div class="half top">${panel('', panels.top)}</div><div class="half bottom">${panel('', panels.bottom)}</div></div>`;
+  } else {
+    for(const id of ['front','top','bottom','back']) html += `<div class="page" data-page="${id}">${panel('', panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  NG.fitLogos();
+  ContactCard.fit(document);
+  document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  window.brochureCheck = () => NG.check(D, issues);
+})();
+</script>
+</body>
+</html>

@@ -39,6 +39,9 @@
     {id: 'listing-flyer', label: 'Two-sided listing flyer', short: 'listing flyer', full: true},
   ];
   const HAS_FLYER = {};   // design id -> true once its pieces.json shows flyer-front and flyer-back
+  // Approved pieces go live as they are approved (owner 11/7/2026): a design's pieces.json lists only its approved pieces,
+  // and "comingSoon" names the piece types still in review. Those show "Coming soon" and can't be ordered.
+  const SOON = {}, SPEC_NOW = {};   // design id -> its coming-soon piece ids; design id -> its loaded pieces.json
   const IVORY_PANELS = [{id: 'front', label: 'Front'}, {id: 'back', label: 'Back'}, {id: 'top', label: 'Inside, top'}, {id: 'bottom', label: 'Inside, bottom'}];
   const COLORS = ['#1f4e5f', '#1F4D3F', '#1d3557', '#7a2e3a', '#3a3a3a', '#8a6a2f'];
   const STYLE_SAMPLE = {
@@ -177,10 +180,16 @@
   }
 
   // ---------- Agent home ----------
-  function piecesOf(p){
-    if(p.order.kind === 'full') return PIECES.filter(x => !x.full || HAS_FLYER[p.design]).map(x => x.id);
+  // the pieces this order asks for in design d (the flyer only with designs that have it or will)
+  function wanted(p, d){
+    d = d || p.design;
+    if(p.order.kind === 'full') return PIECES.filter(x => !x.full || HAS_FLYER[d] || (SOON[d] || []).includes(x.id)).map(x => x.id);
     return p.order.kind === 'essentials' ? ['open-house-flyer', 'postcard'] : [p.order.piece];
   }
+  // a piece is live in a design when the design can draw it (approved); unknown until its pieces.json loads
+  const hasPiece = (p, d, lid) => !SPEC_NOW[d] || !!partsFor(SPEC_NOW[d], lid, p);
+  function piecesOf(p, d){ d = d || p.design; return wanted(p, d).filter(lid => hasPiece(p, d, lid)); }
+  const soonOf = (p, d) => { d = d || p.design; return wanted(p, d).filter(lid => !hasPiece(p, d, lid)); };
   const pieceLabel = id => (PIECES.find(x => x.id === id) || {label: id}).label;
   function windows(p){
     if(!p.paid) return null;
@@ -731,9 +740,33 @@
 
   // ---------- designs, pieces, data for the templates ----------
   const spec = id => specs[id] || (specs[id] = fetch(`/designs/${id}/pieces.json`).then(r => r.json()).then(S => {
-    const ids = new Set(S.pieces.map(x => x.id)); HAS_FLYER[id] = ids.has('flyer-front') && ids.has('flyer-back'); return S; }));
+    const ids = new Set(S.pieces.map(x => x.id)); HAS_FLYER[id] = ids.has('flyer-front') && ids.has('flyer-back');
+    S.design = S.design || id; SOON[id] = S.comingSoon || []; SPEC_NOW[id] = S; return S; }));
   const tpl = (id, file) => tpls[id + '/' + file] || (tpls[id + '/' + file] = fetch(`/designs/${id}/${file}`).then(r => r.text()));
   const example = id => examples[id] || (examples[id] = fetch(`/designs/${id}/copy-example.json`).then(r => r.ok ? r.json() : null));
+  // A design's example copy is another house: where it names that house's photos ("front", "kitchen", "pv2"; listed with
+  // their tags in copy-example.json "photos"), each becomes this package's photo of the same room if there is one, else the
+  // next one not used yet. The same sample photo always becomes the same package photo.
+  function photoMap(ex, ids){
+    const words = s => String(s || '').toLowerCase().match(/[a-z]+/g) || [], used = new Set(), out = {};
+    const info = id => { const ph = pkg.photos[+String(id).slice(1)] || {}; return ' ' + words([ph.role, ph.room, ph.desc].join(' ')).join(' ') + ' '; };
+    for(const [eid, t] of Object.entries((ex && ex.photos) || {})){
+      const key = words(String(t).split(',')[0]).filter(w => !/^(room|area|the|of|and|view|a|an)$/.test(w));
+      const free = ids.filter(id => !used.has(id));
+      const hit = (key.length && (free.find(id => key.every(w => info(id).includes(' ' + w))) || free.find(id => info(id).includes(' ' + key[0]))))
+        || free[0] || ids[0];
+      used.add(hit); out[eid] = hit;
+    }
+    return out;
+  }
+  const mapIds = (v, m) => typeof v === 'string' ? (m[v] || v) : Array.isArray(v) ? v.map(x => mapIds(x, m))
+    : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, mapIds(x, m)])) : v;
+  async function exampleFor(id, ids){
+    const ex = await example(id);
+    if(!ex || !ex.photos) return ex;
+    const m = photoMap(ex, ids);
+    return {copy: mapIds(ex.copy, m), companion: mapIds(ex.companion || {}, m)};
+  }
   const fontSpec = id => fontSpecs[id] || (fontSpecs[id] = fetch(`/designs/${id}/fonts.json`).then(r => r.ok ? r.json() : null).catch(() => null));
   // The parts one logical piece is drawn from, in this design (null when the design doesn't have the piece).
   function partsFor(S, lid, p){
@@ -817,19 +850,20 @@
   // the photo placed there and a line about that room; other text gets a line about what that part will say.
   async function previewCopy(designId, ids){
     await PT.load();
-    const ex = await example(designId), base = {copy: draftCopy(ids), companion: draftCompanion(ids)};
+    const ex = await exampleFor(designId, ids), base = {copy: draftCopy(ids), companion: draftCompanion(ids)};
     if(!ex || !ex.copy) return base;
     const rest = ids.length > 1 ? ids.slice(1) : ids; let n = 0, seed = 0, first = true;
     const roomOf = id => { const ph = pkg.photos[+String(id).slice(1)]; return (ph && ph.room) || 'room'; };
     const at = (o, path) => path.reduce((v, k) => v == null ? v : v[k], o);
     const KEEP = /^(location|stats|variant|footnote|planDisclosures|flyerPhotos|eyebrow|fineprint|stat\d)$/;
+    const FACTY = /\d|flood|never|\bnew\b|updated|replaced|renovat|remodel|roof|foundation|hvac|solar|pool|acre|original|restored/i;
     const TEXT = {kicker: 'kicker', title: 'headline', q: 'headline', heading: 'headline', intro: 'intro', summary: 'summary', notes: 'summary', body: 'feature',
       a: 'feature', detail: 'feature', locationBody: 'location', locationTitle: 'heading:Location', nearbyTitle: 'heading:Nearby'};
     function walk(v, path, group){
       const key = path[path.length - 1], b = at(base, path);
       if(typeof key === 'string' && KEEP.test(key)) return b !== undefined ? b : v;
       if(Array.isArray(v)){
-        if(v.every(x => typeof x === 'string') && /photos$/i.test(key)) return b !== undefined ? b : [];
+        if(v.every(x => typeof x === 'string') && /photos$/i.test(key)) return b !== undefined ? b : v.filter(x => ids.includes(x));
         return v.map((x, i) => walk(x, path.concat(i), group));
       }
       if(v && typeof v === 'object'){
@@ -849,7 +883,8 @@
       if(room && key === 'lead') return '';
       if(room && /^(body|a|detail|notes)$/.test(key)) return PT.line(room, len, seed++);
       const t = TEXT[key];
-      if(!t) return b !== undefined ? b : v.length < 24 ? v : PT.line('feature', len, seed++);
+      // a short label stays; a short fact from the example's house (a size, "Never flooded", "New roof") never shows on this one
+      if(!t) return b !== undefined ? b : ids.includes(v) ? v : v.length < 24 ? (FACTY.test(v) ? 'To come' : v) : PT.line('feature', len, seed++) || 'To come';
       if(t.startsWith('heading:')) return t.slice(8);
       if(t === 'kicker') return v;
       return PT.line(t, len, seed++);
@@ -880,7 +915,7 @@
   async function drawParts(box, designId, parts, data, onReady){
     await photosReady;
     const html = {};
-    for(const pt of parts) html[pt.piece.file] = html[pt.piece.file] || await tpl(designId, pt.piece.file);
+    for(const pt of parts) if(!pt.soon) html[pt.piece.file] = html[pt.piece.file] || await tpl(designId, pt.piece.file);
     const have = [...box.querySelectorAll(':scope > figure')];
     if(have.length !== parts.length){ box.innerHTML = parts.map(pt => `<figure><div class="sheet"></div><figcaption></figcaption></figure>`).join(''); }
     // resolves once every page has laid out: right after a design switch the fill pass used to measure the old design's
@@ -890,6 +925,10 @@
       const pt = parts[i], s = fig.querySelector('.sheet');
       let done; ready.push(new Promise(r => { done = r; setTimeout(r, 20000); }));
       fig.querySelector('figcaption').textContent = parts.length > 1 ? pt.label : '';
+      if(pt.soon){   // a piece of this design that isn't approved yet
+        const old = s.querySelector('iframe'); if(old){ ro.unobserve(s); old.remove(); }
+        s.classList.add('soon'); s.style.height = ''; s.innerHTML = '<span>Coming soon</span>'; done(); return; }
+      s.classList.remove('soon'); if(!s.querySelector('iframe')) s.innerHTML = '';
       s.dataset.panel = pt.panel || '';
       const d = pt.piece.kind === 'foldover' ? Object.assign({}, data, {mode: 'proof'}) : Object.assign({}, data, {mode: 'email', piece: pt.piece});
       let fr = s.querySelector('iframe');
@@ -904,11 +943,13 @@
   }
 
   // ---------- 2. gallery ----------
-  async function eligible(){
+  // designs with at least one piece of this order live; with `soon`, also designs where every piece asked for is coming soon
+  async function eligible(soon){
     const out = [];
     for(const d of designs){
-      const S = await spec(d.id); S.design = d.id;
-      if(piecesOf(pkg).filter(lid => lid !== 'listing-flyer').every(lid => partsFor(S, lid, pkg))) out.push({d, S});   // the flyer comes with designs that have it
+      const S = await spec(d.id); S.design = S.design || d.id;
+      const live = piecesOf(pkg, d.id), later = soonOf(pkg, d.id).filter(lid => SOON[d.id].includes(lid));
+      if(live.length) out.push({d, S, live, later}); else if(soon && later.length) out.push({d, S, live, later});
     }
     return out;
   }
@@ -920,15 +961,17 @@
     // personalized designs: any already in the account come first; for now the offer
     $('#personal').innerHTML = `<div class="offer"><h3>Want your own design?</h3><p>We'll build a full matching set around your brand and keep it in your account.</p>
       <p><a href="/own-design/?as=agent">See how it works</a></p></div>`;
-    const list = await eligible();
-    $('#sets').innerHTML = list.map(({d}) => `<div class="dset" data-design="${d.id}"><div class="row"><h3>${esc(d.name)}${d.test ? '<span class="badge">test</span>' : ''}</h3>
-      <button class="btn" type="button" data-use="${d.id}">Use this design</button></div><div class="minis${ps.length === 1 ? ' one' : ''}"></div></div>`).join('')
+    const list = await eligible(true);
+    $('#sets').innerHTML = list.map(({d, live, later}) => `<div class="dset${live.length ? '' : ' grayed'}" data-design="${d.id}"><div class="row"><h3>${esc(d.name)}${d.test ? '<span class="badge">test</span>' : ''}</h3>
+      <button class="btn" type="button" data-use="${d.id}"${live.length ? '' : ' disabled'}>Use this design</button></div><div class="minis${live.length + later.length === 1 ? ' one' : ''}"></div>
+      ${later.length ? `<p class="fine soonline">Coming soon in this design: ${later.map(pieceLabel).join(', ')}</p>` : ''}</div>`).join('')
       || '<p class="empty">No design has this piece yet.</p>';
-    for(const {d, S} of list){
-      const parts = ps.map(lid => partsFor(S, lid, pkg)[0]);
+    for(const {d, S, live, later} of list){
+      const ids = wanted(pkg, d.id).filter(lid => live.includes(lid) || later.includes(lid));
+      const parts = ids.map(lid => live.includes(lid) ? partsFor(S, lid, pkg)[0] : {piece: {file: null}, soon: true});
       const box = $(`.dset[data-design="${d.id}"] .minis`);
-      drawParts(box, d.id, parts.map((pt, i) => Object.assign({}, pt, {label: pieceLabel(ps[i])})), await dataFor(d.id, false));
-      box.querySelectorAll('figcaption').forEach((c, i) => c.textContent = pieceLabel(ps[i]));
+      drawParts(box, d.id, parts.map((pt, i) => Object.assign({}, pt, {label: pieceLabel(ids[i])})), await dataFor(d.id, false));
+      box.querySelectorAll('figcaption').forEach((c, i) => c.textContent = pieceLabel(ids[i]));
     }
     // plan-only designs (Room Proportions) are made for homes with a floor plan
     const hasPlan = !!(pkg.floorPlan && pkg.floorPlan.active);
@@ -1189,7 +1232,8 @@
     show('vRough');
     const ps = piecesOf(pkg);
     roughPiece = start || (ps.includes(roughPiece) ? roughPiece : ps[0]);   // full package opens on the fold-over
-    $('#roughPiece').innerHTML = ps.map(id => `<option value="${id}"${id === roughPiece ? ' selected' : ''}>${pieceLabel(id)}</option>`).join('');
+    $('#roughPiece').innerHTML = ps.map(id => `<option value="${id}"${id === roughPiece ? ' selected' : ''}>${pieceLabel(id)}</option>`).join('')
+      + soonOf(pkg).filter(id => (SOON[pkg.design] || []).includes(id)).map(id => `<option disabled>${pieceLabel(id)} (Coming soon)</option>`).join('');
     $('#roughTitle').textContent = `Rough draft: ${pkg.listing.address}`;
     $('#copyStyle').value = pkg.copyStyle; $('#styleSample').textContent = `Sounds like: "${STYLE_SAMPLE[pkg.copyStyle]}"`;
     swatches(); await designTabs(); drawStrip(); await fontBox(); planControls(); await drawRough();
@@ -1331,9 +1375,9 @@
     tick(); const timer = setInterval(tick, 9000);
     const planDone = redrawPlan();   // runs while the copy is written
     try {
-      const ex = await example(pkg.design);
-      const d = await dataFor(pkg.design, false);
       const arr = arrangement(pkg, pkg.design);
+      const ex = await exampleFor(pkg.design, arr.map(i => 'p' + i));
+      const d = await dataFor(pkg.design, false);
       const body = {action: 'write', packageId: pkg.id, design: pkg.design, style: pkg.copyStyle, listing: pkg.listing,
         photos: Object.fromEntries(arr.map(i => ['p' + i, pkg.photos[i].desc || ''])),
         allPhotos: Object.fromEntries(pkg.photos.map((p, i) => ['p' + i, [p.room, p.desc].filter(Boolean).join(': ')])),
@@ -1463,7 +1507,7 @@
         if(!pkg.master){ say(`This package was written before designs could switch, so ${name} needs its own writing. Use Back to the rough draft and Finalize again.`); return; }
         say(`Fitting your copy to ${name}…`);
         await PT.load();
-        const ex = await example(id), ids = arrangement(pkg, id).map(i => 'p' + i);
+        const ids = arrangement(pkg, id).map(i => 'p' + i), ex = await exampleFor(id, ids);
         // a design with more photo spots than the package has photos borrows from the listing's other photos (the
         // picker's lower box) before it repeats any; only the ones it places join the package
         const more = (pkg.morePhotos || []).filter(m => !pkg.photos.some(p => p.url === m.url));

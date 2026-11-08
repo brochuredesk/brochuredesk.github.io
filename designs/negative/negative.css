@@ -1,0 +1,105 @@
+/* Architectural Negative: set style file. Black and white only, bold grotesk headings, solid black blocks.
+   Landscape 11 x 17 half-fold (fold "horizontal": panels stack). Lengths are pt (1/72 in). */
+:root{
+  --paper:#ffffff;
+  --ink:#000000;            /* titles, names, rules, black blocks */
+  --text:#1c1c1c;           /* body copy */
+  --muted:#555555;
+  --accent:#000000;         /* the contact card stripe and small labels stay black */
+  --line:rgba(0,0,0,.28);
+  --font-display:'Archivo',Helvetica,Arial,sans-serif;
+  --font-body:'Inter',Helvetica,Arial,sans-serif;
+  --m:24pt;
+}
+@font-face{font-family:'Archivo';font-weight:600;src:url(../../fonts/pool/archivo-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Archivo';font-weight:700;src:url(../../fonts/pool/archivo-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Archivo';font-weight:800;src:url(../../fonts/pool/archivo-latin-800-normal.woff2) format('woff2')}
+@font-face{font-family:'Archivo';font-weight:900;src:url(../../fonts/pool/archivo-latin-900-normal.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-weight:400;src:url(../../fonts/pool/inter-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-weight:500;src:url(../../fonts/pool/inter-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-weight:600;src:url(../../fonts/pool/inter-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-weight:700;src:url(../../fonts/pool/inter-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+.page{position:relative;background:var(--paper);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+body[data-mode=proof] .page{width:810pt;height:630pt}
+body[data-mode=print] .page{width:810pt;height:1242pt}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+@media print{body[data-mode=proof] .page{page:proof}body[data-mode=print] .page{page:spread}}
+@page proof{size:810pt 630pt}
+@page spread{size:810pt 1242pt}
+.panel{position:absolute;width:792pt;height:612pt;left:9pt;top:9pt}
+.half{position:absolute;left:0;width:810pt;height:621pt;overflow:hidden}
+.half.top{top:0}.half.bottom{top:621pt}
+.half.top .panel{top:9pt}.half.bottom .panel{top:0}
+.half .panel.flip{transform:rotate(180deg);transform-origin:396pt 306pt}
+
+/* type */
+.kick{font:800 8pt/10pt var(--font-display);letter-spacing:1.6pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;overflow:hidden}
+.title{font:800 27pt/32pt var(--font-display);letter-spacing:-.4pt;color:var(--ink);overflow:hidden}
+.title.one{white-space:nowrap}
+.rule{position:absolute;height:1pt;background:var(--ink)}
+.rule.hair{height:.6pt;background:var(--line)}
+.body{font-size:9.5pt;line-height:13pt;color:var(--text);overflow:hidden}
+
+/* photos */
+.ph{position:absolute;overflow:hidden;background:#ddd;flex:none}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.logo{position:absolute;display:flex;align-items:center;justify-content:flex-end}
+.logo img{display:block}
+
+/* captions */
+.cap{overflow:hidden}
+.cap .nm{font:800 12pt/14pt var(--font-display);letter-spacing:-.1pt;color:var(--ink);white-space:nowrap;overflow:hidden;height:14pt}
+.cap .nm span{font-weight:600;letter-spacing:0;color:var(--muted);margin-left:6pt;font-size:10pt}
+.cap .tx{font-size:9pt;line-height:12pt;color:var(--text);overflow:hidden;margin-top:2pt}
+.cap.k-lead .nm{font-size:17pt;line-height:20pt;height:20pt;letter-spacing:-.3pt}
+.cap.k-lead .nm span{font-size:13pt;margin-left:8pt}
+.cap.k-side .nm{font-size:11pt;line-height:13pt;height:13pt}
+.cap.k-side .nm span{display:none}
+.cap.k-black{background:#000;padding:9pt 9pt;color:#fff}
+.cap.k-black .nm{font-size:10.5pt;line-height:13pt;height:13pt;color:#fff}
+.cap.k-black .nm span{color:#bdbdbd;font-size:8.5pt;margin-left:5pt}
+.cap.k-black .tx{font-size:8.5pt;line-height:11pt;color:#f2f2f2;margin-top:3pt}
+
+/* cover */
+.band0{position:absolute;left:-9pt;top:-9pt;width:810pt;height:75pt;background:#000}
+.addr{font:900 33pt/36pt var(--font-display);letter-spacing:.2pt;text-transform:uppercase;color:#fff;white-space:nowrap;overflow:hidden}
+.bandsub{font:700 8.5pt/11pt var(--font-display);letter-spacing:1.8pt;text-transform:uppercase;color:#fff;white-space:nowrap;overflow:hidden}
+.facts{position:absolute;display:flex;border-top:2.5pt solid #000}
+.facts .f{flex:1;padding-top:4pt;border-left:.6pt solid var(--line);padding-left:12pt}
+.facts .f:first-child{border-left:0;padding-left:0}
+.facts .v{font:900 22pt/24pt var(--font-display);letter-spacing:-.4pt;color:#000;white-space:nowrap;overflow:hidden}
+.facts .l{font:700 8pt/11pt var(--font-display);letter-spacing:1.4pt;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden}
+.vrule{position:absolute;width:.6pt;background:var(--line)}
+
+/* inside */
+.pblock{position:absolute;background:#000;color:#fff;padding:13pt 13pt}
+.pblock .pn{font:900 19pt/21pt var(--font-display);letter-spacing:.4pt;text-transform:uppercase;white-space:nowrap;overflow:hidden;height:21pt}
+.pblock .pd{font:700 11pt/14pt var(--font-display);margin-top:2pt;white-space:nowrap;overflow:hidden;height:14pt;color:#fff}
+.pblock .pr{height:.8pt;background:rgba(255,255,255,.55);margin:8pt 0 7pt}
+.pblock .tx{font-size:10.5pt;line-height:15pt;color:#f2f2f2;overflow:hidden}
+
+/* back */
+.hl{font:900 17pt/20pt var(--font-display);letter-spacing:-.2pt;text-transform:uppercase;color:#000;white-space:nowrap;overflow:hidden}
+.nearby .d{font:900 20pt/22pt var(--font-display);letter-spacing:-.3pt;color:#000;white-space:nowrap;overflow:hidden}
+.nearby .d small{font:700 8pt/10pt var(--font-display);letter-spacing:1.3pt;text-transform:uppercase;margin-left:4pt;color:var(--muted)}
+.nearby .d.nm{font-size:15pt;letter-spacing:-.2pt}
+.nearby .p{font:600 9.5pt/12pt var(--font-body);color:var(--text);white-space:nowrap;overflow:hidden}
+.nearby>div{border-top:.6pt solid var(--line);padding-top:4pt}
+.plan{position:absolute}
+.plan.lv{position:absolute;overflow:visible}
+.plan.lv .in{position:absolute}
+.plan.lv img{display:block;width:100%;height:100%}
+.plan.flr{position:absolute;text-align:center;font:800 8pt/10pt var(--font-display);letter-spacing:1.4pt;text-transform:uppercase;color:#000;white-space:nowrap;overflow:hidden}
+
+.rooms>div{display:flex;justify-content:space-between;align-items:baseline;border-top:.6pt solid var(--line);line-height:13pt;font-size:9.5pt}
+.rooms>div:first-child{border-top:0}
+.rooms .l{font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden}
+.rooms .v{font-weight:600;color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums}

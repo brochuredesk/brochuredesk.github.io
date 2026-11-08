@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Survey Book open house flyer</title>
+<link rel="stylesheet" href="survey-book.css">
+<link rel="stylesheet" href="survey-book-cards.css">
+<script src="../engine/baths.js"></script>
+<script src="survey-book.js"></script>
+<script src="survey-book-cards.js"></script>
+<!--
+  The Survey Book · Open House flyer "The Plat Sheet" (trim 612 x 792 pt; print: 0.25 in white margin around the white field).
+  The event leads in the book's steel blue on white: the label in tracked blue caps, the date as the largest type on the page
+  (Spectral), the time in blue, and the broker / REALTOR(R) lines (only on those opens, only when filled; refreshments in a ruled
+  white box) beside it, under the book's double rule. Then the whole house inside survey corner marks, the address with city, state and
+  ZIP over it and the facts stacked beside it, and two rooms from the inside, captioned the way the book captions them (name in
+  Spectral, size in blue caps). The standard contact card closes the page.
+  Rules: no RSVP, no QR, no price. Copy: data.copy.pc.oh = {photos: [front, room, room], rooms: [{t, dims, a}, {t, dims, a}]}.
+-->
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = AT.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = AT.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), OHC = PC.oh || {};
+  const issues = await AT.fontsReady(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const O = AT.openHouse(D), X = 36, W = 540;
+  const hero = (OHC.photos || [])[0] || 'front';
+  let h = '';
+
+  // the event
+  h += `<div class="abs oh-lbl" style="left:${X}pt;top:30pt;width:${W}pt;height:26pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
+  if(O.weekday) h += `<div class="abs oh-date" id="date" style="left:${X-1}pt;top:56pt;width:${W}pt;height:68pt;font-size:56pt;line-height:68pt" data-slot="oh.date" data-lines="1">${esc(O.long)}</div>`;
+  else h += `<div class="abs oh-date" style="left:${X}pt;top:60pt;width:${W}pt;height:64pt;font-size:34pt;line-height:32pt;white-space:normal" data-slot="oh.date" data-lines="2">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X}pt;top:126pt;width:300pt;height:32pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  let dy = 0;   // the optional broker / REALTOR(R) lines sit right of the time; more than two lines and the header grows, the photo gives up the difference
+  { const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note box']].filter(l => l[0]);
+    if(ls.length){ const pre = AT.eventLines(ls, 308, 0, 268, 16, 8); dy = Math.max(0, pre.h - 32); h += AT.eventLines(ls, 308, 158 - pre.h + dy, 268, 16, 8, 'text-align:right').html; } }
+  h += `<div class="hrule" style="top:${166 + dy}pt;left:${X}pt;right:${X}pt"></div>`;
+
+  // the whole house, then the address and the facts
+  // long broker / REALTOR(R) lines take header height; when the photo could no longer hold the whole house, the two rooms give their space to it
+  // the house frame is only as tall as the whole house needs (house box + a little margin); the rest goes to the two room photos
+  const hp = (D.photos || {})[hero] || {}, bx = hp.box, avail = 276 - dy;
+  let fh = bx && hp.w ? Math.max(170, W*(hp.h/hp.w)*((bx[3] - bx[1]) + .012)) : avail;
+  let rh = 83 + avail - fh + 4;
+  if(rh > 112){ fh += rh - 112; rh = 112; }
+  const noRooms = rh < 83; if(noRooms){ fh = avail + 137; }
+  const hh = fh + 4, hb = 174 + dy + hh;
+  h += AT.photo(D, hero, `position:absolute;left:${X}pt;top:${178 + dy}pt;width:${W}pt;height:${hh - 4}pt`, 'oh.hero', 'hero');
+  h += `<div class="corners" style="left:${X}pt;top:${178 + dy}pt;width:${W}pt;height:${hh - 4}pt"></div>`;
+  h += `<div class="abs kicker" style="left:${X}pt;top:${hb + 8}pt;width:380pt;height:10pt" data-slot="place" data-lines="1">${esc([L.neighborhood, AT.placeZip(L)].filter(Boolean).join(' · ').toUpperCase())}</div>`;
+  h += `<div class="abs dsp" id="addr" style="left:${X-1}pt;top:${hb + 20}pt;width:370pt;height:42pt;font-size:38pt;line-height:42pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
+  { const f = AT.stats(L); h += `<div class="abs stk r" style="left:420pt;top:${hb + 4}pt;width:156pt;height:56pt">${[0,1,2,3].map(i => `<div data-slot="oh.facts${i}" data-lines="1">${AT.halfy(f[i] || AT.fifth(L))}</div>`).join('')}</div>`; }
+  h += `<div class="hrule" style="top:${hb + 64}pt;left:${X}pt;right:${X}pt"></div>`;
+
+  // two rooms from the inside
+  const rooms = OHC.rooms || [], ids = (OHC.photos || []).slice(1, 3), gap = 12, pw = (W - gap)/2, ry = hb + 72;
+  if(!noRooms) ids.forEach((id, i) => { const c = rooms[i] || {}, x = X + i*(pw + gap);
+    h += AT.photo(D, id, `position:absolute;left:${x}pt;top:${ry}pt;width:${pw}pt;height:${rh.toFixed(2)}pt`, 'oh.room' + i, 'room');
+    h += `<div class="abs cap2" style="left:${x}pt;top:${(ry + rh).toFixed(2)}pt;width:${pw}pt"><div class="h" data-slot="oh.room${i}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="oh.room${i}.body" data-para="1" data-min="2" data-lines="2">${esc(c.a)}</div></div>`; });
+
+  h += AT.cardBox(D, [X, 662, W, 94], {layout: 'panel'});
+  h += `<div class="abs fine" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;white-space:nowrap" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  const f = AT.frame(D, 612, 792, h);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await AT.settle();
+  document.querySelectorAll('#date').forEach(el => AT.fitLine(el, 40));
+  AT.fitLine(document.getElementById('addr'), 28);
+  issues.push(...AT.fitHouse(D));
+  AT.fitRow([...document.querySelectorAll('.cap2 .a')]);
+  ContactCard.fit(document);
+  window.photoPlacements = AT.placements;
+  window.brochureCheck = () => AT.checkSingle(D, issues);
+})();
+</script>
+</body>
+</html>

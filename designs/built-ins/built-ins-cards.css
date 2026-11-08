@@ -1,0 +1,50 @@
+/* Built-In Details: Open House flyer and postcards (single pages). Loads after built-ins.css. */
+.page.sg{background:#fff}
+.field{position:absolute;background:var(--paper)}
+.sheet{position:absolute}
+.logo{display:flex;align-items:center;justify-content:flex-end;overflow:hidden}
+.logo img{display:block;width:auto;height:auto}
+.oh-lbl{font:600 22pt/26pt var(--font-body);letter-spacing:3.2pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.oh-date{font-family:var(--font-display);font-weight:400;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.3pt}
+.oh-time{font:600 22pt/30pt var(--font-body);letter-spacing:.4pt;color:var(--signal);white-space:nowrap;overflow:hidden}
+.oh-strong{font:600 11pt/14pt var(--font-body);color:var(--ink);overflow:hidden;letter-spacing:.2pt}
+.oh-note{font:500 11pt/14pt var(--font-body);color:var(--text);overflow:hidden;letter-spacing:.2pt}
+.oh-box{border:.8pt solid var(--signal);background:#fff;padding:3pt 8pt;box-sizing:border-box}
+.dsp{font-family:var(--font-display);font-weight:400;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.2pt}
+.ptxt{font-size:9.5pt;line-height:13.5pt;color:var(--text);overflow:hidden}
+.jt{text-align:justify;text-align-last:left;hyphens:none}
+/* the four facts: a serif value over a brick small-caps label, between hairlines */
+.fx{display:grid;grid-template-columns:1fr 1fr;column-gap:12pt;row-gap:0}
+.fx .c{border-top:.6pt solid var(--hair);padding-top:3pt}
+.fx .v{font-family:var(--font-display);font-size:15pt;line-height:17pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.fx .l{font:600 8pt/10pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+/* postcards */
+.rc{display:flex;flex-direction:column;justify-content:space-between}
+.head{font-family:var(--font-display);font-weight:400;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.6pt}
+.pst{display:flex;flex-direction:column}
+.pst .r{display:flex;justify-content:space-between;align-items:baseline;border-top:.6pt solid var(--hair);padding:2.5pt 0;white-space:nowrap}
+.pst .r b{font-family:var(--font-display);font-weight:400;font-size:12pt;line-height:15pt;color:var(--ink)}
+.pst .r i{font:600 8pt/10pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--signal);font-style:normal}
+.mailg{position:absolute}
+.mailg .guide{position:absolute;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#9a958b;text-transform:uppercase;white-space:nowrap}
+.mailg.stamp{border:.75pt dashed #b9b4aa;text-align:center;padding-top:36pt;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#9a958b;text-transform:uppercase}
+.mailg .aline{position:absolute;height:.75pt;background:#d9d5cc}
+.bnd{position:absolute;background:var(--signal)}
+.bst{display:flex;align-items:center;white-space:nowrap;overflow:hidden;color:#fff}
+.bst .st{font-family:var(--font-display);font-weight:400;font-size:23pt;line-height:30pt;letter-spacing:-.2pt}
+.bst .ln{flex:1;height:.8pt;background:#fff;opacity:.55;margin:0 10pt;min-width:12pt}
+.bst .ad{font:600 8.5pt/10pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:#f6dcd6}
+.bst .ret{font:400 8pt/9.5pt var(--font-body);color:#fff;white-space:nowrap}
+.bst .ret b{font-weight:600;letter-spacing:.5pt;text-transform:uppercase}
+.bcap .h{font-family:var(--font-display);font-size:10pt;line-height:13pt;color:var(--ink);white-space:nowrap;overflow:hidden;padding-top:5pt}
+.bcap .h i{font-family:var(--font-body);font-style:normal;font-weight:600;font-size:8pt;letter-spacing:.6pt;color:var(--signal);margin-left:6pt}
+.bcap .a{font-size:8.5pt;line-height:11.5pt;color:var(--text);overflow:hidden;margin-top:1pt}
+.slab{position:absolute;background:var(--ink);color:#fff;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.slab .big{font-family:var(--font-display);font-size:13pt;line-height:17pt}
+.slab .sub{font:600 8pt/10pt var(--font-body);color:#ecd9d5;margin-top:4pt;letter-spacing:.3pt}
+.svc{display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.svc .it{display:flex;gap:6pt;align-items:baseline;font:400 9pt/11.5pt var(--font-body);color:var(--ink)}
+.svc .bx{width:4pt;height:4pt;background:var(--signal);flex:none;transform:translateY(-1.5pt)}
+/* balanced lines: a caption or write-up never ends on a short last line */
+.bcap .a,.cap .a,.jt{text-wrap:balance}
+#jlp{text-wrap:balance}#note{text-wrap:pretty}

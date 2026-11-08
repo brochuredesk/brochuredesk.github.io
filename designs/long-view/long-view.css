@@ -1,0 +1,98 @@
+/* The Long View: set style file. A deep teal field on every panel, white serif headings, light cyan labels and sizes,
+   thin cyan rules. Inside: three broad bands per panel (a large photo, a companion photo, a copy column).
+   Landscape 11 x 17 half-fold (panels stack). Lengths are pt (1/72 in). */
+:root{
+  --field:#113b44;          /* the teal field */
+  --field-deep:#0c2f37;
+  --paper:#113b44;
+  --cyan:#82d4dd;           /* labels, sizes */
+  --rule:#63abb4;           /* thin rules */
+  --white:#ffffff;
+  --text:#e4eff1;           /* body copy on the field */
+  --muted:#a9c9ce;
+  --ink:#ffffff;
+  --accent:#82d4dd;
+  --line:rgba(130,212,221,.45);
+  --plan-box:#f4f8f8;
+  --font-display:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --font-body:'Inter',Helvetica,Arial,sans-serif;
+  /* the contact card sits on the field */
+  --cc-paper:#113b44; --cc-ink:#ffffff; --cc-muted:#a9c9ce; --cc-accent:#82d4dd; --cc-line:rgba(130,212,221,.5);
+  --cc-display:'Source Serif 4',Georgia,serif; --cc-body:'Inter',Helvetica,Arial,sans-serif;
+}
+@font-face{font-family:'Source Serif 4';font-weight:400;src:url(../../fonts/pool/source-serif-4-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Serif 4';font-weight:500;src:url(../../fonts/pool/source-serif-4-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Serif 4';font-weight:600;src:url(../../fonts/pool/source-serif-4-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-weight:400;src:url(../../fonts/pool/inter-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-weight:500;src:url(../../fonts/pool/inter-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-weight:600;src:url(../../fonts/pool/inter-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-weight:700;src:url(../../fonts/pool/inter-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--text);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+.page{position:relative;background:var(--field);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+body[data-mode=proof] .page{width:810pt;height:630pt}
+body[data-mode=print] .page{width:810pt;height:1242pt}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+@media print{body[data-mode=proof] .page{page:proof}body[data-mode=print] .page{page:spread}}
+@page proof{size:810pt 630pt}
+@page spread{size:810pt 1242pt}
+.panel{position:absolute;width:792pt;height:612pt;left:9pt;top:9pt}
+.half{position:absolute;left:0;width:810pt;height:621pt;overflow:hidden}
+.half.top{top:0}.half.bottom{top:621pt}
+.half.top .panel{top:9pt}.half.bottom .panel{top:0}
+.half .panel.flip{transform:rotate(180deg);transform-origin:396pt 306pt}
+
+/* type */
+.kick{font:600 8.5pt/10pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--cyan);white-space:nowrap;overflow:hidden}
+.title{font:400 27pt/32pt var(--font-display);letter-spacing:-.2pt;color:var(--white);overflow:hidden}
+.title.one{white-space:nowrap}
+.rule{position:absolute;height:.7pt;background:var(--rule)}
+.body{font-size:9pt;line-height:12pt;color:var(--text);overflow:hidden}
+
+/* photos */
+.ph{position:absolute;overflow:hidden;background:#0c2f37;flex:none}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.logo{position:absolute;display:flex;align-items:center;justify-content:flex-end}
+.logo img{display:block}
+
+/* inside bands */
+.band .rl{position:absolute;height:.7pt;background:var(--rule)}
+.band .hd{position:absolute;font:400 14pt/18pt var(--font-display);color:var(--white);white-space:nowrap;overflow:hidden}
+.band .sz{position:absolute;font:600 9pt/12pt var(--font-body);color:var(--cyan);white-space:nowrap;overflow:hidden}
+.band .sz i{font-style:normal;font-weight:400;color:var(--cyan)}
+.band .pp{position:absolute;font-size:9.5pt;line-height:13pt;color:var(--text);overflow:hidden}
+
+/* captions under a back photo */
+.bcap{position:absolute;overflow:hidden}
+.bcap .nm{font:400 12.5pt/16pt var(--font-display);color:var(--white);white-space:nowrap;overflow:hidden;height:16pt}
+.bcap .nm span{font:600 9pt/16pt var(--font-body);letter-spacing:.2pt;color:var(--cyan);margin-left:7pt}
+.bcap .tx{font-size:9pt;line-height:12pt;color:var(--text);overflow:hidden}
+
+/* back: around list */
+.around .r{height:32pt;border-top:.7pt solid var(--rule);padding-top:3pt}
+.around .d{font:400 16pt/19pt var(--font-display);color:var(--cyan);white-space:nowrap;overflow:hidden}
+.around .d small{font:600 8.5pt/10pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;margin-left:4pt}
+.around .p{font:500 9pt/11pt var(--font-body);color:var(--white);white-space:nowrap;overflow:hidden;margin-top:-1pt}
+.planbox{position:absolute;background:var(--plan-box)}
+.plan{position:absolute}
+.plan.lv{position:absolute;overflow:visible}
+.plan.lv .in{position:absolute}
+.plan.lv img{display:block;width:100%;height:100%}
+.plan.flr{position:absolute;text-align:center;font:600 8pt/10pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:#113b44;white-space:nowrap;overflow:hidden}
+
+/* cover */
+.addr{font:400 38pt/44pt var(--font-display);letter-spacing:-.4pt;color:var(--white);white-space:nowrap;overflow:hidden}
+.place{font:600 9pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--cyan);white-space:nowrap;overflow:hidden}
+.specs div{display:flex;justify-content:space-between;align-items:baseline;border-top:.7pt solid var(--rule);height:21pt;padding-top:3pt}
+.specs div:first-child{border-top:1.2pt solid var(--cyan)}
+.specs .l{font:600 8.5pt/15pt var(--font-body);letter-spacing:1pt;text-transform:uppercase;color:var(--cyan);white-space:nowrap}
+.specs .v{font:400 13.5pt/15pt var(--font-display);color:var(--white);white-space:nowrap}
+.frow{display:flex;justify-content:space-between;align-items:center;border-top:.7pt solid var(--rule);border-bottom:.7pt solid var(--rule)}
+.frow span{font:700 9pt/12pt var(--font-body);letter-spacing:1pt;text-transform:uppercase;color:var(--white);white-space:nowrap}
+.intro{font-size:9.5pt;line-height:13pt;color:var(--text);overflow:hidden}

@@ -1,0 +1,96 @@
+/* House in 360: set style file. Deep green field on every panel, white serif headings, small caps kickers in pale green,
+   thin light rules. Landscape 11 x 17 half-fold (fold "horizontal": panels stack). Lengths are pt (1/72 in). */
+:root{
+  --paper:#17403a;          /* deep green field */
+  --ink:#ffffff;            /* headings, names */
+  --text:#e3eee9;           /* body copy */
+  --muted:#b7d6ca;
+  --accent:#a9d6c5;         /* pale green: kickers, tags */
+  --line:rgba(185,222,208,.50);
+  --board:#ffffff;          /* the white board under the plan */
+  --board-ink:#17403a;
+  --font-display:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --font-body:'Source Sans 3',Helvetica,Arial,sans-serif;
+  --m:24pt;
+}
+@font-face{font-family:'Source Serif 4';font-weight:400;src:url(../../fonts/pool/source-serif-4-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Serif 4';font-weight:500;src:url(../../fonts/pool/source-serif-4-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Serif 4';font-weight:600;src:url(../../fonts/pool/source-serif-4-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:400;src:url(../../fonts/pool/source-sans-3-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:600;src:url(../../fonts/pool/source-sans-3-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:700;src:url(../../fonts/pool/source-sans-3-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+.page{position:relative;background:var(--paper);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+body[data-mode=proof] .page{width:810pt;height:630pt}
+body[data-mode=print] .page{width:810pt;height:1242pt}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+@media print{body[data-mode=proof] .page{page:proof}body[data-mode=print] .page{page:spread}}
+@page proof{size:810pt 630pt}
+@page spread{size:810pt 1242pt}
+.panel{position:absolute;width:792pt;height:612pt;left:9pt;top:9pt}
+.half{position:absolute;left:0;width:810pt;height:621pt;overflow:hidden;background:var(--paper)}
+.half.top{top:0}.half.bottom{top:621pt}
+.half.top .panel{top:9pt}.half.bottom .panel{top:0}
+.half .panel.flip{transform:rotate(180deg);transform-origin:396pt 306pt}
+
+/* type */
+.kick{font:700 8.5pt/10pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+.title{font:400 27pt/32pt var(--font-display);letter-spacing:-.2pt;color:var(--ink);overflow:hidden}
+.title.one{white-space:nowrap}
+.rule{position:absolute;height:.7pt;background:var(--line)}
+.body{font-size:10pt;line-height:14pt;color:var(--text);overflow:hidden}
+
+/* photos */
+.ph{position:absolute;overflow:hidden;background:#0f2e29;flex:none}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.logo{position:absolute;display:flex;align-items:center;justify-content:flex-end}
+.logo img{display:block}
+
+/* captions: serif name, small tag, then text */
+.cap{overflow:hidden}
+.cap .nm{font:400 12.5pt/15pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;height:15pt}
+.cap .nm span{font:600 8pt/15pt var(--font-body);letter-spacing:.9pt;text-transform:uppercase;color:var(--accent);margin-left:7pt}
+.cap .tx{font-size:8.5pt;line-height:11pt;color:var(--text);overflow:hidden;margin-top:2pt}
+.cap.sm .nm{font-size:11.5pt}
+
+/* cover */
+.addr{font:400 31pt/34pt var(--font-display);letter-spacing:-.3pt;white-space:nowrap;overflow:hidden;color:var(--ink)}
+.factrow{position:absolute;display:flex;justify-content:space-between;border-top:.7pt solid var(--line);border-bottom:.7pt solid var(--line);height:22pt}
+.factrow span{font:700 8.5pt/20pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;flex:1;text-align:center}
+.factrow span:first-child{text-align:left}.factrow span:last-child{text-align:right}
+
+/* white board under the plan */
+.board{position:absolute;background:var(--board)}
+.board .bnote{position:absolute;left:12pt;right:12pt;bottom:8pt;font:400 7pt/9pt var(--font-body);color:#4c5f5a}
+.plan{position:absolute}
+.plan.lv{position:absolute;overflow:visible}
+.plan.lv .in{position:absolute}
+.plan.lv img{display:block;width:100%;height:100%}
+.plan.flr{position:absolute;text-align:center;font:700 8pt/10pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:var(--board-ink);white-space:nowrap;overflow:hidden}
+.floorlist{position:absolute}
+.floorlist .f{border-top:1.2pt solid var(--board-ink);padding-top:5pt}
+.floorlist .fn{font:400 14pt/16pt var(--font-display);color:var(--board-ink);white-space:nowrap;overflow:hidden;height:16pt}
+.floorlist .fn span{font:700 7.5pt/16pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:#3d7a6a;margin-left:7pt}
+.floorlist .sm{font-size:8.5pt;line-height:11pt;color:#2b3f3a;margin-top:2pt;overflow:hidden}
+.floorlist table{width:100%;border-collapse:collapse;margin-top:3pt}
+.floorlist td{font-size:8.5pt;line-height:11pt;padding:1.5pt 0;border-top:.5pt solid rgba(23,64,58,.28);color:#2b3f3a;white-space:nowrap}
+.floorlist td:first-child{font-weight:600;color:var(--board-ink);overflow:hidden}
+.floorlist td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+
+/* back */
+.headline{font:700 17pt/22pt var(--font-body);letter-spacing:.2pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;overflow:hidden}
+.around .row{display:flex;justify-content:space-between;align-items:baseline;border-top:.6pt solid var(--line);height:14pt;padding-top:1pt}
+.around .row:first-child{border-top:none;padding-top:0}
+.around .p{font:600 9.5pt/13pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
+.around .d{font:400 9.5pt/13pt var(--font-display);color:var(--accent);white-space:nowrap;flex:none;margin-left:8pt}
+
+/* the standard contact card, in the set's colors */
+.cc{--cc-paper:#17403a;--cc-ink:#ffffff;--cc-muted:#d3e5dd;--cc-accent:#a9d6c5;--cc-line:rgba(255,255,255,.42)}
+.cc .cc-fine{font-size:6.5pt;line-height:8pt;color:#d3e5dd}

@@ -1,0 +1,111 @@
+/* The Modern Chronicle: warm paper, deep red accents, an editorial serif, magazine rhythm (unequal columns, real paragraphs),
+   a four-page book (11 x 17 folded down the middle). Lengths are pt (1/72 in). */
+:root{
+  --field:#faf7f1;          /* warm paper */
+  --paper:#ffffff;
+  --ink:#2a2420;            /* titles, names */
+  --text:#4a423b;           /* body copy (9:1 on the paper) */
+  --signal:#9b2c2c;         /* deep red: kickers, sizes, rules */
+  --accent:#9b2c2c;
+  --muted:#6b6258;
+  --line:rgba(155,44,44,.5);
+  --font-display:'Fraunces',Georgia,'Times New Roman',serif;
+  --font-body:'Libre Franklin',Helvetica,Arial,sans-serif;
+  --m:24pt;
+}
+@font-face{font-family:'Fraunces';font-weight:400;src:url(../../fonts/pool/fraunces-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Fraunces';font-weight:500;src:url(../../fonts/pool/fraunces-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Fraunces';font-weight:600;src:url(../../fonts/pool/fraunces-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Libre Franklin';font-weight:400;src:url(../../fonts/pool/libre-franklin-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Libre Franklin';font-weight:600;src:url(../../fonts/pool/libre-franklin-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Libre Franklin';font-weight:700;src:url(../../fonts/pool/libre-franklin-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+/* ---------- type ---------- */
+.kicker{font:600 8.5pt/10pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.title{font-family:var(--font-display);font-weight:400;font-size:26pt;line-height:31pt;height:31pt;letter-spacing:-.2pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.sect{font:600 8.5pt/10pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.hrule{position:absolute;left:var(--m);right:var(--m);height:.7pt;background:var(--line)}
+.fine{font-size:6.5pt;line-height:8pt;color:var(--muted);overflow:hidden}
+.body{font-size:9pt;line-height:12.5pt;color:var(--text)}
+
+/* ---------- photos and captions ---------- */
+.ph{position:relative;overflow:hidden;background:#e6e0d4;min-height:24pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.flow{position:absolute;left:var(--m);right:var(--m);display:flex;flex-direction:column;min-height:0}
+.row{display:flex;gap:8pt;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.cap{flex:none;padding-top:6pt}
+.cap .h{font:500 12pt/14pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden}
+.cap .h i{font:600 8.5pt/14pt var(--font-body);font-style:normal;color:var(--signal);margin-left:6pt;letter-spacing:.3pt}
+.cap .a{font-size:8.5pt;line-height:11.5pt;color:var(--text)}
+.colhead{flex:none;display:flex;gap:8pt;height:20pt}
+.colhead div{flex:1 1 0;border-bottom:.7pt solid var(--line);padding-top:4pt}
+
+/* ---------- cover ---------- */
+.addr{position:absolute;left:var(--m);top:22pt;font-family:var(--font-display);font-weight:400;line-height:48pt;letter-spacing:-.4pt;color:var(--ink);white-space:nowrap}
+
+
+/* ---------- back ---------- */
+.places .rows{display:block}
+.places .r{display:flex;align-items:baseline;justify-content:space-between;height:15pt;border-bottom:.6pt dotted rgba(42,36,32,.4);padding-top:2pt}
+.places .r .p{font:600 9pt/12pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
+.places .r .d{font:600 9pt/12pt var(--font-body);color:var(--signal);white-space:nowrap;margin-left:8pt}
+.board{position:absolute;background:#fff;border:.7pt solid rgba(155,44,44,.35)}
+
+.boardvars{position:absolute;left:0;top:0;width:612pt;height:792pt;pointer-events:none;--paper:#fff;--ink:#2a2420;--accent:#9b2c2c;--text:#4a423b;--muted:#6b6258;--signal:#9b2c2c;--line:rgba(155,44,44,.4)}
+.boardvars .lg,.boardvars .disc,.boardvars .pt{position:absolute}
+.boardvars .lg{position:absolute;text-align:center;font:600 8pt/10pt var(--font-body);color:#2a2420;white-space:nowrap}
+.boardvars .disc{position:absolute;text-align:center;white-space:nowrap}
+.boardvars .pt{position:absolute;font:700 8.5pt/10pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:#9b2c2c;white-space:nowrap}
+
+/* ---------- floor plans (inside-out-plan.js) ---------- */
+.plan-svg{position:absolute;overflow:visible}
+.plan-room{position:absolute;text-align:center;font:400 8pt/9.5pt var(--font-body);color:var(--ink);white-space:nowrap}
+.plan-room b{display:block;font-weight:600;font-size:8pt;line-height:9.5pt}
+.plan-room span{display:block;color:var(--muted);font-size:8pt;line-height:9.5pt}
+.plan-level{text-align:center;font:600 10pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.plan-note{text-align:center;font:400 6.5pt/8pt var(--font-body);color:var(--muted);white-space:nowrap;overflow:hidden}
+
+/* ---------- the standard contact card, set in this design's colors: navy, white type, amber labels and hairline ---------- */
+.panel .cc{--cc-paper:#faf7f1;--cc-ink:#2a2420;--cc-muted:#5e554b;--cc-accent:#9b2c2c;--cc-line:rgba(155,44,44,.5);--cc-display:'Fraunces',Georgia,serif;--cc-body:'Libre Franklin',Helvetica,Arial,sans-serif}
+
+/* ---------- pages ---------- */
+.page{position:relative;background:var(--field);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+.panel{position:absolute;left:9pt;top:9pt;width:612pt;height:792pt}
+.half{position:absolute;top:0;height:810pt;width:621pt;overflow:hidden;background:var(--field)}
+.half.l{left:0}.half.r{left:621pt}
+.half.r .panel{left:0}
+
+/* ---------- chronicle pieces ---------- */
+.hd{font-family:var(--font-display);font-weight:400;color:var(--ink);letter-spacing:-.2pt}
+.lede{font-family:var(--font-display);font-weight:400;font-size:22pt;line-height:26pt;color:var(--ink);letter-spacing:-.2pt}
+.art{font-size:9pt;line-height:12.8pt;color:var(--text)}
+.art.first::first-letter{font-family:var(--font-display);font-weight:500;color:var(--signal)}
+.txtcol{display:flex;flex-direction:column;min-width:0;min-height:0}
+.txtcol .h{font:500 15pt/18pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;margin-bottom:4pt}
+.txtcol .h i{font:600 8.5pt/18pt var(--font-body);font-style:normal;color:var(--signal);margin-left:7pt;letter-spacing:.3pt}
+.facts{display:flex;border-top:.8pt solid var(--line)}
+.facts .f{flex:1;padding-top:6pt;border-right:.6pt solid rgba(155,44,44,.25);padding-left:12pt}
+.facts .f:first-child{padding-left:0}
+.facts .f:last-child{border-right:0}
+.facts .n{font:500 24pt/26pt var(--font-display);color:var(--ink);white-space:nowrap}
+.facts .l{font:600 8pt/11pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:var(--signal);white-space:nowrap}
+.rooms .sec{display:flex;flex-direction:column;min-height:0;border-top:.8pt solid var(--line);padding-top:7pt}
+.rooms .sec .h{font:500 14pt/17pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;margin-bottom:3pt}
+.rooms .rr{display:flex;justify-content:space-between;align-items:center;height:14pt;border-bottom:.5pt dotted rgba(42,36,32,.35);font:400 9pt/13pt var(--font-body);color:var(--ink)}
+.rooms .rr b{font-weight:600;color:var(--signal);margin-left:6pt;white-space:nowrap}
+.rooms .rr span{white-space:nowrap;overflow:hidden}
+.rooms .sec .a{font-size:8.5pt;line-height:11.8pt;color:var(--text);margin-top:6pt}
+
+.rooms.narrow .sec{padding-top:5pt}
+.rooms.narrow .sec .h{font-size:11.5pt;line-height:14pt;margin-bottom:1pt}
+.rooms.narrow .sec .a{font-size:9pt;line-height:12.4pt;margin-top:2pt}

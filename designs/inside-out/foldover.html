@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Inside to Outside fold-over</title>
+<link rel="stylesheet" href="inside-out.css">
+<script src="inside-out.js"></script>
+<script src="inside-out-plan.js"></script>
+<!--
+  Inside to Outside · 11 x 17 fold-over, a four-page book
+  11 x 17 sheet laid 17 wide, folded once down the middle: four upright 8.5 x 11 pages, 0.125 in (9 pt) bleed, 0.25 in safe zone.
+    outside spread: back (left) + cover (right)        inside spread: first rooms (left) + the rest (right)
+  Nothing (caption, plan, photo, card) crosses the crease. Navy field on every page, bold white titles, amber small caps.
+    cover   address, the whole-house front, the facts beside the house paragraph, a second wide exterior across the bottom
+    left    Living wide + Front Entry narrow, Kitchen wide + Breakfast Bar narrow
+    right   two columns of three: the Primary suite / the secondary rooms
+    back    the meals pair and the outdoor pair (a floor plan in place of the outdoor pair when the listing has one), places, the card
+  Modes (data.mode): proof = four 8.75 x 11.25 in pages; print = two 17.25 x 11.25 in spreads, each half clipped at the fold.
+-->
+<style>
+  .photo-a{position:absolute}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+
+<script>
+window.brochureReady = (async function(){
+  const D = AT.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML='<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const mode = D.mode || 'proof';
+  const pt = AT.pt, esc = AT.esc, L = D.listing, b = D.brand || {};
+  const issues = [];
+  document.body.dataset.version = D.version || '';
+  await AT.cardReady;
+  issues.push(...await AT.applyFonts(D, D.fontSpec || null));
+  await Promise.all(['700 10pt','600 10pt','500 10pt'].map(w => document.fonts.load(`${w} 'Schibsted Grotesk'`)).concat(['400 10pt','600 10pt','700 10pt'].map(w => document.fonts.load(`${w} 'Public Sans'`))));
+
+  const C = D.copy || {};
+  const hasPlan = AT.planOK(D), levels = hasPlan ? AT.levels(D) : [];
+  window.proofNotes = [{plan: hasPlan, levels: levels.length}];
+  const place = [L.neighborhood, [L.city, L.state].filter(Boolean).join(', '), L.zip].filter(Boolean).join(' · ');
+  const kick = (t, slot) => `<div class="kicker abs" style="left:var(--m);top:24pt;width:420pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
+  const title = (t, slot) => `<div class="title abs" style="left:var(--m);top:36pt;width:564pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
+  const head = (k, t, slot) => `${kick(k, slot + '.kicker')}${title(t, slot + '.title')}<div class="hrule" style="top:70pt"></div>`;
+  const cap = (it, slot) => `<div class="cap"><div class="h" data-slot="${slot}.h" data-lines="1">${esc(it.title)}${it.dims ? `<i>${esc(it.dims)}</i>` : ''}</div>
+      <div class="a" data-slot="${slot}.a" data-para="1" data-min="2">${esc(it.body)}</div></div>`;
+  const item = (it, slot, grow) => `<div class="item" style="flex:${grow || 1} 1 0">${AT.photo(D, it.photo, '', slot)}${cap(it, slot)}</div>`;
+  const row = (its, slot, wts, flex) => `<div class="row" style="flex:${flex || '1 1 0'}">${its.map((it, i) => item(it, `${slot}${its.length > 1 ? '.' + 'abc'[i] : ''}`, (wts || [])[i])).join('')}</div>`;
+
+  // ================= COVER =================
+  function cover(){
+    const K = C.cover || {}, ph = (D.photos || {}), hp = ph[K.photo] || {w:3, h:2}, hq = ph[K.photo2] || {w:3, h:2};
+    const asp = hp.w / hp.h, tall = asp < 0.95, bx = hp.box || [0, 0, 1, 1], W = 564, T = 94;
+    const st = AT.stats(L), fifth = AT.fifth(L), facts = [...st, ...(fifth ? [fifth] : [])];
+    const factsHTML = `<div class="stats" style="flex:none;width:200pt">${facts.map((f, i) => `<div data-slot="cover.fact${i}" data-lines="1">${esc(f)}</div>`).join('')}</div>`;
+    const para = `<div class="intro" data-slot="cover.house" data-para="1" data-min="5" data-box="1" data-lo="8.5" data-hi="10.25" style="flex:1 1 0;min-width:0;font-size:9pt;line-height:12.4pt"><span>${esc(K.house)}</span></div>`;
+    let body;
+    if(!tall){
+      const need = Math.min(1, (bx[3] - bx[1]) + 0.05), H1 = Math.round(Math.min(318, Math.max(250, W * need / asp)));
+      const RH = facts.length * 18 + 2;
+      body = `<div class="abs" style="left:var(--m);top:${T}pt;width:${W}pt;display:flex;flex-direction:column;height:${792 - 24 - T}pt">
+        ${AT.photo(D, K.photo, `flex:none;height:${H1}pt`, 'cover.photo', 'hero')}
+        <div class="row" id="coverrow" style="flex:none;margin-top:12pt;gap:20pt;height:${RH}pt">${factsHTML}${para}</div>
+        ${AT.photo(D, K.photo2, 'flex:1 1 0;margin-top:12pt', 'cover.photo2', 'hero')}</div>`;
+    } else {
+      // a tall house photo: the photo as a column, the facts, the paragraph and a second exterior beside it, a third across the bottom
+      const Ht = 330, wA = Math.round(Ht * asp);
+      body = `<div class="abs" style="left:var(--m);top:${T}pt;width:${W}pt;display:flex;flex-direction:column;height:${792 - 24 - T}pt">
+        <div class="row" style="flex:none;height:${Ht}pt;gap:12pt">
+          ${AT.photo(D, K.photo, `flex:0 0 ${wA}pt`, 'cover.photo', 'hero')}
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10pt">
+            <div class="stats" style="flex:none;display:grid;grid-template-columns:1fr 1fr;column-gap:12pt">${facts.map((f, i) => `<div data-slot="cover.fact${i}" data-lines="1" style="font-size:8.5pt;letter-spacing:.5pt">${esc(f)}</div>`).join('')}</div>
+            <div class="intro" data-slot="cover.house" data-para="1" data-min="5" data-box="1" data-boxh="auto" style="flex:none;min-width:0;font-size:9.5pt;line-height:13.2pt"><span>${esc(K.house)}</span></div>
+            ${AT.photo(D, K.photo2, 'flex:1 1 0', 'cover.photo2')}
+          </div></div>
+        ${AT.photo(D, K.photo3, 'flex:1 1 0;margin-top:12pt', 'cover.photo3')}</div>`;
+    }
+    return `${kick(place, 'cover.kicker')}<div class="addr" id="addr" data-slot="cover.address" data-lines="1">${esc(L.address)}</div>${body}`;
+  }
+
+  // ================= INSIDE LEFT: arrival, living, kitchen =================
+  function left(){
+    const P = C.left || {}, ph = P.photos || [];
+    return `${head(P.kicker, P.title, 'left')}
+      <div class="flow" style="top:82pt;bottom:24pt;gap:8pt">
+        ${row(ph.slice(0, 2), 'left.row0', [1.85, 1])}${row(ph.slice(2, 4), 'left.row1', [1.85, 1])}</div>`;
+  }
+
+  // ================= INSIDE RIGHT: suite and secondary rooms =================
+  function right(){
+    const P = C.right || {}, a = P.colA || [], c = P.colB || [];
+    // two columns with different row heights, so the photos step: the big frame sits at the top of the Primary suite column and at the bottom of the other
+    const colA = [1.3, 1, 0.85], colB = [0.85, 1, 1.3];
+    const col = (arr, w, k) => `<div class="stack" style="flex:1 1 0;min-width:0">${arr.map((it, i) => item(it, `right.${k}${i}`, w[i])).join('')}</div>`;
+    return `${head(P.kicker, P.title, 'right')}
+      <div class="flow" style="top:78pt;bottom:24pt;gap:8pt">
+        <div class="colhead"><div class="sect" data-slot="right.colA" data-lines="1">${esc(P.colATitle || 'Primary suite')}</div><div class="sect" data-slot="right.colB" data-lines="1">${esc(P.colBTitle || 'Secondary rooms')}</div></div>
+        <div class="row" style="flex:1 1 0">${col(a, colA, 'a')}${col(c, colB, 'b')}</div></div>`;
+  }
+
+  // ================= BACK: meals, outdoors or the plan, places, the card =================
+  function back(){
+    const B = C.back || {}, meals = B.meals || [], out = B.outdoor || [], pl = B.places || [];
+    const nl = levels.length, maxH = nl >= 4 ? 300 : nl === 3 ? 282 : 264, T = 82, zoneB = 548;
+    let zone, sideHTML = '';
+    if(hasPlan){
+      // the board is sized to the plan's shape: draw once in the largest box, then close the board up around what was drawn
+      const bx = 24, bw0 = 564;
+      const probe = AtlasPlan.draw(D.plan, {x: bx + 10, y: T + 26, w: bw0 - 20, h: maxH - 56}, {allowRotate: true});
+      const bh = Math.min(maxH, Math.round(probe.usedH + 56 + 4)), mealsH = (zoneB - T) - 8 - bh, by = T + mealsH + 8;
+      // a narrow plan (tall stacks of floors) gets a board closed up around it, and an outdoor photo takes the width that is left
+      const side = out[0] && probe.usedW + 40 < bw0 - 190 ? out[0] : null;
+      const bw = side ? Math.round(probe.usedW + 44) : bw0;
+      const plan = AtlasPlan.draw(D.plan, {x: bx + 10, y: by + 26, w: bw - 20, h: bh - 56}, {allowRotate: true});
+      sideHTML = side ? `<div class="abs" style="left:${bx + bw + 8}pt;top:${by}pt;width:${bw0 - bw - 8}pt;height:${bh}pt;display:flex">${item(side, 'back.side')}</div>` : '';
+      issues.push(...plan.issues);
+      window.proofNotes.push({planBoard: {usedW: Math.round(probe.usedW), usedH: Math.round(probe.usedH), board: bh, rotated: !!probe.rotated}});
+      const zs = AtlasPlan.zonesOf(D.plan), Z = AtlasPlan.ZONES;
+      const lg = Object.keys(Z).filter(k => zs.includes(k)).map(k => `<span style="display:inline-flex;align-items:center;margin:0 9pt"><i style="display:inline-block;width:10pt;height:10pt;margin-right:5pt;border:.6pt solid rgba(28,36,54,.45);background:color-mix(in srgb, ${Z[k].fill} ${Math.round(Z[k].op*100)}%, #fff)"></i>${esc(Z[k].label)}</span>`).join('');
+      zone = `<div class="flow" style="top:${T}pt;height:${mealsH}pt;gap:8pt">${row(meals, 'back.meals')}</div>
+        <div class="board" style="left:${bx}pt;top:${by}pt;width:${bw}pt;height:${bh}pt"></div>${sideHTML}
+        <div class="boardvars">
+          <div class="pt" style="left:${bx + 12}pt;top:${by + 9}pt" data-slot="back.planTitle" data-lines="1">Floor plan</div>
+          ${plan.html}
+          <div class="lg" style="left:${bx}pt;width:${bw}pt;top:${by + bh - 27}pt">${lg}</div>
+          <div class="disc fine" style="left:${bx}pt;width:${bw}pt;top:${by + bh - 13}pt" data-slot="back.planDisc" data-fine="1" data-lines="1">${esc(B.planDisc || 'Approximate; not to scale.')}</div></div>`;
+    } else {
+      zone = `<div class="flow" style="top:${T}pt;height:${zoneB - T}pt;gap:8pt">${row(meals, 'back.meals', null, out.length > 1 ? '0.8 1 0' : '')}${row(out, 'back.out', out.length > 1 ? [1.6, 1] : null, out.length > 1 ? '1.2 1 0' : '')}</div>`;
+    }
+    const placesHTML = `<div class="places abs" style="left:24pt;top:${zoneB + 8}pt;width:564pt;height:64pt"><div class="sect" data-slot="back.placesTitle" data-lines="1">${esc(B.placesTitle || 'Nearby')}</div>
+      <div class="rows" style="margin-top:3pt">${pl.slice(0, 6).map((p, i) => `<div class="r"><div class="p" data-slot="back.place${i}" data-lines="1">${esc(p.name)}</div><div class="d" data-slot="back.dist${i}" data-lines="1">${esc(p.miles)}</div></div>`).join('')}</div></div>`;
+    return `${head(B.kicker, B.title, 'back')}${zone}${placesHTML}${AT.card(D, [24, 628, 564, 140], C.footnote || '')}`;
+  }
+
+  const panels = {front: cover(), left: left(), right: right(), back: back()};
+  const panel = h => `<div class="panel">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.back)}</div><div class="half r">${panel(panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.left)}</div><div class="half r">${panel(panels.right)}</div></div>`;
+  } else {
+    for(const id of ['front','left','right','back']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+
+  // ---------- layout passes ----------
+  document.querySelectorAll('#addr').forEach(el => {
+    for(let fs = 46; fs >= 30; fs -= 1){ el.style.fontSize = fs + 'pt'; if(AT.textWidth(el) <= 560) break; }
+  });
+  // captions in one row: the same number of lines, each last line at least 3/4 full
+  document.querySelectorAll('.row').forEach(r => { if(!r.querySelector(':scope > .stack')) AT.fitRow([...r.children].map(it => it.querySelector(':scope > .cap .a'))); });
+  document.querySelectorAll('.row > .stack').forEach((st, si, all) => { if(si % 2) return; const o = all[si + 1]; if(!o) return;
+    [...st.children].forEach((it, i) => { const q = o.children[i]; if(q) AT.fitRow([it.querySelector(':scope > .cap .a'), q.querySelector(':scope > .cap .a')]); }); });
+  document.querySelectorAll('[data-slot="back.side.a"]').forEach(e => AT.fitRow([e]));
+  // the cover paragraph runs to the bottom of the facts beside it
+  document.querySelectorAll('[data-box]').forEach(el => {
+    if(el.dataset.boxh === 'auto'){ AT.fitLines(el, AT.lineBoxes(el).length); return; }
+    const host = el.parentElement, h = pt(host.getBoundingClientRect().height);
+    const hh = el.dataset.boxh ? +el.dataset.boxh : el.closest('#coverrow') ? h : pt(el.getBoundingClientRect().height);
+    AT.fitBox(el, hh, +el.dataset.lo, +el.dataset.hi);
+  });
+  issues.push(...AT.fitPhotos(D));
+  issues.push(...AT.fitReport());
+  window.proofNotes.push({paragraphs: [...document.querySelectorAll('[data-para]')].map(el => {
+    const ls = AT.lineBoxes(el), w = parseFloat(el.style.maxWidth) || el.getBoundingClientRect().width, last = ls[ls.length-1];
+    return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length};
+  })});
+  ContactCard.fit(document);
+  window.brochureCheck = () => AT.check(D, issues);
+  window.photoPlacements = AT.placements;
+})();
+</script>
+</body>
+</html>

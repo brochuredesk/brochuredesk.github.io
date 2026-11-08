@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Architectural Negative open house flyer · Black Block</title>
+<link rel="stylesheet" href="negative.css">
+<script src="negative.js"></script>
+<script src="../engine/setpieces.js"></script>
+<!--
+  Architectural Negative · Open House flyer a "Black Block" (trim 612 x 792 pt; print: 0.25 in white margin around the paper).
+  The event is a solid black block across the top: the label in tracked white caps, the date in heavy uppercase as the
+  largest type on the page, the time under it, and the broker / REALTOR(R) lines (only on those opens, only when filled)
+  right of the time. Then the whole house, the address in heavy uppercase with city, state and ZIP under it, a black bar of
+  facts, a write-up beside two interiors between heavy rules, and the standard contact card (Right panel), which carries
+  the one logo. Open House rules (templates/_shared/ohstandard.js): city, state and ZIP, no RSVP, no QR, no price.
+  Copy: data.copy.pc.oh.a.
+-->
+<style>
+  .cc{--cc-paper:#ffffff;--cc-ink:#000000;--cc-muted:#555555;--cc-accent:#000000;--cc-line:rgba(0,0,0,.28)}
+  .blk{position:absolute;background:#000}
+  .oh-lbl{font:800 20pt/22pt var(--font-display);letter-spacing:3.4pt;text-transform:uppercase;color:#fff;white-space:nowrap;overflow:hidden}
+  .oh-date{font:900 38pt/52pt var(--font-display);letter-spacing:-.6pt;text-transform:uppercase;color:#fff;white-space:nowrap;overflow:hidden}
+  .oh-time{font:700 24pt/28pt var(--font-display);color:#fff;white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
+  .oh-strong{font:700 10.5pt/14pt var(--font-body);color:#fff;text-align:right}
+  .oh-note{font:400 10.5pt/14pt var(--font-body);color:#d4d4d4;text-align:right}
+  .hd{font:900 28pt/34pt var(--font-display);letter-spacing:-.2pt;text-transform:uppercase;color:#000;white-space:nowrap;overflow:hidden}
+  .pl{font:800 9pt/11pt var(--font-display);letter-spacing:2.2pt;text-transform:uppercase;color:#000;white-space:nowrap;overflow:hidden}
+  .fb{display:flex;justify-content:space-between;align-items:center;padding:0 14pt;background:#000}
+  .fb span{font:800 9pt/12pt var(--font-display);letter-spacing:1.6pt;text-transform:uppercase;color:#fff;white-space:nowrap}
+  .ab{font-size:10.5pt;line-height:15pt;color:var(--text)}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const esc = SP.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), C = (PC.oh || {}).a || {};
+  const issues = await SP.ready(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const O = SP.openHouse(D), X = 36, W = 540;
+  let h = '';
+
+  // the event on a black block; the optional lines sit right of the time and push the block (and the photo) down
+  const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note']].filter(l => l[0]);
+  let dy = 0, ev = '';
+  if(ls.length){ const pre = SP.eventLines(ls, 0, 0, 262, 14, 0); dy = Math.max(0, pre.h - 28); ev = SP.eventLines(ls, X + W - 18 - 262, 152 + dy - pre.h, 262, 14, 0).html; }
+  h += `<div class="blk" data-blk="1" style="left:${X}pt;top:36pt;width:${W}pt;height:${124 + dy}pt"></div>`;
+  h += `<div class="abs oh-lbl" style="left:${X + 18}pt;top:46pt;width:${W - 36}pt;height:22pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
+  h += `<div class="abs oh-date" style="left:${X + 16}pt;top:68pt;width:${W - 32}pt;height:52pt" data-slot="oh.date" data-lines="1" data-fit="30">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X + 18}pt;top:124pt;width:250pt;height:28pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  h += ev;
+
+  // the whole house, the address, the facts bar
+  // a tall house (its box needs more than the base frame) takes the height from the write-up, never from the roof
+  const hp = (D.photos || {})[C.hero || 'front'] || {}, bx = hp.box;
+  const need = bx && hp.w ? Math.ceil((bx[3] - bx[1]) * hp.h * W / hp.w) + 3 : 0, ex = Math.max(0, need - (282 - dy));
+  h += SP.photo(D, C.hero || 'front', X, 170 + dy, W, 282 - dy + ex, 'oh.hero');
+  h += `<div class="abs hd" style="left:${X - 1}pt;top:${460 + ex}pt;width:${W}pt;height:34pt" data-slot="address" data-lines="1" data-fit="22">${esc(L.address)}</div>`;
+  h += `<div class="abs pl" style="left:${X}pt;top:${497 + ex}pt;width:${W}pt;height:12pt" data-slot="place" data-lines="1">${esc(SP.placeZip(L))}</div>`;
+  h += `<div class="abs fb" style="left:${X}pt;top:${517 + ex}pt;width:${W}pt;height:28pt">${SP.stats(L).map((t, i) => `<span data-slot="oh.fact${i}" data-lines="1">${esc(t)}</span>`).join('')}</div>`;
+
+  // a write-up beside two interiors
+  const ps = (C.photos || []).slice(0, 2), pw = 112, gx = 10, tx = X + W - 2*pw - gx - 18;
+  const wy = 559 + ex, nl = Math.floor((657 - wy)/15);
+  h += `<div class="abs ab" style="left:${X}pt;top:${wy}pt;width:${tx - X}pt;height:${nl*15}pt" data-slot="oh.blurb" data-para="1" data-min="4" data-fillbox="1">${esc(C.text || '')}</div>`;
+  h += `<div class="abs" data-gapcheck="oh.photos" style="left:0;top:0">${ps.map((id, i) => SP.photo(D, id, X + W - 2*pw - gx + i*(pw + gx), wy, pw, nl*15, 'oh.photo' + i)).join('')}</div>`;
+
+  h += `<div class="rule" style="left:${X}pt;top:659pt;width:${W}pt;height:3pt"></div>`;
+  h += SP.card(D, [X, 668, W, 90], {layout: 'panel', fieldAccent: true});
+  h += `<div class="abs" style="left:${X}pt;top:765pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  await SP.finish(D, 612, 792, h, issues);
+})();
+</script>
+</body>
+</html>

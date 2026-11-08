@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Stepped Gallery fold-over</title>
+<link rel="stylesheet" href="stepped-gallery.css">
+<script src="stepped-gallery.js"></script>
+<!--
+  The Stepped Gallery · 11 x 17 portrait book-fold
+  11 x 17 sheet laid 17 wide, folded once down the middle: four upright 8.5 x 11 pages (612 x 792 pt), 0.125 in (9 pt) bleed.
+    outside spread: back (left) + cover (right)        inside spread: left page + right page
+  Ink-navy field on every page, serif titles over a pale-sky rule, small-caps sky kickers. Unequal frames that step down:
+  on each inside page three rows, a wide frame and a narrower one that starts a step lower, the wide one alternating sides
+  row to row, each caption under its own photo. The back holds two outdoor photos beside the agent's own plan (placed as
+  given, no redraw); with no plan the plan's column holds two more photos. The contact card carries the outside spread's one logo.
+
+  Modes (data.mode):  proof  four panel pages, 630 x 810 pt each (trim + bleed)
+                      print  two spreads, 1242 x 810 pt, each half clipped at the fold
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = PG.data(), esc = PG.esc; PG.fitMode = !!D.fit;
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  await PG.cardReady;
+  const mode = D.mode || 'proof', L = D.listing, A = D.agent || {}, C = D.copy || {}, issues = [];
+  const b = Object.assign({}, D.brand || {}); if(b.logoOnDark) b.logo = b.logoOnDark; D.brand = b;
+  await Promise.all(['400 10pt','500 10pt','600 10pt','700 10pt'].map(w => document.fonts.load(`${w} 'Lora'`)).concat(['400 10pt','600 10pt','700 10pt'].map(w => document.fonts.load(`${w} 'Nunito Sans'`))));
+  document.body.dataset.mode = mode;
+  const hasPlan = !!(D.plan && D.plan.levels && D.plan.levels.length);
+  const hs = (D.photos||{})[A.headshot] ? D.photos[A.headshot].src : (A.headshot || '');
+  const G = 8, M = 29, W = 554, BOT = 763;
+  const ln = (slot, d) => PG.lines(D, slot, d);
+  const cp = (c, slot, x, y, w, n) => PG.cap(c, slot, x, y, w, {lines: n});
+
+  const head = (T, slot) => PG.kick(T.kicker, `${slot}.kicker`, M, 30) + `<div class="abs title" style="left:${M}pt;top:42pt;width:${W}pt;height:32pt" data-slot="${slot}.title" data-lines="1">${esc(T.title)}</div>` + PG.rule(M, 80, W);
+
+  // ================= COVER =================
+  function cover(){
+    const K = C.front || {};
+    let h = PG.kick((K.kicker || '').toUpperCase(), 'front.kicker', M, 30);
+    h += `<div class="abs addr" id="addr" style="left:${M}pt;top:42pt;width:${W}pt;height:48pt" data-slot="front.address" data-lines="1">${esc(L.address)}</div>`;
+    const f = PG.facts(L);
+    h += `<div class="abs facts" style="left:${M}pt;top:98pt;width:${W}pt;height:46pt" data-slot="front.facts">${f.map((x, i) => `<div class="f"><b data-slot="front.fact${i}" data-lines="1">${esc(x[0])}</b><span data-slot="front.fact${i}.l" data-lines="1">${esc(x[1])}</span></div>`).join('')}</div>`;
+    const pn = ln('front.intro', 7), pl = 14.5, rows = (K.around || []).length || 1, rowH = 22, cn = ln('front.cap', 4);
+    const y1 = 158, lowH = 16 + pn*pl + 14 + 16 + rows*rowH, hh = BOT - lowH - 14 - y1;
+    h += PG.photo(D, K.photo, M, y1, W, hh);
+    const y2 = y1 + hh + 14, w1 = 338, x2 = M + w1 + 16, w2 = W - w1 - 16;
+    h += PG.kick(K.introHead, 'front.introhead', M, y2, w1);
+    h += PG.para(K.intro, 'front.intro', M, y2 + 16, w1, pn, pl);
+    const ya = y2 + 16 + pn*pl + 14;
+    h += PG.kick(K.aroundHead, 'front.aroundhead', M, ya, w1) + PG.places(K.around, 'front.around', M, ya + 16, w1, rowH);
+    const c = K.cap || {};
+    h += PG.photo(D, c.id, x2, y2, w2, lowH - 6 - PG.capH(cn)) + PG.cap(c, 'front.cap', x2, y2 + lowH - PG.capH(cn), w2, {lines: cn});
+    return h;
+  }
+
+  // ================= INSIDE: three rows of stepped frames =================
+  function inside(T, which){
+    const rows = T.rows || [], Y0 = 92, GAP = 16, STEP = 18, BW = 330, SW = W - BW - G;
+    const N = rows.map((r, i) => r.map((c, k) => ln(`${which}.row${i}.${k}`, 4)));
+    const hb = Math.floor((BOT - Y0 - GAP*(rows.length - 1) - N.reduce((a, ns) => a + 6 + PG.capH(Math.max(...ns)), 0)) / rows.length);
+    let h = head(T, which), y = Y0;
+    rows.forEach((r, i) => {
+      const bigLeft = i % 2 === 0, xs = bigLeft ? [M, M + BW + G] : [M, M + SW + G], ws = bigLeft ? [BW, SW] : [SW, BW], mx = Math.max(...N[i]);
+      const rowH = hb + 6 + PG.capH(mx);
+      r.forEach((c, k) => {
+        const big = bigLeft ? k === 0 : k === 1, py = big ? y : y + STEP, ph = rowH - 6 - PG.capH(N[i][k]) - (big ? 0 : STEP);
+        h += PG.photo(D, c.id, xs[k], py, ws[k], ph) + PG.cap(c, `${which}.row${i}.${k}`, xs[k], py + ph + 6, ws[k], {lines: N[i][k]});
+      });
+      y += rowH + GAP;
+    });
+    return h;
+  }
+
+  // ================= BACK =================
+  function back(){
+    const bp = hasPlan ? 'back.photo' : 'back.nphoto';
+    const B = C.back || {}, Y0 = 92, H = 510, y1 = Y0 + H, ph0 = (B.photos || []).slice(0, 2);
+    let h = head(B, 'back'), BW = 270;
+    if(hasPlan){ const pr = PG.plan(D, {x: 0, y: 0, w: 330, h: H - 26}); BW = Math.max(170, Math.min(330, Math.ceil(pr.used.w) + 16)); }
+    const LW = W - BW - G, bx = M + LW + G;
+    const ns = ph0.map((c, i) => ln(`${bp}${i}`, 4));
+    const ph = ph0.length === 1 ? H - 6 - PG.capH(ns[0]) : Math.floor((H - G - ns.reduce((a, n) => a + 6 + PG.capH(n), 0))/2); let y = Y0;
+    ph0.forEach((c, i) => { h += PG.photo(D, c.id, M, y, LW, ph) + cp(c, `${bp}${i}`, M, y + ph + 6, LW, ns[i]); y += ph + 6 + PG.capH(ns[i]) + G; });
+    if(hasPlan){
+      h += `<div class="board" style="left:${bx}pt;top:${Y0}pt;width:${BW}pt;height:${H}pt"></div>`;
+      const pl = PG.plan(D, {x: bx + 6, y: Y0 + 6, w: BW - 12, h: H - 24});
+      issues.push(...pl.issues); h += pl.html;
+      h += `<div class="abs" style="left:${bx}pt;top:${y1 - 14}pt;width:${BW}pt;height:10pt"><div class="pnote" data-slot="back.plannote" data-fine="1" data-lines="1">${esc(B.planNote || 'Approximate; not to scale.')}</div></div>`;
+    } else {
+      const ex = B.extra, nb = (B.rooms || []).length, nat = Y0 + PG.roomList(D, B.rooms, 'back.floor', bx, Y0, BW, 0).used + 8*Math.max(0, nb - 1);
+      const en = ex ? ln('back.extra', 3) : 0, ey = nat + 14, eh = ex ? y1 - ey - 6 - PG.capH(en) : 0;
+      const rl = PG.roomList(D, B.rooms, 'back.floor', bx, Y0, BW, ex && eh >= 90 ? nat - Y0 : H); h += rl.html;
+      if(ex && eh >= 90) h += PG.photo(D, ex.id, bx, ey, BW, eh) + cp(ex, 'back.extra', bx, ey + eh + 6, BW, en);
+      if(rl.over) issues.push({slot: 'back.rooms', kind: 'room-list-overflow'});
+    }
+    h += ContactCard.html([M, 616, W, 140], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', fine: B.footnote || ''});
+    return h;
+  }
+
+  const panels = {front: cover(), back: back(), left: inside(C.left || {}, 'left'), right: inside(C.right || {}, 'right')};
+  const panel = h => `<div class="panel">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.back)}</div><div class="half r">${panel(panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.left)}</div><div class="half r">${panel(panels.right)}</div></div>`;
+  } else {
+    for(const id of ['front','back','left','right']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  PG.fitLogos(); PG.fitTags();
+  // the street address: as big as fits the width
+  document.querySelectorAll('#addr').forEach(el => { for(let fs = 40; fs >= 28; fs -= 1){ el.style.fontSize = fs + 'pt'; if(PG.textWidth(el) <= W - 2) break; } });
+  if(!D.fit) document.querySelectorAll('[data-cap]').forEach(PG.balance);
+  issues.push(...PG.fitPhotos(D));
+  ContactCard.fit(document);
+  document.body.dataset.version = D.version || `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  window.brochureCheck = () => PG.check(D, issues);
+})();
+</script>
+</body>
+</html>

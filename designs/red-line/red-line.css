@@ -1,0 +1,90 @@
+/* The Red Line: set style file. White paper, one strong red, condensed bold headings.
+   Landscape 11 x 17 half-fold (panels stack). Lengths are pt (1/72 in). */
+:root{
+  --paper:#ffffff;
+  --ink:#1b1b1d;            /* titles, names */
+  --text:#34383b;           /* body copy */
+  --muted:#686d71;
+  --accent:#d7262b;         /* the red: rail, kickers, rules */
+  --line:rgba(27,27,29,.22);
+  --font-display:'Oswald',Impact,'Arial Narrow',sans-serif;
+  --font-body:'Source Sans 3',Helvetica,Arial,sans-serif;
+  --cc-paper:#ffffff; --cc-ink:#1b1b1d; --cc-muted:#5d6266; --cc-accent:#d7262b; --cc-line:rgba(215,38,43,.40);
+  --cc-display:'Oswald',Impact,sans-serif;
+}
+@font-face{font-family:'Oswald';font-weight:400;src:url(../../fonts/pool/oswald-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Oswald';font-weight:500;src:url(../../fonts/pool/oswald-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Oswald';font-weight:600;src:url(../../fonts/pool/oswald-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Oswald';font-weight:700;src:url(../../fonts/pool/oswald-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:400;src:url(../../fonts/pool/source-sans-3-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:600;src:url(../../fonts/pool/source-sans-3-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:700;src:url(../../fonts/pool/source-sans-3-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+.page{position:relative;background:var(--paper);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+body[data-mode=proof] .page{width:810pt;height:630pt}
+body[data-mode=print] .page{width:810pt;height:1242pt}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+@media print{body[data-mode=proof] .page{page:proof}body[data-mode=print] .page{page:spread}}
+@page proof{size:810pt 630pt}
+@page spread{size:810pt 1242pt}
+.panel{position:absolute;width:792pt;height:612pt;left:9pt;top:9pt}
+.half{position:absolute;left:0;width:810pt;height:621pt;overflow:hidden}
+.half.top{top:0}.half.bottom{top:621pt}
+.half.top .panel{top:9pt}.half.bottom .panel{top:0}
+.half .panel.flip{transform:rotate(180deg);transform-origin:396pt 306pt}
+
+/* type */
+.kick{font:600 8.5pt/11pt var(--font-display);letter-spacing:1.6pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+.title{font:700 27pt/32pt var(--font-display);letter-spacing:.1pt;color:var(--ink);overflow:hidden}
+.title.one{white-space:nowrap}
+.rule{position:absolute;height:1.4pt;background:var(--accent)}
+.rule.thin{height:.7pt}
+.body{font-size:9.5pt;line-height:13pt;color:var(--text);overflow:hidden}
+
+/* photos */
+.ph{position:absolute;overflow:hidden;background:#ddd;flex:none}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.logo{position:absolute;display:flex;align-items:center;justify-content:flex-end}
+.logo img{display:block}
+
+/* captions */
+.cap{overflow:hidden}
+.cap .nm{font:600 11pt/14pt var(--font-display);letter-spacing:.5pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;overflow:hidden;height:14pt}
+.cap .nm span{font-weight:400;letter-spacing:.4pt;color:var(--accent);margin-left:6pt;font-size:10pt}
+.cap.big .nm{font-size:15pt;line-height:19pt;font-weight:700;letter-spacing:.3pt}
+.cap.big .nm span{font-size:12pt}
+.cap .tx{font-size:8.5pt;line-height:11pt;color:var(--text);overflow:hidden}
+
+/* cover */
+.rail{position:absolute;background:var(--accent);overflow:hidden}
+.rail .no{position:absolute;left:14pt;top:18pt;width:98pt;font:700 40pt/44pt var(--font-display);color:#fff;white-space:nowrap;letter-spacing:.5pt}
+.rail .st{position:absolute;left:18pt;bottom:18pt;writing-mode:vertical-rl;transform:rotate(180deg);font:700 34pt/40pt var(--font-display);color:#fff;text-transform:uppercase;white-space:nowrap;letter-spacing:1.5pt}
+.fact{position:absolute;border-top:1.4pt solid var(--accent);padding-top:3pt;display:flex;align-items:baseline;gap:7pt;white-space:nowrap}
+.fact .v{font:700 16pt/20pt var(--font-display);color:var(--ink)}
+.fact .l{font:600 8pt/10pt var(--font-display);letter-spacing:1.3pt;text-transform:uppercase;color:var(--muted)}
+.headline{font:700 30pt/36pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:.1pt}
+
+/* red rows: a heavy red rule between photo rows */
+.band-rule{position:absolute;height:2.2pt;background:var(--accent)}
+
+/* back */
+.rcol .hd{font:700 25pt/28pt var(--font-display);text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
+.rcol .sub{font:600 8.5pt/11pt var(--font-display);letter-spacing:1.6pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+.rcol ul{list-style:none}
+.rcol li{font:600 9pt/15pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden;padding-left:11pt;position:relative}
+.rcol li:before{content:"";position:absolute;left:0;top:5.5pt;width:5pt;height:5pt;background:var(--accent)}
+.rcol .near{font:600 9.5pt/16pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden;display:flex;justify-content:space-between;border-bottom:.5pt solid var(--line)}
+.rcol .near .d{font-family:var(--font-display);font-weight:600;color:var(--accent);letter-spacing:.3pt}
+.plan{position:absolute}
+.plan.lv{position:absolute;overflow:visible}
+.plan.lv .in{position:absolute}
+.plan.lv img{display:block;width:100%;height:100%}
+.plan.flr{position:absolute;text-align:center;font:600 8.5pt/10pt var(--font-display);letter-spacing:1.4pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;overflow:hidden}
+.planbg{position:absolute;border:.7pt solid var(--line)}

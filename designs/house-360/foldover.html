@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · House in 360 fold-over</title>
+<link rel="stylesheet" href="house-360.css">
+<script src="house-360.js"></script>
+<!--
+  BrochureDesk · House in 360 · 11 x 17 fold-over
+  11 x 17 sheet folded once across the middle: four landscape 11 x 8.5 panels (792 x 612 pt), 0.125 in (9 pt) bleed.
+    outside spread: back (turned 180, on top) over cover      inside spread: inside top over inside bottom
+  Walk around the house, then through it: the cover is the whole-house front with three previews, the inside top is the
+  home in plan (the plan on a white board beside the two lead rooms and four more), the inside bottom is the rooms in
+  detail (3 x 2), the back is the outdoors and what is around it, with the standard contact card.
+
+  Modes (data.mode):  proof  four panel pages, 810 x 630 pt each (trim + bleed)
+                      print  two spreads, 810 x 1242 pt, each half clipped at the fold
+
+  The floor plan is the agent's own drawing, placed as given (no redraw): data.plan.levels = [{name, photo, w, h}].
+  With no plan the white board carries a floor-by-floor list of rooms and sizes with a short write-up per floor
+  (copy.top.floors).
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = H3.data(), esc = H3.esc; H3.fitMode = !!D.fit;
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  await H3.cardReady;
+  const mode = D.mode || 'proof', L = D.listing, A = D.agent || {}, b = D.brand || {}, C = D.copy || {}, issues = [];
+  await Promise.all(['400 10pt','500 10pt','600 10pt'].map(w => document.fonts.load(`${w} 'Source Serif 4'`)).concat(['400 10pt','600 10pt','700 10pt'].map(w => document.fonts.load(`${w} 'Source Sans 3'`))));
+  document.body.dataset.mode = mode;
+  const hasPlan = !!(D.plan && D.plan.levels && D.plan.levels.length);
+  const hs = (D.photos||{})[A.headshot] ? D.photos[A.headshot].src : (A.headshot || '');
+  const G = 8;   // gap between photos
+  const LN = C.lines || {}, ln = (k, d) => LN[k] || d;   // line counts the fit chose (every caption of a row has the same count)
+
+  // ================= COVER =================
+  function cover(){
+    const K = C.front || {};
+    let h = '';
+    // the whole-house front, left; three previews stacked at the right edge; all run to the panel's edges
+    const PH = 429, pw = 249, ph = (PH - 2*G)/3;
+    h += H3.photo(D, K.photo, -9, -9, 555, PH);
+    (K.previews || []).slice(0, 3).forEach((id, i) => { h += H3.photo(D, id, 546 + G, -9 + i*(ph + G), pw, ph); });
+    h += H3.kick(K.kicker, 'front.kicker', 24, 428, 744);
+    h += `<div class="abs addr" style="left:24pt;top:440pt;width:744pt;height:36pt" data-slot="front.address" data-lines="1">${esc(L.address)}</div>`;
+    h += `<div class="factrow" style="left:24pt;top:481pt;width:744pt">${H3.stats(L).map((t,i) => `<span data-slot="front.fact${i}" data-lines="1">${esc(t)}</span>`).join('')}</div>`;
+    const col = 366, x2 = 24 + col + 12;
+    h += H3.kick(K.introHead, 'front.introhead', 24, 513, col);
+    h += `<div class="abs body" style="left:24pt;top:527pt;width:${col}pt;height:70pt" data-slot="front.intro" data-lines="5" data-nmin="5" data-nmax="5" data-cap="1">${esc(H3.txt(K.intro))}</div>`;
+    if(K.around && K.around.length){
+      h += H3.kick(K.aroundHead, 'front.aroundhead', x2, 513, col);
+      h += `<div class="abs around" style="left:${x2}pt;top:527pt;width:${col}pt">${K.around.slice(0, 5).map((x,i) => `<div class="row"><div class="p" data-slot="front.around${i}.p" data-lines="1">${esc(x.p)}</div><div class="d" data-slot="front.around${i}.d" data-lines="1">${esc(x.d)}</div></div>`).join('')}</div>`;
+    } else {
+      h += H3.kick(K.outroHead, 'front.outrohead', x2, 513, col);
+      h += `<div class="abs body" style="left:${x2}pt;top:527pt;width:${col}pt;height:70pt" data-slot="front.outro" data-lines="5" data-nmin="5" data-nmax="5" data-cap="1">${esc(H3.txt(K.outro))}</div>`;
+    }
+    return h;
+  }
+
+  // ================= BACK =================
+  function back(){
+    const B = C.back || {}, ps = (B.photos || []).slice(0, 3), w = (744 - 2*G)/3;
+    let h = H3.kick(B.kicker, 'back.kicker', 24, 26, 700) + H3.title(B.title, 'back.title', 24, 36) + H3.rule(24, 71, 744);
+    const kb = ln('back.caps', 3), ph = 188 - (kb - 3)*11;
+    ps.forEach((c, i) => { const x = 24 + i*(w + G);
+      h += H3.photo(D, c.id, x, 82, w, ph);
+      h += H3.cap(c, `back.cap${i}`, x, 82 + ph + 6, w, {lines: kb, min: kb, max: kb}); });
+    // improvements headline, the paragraph and the list beside it
+    const y0 = 82 + ph + 6 + H3.capH(kb) + 13;
+    h += `<div class="abs headline" style="left:24pt;top:${y0}pt;width:744pt;height:22pt" data-slot="back.headline" data-lines="1">${esc(B.headline)}</div>`;
+    const py = y0 + 29, pl = ln('back.para', 4), cw = 452;
+    h += `<div class="abs body" style="left:24pt;top:${py}pt;width:${cw}pt;height:${pl*14}pt" data-slot="back.para" data-lines="${pl}" data-nmin="${pl}" data-nmax="${pl}" data-cap="1">${esc(H3.txt(B.para))}</div>`;
+    const ax = 24 + cw + 24, aw = 768 - ax;
+    h += H3.kick(B.listHead, 'back.listhead', ax, py, aw);
+    h += `<div class="abs around" style="left:${ax}pt;top:${py + 15}pt;width:${aw}pt">${(B.list||[]).slice(0, 5).map((x,i) => `<div class="row"><div class="p" data-slot="back.list${i}.p" data-lines="1">${esc(x.p)}</div><div class="d" data-slot="back.list${i}.d" data-lines="1">${esc(x.d)}</div></div>`).join('')}</div>`;
+    h += H3.kick(B.closing, 'back.closing', 24, py + pl*14 + 14, 440);
+    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', fine: B.footnote || '', fieldAccent: true, bottomGap: 0.5});
+    return h;
+  }
+
+  // ================= INSIDE TOP: the home in plan =================
+  function top(){
+    const T = C.top || {};
+    let h = H3.kick(T.kicker, 'top.kicker', 24, 26, 560) + H3.title(T.title, 'top.title', 24, 36, 540) + H3.logo(D, 588, 26, 180, 26, 'flex-end') + H3.rule(24, 71, 744);
+    const by = 82, bh = 522, bw = 224;
+    h += `<div class="board" style="left:24pt;top:${by}pt;width:${bw}pt;height:${bh}pt"></div>`;
+    if(hasPlan){
+      const pl = H3.plan(D, {x: 24 + 12, y: by + 12, w: bw - 24, h: bh - 12 - 38, gap: 18});
+      issues.push(...pl.issues); h += pl.html;
+      h += `<div class="abs" style="left:24pt;top:${by + bh - 36}pt;width:${bw}pt;height:36pt"><div class="bnote" style="bottom:12pt" data-slot="top.plannote" data-lines="2" data-fine="1">${esc(T.planNote || 'Approximate; not to scale.')}</div></div>`;
+    } else {
+      const fl = (T.floors || []).slice(0, 4), n = fl.length, gh = (bh - 24)/n;
+
+      h += `<div class="floorlist" style="left:${24+12}pt;top:${by+12}pt;width:${bw-24}pt;height:${bh-24}pt;display:flex;flex-direction:column;justify-content:space-between">${fl.map((f,i)=>{
+        const fl_ = ln('floor' + i, 3);
+        return `<div class="f"><div class="fn" data-slot="top.floor${i}.n" data-lines="1">${esc(f.n)}${f.tag ? `<span>${esc(f.tag)}</span>` : ''}</div>
+        <div class="sm" data-slot="top.floor${i}.text" data-lines="${fl_}" data-nmin="${fl_}" data-nmax="${fl_}" data-cap="1" style="height:${fl_*11}pt">${esc(H3.txt(f.text))}</div>
+        <table>${f.rooms.map(r=>`<tr><td data-slot="top.floor${i}.room">${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</table></div>`; }).join('')}</div>`;
+    }
+    // right: Living and Kitchen as the two leads, then four small photos with their captions beside them
+    const rx = 24 + bw + G, rw = 768 - rx, lw = (rw - G)/2, LL = ln('top.leads', 4), s0 = ln('top.smalls0', 6), s1 = ln('top.smalls1', 6);
+    const sr0 = 17 + s0*11, sr1 = 17 + s1*11;
+    const LH = bh - 12 - (sr0 + sr1 + 12) - 6 - H3.capH(LL);
+    (T.leads || []).slice(0, 2).forEach((c, i) => { const x = rx + i*(lw + G);
+      h += H3.photo(D, c.id, x, by, lw, LH);
+      h += H3.cap(c, `top.lead${i}`, x, by + LH + 6, lw, {lines: LL, min: LL, max: LL}); });
+    const phw = 120, cw = lw - phw - 9;
+    (T.smalls || []).slice(0, 4).forEach((c, i) => { const r = Math.floor(i/2), sl = r ? s1 : s0, x = rx + (i%2)*(lw + G), y = r ? by + bh - sr1 : by + bh - sr1 - 12 - sr0;
+      h += H3.photo(D, c.id, x, y, phw, 17 + sl*11);
+      h += H3.cap(c, `top.small${i}`, x + phw + 9, y, cw, {lines: sl, min: sl, max: sl, sm: true}); });
+    return h;
+  }
+
+  // ================= INSIDE BOTTOM: rooms in detail =================
+  function bottom(){
+    const T = C.bottom || {}, items = (T.items || []).slice(0, 6), w = (744 - 2*G)/3;
+    let h = H3.kick(T.kicker, 'bottom.kicker', 24, 26, 600) + H3.title(T.title, 'bottom.title', 24, 36, 744) + H3.rule(24, 71, 744);
+    const R0 = ln('bottom.row0', 3), R1 = ln('bottom.row1', 3), ph = Math.floor((522 - 14 - 12 - H3.capH(R0) - H3.capH(R1))/2);
+    items.forEach((c, i) => { const x = 24 + (i%3)*(w + G), r = Math.floor(i/3), kk = r ? R1 : R0, y = r ? 82 + ph + 6 + H3.capH(R0) + 14 : 82;
+      h += H3.photo(D, c.id, x, y, w, ph);
+      h += H3.cap(c, `bottom.cap${i}`, x, y + ph + 6, w, {lines: kk, min: kk, max: kk}); });
+    h += H3.rule(24, 82 + ph + 6 + H3.capH(R0) + 6, 744);
+    return h;
+  }
+
+  const panels = {front: cover(), back: back(), top: top(), bottom: bottom()};
+  const panel = (cls, h) => `<div class="panel ${cls||''}">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside"><div class="half top">${panel('flip', panels.back)}</div><div class="half bottom">${panel('', panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside"><div class="half top">${panel('', panels.top)}</div><div class="half bottom">${panel('', panels.bottom)}</div></div>`;
+  } else {
+    for(const id of ['front','top','bottom','back']) html += `<div class="page" data-page="${id}">${panel('', panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  H3.fitLogos();
+  ContactCard.fit(document);
+  document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  window.brochureCheck = () => H3.check(D, issues);
+})();
+</script>
+</body>
+</html>

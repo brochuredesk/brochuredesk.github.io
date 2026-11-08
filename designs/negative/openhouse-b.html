@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Architectural Negative open house flyer · Black Label</title>
+<link rel="stylesheet" href="negative.css">
+<script src="negative.js"></script>
+<script src="../engine/setpieces.js"></script>
+<!--
+  Architectural Negative · Open House flyer b "Black Label" (trim 612 x 792 pt; print: 0.25 in white margin around the paper).
+  The reverse of flyer a: the event is black type on white paper under a solid black label bar, the date in heavy uppercase
+  as the largest type on the page, a thick rule under it, and the broker / REALTOR(R) lines (only on those opens, only when
+  filled) right of the time. The address sits on a full-width black bar with city, state and ZIP under the street. Below,
+  the whole house beside a column of big fact numbers, then a row of three interiors, each over a black caption tile, and
+  the standard contact card (Right panel), which carries the one logo.
+  Open House rules (templates/_shared/ohstandard.js): city, state and ZIP, no RSVP, no QR, no price. Copy: data.copy.pc.oh.b.
+-->
+<style>
+  .cc{--cc-paper:#ffffff;--cc-ink:#000000;--cc-muted:#555555;--cc-accent:#000000;--cc-line:rgba(0,0,0,.28)}
+  .blk{position:absolute;background:#000}
+  .oh-lbl{font:800 20pt/30pt var(--font-display);letter-spacing:3.4pt;text-transform:uppercase;color:#fff;white-space:nowrap;overflow:hidden}
+  .oh-date{font:900 40pt/54pt var(--font-display);letter-spacing:-.6pt;text-transform:uppercase;color:#000;white-space:nowrap;overflow:hidden}
+  .oh-time{font:700 24pt/28pt var(--font-display);color:#000;white-space:nowrap;overflow:hidden}
+  .oh-strong{font:700 10.5pt/14pt var(--font-body);color:#000;text-align:right}
+  .oh-note{font:400 10.5pt/14pt var(--font-body);color:#444;text-align:right}
+  .hd{font:900 28pt/32pt var(--font-display);letter-spacing:-.2pt;text-transform:uppercase;color:#fff;white-space:nowrap;overflow:hidden}
+  .pl{font:800 9pt/12pt var(--font-display);letter-spacing:2.2pt;text-transform:uppercase;color:#fff;white-space:nowrap;overflow:hidden}
+  .fcol{position:absolute;display:flex;flex-direction:column;justify-content:space-between;border-top:3pt solid #000}
+  .fcol div{border-bottom:.6pt solid var(--line);padding:3pt 0 4pt;display:flex;flex-direction:column;justify-content:center;flex:1}
+  .fcol div:last-child{border-bottom:0}
+  .fcol b{font:900 28pt/30pt var(--font-display);letter-spacing:-.4pt;color:#000;white-space:nowrap;overflow:hidden}
+  .fcol i{font:800 8.5pt/11pt var(--font-display);letter-spacing:1.6pt;text-transform:uppercase;font-style:normal;color:#555;white-space:nowrap;overflow:hidden}
+  .tile{position:absolute;background:#000;padding:8pt 9pt}
+  .tile .nm{font:800 11pt/13pt var(--font-display);letter-spacing:-.05pt;color:#fff;white-space:nowrap;overflow:hidden;height:13pt;margin-bottom:3pt}
+  .tile .tx{font-size:9pt;line-height:11.5pt;color:#f0f0f0;overflow:hidden}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const esc = SP.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), C = (PC.oh || {}).b || {};
+  const issues = await SP.ready(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const O = SP.openHouse(D), X = 36, W = 540;
+  let h = '';
+
+  // the event: a black label bar over black type on white paper
+  const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note']].filter(l => l[0]);
+  let dy = 0, ev = '';
+  if(ls.length){ const pre = SP.eventLines(ls, 0, 0, 262, 14, 0); dy = Math.max(0, pre.h - 28); ev = SP.eventLines(ls, X + W - 262, 152 + dy - pre.h, 262, 14, 0).html; }
+  h += `<div class="blk" data-blk="1" style="left:${X}pt;top:36pt;width:${W}pt;height:30pt"></div>`;
+  h += `<div class="abs oh-lbl" style="left:${X + 14}pt;top:36pt;width:${W - 28}pt;height:30pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
+  h += `<div class="abs oh-date" style="left:${X - 2}pt;top:72pt;width:${W + 2}pt;height:54pt" data-slot="oh.date" data-lines="1" data-fit="30">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X}pt;top:126pt;width:250pt;height:28pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  h += ev;
+  h += `<div class="rule" style="left:${X}pt;top:${160 + dy}pt;width:${W}pt;height:4pt"></div>`;
+
+  // the address on a black bar, city, state and ZIP under the street
+  const ay = 172 + dy;
+  h += `<div class="blk" data-blk="1" style="left:${X}pt;top:${ay}pt;width:${W}pt;height:62pt"></div>`;
+  h += `<div class="abs hd" style="left:${X + 14}pt;top:${ay + 5}pt;width:${W - 28}pt;height:32pt" data-slot="address" data-lines="1" data-fit="22">${esc(L.address)}</div>`;
+  h += `<div class="abs pl" style="left:${X + 14}pt;top:${ay + 40}pt;width:${W - 28}pt;height:12pt" data-slot="place" data-lines="1">${esc(SP.placeZip(L))}</div>`;
+
+  // the whole house beside big fact numbers
+  const hy = ay + 62 + 10, hh = 514 - hy - 10 + 0, pwid = 346;
+  h += SP.photo(D, C.hero || 'front', X, hy, pwid, hh, 'oh.hero');
+  const fp = SP.factPairs(L, 6).filter(p => !/^Half|^Stor/.test(p[1])).slice(0, 4);
+  h += `<div class="fcol" style="left:${X + pwid + 14}pt;top:${hy}pt;width:${W - pwid - 14}pt;height:${hh}pt">${fp.map((p, i) => `<div><b data-slot="oh.fact${i}" data-lines="1">${esc(p[0])}</b><i data-slot="oh.factl${i}" data-lines="1">${esc(p[1])}</i></div>`).join('')}</div>`;
+
+  // three interiors over black caption tiles
+  const cs = (C.caps || []).slice(0, 3), g = 10, pw = (W - 2*g)/3, ph = 64, ty = 514;
+  let row = '';
+  cs.forEach((c, i) => { const x = X + i*(pw + g);
+    row += SP.photo(D, c.id, x, ty, pw, ph, 'oh.photo' + i);
+    row += `<div class="tile" style="left:${x}pt;top:${ty + ph}pt;width:${pw}pt;height:${660 - ty - ph}pt"><div class="nm" data-slot="oh.cap${i}.t" data-lines="1">${esc(c.t)}</div><div class="tx" data-slot="oh.cap${i}" data-cap="1" data-row="oh" data-para="1" data-min="3">${esc(c.a)}</div></div>`; });
+  h += `<div class="abs" data-gapcheck="oh.row" style="left:0;top:0">${row}</div>`;
+
+  h += SP.card(D, [X, 670, W, 88], {layout: 'panel', fieldAccent: true});
+  h += `<div class="abs" style="left:${X}pt;top:765pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  await SP.finish(D, 612, 792, h, issues);
+})();
+</script>
+</body>
+</html>

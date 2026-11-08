@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · The Split Edition fold-over</title>
+<link rel="stylesheet" href="split-edition.css">
+<script src="split-edition.js"></script>
+<!--
+  BrochureDesk · The Split Edition · 11 x 17 fold-over
+  11 x 17 sheet folded once across the middle: four landscape 11 x 8.5 panels (792 x 612 pt), 0.125 in (9 pt) bleed.
+    outside spread: back (turned 180, on top) over cover      inside spread: inside top over inside bottom
+  White editorial pages with burgundy accents. Cover: a left column (giant serif house number, street, city line, fact list,
+  intro, around list) and two stacked exteriors filling the right two thirds to the bleed. Inside top: an editorial copy
+  column on the left, 2 x 3 photos with serif captions on the right; inside bottom reverses it. Back: two outdoor photos
+  with captions, the agent's floor plan (or a room-by-room list when there is none), a claim block, then the contact card.
+
+  Modes (data.mode):  proof  four panel pages, 810 x 630 pt each (trim + bleed)
+                      print  two spreads, 810 x 1242 pt, each half clipped at the fold
+  The floor plan is the agent's own drawing, placed as given: data.plan.levels = [{name, src, w, h}].
+  The one brokerage logo of the outside spread sits on the standard contact card; the inside spread has it upper right of the top panel.
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SE.data(), esc = SE.esc; SE.fitMode = !!D.fit;
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  await SE.cardReady;
+  const mode = D.mode || 'proof', L = D.listing, A = D.agent || {}, b = D.brand || {}, C = D.copy || {}, issues = [];
+  if(b.accent) document.documentElement.style.setProperty('--accent', b.accent);
+  await Promise.all(['400 10pt','500 10pt','600 10pt'].map(w => document.fonts.load(`${w} 'Source Serif 4'`)).concat(['400 10pt','500 10pt','600 10pt','700 10pt'].map(w => document.fonts.load(`${w} 'Albert Sans'`))));
+  document.body.dataset.mode = mode;
+  const hasPlan = !!(D.plan && D.plan.levels && D.plan.levels.length);
+  const hs = (D.photos||{})[A.headshot] ? D.photos[A.headshot].src : (A.headshot || '');
+  const flood = SE.floodStated(L.description);
+  const para = (slot, text, x, y, w, lines, cls, extra) => `<div class="abs body ${cls||''}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${lines*(cls==='sm'?12:13)}pt" data-slot="${slot}" data-lines="${lines}" data-cap="1" ${extra||''}>${esc(SE.txt(text))}</div>`;
+  const kick = (t, slot, x, y, w) => SE.kick(t, slot, x, y, w);
+
+  // ================= COVER =================
+  const nfmt = v => Number(v).toLocaleString('en-US');
+  const factList = () => {
+    const f = [], lot = String(L.lotSize || '').match(/[\d,]+/), yr = L.yearBuilt || L.year;
+    if(L.beds) f.push([String(L.beds), +L.beds === 1 ? 'Bedroom' : 'Bedrooms']);
+    if(L.baths) BD.bathCells(L).forEach(c => f.push([c[0], c[1]]));
+    if(L.sqft) f.push([nfmt(L.sqft), 'Square feet']);
+    if(lot) f.push([lot[0], 'Sq ft lot']); else if(yr) f.push([String(yr), 'Year built']); else if(L.stories) f.push([String(L.stories), +L.stories === 1 ? 'Story' : 'Stories']);
+    return f.slice(0, 4);
+  };
+  const coverHead = (K, X, W, y) => {     // house number, street, city line; returns [html, bottom y]
+    const parts = String(L.address).split(' '), num = parts.shift(), street = parts.join(' ');
+    return [`<div class="abs numb" data-fit="${W}|100|64" style="left:${X}pt;top:${y}pt;width:${W}pt;height:92pt" data-slot="front.number" data-lines="1">${esc(num)}</div>`
+      + `<div class="abs street" data-fit="${W}|31|24" style="left:${X}pt;top:${y+88}pt;width:${W}pt;height:36pt" data-slot="front.street" data-lines="1">${esc(street)}</div>`
+      + `<div class="abs city" style="left:${X}pt;top:${y+126}pt;width:${W}pt;height:13pt" data-slot="front.city" data-lines="1">${esc(K.kicker || [SE.place(L), L.zip].filter(Boolean).join(' '))}</div>`, y + 139];
+  };
+  const coverPhotos = (K, PX) => SE.photo(D, K.photo, PX, -9, 801 - PX, 310) + SE.photo(D, K.photo2, PX, 311, 801 - PX, 310);
+  const aroundList = (K, X, y, W) => {
+    const ar = (K.around || []).slice(0, 5);
+    return `<div class="abs around" style="left:${X}pt;top:${y}pt;width:${W}pt">${ar.map((r,i) => `<div><span class="p" data-slot="front.around${i}.p" data-lines="1">${esc(r.p)}</span><span class="d" data-slot="front.around${i}.d" data-lines="1">${esc(r.d)}</span></div>`).join('')}</div>`;
+  };
+
+  // A: identity above the split line, story below it. 2 x 2 fact grid ends on a burgundy rule that runs out through the
+  // gap between the photos; the tag sits under it; the intro and the around list end on the bottom margin.
+  // owner 10/29 voice review: the whole text and facts block is centered side to side in the white space left of the
+  // photos (trim edge to 268 pt); same sizes, photos untouched.
+  function coverA(){
+    const W = 232, K = C.front || {}, X = (268 - W)/2, fx = factList(), GY = 170, RH = (305.5 - GY)/2;
+    let h = coverPhotos(K, 268), [hh] = coverHead(K, X, W, 14); h += hh;
+    h += SE.rule(X, GY, W);
+    fx.forEach((f, i) => { const cx = X + (i % 2)*(W/2), cy = GY + Math.floor(i/2)*RH;
+      h += `<div class="abs fcell" style="left:${cx}pt;top:${cy}pt;width:${W/2}pt;height:${RH}pt;padding:11pt 0 0 ${i % 2 ? 14 : 0}pt;${i % 2 ? 'border-left:.7pt solid var(--line);' : ''}${i > 1 ? 'border-top:.7pt solid var(--line);' : ''}">`
+        + `<div class="fv" data-slot="front.fact${i}.v" data-lines="1">${esc(f[0])}</div><div class="fl" data-slot="front.fact${i}.l" data-lines="1">${esc(f[1])}</div></div>`; });
+    h += `<div class="abs" style="left:${X}pt;top:305.5pt;width:${801 - X}pt;height:1pt;background:var(--accent)"></div>`;
+    if(K.tag) h += `<div class="abs" style="left:${X}pt;top:322pt"><span class="tag" data-slot="front.tag" data-lines="1">${esc(K.tag)}</span></div>`;
+    const il = K.introLines || 9;
+    h += para('front.intro', K.intro, X, 469 - il*13, W, il);
+    h += kick(K.aroundHead || 'Around the house', 'front.aroundhead', X, 483, W);
+    h += aroundList(K, X, 499, W);
+    return h;
+  }
+
+  // owner 10/29 voice review (SE-FO): option A is the cover; options B and C and the older cover are gone.
+  const cover = coverA;
+
+  // ================= BACK =================
+  function back(){
+    const B = C.back || {};
+    let h = kick(B.kicker, 'back.kicker', 24, 26, 700) + SE.title(B.title, 'back.title', 24, 36) + SE.rule(24, 71, 744);
+    // the outdoor stack: two photos, each with its caption
+    const lw = 330, ln = 3, capH = SE.capH(ln), ph = Math.floor((372 - 14 - 2*(6 + capH))/2);
+    [B.photoA, B.photoB].forEach((c, i) => { const y = 84 + i*(ph + 6 + capH + 14);
+      h += SE.photo(D, (c||{}).id, 24, y, lw, ph) + SE.cap(c, `back.cap${i}`, 24, y + ph + 6, lw, {lines: ln, min: 3, max: 3}); });
+    const rx = 372, rw = 396;
+    if(hasPlan){
+      const pl = SE.plan(D, {x:rx, y:84, w:rw, h:200});
+      issues.push(...pl.issues); h += pl.html;
+      h += `<div class="abs body sm" style="left:${rx}pt;top:288pt;width:${rw}pt;height:48pt" data-slot="back.plannote" data-lines="4" data-cap="1"><b style="font:700 8pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--accent)">${esc(B.planHead || 'Reading the plan')}&nbsp; </b>${esc(SE.txt(B.planNote))}</div>`;
+    } else {
+      const fl = B.floors || [], n = fl.length, cols = n > 2 ? 2 : n, rows = Math.ceil(n / cols), fh = Math.floor((246 - 14*(rows-1)) / rows), fw = (rw - 18*(cols-1)) / cols;
+      h += kick(B.roomsHead || 'Room by room', 'back.roomshead', rx, 84, rw);
+      fl.forEach((f, i) => { const fx = rx + (i % cols)*(fw + 18), fy = 100 + Math.floor(i / cols)*(fh + 14) - 0, avail = fh - 16;
+        const tl = Math.max(2, Math.min(4, Math.floor((avail - 24 - 16 - f.rooms.length/(n === 1 ? 2 : 1)*19)/12)));
+        const rp = Math.min(21, Math.floor((avail - 24 - tl*12 - 10) / Math.ceil(f.rooms.length/(n === 1 ? 2 : 1))));
+        h += `<div class="abs" style="left:${fx}pt;top:${fy}pt;width:${fw}pt;border-top:1pt solid var(--accent);padding-top:5pt">
+          <div style="font:400 15pt/20pt var(--font-display);color:var(--ink);height:20pt;white-space:nowrap;overflow:hidden" data-slot="back.floor${i}.name" data-lines="1">${esc(f.n)}</div>
+          <div class="body sm" style="margin-top:2pt;height:${tl*12}pt" data-slot="back.floor${i}.text" data-lines="${tl}" data-cap="1">${esc(SE.txt(f.text))}</div>
+          <div class="rooms" style="margin-top:8pt;${n === 1 ? 'display:grid;grid-template-columns:1fr 1fr;column-gap:18pt;border-top:0' : ''}">${f.rooms.map((r,j) => `<div style="height:${rp}pt;line-height:${rp}pt" data-slot="back.floor${i}.room${j}" data-lines="1"><span class="n">${esc(r[0])}</span><span class="s">${esc(r[1])}</span></div>`).join('')}</div></div>`; });
+    }
+    // the claim block
+    const Bd = B.claim || {}, cy = 84 + 372 - 118;
+    h += `<div class="claim" style="left:${rx}pt;top:${cy}pt;width:${rw}pt;height:118pt;padding:9pt 14pt 0 14pt;gap:18pt">
+      <div style="width:176pt;flex:none"><div class="big" style="height:28pt;flex:none" data-slot="back.claim.big" data-lines="1">${esc(Bd.big)}</div>
+        <div class="sm" style="margin-top:8pt;height:60pt" data-slot="back.claim.small" data-lines="5" data-cap="1">${esc(SE.txt(Bd.small))}</div></div>
+      <div style="flex:1;min-width:0;padding-top:3pt"><div class="kick" style="height:10pt;margin-bottom:6pt" data-slot="back.claim.head" data-lines="1">${esc(Bd.head)}</div>
+        <div class="grid" style="grid-template-rows:repeat(${Math.min(6, (Bd.items||[]).length)},auto);gap:4pt 0">${(Bd.items||[]).slice(0,6).map((t,i)=>`<div data-slot="back.claim.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div></div></div>`;
+    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', brokerage: true, fine: B.footnote || ''});
+    return h;
+  }
+
+  // ================= INSIDE (top: copy left, photos right; bottom: photos left, copy right) =================
+  function inside(P, side){
+    const T = C[P] || {}, items = (T.items || []).slice(0, 6), GW = 526, CW = 200, GAP = 18, G = 12, CG = 10, w = (GW - CG)/2;
+    const gx = side === 'top' ? 24 + CW + GAP : 24, cx = side === 'top' ? 24 : 24 + GW + GAP;
+    let h = kick(T.kicker, `${P}.kicker`, 24, 26, 560) + SE.title(T.title, `${P}.title`, 24, 36, side === 'top' ? 556 : 744) + SE.rule(24, 71, 744);
+    if(side === 'top') h += SE.logo(D, 588, 26, 180, 26, 'flex-end');
+    // photos
+    const rows = 3, lns = [0,1,2].map(r => Math.max(3, ...items.slice(r*2, r*2+2).map(it => SE.need(it.text, w))));
+    const y0 = 84, avail = 604 - y0, fx = lns.map(n => 6 + SE.capH(n)), ph = Math.floor((avail - G*(rows-1) - fx.reduce((a,b)=>a+b,0))/rows);
+    let y = y0;
+    for(let r = 0; r < rows; r++){
+      items.slice(r*2, r*2+2).forEach((it, j) => { const x = gx + j*(w + CG);
+        h += SE.photo(D, it.id, x, y, w, ph) + SE.cap(it, `${P}.cap${r*2+j}`, x, y + ph + 6, w, {lines: lns[r], min: 3, max: 4}); });
+      y += ph + fx[r] + G;
+    }
+    // the editorial column
+    let cy = 84;
+    h += kick(T.head, `${P}.col.head`, cx, cy, CW); cy += 14;
+    h += `<div class="abs sub col" style="left:${cx}pt;top:${cy}pt;width:${CW}pt;height:44pt;font:400 18pt/22pt var(--font-display);letter-spacing:-.15pt;color:var(--ink);overflow:hidden" data-slot="${P}.col.sub" data-lines="2">${esc(T.sub)}</div>`; cy += 52;
+    const ll = T.ledeLines || 8;
+    h += `<div class="abs body col" style="left:${cx}pt;top:${cy}pt;width:${CW}pt;height:${ll*13}pt" data-slot="${P}.col.lede" data-lines="${ll}" data-cap="1">${esc(SE.txt(T.lede))}</div>`; cy += ll*13 + 12;
+    const sp = (T.specs || []).slice(0, 6);
+    h += `<div class="abs rooms" style="left:${cx}pt;top:${cy}pt;width:${CW}pt">${sp.map((r,i) => `<div style="height:21pt;line-height:21pt" data-slot="${P}.col.spec${i}" data-lines="1"><span class="n">${esc(r.l)}</span><span class="s">${esc(r.v)}</span></div>`).join('')}</div>`; cy += sp.length*21 + 14;
+    const ql = T.quoteLines || 3;
+    h += `<div class="abs col quote" style="left:${cx}pt;top:${cy}pt;width:${CW}pt;height:${ql*18}pt;font:italic 400 13.5pt/18pt var(--font-display);color:var(--accent);overflow:hidden" data-slot="${P}.col.quote" data-lines="${ql}">${esc(T.quote)}</div>`; cy += ql*18 + 10;
+    const cl = Math.floor((604 - cy)/13);
+    h += `<div class="abs body col" style="left:${cx}pt;top:${cy}pt;width:${CW}pt;height:${cl*13}pt" data-slot="${P}.col.close" data-lines="${cl}" data-cap="1">${esc(SE.txt(T.close))}</div>`;
+    return h;
+  }
+
+  const panels = {front: cover(), back: back(), top: inside('top', 'top'), bottom: inside('bottom', 'bottom')};
+  const panel = (cls, h) => `<div class="panel ${cls||''}">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside"><div class="half top">${panel('flip', panels.back)}</div><div class="half bottom">${panel('', panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside"><div class="half top">${panel('', panels.top)}</div><div class="half bottom">${panel('', panels.bottom)}</div></div>`;
+  } else {
+    for(const id of ['front','top','bottom','back']) html += `<div class="page" data-page="${id}">${panel('', panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  // the house number and street name grow to their column, never past it
+  document.querySelectorAll('[data-fit]').forEach(el => { const [w, mx, mn] = el.dataset.fit.split('|').map(Number); let s = mx; el.style.fontSize = s + 'pt';
+    while(s > mn && el.scrollWidth > w + .5){ s -= 1; el.style.fontSize = s + 'pt'; } });
+  SE.fitLogos();
+  ContactCard.fit(document);
+  document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  window.brochureCheck = () => SE.check(D, issues);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Across the Fold open house flyer</title>
+<link rel="stylesheet" href="across-the-fold.css">
+<link rel="stylesheet" href="pieces.css">
+<script src="across-the-fold.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/setpieces.js"></script>
+<!--
+  Across the Fold · Open House flyer (trim 612 x 792 pt; print: 0.25 in white margin around the navy field).
+  The event leads in the set's own type: the label in tracked gold caps with a hairline running off it, the date in the serif
+  as the largest type on the page, the time under it, the broker / REALTOR(R) lines (only on those opens, only when filled)
+  right of the time. A gold rule with a diamond on it (the fold) closes the event. Then the whole house with the gold-boxed
+  tag, the address with city, state and ZIP, a hairline, and two columns: the write-up over a diamond-bullet list, and the
+  fold-over's facts table over two interiors. The standard contact card (templates/_shared/agentcard.js, Right panel) carries
+  the one logo. Open House rules (templates/_shared/ohstandard.js): city, state and ZIP, no RSVP, no QR, no price.
+  Copy: data.copy.pc.oh.a.
+-->
+<style>
+  .oh-lbl{font:700 20pt/22pt var(--font-body);letter-spacing:3pt;text-transform:uppercase;color:var(--gold);white-space:nowrap;overflow:hidden;flex:none}
+  .oh-date{font:400 54pt/60pt var(--font-display);letter-spacing:-.8pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+  .oh-time{font:600 24pt/28pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
+  .oh-strong{font:600 10.5pt/14pt var(--font-body);color:var(--ink);text-align:right}
+  .oh-note{font:400 10.5pt/14pt var(--font-body);color:var(--text);text-align:right}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = AF.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = SP.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), C = (PC.oh || {}).a || {};
+  const b = Object.assign({}, D.brand || {}); b.logo = b.logoOnDark || b.logo; D.brand = b;   // navy field: the light logo
+  const issues = await SP.ready(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const O = SP.openHouse(D), X = 36, W = 540;
+  let h = '';
+
+  // the event
+  h += `<div class="abs" style="left:${X}pt;top:32pt;width:${W}pt;height:22pt;display:flex;align-items:center;gap:14pt"><span class="oh-lbl" data-slot="oh.label" data-lines="1">${esc(O.label)}</span><i style="flex:1;height:.7pt;background:var(--line)"></i></div>`;
+  h += `<div class="abs oh-date" style="left:${X - 2}pt;top:56pt;width:${W + 2}pt;height:60pt" data-slot="oh.date" data-lines="1" data-fit="36">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X}pt;top:120pt;width:250pt;height:28pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  let dy = 0;   // the broker / REALTOR(R) lines sit right of the time; past two lines the header grows and the photo gives up the difference
+  { const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note']].filter(l => l[0]);
+    if(ls.length){ const pre = SP.eventLines(ls, 300, 0, 276, 14, 0); dy = Math.max(0, pre.h - 28); h += SP.eventLines(ls, 300, 148 - pre.h + dy, 276, 14, 0).html; } }
+  h += `<div class="rule" style="left:${X}pt;top:${158 + dy}pt;width:${W}pt;height:1.4pt;background:var(--gold)"></div>`;
+  h += `<i class="dia abs" style="left:${X + W/2 - 2}pt;top:${156.7 + dy}pt;outline:3pt solid var(--paper)"></i>`;
+
+  // the house, with the fold-over's gold-boxed tag. A tall house (its box needs more height than the usual frame) takes a
+  // taller frame, and the place line moves onto the address row to give the height back.
+  const ph0 = (D.photos || {})[C.hero || 'front'] || {}, bx = ph0.box;
+  const need = (bx && ph0.w && ph0.h) ? W/(ph0.w/ph0.h)*(bx[3] - bx[1] + 0.012) : 0;
+  const tall = need > 268 - dy, hh = tall ? Math.min(312, Math.ceil(need)) : 268 - dy, hb = 168 + dy + hh;
+  h += SP.photo(D, C.hero || 'front', X, 168 + dy, W, hh, 'oh.hero');
+  if(SP.floodStated(L.description)) h += `<div class="abs" style="left:${X + 12}pt;top:${hb - 29}pt"><span class="ctag" data-slot="oh.tag" data-lines="1">Never flooded</span></div>`;
+
+  // the address
+  let ruleY, top;
+  if(tall){
+    h += `<div class="abs kick" style="left:${X + W - 160}pt;top:${hb + 26}pt;width:160pt;height:10pt;text-align:right" data-slot="place" data-lines="1">${esc(SP.placeZip(L).toUpperCase())}</div>`;
+    h += `<div class="abs addr" style="left:${X - 1}pt;top:${hb + 8}pt;width:${W - 170}pt;height:40pt;font-size:36pt;line-height:40pt" data-slot="address" data-lines="1" data-fit="24">${esc(L.address)}</div>`;
+    ruleY = hb + 52; top = hb + 62;
+  } else {
+    h += `<div class="abs kick" style="left:${X}pt;top:${hb + 12}pt;width:${W}pt;height:10pt" data-slot="place" data-lines="1">${esc(SP.placeZip(L).toUpperCase())}</div>`;
+    h += `<div class="abs addr" style="left:${X - 1}pt;top:${hb + 25}pt;width:${W}pt;height:40pt;font-size:36pt;line-height:40pt" data-slot="address" data-lines="1" data-fit="24">${esc(L.address)}</div>`;
+    ruleY = hb + 72; top = hb + 82;
+  }
+  h += `<div class="rule" style="left:${X}pt;top:${ruleY}pt;width:${W}pt"></div>`;
+
+  // left: the write-up over the bullets; right: the facts table over two interiors
+  const colW = 262, rx = X + colW + 16, rw = W - colW - 16, bot = 660;
+  const bn = BD.bathNum(L), nf = v => Number(v).toLocaleString('en-US'), cells = [];
+  if(L.beds) cells.push([L.beds == 1 ? 'Bedroom' : 'Bedrooms', esc(L.beds)]);
+  if(L.baths) cells.push([bn.label, bn.num]);
+  if(bn.half) cells.push(['Half baths', esc(bn.half.replace(/\D.*/, ''))]);
+  if(L.sqft) cells.push(['Square feet', nf(L.sqft)]);
+  if(L.yearBuilt || L.year) cells.push(['Built in', esc(L.yearBuilt || L.year)]);
+  { const lot = String(SP.lotText(L) || '').match(/^([\d,.]+)\s*(.*)$/); if(lot) cells.push(['Lot size', esc(lot[1] + ' ' + (lot[2] || 'Sq Ft Lot').replace(/\s*Lot$/i, '').toLowerCase())]); }
+  const rows = Math.ceil(cells.length/2), sh = 26*rows;
+  h += `<div class="abs sp2" style="left:${rx}pt;top:${top}pt;width:${rw}pt">${cells.map((c, i) => `<div${cells.length % 2 && i == cells.length - 1 ? ' style="grid-column:1/-1"' : ''}><span class="l" data-slot="oh.spec${i}.l" data-lines="1">${esc(c[0])}</span><span class="v" data-slot="oh.spec${i}.v" data-lines="1">${c[1]}</span></div>`).join('')}</div>`;
+  const pt0 = top + sh + 8, pw = (rw - 10)/2;
+  h += `<div class="abs" data-gapcheck="oh.photos" style="left:0;top:0">${(C.photos || []).slice(0, 2).map((id, i) => SP.photo(D, id, rx + i*(pw + 10), pt0, pw, bot - pt0 + 4, 'oh.photo' + i)).join('')}</div>`;
+  // the write-up keeps the lines it needs; the bullets take what is left under it (a header that grew gives up bullets, never photo)
+  const nl = SP.linesNeeded('ab', C.text || '', colW, 14.5, 'font-size:10.5pt;line-height:14.5pt'), avail = bot + 4 - top - nl*14.5 - 8;
+  let bl = (C.bullets || []).slice(0, 4); while(bl.length && bl.length*13 + (bl.length - 1)*2 > avail) bl.pop();
+  h += `<div class="abs ab" style="left:${X}pt;top:${top}pt;width:${colW}pt;height:${nl*14.5}pt;font-size:10.5pt;line-height:14.5pt" data-slot="oh.blurb" data-para="1" data-min="${nl}" data-fillbox="1">${esc(C.text || '')}</div>`;
+  if(bl.length) h += `<div class="abs bul" style="left:${X}pt;top:${top + nl*14.5 + 8}pt;width:${colW}pt;height:${avail}pt">${bl.map((t, i) => `<div class="it"><i></i><span data-slot="oh.bullet${i}" data-lines="1" style="white-space:nowrap;overflow:hidden">${esc(t)}</span></div>`).join('')}</div>`;
+
+  h += SP.card(D, [X, 670, W, 88], {layout: 'panel', fieldAccent: true});
+  h += `<div class="abs" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  await SP.finish(D, 612, 792, h, issues);
+})();
+</script>
+</body>
+</html>

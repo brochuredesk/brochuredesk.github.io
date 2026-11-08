@@ -1,0 +1,107 @@
+/* The Split Edition: set style file. White editorial pages with burgundy accents: a giant serif house number, hairlines,
+   serif room titles, sans body. Landscape 11 x 17 half-fold (panels stack). Lengths are pt (1/72 in). */
+:root{
+  --paper:#ffffff;
+  --ink:#201c1d;            /* titles, names, facts */
+  --text:#3c383a;           /* body copy */
+  --muted:#76696c;
+  --accent:#8f2430;         /* burgundy: kickers, size lines, tags */
+  --soft:#f6eeee;           /* pale rose block */
+  --line:#cdb9bc;           /* hairlines */
+  --font-display:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --font-body:'Albert Sans',Helvetica,Arial,sans-serif;
+  --m:24pt;
+}
+@font-face{font-family:'Source Serif 4';font-weight:400;src:url(../../fonts/pool/source-serif-4-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Serif 4';font-weight:500;src:url(../../fonts/pool/source-serif-4-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Serif 4';font-weight:600;src:url(../../fonts/pool/source-serif-4-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Albert Sans';font-weight:400;src:url(../../fonts/pool/albert-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Albert Sans';font-weight:500;src:url(../../fonts/pool/albert-sans-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Albert Sans';font-weight:600;src:url(../../fonts/pool/albert-sans-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Albert Sans';font-weight:700;src:url(../../fonts/pool/albert-sans-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+.page{position:relative;background:var(--paper);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+body[data-mode=proof] .page{width:810pt;height:630pt}
+body[data-mode=print] .page{width:810pt;height:1242pt}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+@media print{body[data-mode=proof] .page{page:proof}body[data-mode=print] .page{page:spread}}
+@page proof{size:810pt 630pt}
+@page spread{size:810pt 1242pt}
+.panel{position:absolute;width:792pt;height:612pt;left:9pt;top:9pt}
+.half{position:absolute;left:0;width:810pt;height:621pt;overflow:hidden}
+.half.top{top:0}.half.bottom{top:621pt}
+.half.top .panel{top:9pt}.half.bottom .panel{top:0}
+.half .panel.flip{transform:rotate(180deg);transform-origin:396pt 306pt}
+
+/* type */
+.kick{font:700 8.5pt/10pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+.title{font:400 27pt/32pt var(--font-display);letter-spacing:-.2pt;color:var(--ink);overflow:hidden}
+.title.one{white-space:nowrap}
+.rule{position:absolute;height:.7pt;background:var(--line)}
+.rule.acc{background:var(--accent);height:1pt}
+.body{font-size:9.5pt;line-height:13pt;color:var(--text);overflow:hidden}
+.body.sm{font-size:9pt;line-height:12pt}
+
+/* photos */
+.ph{position:absolute;overflow:hidden;background:#e4dede;flex:none}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.logo{position:absolute;display:flex;align-items:center;justify-content:flex-end}
+.logo img{display:block}
+
+/* captions: serif title, burgundy size line, then the paragraph */
+.cap{overflow:hidden}
+.cap .nm{height:17pt;white-space:nowrap;overflow:hidden;display:flex;align-items:baseline;gap:7pt}
+.cap .nm b{font:500 12.5pt/17pt var(--font-display);color:var(--ink);letter-spacing:-.05pt}
+.cap .nm span{font:600 8pt/17pt var(--font-body);letter-spacing:.9pt;text-transform:uppercase;color:var(--accent)}
+.cap .tx{font-size:9pt;line-height:11.5pt;color:var(--text);overflow:hidden}
+
+/* editorial copy column (inside spread) */
+.col .lede{font-size:9.5pt;line-height:13pt;color:var(--text);overflow:hidden}
+.col .lede.first:first-letter{font:400 30pt/26pt var(--font-display);float:left;padding:2pt 4pt 0 0;color:var(--accent)}
+.col .h{font:700 8.5pt/10pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+.col .sub{font:400 18pt/22pt var(--font-display);color:var(--ink);overflow:hidden;letter-spacing:-.15pt}
+.col .quote{font:400 italic 13.5pt/18pt var(--font-display);color:var(--accent);overflow:hidden}
+.rooms{border-top:1pt solid var(--accent)}
+.rooms div{display:flex;justify-content:space-between;align-items:baseline;border-bottom:.6pt solid var(--line);white-space:nowrap}
+.rooms .n{font:600 9pt/12pt var(--font-body);color:var(--ink);overflow:hidden}
+.rooms .s{font:500 9pt/12pt var(--font-body);color:var(--accent);font-variant-numeric:tabular-nums;margin-left:8pt}
+
+/* plan */
+.plan{position:absolute}
+.plan.lv{position:absolute;overflow:visible}
+.plan.lv .in{position:absolute}
+.plan.lv img{display:block;width:100%;height:100%}
+.plan.flr{position:absolute;text-align:center;font:600 8pt/10pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;overflow:hidden}
+
+/* back */
+.claim{position:absolute;background:var(--soft);border-top:1.4pt solid var(--accent);display:flex}
+.claim .big{font:400 25pt/28pt var(--font-display);letter-spacing:-.2pt;color:var(--accent);overflow:hidden;white-space:nowrap}
+.claim .sm{font-size:9pt;line-height:12pt;color:var(--text);overflow:hidden}
+.claim .grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(3,auto);gap:5pt 18pt}
+.claim .grid div{font:600 9pt/12pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden;padding-left:9pt;position:relative}
+.claim .grid div:before{content:"";position:absolute;left:0;top:4pt;width:4pt;height:4pt;background:var(--accent)}
+.floors{position:absolute;display:flex;gap:18pt}
+.floors .f{flex:1;min-width:0;border-top:1pt solid var(--accent)}
+
+/* cover */
+.numb{font:400 100pt/92pt var(--font-display);font-variant-numeric:oldstyle-nums;letter-spacing:-2pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.street{font:400 31pt/36pt var(--font-display);letter-spacing:-.3pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.city{font:700 8.5pt/13pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+.facts div{font:700 9.5pt/24pt var(--font-body);letter-spacing:.9pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;overflow:hidden;height:24pt}
+.around div{display:flex;justify-content:space-between;align-items:baseline;white-space:nowrap;height:17pt;border-bottom:.6pt solid var(--line)}
+.around .p{font:500 9pt/17pt var(--font-body);color:var(--ink);overflow:hidden}
+.around .d{font:500 9pt/17pt var(--font-body);color:var(--accent);margin-left:6pt}
+.tag{display:inline-block;background:var(--accent);color:#fff;font:700 8.5pt/16pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;padding:0 9pt;height:16pt;white-space:nowrap}
+
+/* cover (option A, owner 10/29) */
+.fv{font:400 34pt/38pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;height:38pt;letter-spacing:-.3pt}
+.fl{font:700 8pt/10pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden;height:10pt}
+.fcell{overflow:hidden}
+.fcell .fl{margin-top:2pt}

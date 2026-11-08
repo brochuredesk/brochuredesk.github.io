@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Midnight Residence postcard</title>
+<link rel="stylesheet" href="midnight.css">
+<script src="midnight.js"></script>
+<script src="../engine/setpieces.js"></script>
+<!--
+  Midnight Residence · Just Listed and Just Sold postcards. data.piece: card "listed" | "sold", size "6x9" (trim 648 x 432 pt) |
+  "6x11" (trim 792 x 432 pt), side "front" | "back". Print adds 0.125 in (9 pt) bleed (TrimBox set by the renderer).
+
+  Front: the navy field. The whole house (roof to steps) sits in a gold hairline frame at the left; right of it a gold small-caps
+  kicker, the status in the serif, a gold rule, the address and city, state and ZIP, and the facts as serif numbers on gold
+  hairlines (Just Listed) or the agent's name and number (Just Sold). Under a gold rule, a write-up (Just Listed) or what the
+  agent did for this sale and the invitation in a gold serif line (Just Sold).
+  Back (10/29 postcard rules, docs/context/product.md): a solid gold band runs across the top edge, over the mail side too.
+  The return address top right, the status in gold small caps over the address in the serif at the left; captioned photos in
+  one row (serif names, the gold room-size tags of the fold-over, same line count), one of them beside the address block under
+  the return address; a short line in the serif between two gold hairlines under the postage box; a write-up (Just Listed) or
+  two interiors, a numbered "How I'd start" list, and what the first meeting is like (Just Sold). Then the postcard contact
+  card (templates/_shared/agentcard.js, postcard true) full width under the address block and above the barcode strip, and the
+  two-line disclaimer beside the barcode strip. Mail zones: templates/_shared/setpieces.js SP.mail (the Just Listed library's).
+  No price, no QR, no photo numbers, no "virtually staged". Copy: data.copy.pc.jl / data.copy.pc.js.
+-->
+<style>
+  .cc{--cc-paper:#121a2b;--cc-ink:#ffffff;--cc-muted:#c3cad8;--cc-accent:#c9a96a;--cc-line:rgba(201,169,106,.55);--cc-display:'Newsreader',Georgia,serif}
+  .st{font:500 44pt/46pt var(--font-display);letter-spacing:-.5pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+  .ad{font:500 21pt/24pt var(--font-display);letter-spacing:-.2pt;color:var(--ink);overflow:hidden}
+  .ab{font-size:10.5pt;line-height:15pt;color:var(--text)}
+  .frow{display:flex;align-items:baseline;gap:5pt;border-top:.7pt solid var(--line);height:18pt;overflow:hidden;white-space:nowrap}
+  .frow b{font:500 16pt/18pt var(--font-display);color:var(--ink)}
+  .frow span{font:600 8pt/18pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--accent)}
+  .ret{font:400 8pt/10pt var(--font-body);color:var(--text);white-space:nowrap;overflow:hidden}
+  .ret b{font-weight:700;letter-spacing:.8pt;text-transform:uppercase;color:var(--accent)}
+  .bad{font:500 20pt/24pt var(--font-display);letter-spacing:-.2pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+  .cap .nm{font:500 11.5pt/15pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;height:15pt}
+  .cap .nm span{font:600 8pt/15pt var(--font-body);letter-spacing:1pt;text-transform:uppercase;color:var(--accent);margin-left:6pt}
+  .ctx{font-size:9pt;line-height:11.5pt;color:var(--text)}
+  .slab{display:flex;align-items:center;justify-content:center;text-align:center;border-top:.7pt solid var(--accent);border-bottom:.7pt solid var(--accent);padding:4pt 2pt}
+  .slab div{font:500 15pt/17pt var(--font-display);color:var(--ink);overflow:hidden}
+  .steps{display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+  .steps .it{display:flex;gap:7pt;align-items:baseline;font:400 9.5pt/12pt var(--font-body);color:var(--ink);border-top:.7pt solid var(--line);padding-top:3pt}
+  .steps .it i{font:500 13pt/12pt var(--font-display);font-style:normal;color:var(--accent);flex:none;width:9pt}
+  .hframe{outline:.7pt solid var(--accent);outline-offset:4pt}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = SP.esc, L = D.listing, A = D.agent || {};
+  const issues = await SP.ready(D);
+  const sold = D.piece.card === 'sold', big = D.piece.size === '6x11', front = D.piece.side === 'front';
+  const PCall = ((D.copy || {}).pc || {}), C = (sold ? PCall.js : PCall.jl) || {};
+  document.body.dataset.mode = D.mode || 'email';
+  const W = big ? 792 : 648, H = 432, M = 24, status = sold ? 'Just Sold' : 'Just Listed';
+  let h = '';
+
+  if(front){
+    // ---------- front ----------
+    const pw = big ? 484 : 380, ph = 288, cx = M + pw + 24, cw = W - M - cx, top = 26;
+    h += SP.photo(D, C.hero || 'front', M, top, pw, ph, 'front.hero', '', 'hframe');
+    // owner 10/30: 6x9 Just Listed address a little bigger, 6x11 status/address bigger (status on one line there)
+    const sold11 = sold && big, one = big && !sold;
+    const stT = one ? esc(status) : esc(status.split(' ')[0]) + '<br>' + esc(status.split(' ')[1]);
+    const stH = one ? 'height:56pt' : sold11 ? 'height:116pt' : 'height:88pt', stF = one ? 50 : sold11 ? 62 : 44, stL = one ? 54 : sold11 ? 58 : 44, stW = one ? 'nowrap' : 'normal', stN = one ? 1 : 2;
+    const adF = sold11 ? (L.address.length <= 15 ? 32 : 28) : big ? 27 : (sold ? 21 : 22.5), adL = sold11 ? (L.address.length <= 15 ? 36 : 31) : big ? 30 : (sold ? 24 : 26);
+    const ex = sold11 && L.address.length <= 15 ? 9 : 0;  // one-line address: spread the spare height as even spacing
+    const fp = sold ? [] : SP.factPairs(L, 6, {lot: true}).filter(p => !/^Stor/.test(p[1])).slice(0, 5);
+    const fbF = big ? Math.min(24, 120/fp.length*.72) : Math.min(21, 92/fp.length*.8), fsF = big ? 9 : 8.5;
+    h += `<div class="abs" style="left:${cx}pt;top:${top}pt;width:${cw}pt;height:${ph}pt;display:flex;flex-direction:column;justify-content:space-between">
+      <div><div class="kick" style="height:10pt" data-slot="front.kick" data-lines="1">${esc(sold ? 'Recently sold' : 'New on the market')}</div>
+        <div class="st" style="margin-top:6pt;${stH};font-size:${stF}pt;line-height:${stL}pt;white-space:${stW}" data-slot="status" data-lines="${stN}">${stT}</div>
+        <div class="rule" style="position:relative;margin:${7 + ex}pt 0 ${8 + ex}pt"></div>
+        <div class="ad" style="font-size:${adF}pt;line-height:${adL}pt" data-slot="address" data-lines="2">${esc(L.address)}</div>
+        <div class="kick" style="margin-top:${6 + ex}pt;height:10pt" data-slot="place" data-lines="1">${esc(SP.placeZip(L).toUpperCase())}</div></div>
+      ${!sold
+        ? `<div style="flex:1;min-height:0;margin-top:6pt;display:flex;flex-direction:column">${fp.map((p, i) => `<div class="frow" style="flex:1;height:auto;align-items:center" data-slot="front.fact${i}" data-lines="1"><b style="font-size:${fbF}pt;line-height:1.1">${esc(p[0])}</b><span style="font-size:${fsF}pt;line-height:1.1">${esc(({'Square Feet': 'Sq Ft', 'Year Built': 'Built'})[p[1]] || p[1])}</span></div>`).join('')}</div>`
+        : `<div style="border-top:.7pt solid var(--line);padding-top:8pt"><div style="font:500 22pt/26pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden" data-slot="agent.name" data-lines="1" data-fit="14">${esc(A.name || '')}</div>
+           <div style="font:700 14pt/20pt var(--font-body);color:var(--accent);letter-spacing:.4pt;white-space:nowrap;overflow:hidden" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div></div>`}
+    </div>`;
+    const nl = sold ? 3 : 4, lh = 17, fs = 12, ty = top + ph + 24;
+    h += `<div class="rule" style="left:${M}pt;top:${ty - 10}pt;width:${W - 2*M}pt"></div>`;
+    h += `<div class="abs ab" style="left:${M}pt;top:${ty}pt;width:${W - 2*M}pt;height:${nl*lh}pt;font-size:${fs}pt;line-height:${lh}pt" data-slot="${sold ? 'front.sold' : 'front.about'}" data-para="1" data-min="${nl}" data-fillbox="1">${esc(big ? C.front11 : C.front9)}</div>`;
+    if(sold) h += `<div class="abs" style="left:${M}pt;top:${ty + nl*lh + 8}pt;width:${W - 2*M}pt;height:24pt;font:500 19pt/24pt var(--font-display);color:var(--accent);white-space:nowrap;overflow:hidden" data-slot="sold.cta" data-lines="1">${esc(C.cta || 'Thinking about selling? Let’s talk.')}</div>`;
+  } else {
+    // ---------- back ----------
+    const Z = SP.mail(W), X = M, LZ = Z.zA[0] - 12, rW = Z.zP[0] - 12 - Z.zA[0], pTop = 64;
+    h += `<div class="abs" data-blk="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:12.5pt;background:var(--accent)"></div>`;
+    // the return address beside the status line; the status over the address, a gold rule under both
+    const ret = SP.returnLines(D);
+    h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:16pt;width:${rW}pt;height:32pt;text-align:${sold ? 'center' : 'right'}" data-slot="return" data-lines="3"><b>${esc(ret[0] || '')}</b>${ret.slice(1).map(r => '<br>' + esc(r)).join('')}</div>`;
+    h += `<div class="abs kick" style="left:${X}pt;top:16pt;width:${LZ - X}pt;height:10pt" data-slot="back.status" data-lines="1">${esc(status)}</div>`;
+    h += `<div class="abs bad" style="left:${X}pt;top:28pt;width:${LZ - X}pt;height:26pt" data-slot="back.address" data-lines="1">${esc(L.address)}</div>`;
+    h += `<div class="rule" style="left:${X}pt;top:57pt;width:${LZ - X}pt"></div>`;
+    const cap = (c, x, y, w, slot, row) => `<div class="abs cap" style="left:${x}pt;top:${y + 4}pt;width:${w}pt"><div class="nm" data-slot="${slot}.t" data-lines="1">${esc(c.t)}${c.s ? `<span>${esc(c.s)}</span>` : ''}</div></div>
+      <div class="abs ctx" style="left:${x}pt;top:${y + 21}pt;width:${w}pt" data-slot="${slot}" data-cap="1" data-row="${row}" data-para="1" data-min="3">${esc((big && c.a11) || c.a)}</div>`;
+    let g = '';
+    if(!sold){
+      // one row of captioned photos: the left zone, and one beside the address block under the return address
+      const bk = C.back || [], n = big ? 4 : 3, items = bk.slice(0, n), rItem = bk[4], gap = 10, ph = 56;
+      const pw = (LZ - X - (n - 1)*gap)/n;
+      items.forEach((c, i) => { const x = X + i*(pw + gap); g += SP.photo(D, c.id, x, pTop, pw, ph, 'back.photo' + i); h += cap(c, x, pTop + ph, pw, 'back.cap' + i, 'back'); });
+      if(rItem){ g += SP.photo(D, rItem.id, Z.zA[0], pTop, rW, ph, 'back.photoR'); h += cap(rItem, Z.zA[0], pTop + ph, rW, 'back.capR', 'back'); }
+      const ty = pTop + ph + 21 + 4*11.5 + 14, nlb = Math.floor((Z.cardY - 6 - ty)/17);
+      h += `<div class="rule" style="left:${X}pt;top:${ty - 7}pt;width:${LZ - X}pt"></div>`;
+      h += `<div class="abs ab" style="left:${X}pt;top:${ty}pt;width:${LZ - X}pt;height:${nlb*17}pt;font-size:11.5pt;line-height:17pt" data-slot="back.about" data-para="1" data-min="3" data-fillbox="1">${esc(big ? C.about11 : C.about9)}</div>`;
+    } else {
+      // two interiors, no captions; "How I'd start" beside them; what the first meeting is like under them
+      const ids = C.photos || [], gap = 10, pw = (LZ - X - gap)/2, ph = 116;
+      ids.slice(0, 2).forEach((id, i) => { g += SP.photo(D, id, X + i*(pw + gap), pTop, pw, ph, 'back.photo' + i); });
+      h += `<div class="abs kick" style="left:${Z.zA[0]}pt;top:${pTop}pt;width:${rW}pt;height:10pt" data-slot="sold.startLabel" data-lines="1">${esc(C.startLabel || "How I'd start")}</div>`;
+      h += `<div class="abs steps" style="left:${Z.zA[0]}pt;top:${pTop + 14}pt;width:${rW}pt;height:${ph - 14 + 4}pt">${(C.steps || []).map((s, i) => `<div class="it"><i>${i + 1}</i><span data-slot="sold.step${i}" data-lines="3">${esc(s)}</span></div>`).join('')}</div>`;
+      const my = pTop + ph + 12;
+      h += `<div class="abs kick" style="left:${X}pt;top:${my}pt;width:${LZ - X}pt;height:10pt" data-slot="sold.meetLabel" data-lines="1">${esc(C.meetLabel || 'Our first meeting')}</div>`;
+      h += `<div class="abs ab" style="left:${X}pt;top:${my + 15}pt;width:${LZ - X}pt;height:60pt" data-slot="sold.meet" data-para="1" data-min="3" data-fillbox="1">${esc(big ? C.meet11 : C.meet9)}</div>`;
+      h += `<div class="abs" style="left:${X}pt;top:${my + 81}pt;width:${LZ - X}pt;height:24pt;font:500 18pt/24pt var(--font-display);color:var(--accent);white-space:nowrap;overflow:hidden" data-slot="sold.call" data-lines="1">${esc(C.call || 'Thinking about selling? Let’s talk.')}</div>`;
+    }
+    h += `<div class="abs" data-gapcheck="back.photos" style="left:0;top:0">${g}</div>`;
+    // under the postage box: a short line in the serif between two gold hairlines
+    const sl = C.slab || {};
+    h += `<div class="abs slab" style="left:${Z.zP[0]}pt;top:${Z.zP[1] + Z.zP[3] + 10}pt;width:${W - 12 - Z.zP[0]}pt;height:${Z.zA[1] - Z.zP[1] - Z.zP[3] - 20}pt"><div data-slot="slab.big" data-lines="3">${esc(sl.big || '')}</div></div>`;
+    // the card: full width under the address block, above the barcode strip
+    h += SP.postCard(D, Z, W);
+    h += SP.fine(D, X, 396, Z.zB[0] - 12 - X, 'var(--text)');
+    h += SP.mailGuides(D, Z);
+  }
+
+  await SP.finish(D, W, H, h, issues);
+})();
+</script>
+</body>
+</html>

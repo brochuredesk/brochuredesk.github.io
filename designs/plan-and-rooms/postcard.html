@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Plan and the Rooms postcard</title>
+<link rel="stylesheet" href="plan-and-rooms.css">
+<link rel="stylesheet" href="plan-and-rooms-cards.css">
+<script src="../engine/baths.js"></script>
+<script src="plan-and-rooms.js"></script>
+<script src="plan-and-rooms-cards.js"></script>
+<script src="../engine/agentcard.js"></script>
+<!--
+  The Plan and the Rooms · Just Listed and Just Sold postcards. data.piece: card "listed" | "sold", size "6x9" (trim 648 x 432 pt)
+  | "6x11" (trim 792 x 432 pt), side "front" | "back". Print adds 0.125 in (9 pt) bleed on every edge (TrimBox set by the renderer).
+
+  White paper, crimson small caps, condensed sans titles over a hairline, as the fold-over.
+  Front: the whole house (roof to steps; the house box kept in frame) bleeds off the top and left. "Just Listed" / "Just Sold" runs in
+  the condensed sans beside it over a crimson hairline, with the address, city, state and ZIP and the facts (Just Listed) or the offer
+  of help and the agent's name and number (Just Sold). Just Listed: three captioned rooms close the card. Just Sold: a note to the
+  neighbors runs under the photo.
+  Back (the design carries across the mail side): a thin crimson edge strip over the whole top, the status, the address and the return
+  address on a hairline, and a crimson callout under the postage box. At the left the room-dimension list (Just Listed: every room's size,
+  as the listing gives it; Just Sold: what the agent does for a seller, in the same ruled rows). At the right a photo with its caption and
+  the write-up (6 x 9), or two photo-left / text-right rows (6 x 11); Just Sold: two interiors and what the first meeting is like.
+  Then the postcard contact card (templates/_shared/agentcard.js, postcard true), full width under the address block and above the barcode
+  strip, which carries the back's one brokerage logo. Mail zones are the Just Listed library's (postage, address block, barcode strip);
+  guides on proofs, clear in print. No price, no QR, no photo numbers. Copy: data.copy.pc.jl / data.copy.pc.js.
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = CN.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#000;padding:20pt">No data injected.</p>'; return; }
+  const esc = CN.esc, L = D.listing, A = D.agent || {}, b = D.brand || {};
+  const issues = await CN.fontsReady(D);
+  const sold = D.piece.card === 'sold', big = D.piece.size === '6x11', front = D.piece.side === 'front';
+  const PCall = ((D.copy || {}).pc || {}), PC = (sold ? PCall.js : PCall.jl) || {};
+  const PT = 96/72, W = big ? 792 : 648, H = 432, M = 27, status = sold ? 'Just Sold' : 'Just Listed';
+  const hero = PC.hero || 'front';
+  const n0 = v => v == null ? '' : Number(v).toLocaleString('en-US');
+  let h = '';
+
+  if(front){
+    // ---------- front ----------
+    const xR = big ? 497 : 420, ph = sold ? 330 : 261, cx = xR + 18, cw = W - M - cx, S = big ? (sold ? 68 : 46) : (sold ? 62 : 50), LH = Math.round(S*1.05);
+    h += CN.photo(D, hero, `position:absolute;left:-9pt;top:-9pt;width:${xR + 9}pt;height:${ph}pt`, 'front.hero');
+    const AL = big ? 26 : 22;
+    let bottom;
+    if(!sold){
+      const bn = BD.bathNum(L);
+      const rows = [[L.beds, 'Bedrooms'], [bn.num, bn.label, bn.half], [n0(L.sqft), 'Square Feet'], [L.yearBuilt || L.year, 'Year Built']];
+      bottom = `<div class="fcol">${rows.map((r, i) => `<div class="r"><b data-slot="stat${i}.v" data-lines="1">${i === 1 ? r[0] : esc(r[0])}</b><i data-slot="stat${i}.l" data-lines="1">${esc(r[1])}</i></div>${r[2] ? `<div class="r"><b></b><i data-slot="stat${i}.x" data-lines="1">${esc(r[2])}</i></div>` : ''}`).join('')}</div>`;
+    } else {
+      bottom = `<div><div class="dsp" style="font-size:${big ? 21 : 19}pt;line-height:${big ? 25 : 23}pt;color:var(--crimson)" data-slot="sold.cta" data-lines="2">${esc(PC.cta1 || 'Thinking of selling?')}<br>${esc(PC.cta2 || 'Let’s talk.')}</div>
+        <div class="dsp" id="agname" style="margin-top:8pt;font-size:${big ? 21 : 19}pt;line-height:${big ? 25 : 23}pt" data-slot="agent.name" data-lines="1">${esc(A.name || '')}</div>
+        <div style="font:600 ${big ? 14.5 : 13}pt/${big ? 17 : 16}pt var(--font-body);color:var(--ink);letter-spacing:.3pt;white-space:nowrap;overflow:hidden;margin-top:1pt" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div></div>`;
+    }
+    const nrc = ph - 9 + (sold ? 0 : -2) - 10;
+    h += `<div class="abs rc" style="left:${cx}pt;top:10pt;width:${cw}pt;height:${nrc}pt">
+      <div><div class="head" id="head" style="margin-left:-1pt;height:${2*LH}pt;font-size:${S}pt;line-height:${LH}pt" data-slot="status" data-lines="2">${esc(status.split(' ')[0])}<br>${esc(status.split(' ')[1])}</div>
+        <div style="height:.8pt;background:var(--crimson);margin-top:6pt"></div></div>
+      <div><div class="dsp" id="addr" style="margin-left:-1pt;font-size:${big ? 23 : 20}pt;line-height:${AL}pt;white-space:normal;height:auto" data-slot="address" data-lines="2">${esc(L.address)}</div>
+        <div class="kicker" style="margin-top:6pt;height:12pt" data-slot="place" data-lines="1">${esc(CN.placeZip(L).toUpperCase())}</div></div>
+      ${bottom}</div>`;
+    if(!sold){
+      const rows = PC.front || [], top = ph - 9 + 10, rh = 417 - top, gap = 14, cwd = (W - 2*M - 2*gap)/3;
+      h += `<div class="abs row" style="left:${M}pt;top:${top}pt;width:${W - 2*M}pt;height:${rh}pt;gap:${gap}pt">` + rows.map((r, i) =>
+        `<div class="item" style="flex:1 1 0;width:${cwd}pt">${CN.photo(D, r.photo, 'flex:1 1 0', 'front.room' + i)}<div class="cap2"><div class="h" data-slot="front.room${i}.h" data-lines="1">${esc(r.title)}</div><div class="a" data-slot="front.room${i}.a" data-para="1" data-min="2" data-lines="3">${esc(big ? r.text11 || r.text : r.text)}</div></div></div>`).join('') + `</div>`;
+    } else {
+      const tt = ph - 9 + 12, tw = W - 2*M, lh = big ? 19 : 17;
+      h += `<div class="abs kicker" style="left:${M}pt;top:${tt}pt;width:${tw}pt;height:12pt" data-slot="sold.kicker" data-lines="1">${esc(PC.kicker || 'To the neighbors')}</div>`;
+      h += `<div class="abs ptxt" id="note" style="left:${M}pt;top:${tt + 16}pt;width:${tw}pt;height:${417 - tt - 16}pt;font-size:${big ? 13.75 : 12.5}pt;line-height:${lh}pt" data-slot="front.about" data-para="1" data-min="3">${esc(big ? PC.front11 : PC.front9)}</div>`;
+    }
+  } else {
+    // ---------- back ----------
+    const X = 24, zP = [W - 96, 12, 84, 98.25], zA = [W - 243, 187.5, 240, 112.5], zB = [W - 342, 387, 342, 45];
+    const LZ = zA[0] - 10, bandR = zP[0] - 12, avail = LZ - X;
+    const lw = big ? (sold ? 214 : 230) : 170, rx = X + lw + 18, rw = LZ - rx, T0 = 58, BOT = 298;
+    const ret = [].concat(b.returnAddress || b.address || []).flatMap(a => String(a).split('\n')).map(s => s.trim()).filter(Boolean).slice(0, 2);
+    h += `<div class="bnd" data-blk="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:15pt"></div>`;
+    h += `<div class="abs bst" style="left:${X}pt;top:10pt;width:${bandR - X - 14}pt;height:32pt" data-slot="status" data-lines="1"><span class="st">${esc(status)}</span><span class="ln"></span><span class="ad">${esc(L.address)}</span>
+      <span class="ln" style="max-width:30pt"></span><span class="ret">${b.brokerage ? '<b>' + esc(b.brokerage) + '</b>' : ''}${ret.map(r => '<br>' + esc(r)).join('')}</span></div>`;
+    h += `<div class="hrule" style="left:${X}pt;top:46pt;width:${bandR - X - 14}pt"></div>`;
+    const lh = 12;
+    const cap = (c, id, x, y, w, slot, lines) => `<div class="abs cap2" id="${id}" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.title" data-lines="1">${esc(c.title)}</div><div class="a" data-slot="${slot}" data-para="1" data-min="2" data-lines="${lines || 3}" data-nobal="1">${esc(c.text)}</div></div>`;
+    let slab;
+    if(!sold){
+      if(!big){
+        // 6x9 back (The owner 11/1): the big write-up where the room table was, and a small room table at the foot of the right column
+        h += `<div class="abs kicker" style="left:${X}pt;top:${T0}pt;width:${lw}pt;height:12pt" data-slot="about.label" data-lines="1">${esc(PC.aboutLabel || 'The house')}</div>`;
+        h += `<div class="abs ptxt" id="jlw" style="left:${X}pt;top:${T0 + 17}pt;width:${lw}pt;height:${BOT - T0 - 17}pt;font-size:10pt;line-height:14.5pt" data-slot="about" data-para="1" data-min="3" data-nobal="1">${esc(PC.aboutBig || PC.about9)}</div>`;
+        const r = PC.right, lst = PC.list || [], tbH = lst.length > 7 ? 14 + lst.length * 11.8 : 14 + lst.length * 13, pitch = (tbH - 14) / Math.max(1, lst.length), mf = pitch >= 12.5 ? 9 : 8.5;
+        h += CN.photo(D, r.photo, `position:absolute;left:${rx}pt;top:${T0}pt;width:${rw}pt;height:90pt`, 'back.photoR');
+        h += lst.length > 7 ? `<div class="abs" id="capR" style="left:${rx}pt;top:${T0 + 90}pt;width:${rw}pt;height:0"></div>` : `<div class="abs cap2" id="capR" style="left:${rx}pt;top:${T0 + 90}pt;width:${rw}pt"><div class="h" data-slot="back.capR.title" data-lines="1">${esc(r.title)}</div></div>`;
+        h += CN.roomList(rx, BOT - tbH, rw, tbH, lst.map(x => Object.assign({}, x, {s: ''})), PC.listLabel || 'Room dimensions', 'back.list').replace('class="abs rd', 'class="abs rd mini').replace('style="', `id="jlt" style="--mf:${mf}pt;`);
+      } else {
+        const pairs = PC.pairs || [], rh = (BOT - T0 - 8)/2, pw = 112;
+        pairs.forEach((c, i) => { const y = T0 + i*(rh + 8);
+          h += `<div class="pr2" style="left:${rx}pt;top:${y}pt;width:${rw}pt;height:${rh}pt"><div class="pw" style="width:${pw}pt;height:${rh}pt">${CN.photo(D, c.photo, 'position:absolute;inset:0', 'back.photo' + i)}</div>
+            <div class="bt" style="font-size:10pt"><div class="h" data-slot="back.cap${i}.title" data-lines="1">${esc(c.title)}</div><div class="a" data-slot="back.cap${i}" data-para="1" data-min="3" data-lines="9">${esc(c.text)}</div></div></div>`; });
+      }
+      slab = PC.slab || {};
+    } else {
+      // Just Sold: what the agent does, in the list's ruled rows, beside two interiors and the first meeting
+      const items = (big && PC.services11) || PC.services || [];
+      h += `<div class="abs rd svc${big ? ' b11' : ''}" style="left:${X}pt;top:${T0}pt;width:${lw}pt;height:${BOT - T0}pt"><div class="k" data-slot="sold.servicesLabel" data-lines="1">${esc(PC.servicesLabel || 'What I do for sellers')}</div>` +
+        items.map((s, i) => `<div class="lr"><div class="t"><span class="n" data-slot="sold.svc${i}.n" data-lines="1">${esc(s.n)}</span></div><div class="s" style="white-space:normal" data-slot="sold.svc${i}.s" data-lines="2">${esc(s.s)}</div></div>`).join('') + `</div>`;
+      const ids = PC.photos || [], g = 8, pw = (rw - g)/2;
+      ids.slice(0, 2).forEach((id, i) => { h += CN.photo(D, id, `position:absolute;left:${(rx + i*(pw + g)).toFixed(2)}pt;top:${T0}pt;width:${pw.toFixed(2)}pt;height:100pt`, 'back.photo' + i); });
+      h += `<div class="abs kicker" id="mk" style="left:${rx}pt;width:${rw}pt;height:12pt" data-slot="sold.meetLabel" data-lines="1">${esc(PC.meetLabel || 'When we meet')}</div>`;
+      h += `<div class="abs ptxt" id="mp" style="left:${rx}pt;width:${rw + (big ? 6 : 0)}pt;text-align:${big ? 'justify' : 'left'};text-align-last:left;font-size:${big ? 10.5 : 9.5}pt;line-height:${big ? 14.5 : 13}pt" data-slot="sold.meet" data-para="1" data-min="3" data-nobal="1">${esc(big ? PC.meet11 : PC.meet9)}</div>`;
+      slab = PC.slab || {};
+    }
+    h += `<div class="slab" data-blk="1" style="left:${zP[0]}pt;top:116pt;width:${W - zP[0] + 9}pt;height:68pt;padding:6pt 18pt 6pt 9pt"><div class="big" data-slot="slab.big" data-lines="2">${esc(slab.big || '')}</div><div class="sub" data-slot="slab.sub" data-lines="3">${esc(slab.sub || '')}</div></div>`;
+    const cardH = 80, cardY = zA[1] + zA[3] + 5, cwid = W - 2*X;
+    { const hs = CN.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
+      h += ContactCard.html([X, cardY, cwid, cardH], Object.assign({}, A, {headshot: hs}), b, {postcard: true, fine: '', s: {inlineLabel: !hs || big, logo: {wide: [156, 36], square: [44, 44], tall: [46, 46]}}}); }
+    const fine = [PCall.fineprint || 'Information deemed reliable but not guaranteed.', 'If your property is currently listed with a broker, please disregard this notice. It is not intended to solicit listed property.'].join(' ');
+    const fineW = zB[0] - 10 - X;
+    h += `<div class="abs" style="left:${X}pt;top:${420 - 22.5}pt;width:${fineW}pt;height:22.5pt;font-size:6pt;line-height:7.5pt;color:var(--ink);opacity:.75;overflow:hidden;display:flex;align-items:flex-end" data-slot="fineprint" data-lines="3" data-fine="1"><span>${esc(fine)}</span></div>`;
+    const V = D.mailVendor || {}, guide = (D.mode || 'email') !== 'print';
+    if(guide) h += `<div class="mailg stamp" data-z="1" style="left:${zP[0]}pt;top:${zP[1]}pt;width:${zP[2]}pt;height:${zP[3]}pt">Postage<br><span style="text-transform:none">mail vendor</span></div>
+      <div class="mailg" data-z="1" style="left:${zA[0]}pt;top:${zA[1]}pt;width:${zA[2]}pt;height:${zA[3]}pt">${[0,1,2,3].map(i => `<div class="aline" style="left:22pt;right:22pt;top:${24 + i*17.25}pt"></div>`).join('')}<div class="guide" style="left:22pt;top:97pt">${esc(V.name ? 'Address block · ' + V.name : 'Address block · mail vendor')}</div></div>
+      <div class="mailg" data-z="1" style="left:${zB[0]}pt;top:${zB[1]}pt;width:${zB[2]}pt;height:${zB[3]}pt;border:.75pt dashed #c9c5bb"><div class="guide" style="left:10pt;top:17pt">Barcode strip · keep clear</div></div>`;
+    window.mailZones = {postage: zP, address: zA, barcode: zB};
+    window.__geo = {T0, BOT};
+  }
+
+  const f = CN.sframe(D, W, H, h);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await CN.settle();
+  const fitLines = (el, lo) => { let s = parseFloat(getComputedStyle(el).fontSize)*72/96; while((CN.nl(el) > 2 || el.scrollWidth > el.clientWidth + .5) && s > lo){ s -= .5; el.style.fontSize = s + 'pt'; } };
+  const ad = document.getElementById('addr'); if(ad) fitLines(ad, 15);
+  const hd = document.getElementById('head'); if(hd) CN.fitLine(hd, 34);
+  const an = document.getElementById('agname'); if(an) CN.fitLine(an, 13);
+  // the write-up sits at the bottom of the right column; the photo above it takes whatever height is left (never under 85 pt)
+  const setBottom = (pid, kid, capid, photoSel) => {
+    const p = document.getElementById(pid); if(!p) return;
+    CN.balance(p);
+    const nl = CN.nl(p), lh = parseFloat(getComputedStyle(p).lineHeight)*72/96, pT = window.__geo.BOT - nl*lh;
+    p.style.top = pT + 'pt'; p.style.height = (nl*lh) + 'pt';
+    const k = document.getElementById(kid); k.style.top = (pT - 15) + 'pt';
+    const cp = capid && document.getElementById(capid), capH = cp ? pt(cp.getBoundingClientRect().height) : 0;
+    const phh = pT - 15 - 9 - window.__geo.T0 - capH;
+    document.querySelectorAll(photoSel).forEach(e => { e.style.height = phh + 'pt'; });
+    if(cp) cp.style.top = (window.__geo.T0 + phh) + 'pt';
+  };
+  const pt = px => px*72/96;
+  if(!front){
+    if(document.getElementById('jlt')){
+      const tb = document.getElementById('jlt'), cp = document.getElementById('capR'), capH = pt(cp.getBoundingClientRect().height), tT = parseFloat(tb.style.top), phh = tT - 9 - window.__geo.T0 - capH;
+      document.querySelectorAll('[data-slot-photo="back.photoR"]').forEach(e => { e.style.height = phh + 'pt'; });
+      cp.style.top = (window.__geo.T0 + phh) + 'pt';
+      const el = document.getElementById('jlw'), maxH = pt(el.getBoundingClientRect().height); let best = 9;
+      for(let fs = 12; fs >= 9; fs -= 0.25){ el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs * 1.45) + 'pt'; if(el.scrollHeight > el.clientHeight + 0.5) continue; CN.balance(el);
+        const ls = CN.lineBoxes(el), last = ls[ls.length - 1]; if(ls.length > 1 && (last.r - last.l)/el.getBoundingClientRect().width < .78) continue; best = fs; break; }
+      el.style.fontSize = best + 'pt'; el.style.lineHeight = (best * 1.45) + 'pt'; CN.balance(el);
+      for(let lh = 1.45; lh <= 1.75; lh += 0.01){ el.style.lineHeight = (best * lh) + 'pt'; if(el.scrollHeight > el.clientHeight - 1){ el.style.lineHeight = (best * (lh - 0.01)) + 'pt'; break; } }
+    } else
+    setBottom('jlp', 'jlk', 'capR', '[data-slot-photo="back.photoR"]');
+    setBottom('mp', 'mk', null, '[data-slot-photo^="back.photo"]');
+  }
+  issues.push(...CN.fitHouse(D));
+  document.querySelectorAll('[data-para]:not([data-nobal])').forEach(el => CN.balance(el));
+  document.querySelectorAll('.cap2 .a').forEach(el => CN.balance(el));
+  if(window.mailZones){
+    const sh = document.querySelector('.sheet').getBoundingClientRect(), P = r => ({l:(r.left - sh.left)/PT, r:(r.right - sh.left)/PT, t:(r.top - sh.top)/PT, b:(r.bottom - sh.top)/PT});
+    const hit = (q, z) => q.l < z[0] + z[2] - .5 && q.r > z[0] + .5 && q.t < z[1] + z[3] - .5 && q.b > z[1] + .5;
+    const els = [...document.querySelectorAll('.sheet *')].filter(e => !e.closest('[data-z]') && !e.closest('[data-contactcard]'));
+    els.forEach(e => { const own = [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()), blk = e.matches('.ph,[data-blk],img');
+      if(!own && !blk) return;
+      let rects = [];
+      if(own){ const rg = document.createRange(); rg.selectNodeContents(e); rects = [...rg.getClientRects()].filter(q => q.width > .5 && q.height > .5); } else rects = [e.getBoundingClientRect()];
+      rects.forEach(q => { for(const k in window.mailZones) if(hit(P(q), window.mailZones[k])) issues.push({kind: own ? 'text-in-mail-zone' : 'image-in-mail-zone', slot:k, text:(e.textContent||'').trim().slice(0, 24)}); }); });
+    { const cc = document.querySelector('[data-contactcard]'); if(cc){ const r = P(cc.getBoundingClientRect()); for(const k in window.mailZones) if(hit(r, window.mailZones[k])) issues.push({kind:'card-in-mail-zone', slot:k}); } }
+  }
+  // captions side by side grow together while they keep their lines
+  { const cs = [...document.querySelectorAll('.cap2 .a')]; if(cs.length){ const base = cs.map(c => CN.nl(c));
+    for(let s = 9; s <= 10; s += .5){ cs.forEach(c => { c.style.fontSize = s + 'pt'; c.style.lineHeight = (s*1.28) + 'pt'; });
+      if(cs.some((c, i) => CN.nl(c) !== base[i] || c.scrollHeight > c.clientHeight + 1)){ const p = s - .5; cs.forEach(c => { c.style.fontSize = p + 'pt'; c.style.lineHeight = (p*1.28) + 'pt'; }); break; } } } }
+  ContactCard.fit(document);
+  window.proofNotes = [{paragraphs: [...document.querySelectorAll('[data-para]')].map(el => { const ls = CN.lineBoxes(el), w = el.getBoundingClientRect().width, last = ls[ls.length-1];
+    return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, wPt: Math.round(pt(w))}; })}];
+  window.photoPlacements = CN.placements;
+  window.brochureCheck = () => CN.checkSingle(D, issues);
+})();
+</script>
+</body>
+</html>

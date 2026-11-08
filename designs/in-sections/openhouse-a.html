@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The House in Sections open house flyer</title>
+<link rel="stylesheet" href="in-sections.css">
+<link rel="stylesheet" href="in-sections-cards.css">
+<script src="in-sections.js"></script>
+<script src="in-sections-cards.js"></script>
+<!--
+  The House in Sections · Open House flyer "The Section Sheet" (trim 612 x 792 pt; print: 0.25 in white margin around the pale gray field).
+  The event leads: the label in red tracked caps, the date as the largest type on the page (bold Hanken Grotesk), the time in red, and the
+  broker / REALTOR(R) lines (only on those opens, only when filled; refreshments in a white box) beside it, over a red rule. Then the whole
+  house across the page. Under it the page is cut into sections as the book is: a tinted column on the left (red head "The address",
+  the street, city, state and ZIP, the facts stacked) that runs to the very bottom of the page behind the contact card, and two captioned
+  rooms on the right, each under its own red section head (Cook, Gather), the size in red caps as the book prints it.
+  Rules: no RSVP, no QR, no price. Copy: data.copy.pc.oh = {photos: [front, room, room], rooms: [{head, t, dims, a}, {head, t, dims, a}]}.
+-->
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const AT = window.PG, D = AT.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = AT.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), OHC = PC.oh || {};
+  const issues = await AT.fontsReady(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const O = AT.openHouse(D), X = 36, W = 540;
+  const hero = (OHC.photos || [])[0] || 'front';
+  let h = '', u = '';
+
+  // the event
+  h += `<div class="abs oh-lbl" style="left:${X}pt;top:30pt;width:${W}pt;height:26pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
+  if(O.weekday) h += `<div class="abs oh-date" id="date" style="left:${X-1}pt;top:56pt;width:${W}pt;height:68pt;font-size:56pt;line-height:68pt" data-slot="oh.date" data-lines="1">${esc(O.long)}</div>`;
+  else h += `<div class="abs oh-date" style="left:${X}pt;top:60pt;width:${W}pt;height:64pt;font-size:34pt;line-height:32pt;white-space:normal" data-slot="oh.date" data-lines="2">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X}pt;top:126pt;width:300pt;height:32pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  let dy = 0;
+  { const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note box']].filter(l => l[0]);
+    if(ls.length){ const pre = AT.eventLines(ls, 308, 0, 268, 16, 8); dy = Math.max(0, pre.h - 32); h += AT.eventLines(ls, 308, 158 - pre.h + dy, 268, 16, 8, 'text-align:right').html; } }
+  h += `<div class="hrule" style="top:${166 + dy}pt;left:${X}pt;width:${W}pt"></div>`;
+
+  // the whole house: the frame is only as tall as the house needs (house box + a little); the rest goes to the rooms
+  const hp = (D.photos || {})[hero] || {}, bx = hp.box;
+  const fh = Math.round(bx && hp.w ? Math.max(170, W*(hp.h/hp.w)*((bx[3] - bx[1]) + .012)) : 250);
+  const hy = 176 + dy, hb = hy + fh;
+  h += AT.ph(D, hero, `position:absolute;left:${X}pt;top:${hy}pt;width:${W}pt;height:${fh}pt`, 'oh.hero', 'hero');
+
+  // the tinted column on the left runs from under the house to the very bottom edge of the page
+  const TX = 224, ty = hb + 8, yy = ty + 14, BOT = 646;
+  u += `<div class="tcol" style="left:-20pt;top:${ty}pt;width:${TX + 20}pt;height:${800 - ty}pt"></div>`;
+  h += `<div class="abs sc" style="left:${X}pt;top:${yy}pt;width:${TX - X - 14}pt;height:10pt" data-slot="oh.addrhead" data-lines="1">${esc(PC.addrHead || 'The address')}</div>`;
+  h += `<div class="abs dsp" id="addr" style="left:${X - 1}pt;top:${yy + 16}pt;width:${TX - X - 12}pt;height:60pt;font-size:27pt;line-height:30pt;white-space:normal;letter-spacing:-.6pt" data-slot="address" data-lines="2">${esc(L.address)}</div>`;
+  h += `<div class="abs" style="left:${X}pt;top:${yy + 80}pt;width:${TX - X - 14}pt;height:16pt;font:700 11.5pt/16pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden" data-slot="place" data-lines="1">${esc(AT.placeZip(L))}</div>`;
+  { const f = AT.stats(L), fi = AT.fifth(L); if(fi) f.push(fi); const fy = yy + 108, fH = BOT - fy;
+    h += `<div class="abs stk" style="left:${X}pt;top:${fy}pt;width:${TX - X - 14}pt;height:${fH}pt;display:flex;flex-direction:column">${f.slice(0, 5).map((t, i) => `<div style="flex:1;display:flex;align-items:center;font-size:10pt;line-height:12pt" data-slot="oh.facts${i}" data-lines="1">${esc(t)}</div>`).join('')}</div>`; }
+
+  // two rooms, each under its own red section head
+  const rooms = OHC.rooms || [], ids = (OHC.photos || []).slice(1, 3), RX = TX + 16, RW = X + W - RX, gap = 12, pw = (RW - gap)/2;
+  const capLines = c => { const m = document.createElement('div'); m.className = 'cap2'; m.style.cssText = `position:absolute;left:-9999pt;top:0;width:${pw}pt;visibility:hidden`;
+    m.innerHTML = `<div class="a" style="height:auto">${esc(c.a || '')}</div>`; document.body.appendChild(m);
+    const k = Math.max(2, Math.round(m.firstChild.getBoundingClientRect().height*72/96/12.75)); m.remove(); return k; };
+  const nl = Math.max(...rooms.map(capLines)), capH = 6 + 14 + 1 + nl*12.75 + 2, py = yy + 16, ph = BOT - py - capH;
+  ids.forEach((id, i) => { const c = rooms[i] || {}, x = RX + i*(pw + gap);
+    h += `<div class="abs sc" style="left:${x}pt;top:${yy}pt;width:${pw}pt;height:10pt" data-slot="oh.room${i}.head" data-lines="1">${esc(c.head || '')}</div>`;
+    h += AT.ph(D, id, `position:absolute;left:${x}pt;top:${py}pt;width:${pw}pt;height:${ph.toFixed(2)}pt`, 'oh.room' + i, 'room');
+    h += `<div class="abs cap2" style="left:${x}pt;top:${(py + ph).toFixed(2)}pt;width:${pw}pt"><div class="h" data-slot="oh.room${i}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="oh.room${i}.body" data-para="1" data-min="2" data-lines="${nl}">${esc(c.a)}</div></div>`; });
+
+  u += `<div class="tcol" style="left:-20pt;top:654pt;width:660pt;height:200pt"></div>`;   // the tint runs on under the contact card, edge to edge, to the bottom of the page
+  h += AT.cardBox(D, [X, 660, W, 96], {layout: 'panel'});
+  h += `<div class="abs fine" style="left:${X}pt;top:762pt;width:${W}pt;height:8pt;white-space:nowrap;font:400 6.5pt/8pt var(--font-body);color:var(--text)" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  const f = AT.frame(D, 612, 792, h, u);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await AT.settle();
+  document.querySelectorAll('#date').forEach(el => AT.fitLine(el, 40));
+  issues.push(...AT.fitHouse(D));
+  AT.fitRow([...document.querySelectorAll('.cap2 .a')]);
+  ContactCard.fit(document);
+  window.photoPlacements = AT.placements;
+  window.brochureCheck = () => AT.checkSingle(D, issues);
+})();
+</script>
+</body>
+</html>

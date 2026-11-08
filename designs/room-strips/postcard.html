@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · The Room Strips postcard</title>
+<link rel="stylesheet" href="room-strips.css">
+<script src="room-strips.js"></script>
+<script src="../engine/setpieces.js"></script>
+<!--
+  The Room Strips · Just Listed and Just Sold postcards. data.piece: card "listed" | "sold", size "6x9" (trim 648 x 432 pt) |
+  "6x11" (trim 792 x 432 pt), side "front" | "back". Print adds 0.125 in (9 pt) bleed (TrimBox set by the renderer).
+
+  Front: the fold-over's red header band across the top, bleeding off three sides: the status in white condensed bold at left,
+  the address with city, state and ZIP at right. Under it the whole house (roof to steps) bleeds off the left, and beside it
+  the fact numbers over one interior (Just Listed) or the agent's name, number and invitation (Just Sold). A red rule and a
+  write-up (what the home offers, or what the agent did for this sale) and a thin red band along the foot.
+  Back (10/29 postcard rules, docs/context/product.md): the red band runs across the top as far as the postage box and holds
+  the status and address and the return address; a thin red edge band runs along the foot; a red block under the postage box
+  carries one line. Captioned photos in one row (name, red size line, caption, same line count), one of them beside the
+  address block under the return address, then a write-up under a red rule (Just Listed), or two uncaptioned interiors, what
+  the agent does first for sellers and what the first meeting is like (Just Sold). Then the postcard contact card
+  (templates/_shared/agentcard.js, postcard true) full width under the address block and above the barcode strip, carrying
+  the back's one logo, and the two-line disclaimer beside the barcode strip. Mail zones: SP.mail (the Just Listed library's).
+  No price, no QR, no photo numbers, no "virtually staged". Copy: data.copy.pc.jl / data.copy.pc.js.
+-->
+<style>
+  .cc{--cc-paper:#ffffff;--cc-ink:#1b1b1d;--cc-muted:#6c6c70;--cc-accent:#c0292f;--cc-line:rgba(27,27,29,.22)}
+  .band{position:absolute;background:var(--accent)}
+  .st{font:700 40pt/44pt var(--font-display);letter-spacing:-.2pt;color:#fff;white-space:nowrap;overflow:hidden}
+  .ad{font:600 19pt/24pt var(--font-display);letter-spacing:.1pt;color:#fff;white-space:nowrap;overflow:hidden;text-align:right}
+  .pl{font:600 8.5pt/11pt var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;color:#fff;white-space:nowrap;overflow:hidden;text-align:right}
+  .rk{font:600 8.5pt/10pt var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+  .fl{position:absolute;display:flex;flex-direction:column}
+  .fl div{border-top:.7pt solid var(--line);height:28pt;display:flex;align-items:baseline;gap:6pt;padding-top:3pt;white-space:nowrap;overflow:hidden}
+  .fl div:first-child{border-top:2pt solid var(--accent)}
+  .fl b{font:600 20pt/24pt var(--font-display);color:var(--ink)}
+  .fl span{font:600 8.5pt/12pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--muted)}
+  .ab{color:var(--text)}
+  .ret{font:400 8pt/10pt var(--font-body);color:#fff;white-space:nowrap;overflow:hidden}
+  .ret b{font-weight:700;letter-spacing:.8pt;text-transform:uppercase}
+  .bst{display:flex;align-items:baseline;gap:10pt;white-space:nowrap;overflow:hidden}
+  .bst .s{font:700 30pt/34pt var(--font-display);color:#fff;letter-spacing:-.1pt}
+  .bst .a{font:600 9pt/12pt var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;color:#fff}
+  .cb .nm{position:absolute;left:0;right:0;top:0;font:600 12.5pt/16pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;height:16pt}
+  .cb .sz{position:absolute;left:0;right:0;top:15pt;font:600 8.5pt/11pt var(--font-body);letter-spacing:.2pt;color:var(--accent);white-space:nowrap;overflow:hidden;height:11pt}
+  .cb .tx{position:absolute;left:0;right:0;top:29pt;font-size:9pt;line-height:11pt;color:var(--text);overflow:hidden}
+  .svc{display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+  .svc .it{display:flex;gap:7pt;align-items:baseline;font:500 9.5pt/12pt var(--font-body);color:var(--ink)}
+  .svc .it i{font:600 15pt/12pt var(--font-display);font-style:normal;color:var(--accent);width:9pt;flex:none}
+  .slab{display:flex;flex-direction:column;justify-content:center;padding:4pt 16pt 4pt 10pt}
+  .slab .bg{font:600 13.5pt/14.5pt var(--font-display);color:#fff;overflow:hidden}
+  .kk{font:600 15pt/18pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const esc = SP.esc, L = D.listing, A = D.agent || {};
+  const issues = await SP.ready(D);
+  const sold = D.piece.card === 'sold', big = D.piece.size === '6x11', front = D.piece.side === 'front';
+  const PCall = ((D.copy || {}).pc || {}), C = (sold ? PCall.js : PCall.jl) || {};
+  document.body.dataset.mode = D.mode || 'email';
+  const W = big ? 792 : 648, H = 432, M = 24, status = sold ? 'Just Sold' : 'Just Listed';
+  let h = '';
+
+  if(front){
+    // ---------- front ----------
+    h += `<div class="band" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:67pt"></div>`;
+    h += `<div class="abs st" style="left:${M}pt;top:8pt;width:300pt;height:44pt" data-slot="status" data-lines="1">${esc(status)}</div>`;
+    h += `<div class="abs ad" style="left:${W - M - 330}pt;top:12pt;width:330pt;height:24pt" data-slot="address" data-lines="1" data-fit="13">${esc(L.address)}</div>`;
+    h += `<div class="abs pl" style="left:${W - M - 330}pt;top:38pt;width:330pt;height:11pt" data-slot="place" data-lines="1">${esc(SP.placeZip(L))}</div>`;
+    const hid = C.hero || 'front', hp = (D.photos || {})[hid] || {}, hb = hp.box;
+    const mr = hb && hp.w ? (hp.w/hp.h)/(hb[3] - hb[1])*0.97 : 1.9;
+    const ph = big ? 266 : 214, fw = Math.round(ph*Math.min(1.95, mr)), pw = fw - 9, top = 66, cx = pw + 14, cw = W - M - cx;
+    h += SP.photo(D, hid, -9, top, fw, ph, 'front.hero');
+    if(!sold){
+      h += `<div class="fl" style="left:${cx}pt;top:${top}pt;width:${cw}pt">${SP.factPairs(L, 4).map((p, i) => `<div data-slot="front.fact${i}" data-lines="1"><b>${esc(p[0])}</b><span>${esc(p[1])}</span></div>`).join('')}</div>`;
+      h += SP.photo(D, C.interior || 'living', cx, top + 120, cw, ph - 120, 'front.photo');
+    } else {
+      const cl = (C.cta || '').length, cs = big ? (cl < 40 ? 36 : cl < 60 ? 29 : 22) : (cl < 40 ? 28 : cl < 60 ? 23 : 18), cw7 = big ? 700 : 600;
+      h += `<div class="abs" style="left:${cx}pt;top:${top}pt;width:${cw}pt;height:${ph}pt;display:flex;flex-direction:column;border-top:2pt solid var(--accent);padding-top:7pt">
+        <div><div class="rk" data-slot="agent.kick" data-lines="1">Your agent</div>
+        <div style="font:600 24pt/28pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;margin-top:4pt" data-slot="agent.name" data-lines="1" data-fit="14">${esc(A.name || '')}</div>
+        <div style="font:600 16pt/20pt var(--font-display);color:var(--accent);letter-spacing:.4pt;white-space:nowrap;overflow:hidden" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div></div>
+        <div style="flex:1;display:flex;align-items:center;border-top:.7pt solid var(--line);margin-top:8pt"><div style="font:${cw7} ${cs}pt/${cs + 3}pt var(--font-display);color:var(--ink);overflow:hidden;width:100%${big ? ';text-wrap:balance' : ''}" data-slot="sold.cta" data-lines="5">${esc(C.cta || '')}</div></div></div>`;
+    }
+    const lh = big ? 20 : 24, fs = big ? 14 : 15, ry = top + ph + 10, ty = ry + 8, nl = Math.floor((411 - ty)/lh);
+    h += `<div class="rule" style="left:${M}pt;top:${ry}pt;width:${W - 2*M}pt;height:2pt"></div>`;
+    const fslot = sold ? 'front.sold' : 'front.about', ftxt = esc(big ? C.front11 : C.front9);
+    if(!big){
+      // owner 10/30: the 6x9 write-up (Just Listed and Just Sold) sits vertically centered in its box (flex, no fillbox)
+      h += `<div class="abs" style="left:${M}pt;top:${ry + 2}pt;width:${W - 2*M}pt;height:${420 - ry - 2}pt;display:flex;align-items:center"><div class="ab" style="width:100%;font-size:${fs}pt;line-height:${lh}pt" data-slot="${fslot}" data-para="1" data-min="${nl}">${ftxt}</div></div>`;
+    } else {
+      h += `<div class="abs ab" style="left:${M}pt;top:${ty}pt;width:${W - 2*M}pt;height:${nl*lh}pt;font-size:${fs}pt;line-height:${lh}pt" data-slot="${fslot}" data-para="1" data-min="${nl}" data-fillbox="1">${ftxt}</div>`;
+    }
+    h += `<div class="band" style="left:-9pt;top:420pt;width:${W + 18}pt;height:21pt"></div>`;
+  } else {
+    // ---------- back ----------
+    const Z = SP.mail(W), X = M, LZ = Z.zA[0] - 12, rW = Z.zP[0] - 12 - Z.zA[0], pTop = 62;
+    h += `<div class="band" data-blk="1" style="left:-9pt;top:-9pt;width:${Z.zP[0] - 10 + 9}pt;height:61pt"></div>`;
+    h += `<div class="band" data-blk="1" style="left:-9pt;top:426pt;width:${Z.zB[0] - 12 + 9}pt;height:15pt"></div>`;
+    const ret = SP.returnLines(D);
+    h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:11pt;width:${rW}pt;height:32pt${!sold && big ? ';text-align:right' : ''}" data-slot="return" data-lines="3"><b>${esc(ret[0] || '')}</b>${ret.slice(1).map(r => '<br>' + esc(r)).join('')}</div>`;
+    h += `<div class="abs bst" style="left:${X}pt;top:7pt;width:${Z.zA[0] - 14 - X}pt;height:38pt" data-slot="back.status" data-lines="1"><span class="s">${esc(status)}</span><span class="a">${esc(L.address)}</span></div>`;
+    const cap = (c, x, y, w, slot, row) => `<div class="abs cb" style="left:${x}pt;top:${y + 4}pt;width:${w}pt;height:${29 + 33}pt"><div class="nm" data-slot="${slot}.t" data-lines="1">${esc(c.t)}</div><div class="sz" data-slot="${slot}.s" data-lines="1">${esc(c.s)}</div>
+      <div class="tx" style="height:33pt" data-slot="${slot}" data-cap="1" data-row="${row}" data-para="1" data-min="3">${esc(c.a)}</div></div>`;
+    let g = '';
+    if(!sold){
+      const bk = C.back || [], n = big ? 4 : 3, items = bk.slice(0, n), rItem = bk[4], gap = 10, ph = 54;
+      const pw = (LZ - X - (n - 1)*gap)/n;
+      items.forEach((c, i) => { const x = X + i*(pw + gap); g += SP.photo(D, c.id, x, pTop, pw, ph, 'back.photo' + i); h += cap(c, x, pTop + ph, pw, 'back.cap' + i, 'back'); });
+      if(rItem){ g += SP.photo(D, rItem.id, Z.zA[0], pTop, rW, ph, 'back.photoR'); h += cap(rItem, Z.zA[0], pTop + ph, rW, 'back.capR', 'back'); }
+      const ry = pTop + ph + 4 + 29 + 33 + 10, ty = ry + 8;
+      h += `<div class="rule" style="left:${X}pt;top:${ry}pt;width:${LZ - X}pt;height:2pt"></div>`;
+      h += `<div class="abs ab" style="left:${X}pt;top:${ty}pt;width:${LZ - X}pt;height:${Math.floor((Z.cardY - 8 - ty)/18)*18}pt;font-size:12pt;line-height:18pt" data-slot="back.about" data-para="1" data-min="4" data-fillbox="1">${esc(big ? C.about11 : C.about9)}</div>`;
+    } else {
+      const ids = C.photos || [], gap = 10, pw = (LZ - X - gap)/2, ph = 118;
+      ids.slice(0, 2).forEach((id, i) => { g += SP.photo(D, id, X + i*(pw + gap), pTop, pw, ph, 'back.photo' + i); });
+      h += `<div class="rule" style="left:${Z.zA[0]}pt;top:${pTop}pt;width:${rW}pt;height:2pt"></div>`;
+      h += `<div class="abs kk" style="left:${Z.zA[0]}pt;top:${pTop + 5}pt;width:${rW}pt;height:18pt" data-slot="sold.servicesLabel" data-lines="1">How I’d start</div>`;
+      h += `<div class="abs svc" style="left:${Z.zA[0]}pt;top:${pTop + 30}pt;width:${rW}pt;height:${Z.zA[1] - 6 - pTop - 30}pt">${(C.services || []).map((s, i) => `<div class="it"><i>${i + 1}</i><span data-slot="sold.svc${i}" data-lines="2">${esc(s)}</span></div>`).join('')}</div>`;
+      const my = pTop + ph + 10;
+      h += `<div class="rule" style="left:${X}pt;top:${my}pt;width:${LZ - X}pt;height:2pt"></div>`;
+      h += `<div class="abs ab" style="left:${X}pt;top:${my + 8}pt;width:${LZ - X}pt;height:60pt;font-size:10.5pt;line-height:15pt" data-slot="sold.meet" data-para="1" data-min="4" data-fillbox="1">${esc(big ? C.meet11 : C.meet9)}</div>`;
+      h += `<div class="abs" style="left:${X}pt;top:${my + 8 + 60 + 8}pt;width:${LZ - X}pt;height:22pt;font:600 16pt/22pt var(--font-display);color:var(--accent);white-space:nowrap;overflow:hidden" data-slot="sold.call" data-lines="1" data-fit="12">${esc(C.call || '')}</div>`;
+    }
+    h += `<div class="abs" data-gapcheck="back.photos" style="left:0;top:0">${g}</div>`;
+    // a red block under the postage box, bleeding off the right edge
+    const sl = C.slab || {};
+    h += `<div class="band slab" data-blk="1" style="left:${Z.zP[0]}pt;top:${Z.zP[1] + Z.zP[3] + 8}pt;width:${W - Z.zP[0] + 9}pt;height:${Z.zA[1] - Z.zP[1] - Z.zP[3] - 16}pt"><div class="bg" data-slot="slab.big" data-lines="4">${esc(sl.big || '')}</div></div>`;
+    h += SP.postCard(D, Z, W);
+    h += SP.fine(D, X, 396, Z.zB[0] - 12 - X, 'var(--text)');
+    h += SP.mailGuides(D, Z);
+  }
+
+  await SP.finish(D, W, H, h, issues);
+})();
+</script>
+</body>
+</html>

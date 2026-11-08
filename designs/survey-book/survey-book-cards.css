@@ -1,0 +1,54 @@
+/* The Survey Book: single-page pieces (Open House flyer, postcards). Builds on survey-book.css. White paper, steel-blue rules and kickers. */
+.page.sg{background:#fff;margin:0}
+@media screen{.page.sg{margin:12pt auto}}
+.field{position:absolute;background:#fff}
+.sheet{position:absolute}
+.dsp{font-family:var(--font-display);font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.4pt}
+.oh-lbl{font:600 20pt/26pt var(--font-body);letter-spacing:3pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.oh-date{font-family:var(--font-display);font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-1.2pt}
+.oh-time{font:500 26pt/32pt var(--font-display);color:var(--signal);white-space:nowrap;overflow:hidden;letter-spacing:-.2pt}
+.oh-strong{font:600 11.5pt/16pt var(--font-body);color:var(--ink);overflow:hidden}
+.oh-note{font:500 11.5pt/16pt var(--font-body);color:var(--text);overflow:hidden}
+.oh-note.box{background:#fff;color:var(--ink);padding:3pt 8pt;border:.8pt solid var(--signal)}
+.ptxt{font-size:9.5pt;line-height:13.5pt;color:var(--text);overflow:hidden}
+.ptxt2{font-size:10.5pt;line-height:15pt;color:var(--text);overflow:hidden}
+.jt{text-align:justify;text-align-last:left;hyphens:none}
+.hrule{position:absolute;height:3.5pt;border-top:1.4pt solid var(--signal);border-bottom:.5pt solid var(--line)}
+.sfacts{display:flex;border-top:.6pt solid var(--line);border-bottom:.6pt solid var(--line)}
+.sfacts div{flex:1;padding:4pt 0 4pt 8pt;border-left:.6pt solid var(--line)}
+.sfacts div:first-child{padding-left:0;border-left:0}
+.sfacts b{display:block;font:600 14pt/16pt var(--font-display);color:var(--ink);white-space:nowrap}
+.sfacts span{display:block;font:600 7.5pt/10pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--signal);white-space:nowrap}
+.stk div{font:600 9pt/11pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;border-bottom:.6pt dotted var(--line);padding:1.5pt 0}
+.stk div:last-child{border-bottom:0}
+.rc{display:flex;flex-direction:column;justify-content:space-between}
+.head{font-family:var(--font-display);font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-1.4pt}
+.head b{color:var(--signal);font-weight:600}
+.cap2 .h{font:600 11.5pt/14pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;padding-top:6pt}
+.cap2 .h i{font:600 7.75pt/14pt var(--font-body);font-style:normal;letter-spacing:.9pt;text-transform:uppercase;color:var(--signal);margin-left:7pt}
+.cap2 .a{font-size:9.25pt;line-height:12.75pt;color:var(--text);overflow:hidden;margin-top:1pt}
+.cap2.bk .a{font-size:9pt;line-height:12pt}
+.corners{position:absolute;pointer-events:none}
+.corners::before,.corners::after{content:'';position:absolute;width:12pt;height:12pt;border:1.6pt solid var(--signal)}
+.corners::before{left:-5pt;top:-5pt;border-right:0;border-bottom:0}
+.corners::after{right:-5pt;bottom:-5pt;border-left:0;border-top:0}
+.bnd{position:absolute;background:var(--signal)}
+.mailp{position:absolute;background:#f3f6fa}
+.mret{font:400 8pt/10.5pt var(--font-body);color:var(--text);white-space:nowrap}
+.mret b{font-weight:600;letter-spacing:.5pt;text-transform:uppercase;color:var(--ink)}
+.mailg{position:absolute}
+.mailg .guide{position:absolute;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#8794a3;text-transform:uppercase;white-space:nowrap}
+.mailg.stamp{border:.75pt dashed #a5b1be;text-align:center;padding-top:36pt;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#8794a3;text-transform:uppercase}
+.mailg .aline{position:absolute;height:.75pt;background:#cdd6df}
+.slab{position:absolute;background:var(--signal);color:#fff;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.slab .big{font-family:var(--font-display);font-weight:600;font-size:15pt;line-height:16.5pt;letter-spacing:0}
+.slab .sub{font:500 8pt/9.5pt var(--font-body);margin-top:3pt}
+.svc{display:grid;grid-template-columns:1fr 1fr;column-gap:14pt;row-gap:4pt;align-content:space-between;overflow:hidden}
+.svc .it{display:flex;gap:6pt;align-items:baseline;font:400 9.5pt/12pt var(--font-body);color:var(--text)}
+.svc .bx{width:4pt;height:4pt;background:var(--signal);flex:none;transform:translateY(-1.5pt)}
+
+/* the small ½ in a bath count (The owner 11/1): stays inline in the number, whatever the label rule says */
+
+/* Just Sold 6x11 back: body type about 1.1x the 6x9's (The owner 11/1) */
+.s11 .svc .it{font-size:10.5pt;line-height:13pt}
+.bd-half{display:inline !important;font:inherit !important;letter-spacing:0 !important;text-transform:none !important;vertical-align:baseline !important;color:inherit !important}   /* the ½ at its row's own size (owner 11/1 Round 4); only undoes the row's span styles */

@@ -1,0 +1,58 @@
+/* The Modern Chronicle: single-page pieces (Open House flyer, postcards). Builds on chronicle.css. Warm paper, deep red kickers and rules,
+   Fraunces headlines, Libre Franklin small caps; unequal columns and real paragraphs. */
+.page.sg{background:#fff;margin:0}
+@media screen{.page.sg{margin:12pt auto}}
+.field{position:absolute;background:var(--field)}
+.sheet{position:absolute}
+.sheet .cc{--cc-paper:#faf7f1;--cc-ink:#2a2420;--cc-muted:#5e554b;--cc-accent:#9b2c2c;--cc-line:rgba(155,44,44,.5);--cc-display:'Fraunces',Georgia,serif;--cc-body:'Libre Franklin',Helvetica,Arial,sans-serif}
+.dsp{font-family:var(--font-display);font-weight:400;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.4pt}
+.oh-lbl{font:600 20pt/26pt var(--font-body);letter-spacing:3pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.oh-date{font-family:var(--font-display);font-weight:400;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-1.4pt}
+.oh-time{font:500 24pt/30pt var(--font-display);color:var(--signal);white-space:nowrap;overflow:hidden;letter-spacing:-.2pt}
+.oh-strong{font:600 11.5pt/16pt var(--font-body);color:var(--ink);overflow:hidden}
+.oh-note{font:400 11.5pt/16pt var(--font-body);color:var(--text);overflow:hidden}
+.oh-note.box{background:#fff;color:var(--ink);padding:3pt 8pt;border:.8pt solid var(--signal)}
+.ptxt{font-size:9.5pt;line-height:13.5pt;color:var(--text);overflow:hidden}
+.ptxt2{font-size:10.5pt;line-height:15pt;color:var(--text);overflow:hidden}
+.ptxt2.dc::first-letter,.ptxt.dc::first-letter{font-family:var(--font-display);font-weight:500;color:var(--signal)}
+.jt{text-align:left;hyphens:none}
+.hrule{position:absolute;height:.7pt;background:var(--line)}
+.hrule2{position:absolute;height:3.5pt;border-top:1.6pt solid var(--signal);border-bottom:.5pt solid var(--line)}
+.sfacts{display:flex;border-top:.8pt solid var(--line)}
+.sfacts div{flex:1;padding:5pt 0 0 10pt;border-left:.6pt solid rgba(155,44,44,.25)}
+.sfacts div:first-child{padding-left:0;border-left:0}
+.sfacts>div>b{display:block;font:500 22pt/24pt var(--font-display);color:var(--ink);white-space:nowrap}
+.sfacts>div>span{display:block;font:600 8pt/11pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:var(--signal);white-space:nowrap}
+.stk div{font:600 9pt/11pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;border-bottom:.6pt dotted rgba(42,36,32,.4);padding:1.5pt 0}
+.stk div:last-child{border-bottom:0}
+.rc{display:flex;flex-direction:column;justify-content:space-between}
+.head{font-family:var(--font-display);font-weight:400;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-1.4pt}
+.head b{color:var(--signal);font-weight:400}
+.cap2 .h{font:500 12.5pt/15pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;padding-top:6pt}
+.cap2 .h i{font:600 8.25pt/15pt var(--font-body);font-style:normal;letter-spacing:.4pt;color:var(--signal);margin-left:7pt}
+.cap2 .a{font-size:9.25pt;line-height:12.75pt;color:var(--text);overflow:hidden;margin-top:1pt}
+.cap2.bk .a{font-size:9pt;line-height:12pt}
+.cap2.bk .h{font-size:11.5pt}
+.bnd{position:absolute;background:var(--signal)}
+.mailp{position:absolute;background:#f0e8da}
+.mret{font:400 8pt/10.5pt var(--font-body);color:var(--text);white-space:nowrap}
+.mret b{font-weight:600;letter-spacing:.5pt;text-transform:uppercase;color:var(--ink)}
+.mailg{position:absolute}
+.mailg .guide{position:absolute;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#8f8372;text-transform:uppercase;white-space:nowrap}
+.mailg.stamp{border:.75pt dashed #a89b87;text-align:center;padding-top:36pt;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#8f8372;text-transform:uppercase}
+.mailg .aline{position:absolute;height:.75pt;background:#d6c9b5}
+.slab{position:absolute;background:transparent;color:var(--ink);display:flex;flex-direction:column;justify-content:center;overflow:hidden;border-top:2.6pt solid var(--signal);border-bottom:.7pt solid var(--signal)}
+.slab .big{font-family:var(--font-display);font-weight:400;font-style:italic;font-size:15pt;line-height:17pt;letter-spacing:0;color:var(--signal)}
+.slab .sub{font:400 8.25pt/10pt var(--font-body);margin-top:3pt;color:var(--text)}
+.cap3 .h{font:500 12.5pt/14.5pt var(--font-display);color:var(--ink);overflow:hidden}
+.cap3 .d{font:600 8.25pt/11pt var(--font-body);letter-spacing:.5pt;color:var(--signal);margin:1pt 0 5pt;white-space:nowrap;overflow:hidden;border-bottom:.6pt solid var(--line);padding-bottom:4pt}
+.cap3 .a{color:var(--text);overflow:hidden;text-align:left}
+.svc1{display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.svc1 .it{display:flex;gap:6pt;align-items:baseline;font:400 9pt/12pt var(--font-body);color:var(--text)}
+.svc1 .bx{width:4pt;height:1.4pt;background:var(--signal);flex:none;transform:translateY(-2.5pt)}
+.svc{display:grid;grid-template-columns:1fr 1fr;column-gap:14pt;row-gap:4pt;align-content:space-between;overflow:hidden}
+.svc .it{display:flex;gap:6pt;align-items:baseline;font:400 9.5pt/12pt var(--font-body);color:var(--text)}
+.svc .bx{width:4pt;height:1.4pt;background:var(--signal);flex:none;transform:translateY(-2.5pt)}
+.sb{font:600 8.5pt/10pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+
+body.big .svc1 .it{font-size:10pt;line-height:13pt}

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Built-In Details open house flyer</title>
+<link rel="stylesheet" href="built-ins.css">
+<link rel="stylesheet" href="built-ins-cards.css">
+<script src="built-ins.js"></script>
+<script src="built-ins-cards.js"></script>
+<!--
+  Built-In Details · Open House flyer "Rooms Below" (trim 612 x 792 pt; print: 0.25 in white margin around the paper field).
+  White paper, brick small caps, serif titles over a hairline, as the fold-over. The event leads: the label (22 pt brick small caps),
+  the date in the serif as the largest type on the page, the time at 22 pt, and the broker / REALTOR(R) lines (only on those opens,
+  only when filled) beside it, the refreshments line in a white box. Then the whole house, the address with city, state and ZIP and the
+  four facts, and three captioned rooms with their sizes in brick as the fold-over sets them. The standard contact card
+  (templates/_shared/agentcard.js) closes the page and carries its one brokerage logo.
+  Open House rules (templates/_shared/ohstandard.js): no RSVP, no QR, no price. Copy: data.copy.pc.oh.
+-->
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = AT.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = AT.esc, L = D.listing, b = D.brand || {}, PC = ((D.copy || {}).pc || {}), OHC = PC.oh || {};
+  const issues = await AT.fontsReady(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const O = AT.openHouse(D);
+  const dm = s => String(s);   // room sizes read 24' x 17' on every piece (owner 11/1 Round 4)
+  const X = 36, W = 540;
+  let h = '';
+
+  // the event
+  h += `<div class="abs oh-lbl" style="left:${X}pt;top:30pt;width:${W}pt;height:26pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
+  if(O.weekday) h += `<div class="abs oh-date" id="date" style="left:${X-1}pt;top:58pt;width:${W}pt;height:52pt;font-size:42pt;line-height:52pt" data-slot="oh.date" data-lines="1">${esc(O.long)}</div>`;
+  else h += `<div class="abs oh-date" style="left:${X}pt;top:58pt;width:${W}pt;height:52pt;font-size:30pt;line-height:26pt;white-space:normal" data-slot="oh.date" data-lines="2">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X}pt;top:112pt;width:300pt;height:30pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  // the optional broker / REALTOR(R) lines sit right of the time; the refreshments line is a white box. When they need more than
+  // two lines the header grows and the row of rooms gives up the difference (the house keeps its full frame)
+  let dy = 0;
+  { const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note oh-box']].filter(l => l[0]);
+    if(ls.length){
+      const lh = 14, w = 268, pad = 6;
+      const ks = ls.map(l => AT.linesNeeded(l[2].includes('oh-box') ? 'oh-note' : l[2], l[0], l[2].includes('oh-box') ? w - 16 : w, lh));
+      const hs = ks.map((k, i) => k*lh + (ls[i][2].includes('oh-box') ? 8 : 0));
+      const tot = hs.reduce((a, c) => a + c, 0) + pad*(ls.length - 1);
+      dy = Math.max(0, tot - 30);
+      let at = 142 + dy - tot;
+      ls.forEach((l, i) => { h += `<div class="abs ${l[2]}" style="left:308pt;top:${at}pt;width:${w}pt;height:${hs[i]}pt;white-space:normal;text-align:right" data-slot="${l[1]}" data-lines="${ks[i]}">${esc(l[0])}</div>`; at += hs[i] + pad; });
+    } }
+  h += `<div class="hrule" style="top:${150 + dy}pt;left:${X}pt;right:${X}pt"></div>`;
+
+  // the house, whole, then the address, the place and the four facts
+  const hero = (OHC.photos || [])[0] || 'front';
+  h += AT.photo(D, hero, `position:absolute;left:${X}pt;top:${160 + dy}pt;width:${W}pt;height:254pt`, 'oh.hero', 'hero');
+  const T = 422 + dy;
+  h += `<div class="abs dsp" id="addr" style="left:${X-1}pt;top:${T}pt;width:340pt;height:40pt;font-size:30pt;line-height:40pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
+  h += `<div class="abs kicker" style="left:${X}pt;top:${T + 44}pt;width:340pt;height:10pt" data-slot="place" data-lines="1">${esc(AT.placeZip(L).toUpperCase())}</div>`;
+  const bm = (() => { const t = BD.bathsText(L), m = t.main.match(/^(\S+) (.*)$/); return {num: m[1], label: m[2], half: t.half}; })();
+  const cells = [[L.beds, 'Bedrooms'], [bm.num, bm.label], ...(bm.half ? [[L.halfBaths, 'Half Baths']] : []), [n0(L.sqft), 'Square Feet'], [L.yearBuilt || L.year, 'Year Built']];
+  function n0(v){ return v == null ? '' : Number(v).toLocaleString('en-US'); }
+  h += `<div class="abs fx" style="left:396pt;top:${T - 2}pt;width:180pt;height:62pt">${cells.map((c, i) => `<div class="c"><div class="v" data-slot="oh.fact${i}.v" data-lines="1">${esc(c[0])}</div><div class="l" data-slot="oh.fact${i}.l" data-lines="1">${esc(c[1])}</div></div>`).join('')}</div>`;
+  h += `<div class="hrule" style="top:${T + 63}pt;left:${X}pt;right:${X}pt"></div>`;
+
+  // three rooms, with their sizes
+  const rows = OHC.rows || [], rt = T + 72, rh = 646 - rt, cw = (W - 24)/3, ph = rh - 56;
+  h += `<div class="abs row" style="left:${X}pt;top:${rt}pt;width:${W}pt;height:${rh}pt;gap:12pt">` + rows.map((r, i) =>
+    `<div class="item" style="flex:1 1 0;width:${cw}pt">${AT.photo(D, r.photo, `flex:none;height:${ph}pt`, 'oh.room' + i, 'bp')}<div class="cap"><div class="h" data-slot="oh.room${i}.h" data-lines="1">${esc(r.title)}${r.dims ? `<i>${esc(dm(r.dims))}</i>` : ''}</div><div class="a" data-slot="oh.room${i}.a" data-para="1" data-min="2" data-lines="3">${esc(r.text)}</div></div></div>`).join('') + `</div>`;
+
+  h += AT.cardBox(D, [X, 664, W, 92], {layout: 'panel'});
+  h += `<div class="abs fine" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;white-space:nowrap" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  const f = AT.frame(D, 612, 792, h);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await AT.settle();
+  document.querySelectorAll('#date').forEach(el => AT.fitLine(el, 30));
+  AT.fitLine(document.getElementById('addr'), 22);
+  issues.push(...AT.fitHouse(D));
+  document.querySelectorAll('[data-para]').forEach(el => AT.balance(el));
+  // the captions in the row grow together while they keep three lines
+  { const caps = [...document.querySelectorAll('.cap .a')], base = caps.map(c => AT.lines(c));
+    for(let s = 9; s <= 10; s += .5){ caps.forEach(c => { c.style.fontSize = s + 'pt'; c.style.lineHeight = (s*1.35) + 'pt'; });
+      if(caps.some((c, i) => AT.lines(c) !== base[i] || c.scrollHeight > c.clientHeight + 1)){ const p = s - .5; caps.forEach(c => { c.style.fontSize = p + 'pt'; c.style.lineHeight = (p*1.35) + 'pt'; }); break; } } }
+  ContactCard.fit(document);
+  window.photoPlacements = AT.placements;
+  window.brochureCheck = () => AT.checkSingle(D, issues);
+})();
+</script>
+</body>
+</html>

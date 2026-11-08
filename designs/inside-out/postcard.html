@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Inside to Outside postcard</title>
+<link rel="stylesheet" href="inside-out.css">
+<link rel="stylesheet" href="inside-out-cards.css">
+<script src="inside-out.js"></script>
+<script src="inside-out-cards.js"></script>
+<!--
+  Inside to Outside · Just Listed and Just Sold postcards. data.piece: card "listed" | "sold", size "6x9" (trim 648 x 432 pt) | "6x11"
+  (792 x 432 pt), side "front" | "back". Print adds 0.125 in (9 pt) bleed on every edge (TrimBox set by the renderer).
+  The book's navy field, bold white titles and amber small caps run across the whole card.
+  Front: the whole house (roof to steps, house box kept in frame) bleeds off the top and left. The status ("Just" white, "Listed" /
+  "Sold" amber) runs bold beside it over the address, city, state and ZIP and the facts stacked with amber hairlines (Just Listed) or
+  the invitation and the agent's name and number (Just Sold). A short write-up runs under the photo and a row of interiors closes the card.
+  Back: an amber edge strip across the top, a light mail panel carrying the return address, the status, the street and an amber callout
+  around the postage box and the address block; Just Listed: captioned rooms (size in amber, as the book does) from the first floor to
+  the yard; Just Sold: two interiors, what the agent does for a seller and what the first meeting is like. The postcard contact card
+  runs full width (one brokerage logo) over the barcode strip's panel. Mail zones are the Just Listed library's (jllib.js zones(),
+  px x 0.75): postage, address block, barcode strip; guides on proofs, clear in print.
+  No price, no QR, no photo numbers, no "virtually staged". Copy: data.copy.pc.jl / data.copy.pc.js.
+-->
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = AT.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = AT.esc, L = D.listing, A = D.agent || {}, b = D.brand || {};
+  const issues = await AT.fontsReady(D);
+  const sold = D.piece.card === 'sold', big = D.piece.size === '6x11', front = D.piece.side === 'front';
+  const PCall = ((D.copy || {}).pc || {}), PC = (sold ? PCall.js : PCall.jl) || {};
+  document.body.dataset.mode = D.mode || 'email';
+  if(D.piece.size === '6x11') document.body.classList.add('big');
+  const PT = 96/72, W = big ? 792 : 648, H = 432, M = 27, status = sold ? ['Just', 'Sold'] : ['Just', 'Listed'];
+  const hero = PC.hero || 'front';
+  let h = '';
+
+  if(front){
+    // ---------- front ----------
+    const xR = big ? 497 : 420, ph = 261, cx = xR + 18, cw = W - M - cx, S = big ? 60 : 58, LH = big ? 54 : 52;
+    h += AT.photo(D, hero, `position:absolute;left:-9pt;top:-9pt;width:${xR + 9}pt;height:${ph}pt`, 'front.hero', 'hero');
+    let bottom;
+    if(!sold){
+      const st = AT.stats(L);
+      bottom = `<div class="stk">${st.slice(0, 4).map((t, i) => `<div data-slot="stat${i}" data-lines="1">${esc(t)}</div>`).join('')}</div>`;
+    } else {
+      bottom = `<div><div class="dsp" style="font-size:19pt;line-height:21pt;color:var(--signal)" data-slot="sold.cta" data-lines="2">${esc(PC.cta1 || 'Thinking of selling?')}<br>${esc(PC.cta2 || 'Let’s talk.')}</div>
+        <div class="dsp" id="agname" style="margin-top:8pt;font-size:19pt;line-height:22pt" data-slot="agent.name" data-lines="1">${esc(A.name || '')}</div>
+        <div style="font:700 14pt/17pt var(--font-body);color:var(--ink);letter-spacing:.3pt;white-space:nowrap;overflow:hidden;margin-top:1pt" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div></div>`;
+    }
+    const nrc = sold ? 294 : 243;
+    h += `<div class="abs rc" style="left:${cx}pt;top:10pt;width:${cw}pt;height:${nrc}pt">
+      <div><div class="head" id="head" style="margin-left:-2pt;height:${2*LH}pt;font-size:${S}pt;line-height:${LH}pt" data-slot="status" data-lines="2">${status[0]}<br><b>${status[1]}</b></div>
+        <div style="height:1pt;background:var(--signal);opacity:.7;margin-top:${sold ? 8 : 6}pt"></div></div>
+      <div><div class="dsp" id="addr" style="margin-left:-1pt;font-size:${big ? 29 : 25.5}pt;line-height:${big ? 31 : 27}pt;white-space:normal;height:auto" data-slot="address" data-lines="2">${esc(L.address)}</div>
+        <div class="kicker" style="margin-top:7pt;height:10pt" data-slot="place" data-lines="1">${esc(AT.placeZip(L).toUpperCase())}</div></div>
+      ${bottom}</div>`;
+    const tw = sold ? xR - M : W - 2*M, tt = ph - 9 + 9, flh = sold ? (big ? 16.5 : 15) : 15.5;
+    h += `<div class="abs ptxt2 jt" style="left:${M}pt;top:${tt}pt;width:${tw}pt;height:${3*flh + 1}pt;line-height:${flh}pt${sold ? (big ? ';font-size:11.5pt' : '') : ';font-size:11pt'}" data-slot="front.about" data-para="1" data-min="3" data-fillbox="1" data-nobal="1">${esc(big ? PC.front11 : PC.front9)}</div>`;
+    // the interiors across the bottom
+    const ids = (PC.strip || []).slice(0, big ? 4 : 3), g = 8, sw = (W - 2*M - g*(ids.length - 1))/ids.length;
+    ids.forEach((id, i) => { h += AT.photo(D, id, `position:absolute;left:${(M + i*(sw + g)).toFixed(2)}pt;top:318pt;width:${sw.toFixed(2)}pt;height:86pt`, 'front.strip' + i, 'strip'); });
+  } else {
+    // ---------- back ----------
+    const X = 24, zP = [W - 96, 12, 84, 98.25], zA = [W - 243, 187.5, 240, 112.5], zB = [W - 342, 387, 342, 45];
+    const LZ = W - 252 - 14, avail = LZ - X, top0 = 24, bot0 = 296;
+    const ret = [].concat(b.returnAddress || b.address || []).flatMap(a => String(a).split('\n')).map(s => s.trim()).filter(Boolean).slice(0, 2);
+    // the light mail panel (postage, return address, address block) and the barcode strip's panel; the amber edge strip runs across the top
+    h += `<div class="mailp" style="left:${W - 252}pt;top:-9pt;width:${261}pt;height:${309}pt"></div><div class="mailp" style="left:${zB[0] - 4}pt;top:386pt;width:${W - zB[0] + 4 + 9}pt;height:55pt"></div>`;
+    h += `<div class="bnd" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:15pt"></div>`;
+    h += `<div class="abs mret" style="left:${zA[0]}pt;top:20pt;width:${zP[0] - 8 - zA[0]}pt;height:34pt;overflow:hidden" data-slot="return" data-lines="3">${b.brokerage ? '<b>' + esc(b.brokerage) + '</b>' : ''}${ret.map(r => '<br>' + esc(r)).join('')}</div>`;
+    h += `<div class="abs dsp" style="left:${zA[0]}pt;top:70pt;width:${zP[0] - 10 - zA[0]}pt;height:70pt;font-size:32pt;line-height:34pt;color:#1c2436;letter-spacing:-1pt" data-slot="status" data-lines="2">${status[0]}<br><span style="color:#8c5b12">${status[1]}</span></div>`;
+    h += `<div class="abs dsp" id="st" style="left:${zA[0]}pt;top:146pt;width:${zP[0] - 10 - zA[0]}pt;height:14pt;font-size:11pt;line-height:14pt;color:#1c2436;letter-spacing:0" data-slot="back.street" data-lines="1">${esc(L.address)}</div>`;
+    h += `<div class="abs kicker" style="left:${zA[0]}pt;top:163pt;width:${zP[0] - 10 - zA[0]}pt;height:10pt;color:#8c5b12" data-slot="back.place" data-lines="1">${esc(AT.placeZip(L).toUpperCase())}</div>`;
+    const slab = PC.slab || {};
+    h += `<div class="slab" data-blk="1" style="left:${zP[0]}pt;top:116pt;width:${W - zP[0] + 9}pt;height:68pt;padding:6pt 18pt 6pt 9pt"><div class="big" data-slot="slab.big" data-lines="2">${esc(slab.big || '')}</div><div class="sub" data-slot="slab.sub" data-lines="3">${esc(slab.sub || '')}</div></div>`;
+    const cap = (c, x, y, w, slot, lines) => `<div class="abs cap2 bk" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="${slot}" data-para="1" data-min="2" data-lines="${lines}">${esc(big && c.a11 ? c.a11 : c.a)}</div></div>`;
+    if(!sold){
+      const bk = (PC.back || []).slice(0, big ? 3 : 2), g = 10, pw = (avail - g*(bk.length - 1))/bk.length, capH = 6 + 13 + 2*11.5, phh = bot0 - top0 - capH;
+      bk.forEach((c, i) => { const x = X + i*(pw + g);
+        h += AT.photo(D, c.id, `position:absolute;left:${x.toFixed(2)}pt;top:${top0}pt;width:${pw.toFixed(2)}pt;height:${phh.toFixed(2)}pt`, 'back.photo' + i, 'bp');
+        h += cap(c, x.toFixed(2), top0 + phh, pw.toFixed(2), 'back.cap' + i, 2); });
+    } else {
+      const ids = PC.photos || [], g = 10, pw = (avail - g)/2;
+      const items = (big ? (PC.services11 || PC.services) : PC.services) || [], lh = big ? 15.5 : 14.5, nl = 3, ty = bot0 - nl*lh, sy = ty - 14 - 10 - 52 - 15, ph1 = sy - 12 - top0;
+      ids.slice(0, 2).forEach((id, i) => { h += AT.photo(D, id, `position:absolute;left:${(X + i*(pw + g)).toFixed(2)}pt;top:${top0}pt;width:${pw.toFixed(2)}pt;height:${ph1}pt`, 'back.photo' + i, 'bp'); });
+      h += `<div class="abs kicker" style="left:${X}pt;top:${sy}pt;width:${avail}pt;height:10pt" data-slot="sold.servicesLabel" data-lines="1">${esc(PC.servicesLabel || 'What I do for sellers')}</div>`;
+      h += `<div class="abs svc" style="left:${X}pt;top:${sy + 15}pt;width:${avail}pt;height:52pt;display:grid;grid-template-columns:1fr 1fr;column-gap:14pt;row-gap:4pt;align-content:space-between">${items.map((s, i) => `<div class="it"><span class="bx"></span><span data-slot="sold.svc${i}" data-lines="${big ? 1 : 2}">${esc(s)}</span></div>`).join('')}</div>`;
+      const my = sy + 15 + 52 + 10;
+      h += `<div class="abs kicker" style="left:${X}pt;top:${my}pt;width:${avail}pt;height:10pt" data-slot="sold.meetLabel" data-lines="1">${esc(PC.meetLabel || 'When we meet')}</div>`;
+            h += `<div class="abs ptxt jt" style="left:${X}pt;top:${ty}pt;width:${avail}pt;height:${nl*lh}pt;font-size:${big ? 11 : 10}pt;line-height:${lh}pt" data-slot="sold.meet" data-para="1" data-min="2" data-fillbox="1" data-nobal="1">${esc(big ? PC.meet11 : PC.meet9)}</div>`;
+    }
+    // the card: full width, under the address block and above the barcode strip
+    const cardH = 80, cardY = zA[1] + zA[3] + 5, cw = W - 2*X;
+    { const hs = AT.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
+      h += ContactCard.html([X, cardY, cw, cardH], Object.assign({}, A, {headshot: hs}), b, {postcard: true, fine: '', s: {inlineLabel: !hs || big, logo: {wide: [156, 36], square: [44, 44], tall: [46, 46]}}}); }
+    const fine = [PCall.fineprint || 'Information deemed reliable but not guaranteed.', 'If your property is currently listed with a broker, please disregard this notice. It is not intended to solicit listed property.'].join(' ');
+    h += `<div class="abs" style="left:${X}pt;top:${420 - 22.5}pt;width:${zB[0] - 10 - X}pt;height:22.5pt;font-size:6pt;line-height:7.5pt;color:var(--text);overflow:hidden;display:flex;align-items:flex-end" data-slot="fineprint" data-lines="3" data-fine="1"><span>${esc(fine)}</span></div>`;
+    const V = D.mailVendor || {}, guide = (D.mode || 'email') !== 'print';
+    if(guide) h += `<div class="mailg stamp" data-z="1" style="left:${zP[0]}pt;top:${zP[1]}pt;width:${zP[2]}pt;height:${zP[3]}pt">Postage<br><span style="text-transform:none">mail vendor</span></div>
+      <div class="mailg" data-z="1" style="left:${zA[0]}pt;top:${zA[1]}pt;width:${zA[2]}pt;height:${zA[3]}pt">${[0,1,2,3].map(i => `<div class="aline" style="left:22pt;right:22pt;top:${24 + i*17.25}pt"></div>`).join('')}<div class="guide" style="left:22pt;top:97pt">${esc(V.name ? 'Address block · ' + V.name : 'Address block · mail vendor')}</div></div>
+      <div class="mailg" data-z="1" style="left:${zB[0]}pt;top:${zB[1]}pt;width:${zB[2]}pt;height:${zB[3]}pt;border:.75pt dashed #aaa59a"><div class="guide" style="left:10pt;top:17pt">Barcode strip · keep clear</div></div>`;
+    window.mailZones = {postage: zP, address: zA, barcode: zB};
+  }
+
+  const f = AT.frame(D, W, H, h);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await AT.settle();
+  const fitLines = (el, lo) => { let s = parseFloat(getComputedStyle(el).fontSize)*72/96; while((AT.lines(el) > 2 || el.scrollWidth > el.clientWidth + .5) && s > lo){ s -= .5; el.style.fontSize = s + 'pt'; } };
+  const ad = document.getElementById('addr'); if(ad) fitLines(ad, 20);
+  const hd = document.getElementById('head'); if(hd) AT.fitLine(hd, 40);
+  const an = document.getElementById('agname'); if(an) AT.fitLine(an, 14);
+  const sk = document.getElementById('st'); if(sk) AT.fitLine(sk, 9);
+  issues.push(...AT.fitHouse(D));
+  AT.fitRow([...document.querySelectorAll('.cap2 .a')]);
+  document.querySelectorAll('[data-para]:not([data-nobal])').forEach(el => AT.balance(el));
+  if(window.mailZones){
+    const sh = document.querySelector('.sheet').getBoundingClientRect(), P = r => ({l:(r.left - sh.left)/PT, r:(r.right - sh.left)/PT, t:(r.top - sh.top)/PT, b:(r.bottom - sh.top)/PT});
+    const hit = (q, z) => q.l < z[0] + z[2] - .5 && q.r > z[0] + .5 && q.t < z[1] + z[3] - .5 && q.b > z[1] + .5;
+    const els = [...document.querySelectorAll('.sheet *')].filter(e => !e.closest('[data-z]') && !e.closest('[data-contactcard]'));
+    els.forEach(e => { const own = [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()), blk = e.matches('.ph,[data-blk],img');
+      if(!own && !blk) return;
+      let rects = [];
+      if(own){ const rg = document.createRange(); rg.selectNodeContents(e); rects = [...rg.getClientRects()].filter(q => q.width > .5 && q.height > .5); } else rects = [e.getBoundingClientRect()];
+      rects.forEach(q => { for(const k in window.mailZones) if(hit(P(q), window.mailZones[k])) issues.push({kind: own ? 'text-in-mail-zone' : 'image-in-mail-zone', slot:k, text:(e.textContent||'').trim().slice(0, 24)}); }); });
+    { const cc = document.querySelector('[data-contactcard]'); if(cc){ const r = P(cc.getBoundingClientRect()); for(const k in window.mailZones) if(hit(r, window.mailZones[k])) issues.push({kind:'card-in-mail-zone', slot:k}); } }
+  }
+  { const caps = [...document.querySelectorAll('.cap2 .a')].map(c => AT.lines(c));
+    if(caps.length > 1 && Math.max(...caps) !== Math.min(...caps)) issues.push({slot:'captions', kind:'captions-uneven', lines:caps}); }
+  ContactCard.fit(document);
+  window.proofNotes = [{paragraphs: [...document.querySelectorAll('[data-para]')].map(el => { const ls = AT.lineBoxes(el), w = el.getBoundingClientRect().width, last = ls[ls.length-1];
+    return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, wPt: Math.round(AT.pt(w))}; })}];
+  window.photoPlacements = AT.placements;
+  window.brochureCheck = () => AT.checkSingle(D, issues);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · The Long View fold-over</title>
+<link rel="stylesheet" href="long-view.css">
+<script src="long-view.js"></script>
+<!--
+  BrochureDesk · The Long View · 11 x 17 fold-over
+  11 x 17 sheet folded once across the middle: four landscape 11 x 8.5 panels (792 x 612 pt), 0.125 in (9 pt) bleed.
+    outside spread: back (turned 180, on top) over cover      inside spread: inside top over inside bottom
+  A deep teal field on every panel. Cover: a whole-house hero at left, two stacked photos at right, the address in a
+  large serif, a key-sizes block, the fact row, the intro and an "around" column. Inside: three broad bands per panel,
+  each a large photo, a companion photo and a copy column (room name, size lines, paragraph). Back: the agent's floor
+  plan on a pale panel (or a large outdoor photo when there is no plan), two outdoor views with captions, the "around"
+  list and the standard contact card on the field.
+
+  Modes (data.mode):  proof  four panel pages, 810 x 630 pt each (trim + bleed)
+                      print  two spreads, 810 x 1242 pt, each half clipped at the fold
+
+  The floor plan is the agent's own drawing, placed as given (no redraw): data.plan.levels = [{name, src, w, h}].
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = LV.data(), esc = LV.esc; LV.fitMode = !!D.fit;
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  await LV.cardReady;
+  const mode = D.mode || 'proof', L = D.listing, A = D.agent || {}, C = D.copy || {}, issues = [];
+  const b = Object.assign({}, D.brand || {}); b.logo = b.logoOnDark || b.logo;   // the white mark on the teal field
+  D.brand = b;
+  await Promise.all(['400 10pt','500 10pt','600 10pt'].map(w => document.fonts.load(`${w} 'Source Serif 4'`)).concat(['400 10pt','500 10pt','600 10pt','700 10pt'].map(w => document.fonts.load(`${w} 'Inter'`))));
+  document.body.dataset.mode = mode;
+  const hasPlan = !!(D.plan && D.plan.levels && D.plan.levels.length);
+  const hs = (D.photos||{})[A.headshot] ? D.photos[A.headshot].src : (A.headshot || '');
+  const LH = 12, BL = 13;   // body line 9 pt on 12; band paragraphs 9.5 pt on 13
+
+  // a paragraph box: exactly n lines, filled (the fit pass picks the sentences)
+  const para = (cls, slot, text, x, y, w, n, lh) => `<div class="abs ${cls}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${n*lh}pt" data-slot="${slot}" data-lines="${n}" data-nmin="${n}" data-nmax="${n}" data-cap="1">${esc(LV.txt(text))}</div>`;
+
+  // ================= COVER =================
+  function cover(){
+    const K = C.front || {}, sp = K.specs || [];
+    const PB = 386, GX = 484;   // photo block bottom, right column left edge
+    let h = '';
+    h += LV.photo(D, K.photo, -9, -9, GX - 10 + 9, PB + 9);
+    const rh = (PB + 9 - 10)/2;
+    h += LV.photo(D, K.photo2, GX, -9, 801 - GX, rh);
+    h += LV.photo(D, K.photo3, GX, -9 + rh + 10, 801 - GX, rh);
+    h += `<div class="abs addr" style="left:24pt;top:396pt;width:440pt;height:44pt" data-slot="front.address" data-lines="1">${esc(L.address)}</div>`;
+    h += `<div class="abs place" style="left:24pt;top:443pt;width:440pt;height:12pt" data-slot="front.place" data-lines="1">${esc(LV.place(L) + (L.zip ? ' ' + L.zip : ''))}</div>`;
+    h += `<div class="abs specs" style="left:490pt;top:399pt;width:278pt">${sp.slice(0,3).map((r,i)=>`<div><span class="l" data-slot="front.spec${i}.l" data-lines="1">${esc(r.l)}</span><span class="v" data-slot="front.spec${i}.v" data-lines="1">${esc(r.v)}</span></div>`).join('')}</div>`;
+    const st = LV.stats(L);
+    h += `<div class="abs frow" style="left:24pt;top:472pt;width:744pt;height:22pt">${st.map((t,i)=>`<span data-slot="front.stat${i}" data-lines="1">${esc(t)}</span>`).join('')}</div>`;
+    h += LV.kick(K.introHead || 'About the house', 'front.introhead', 24, 505, 440);
+    h += para('intro', 'front.intro', K.intro, 24, 520, 444, 5, 13);
+    h += LV.kick(K.outroHead || 'Around the house', 'front.outrohead', 500, 505, 268);
+    h += para('intro', 'front.outro', K.outro, 500, 520, 268, 5, 13);
+    return h;
+  }
+
+  // ================= BACK =================
+  function back(){
+    const B = C.back || {};
+    let h = LV.kick(B.kicker, 'back.kicker', 24, 26, 700) + `<div class="abs title one" style="left:24pt;top:36pt;width:744pt;height:32pt" data-slot="back.title" data-lines="1">${esc(B.title)}</div>` + LV.rule(24, 71, 744);
+    const BOT = 458, X1 = 24, W1 = 470, TOP = 82, BH = 254;
+    if(hasPlan){
+      h += `<div class="planbox" style="left:${X1}pt;top:${TOP}pt;width:${W1}pt;height:${BH}pt"></div>`;
+      const pl = LV.plan(D, {x:X1+12, y:TOP+10, w:W1-24, h:BH-20});
+      issues.push(...pl.issues); h += pl.html;
+      h += LV.kick(B.planHead || 'Reading the plan', 'back.planhead', X1, 346, 280);
+      h += para('body', 'back.plannote', B.planNote, X1, BOT - 8*LH, 280, 8, LH);
+    } else {
+      const N = B.big || {};
+      h += LV.photo(D, N.id, X1, TOP, W1, BH);
+      h += `<div class="abs bcap" style="left:${X1}pt;top:344pt;width:280pt;height:16pt"><div class="nm" data-slot="back.big.name" data-lines="1">${esc(N.name)}${N.tag ? `<span>${esc(N.tag)}</span>` : ''}</div></div>`;
+      h += para('body', 'back.big.text', N.text, X1, BOT - 8*LH, 280, 8, LH);
+    }
+    // around list
+    const Ar = B.around || {};
+    h += LV.kick(Ar.head, 'back.aroundhead', 314, 346, 180);
+    h += `<div class="abs around" style="left:314pt;top:362pt;width:180pt">${(Ar.rows||[]).slice(0,3).map((x,i)=>`<div class="r"><div class="d" data-slot="back.around${i}.d" data-lines="1">${esc(x.d)}${x.u === '' ? '' : `<small>${esc(x.u || 'miles')}</small>`}</div><div class="p" data-slot="back.around${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}</div>`;
+    // right column: two outdoor views with captions
+    const RX = 504, RW = 264, L4 = 4, P = Math.floor((BOT - TOP - 10 - 2*(6 + 16 + L4*LH))/2);
+    const bp = hasPlan ? 'back.p' : 'back.np';
+    (hasPlan ? B.photos : (B.photosNoplan || B.photos) || []).slice(0, 2).forEach((c, i) => {
+      const y = TOP + i*(P + 6 + 16 + L4*LH + 10);
+      h += LV.photo(D, c.id, RX, y, RW, P);
+      h += `<div class="abs bcap" style="left:${RX}pt;top:${y + P + 6}pt;width:${RW}pt;height:16pt"><div class="nm" data-slot="${bp}${i}.name" data-lines="1">${esc(c.name)}${c.tag ? `<span>${esc(c.tag)}</span>` : ''}</div></div>`;
+      h += para('body', `${bp}${i}.text`, c.text, RX, y + P + 6 + 16, RW, L4, LH);
+    });
+    h += LV.rule(24, 464, 744);
+    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', brokerage: true, fine: B.footnote || '', fieldAccent: true});
+    return h;
+  }
+
+  // ================= INSIDE (top and bottom share one band layout) =================
+  function bands(T, pre, logo){
+    const bs = (T.bands || []).slice(0, 3);
+    let h = LV.kick(T.kicker, pre + '.kicker', 24, 26, 560) + `<div class="abs title one" style="left:24pt;top:36pt;width:${logo ? 560 : 744}pt;height:32pt" data-slot="${pre}.title" data-lines="1">${esc(T.title)}</div>` + (logo ? LV.logo(D, 588, 26, 180, 26, 'flex-end') : '') + LV.rule(24, 71, 744);
+    const y0 = 82, G = 10, BH = Math.floor((604 - y0 - G*(bs.length-1))/bs.length);
+    const XB = 24, WB = 296, XS = XB + WB + 10, WS = 196, XC = XS + WS + 10, WC = 768 - XC;
+    bs.forEach((c, i) => {
+      const y = y0 + i*(BH + G), sz = c.sizes || [], n = Math.floor((BH - 27 - sz.length*LH - 8)/BL);
+      h += LV.photo(D, c.big, XB, y, WB, BH) + LV.photo(D, c.small, XS, y, WS, BH);
+      h += `<div class="abs band"><div class="rl" style="left:${XC}pt;top:${y}pt;width:${WC}pt"></div>` +
+        `<div class="hd" style="left:${XC}pt;top:${y + 7}pt;width:${WC}pt;height:18pt" data-slot="${pre}.b${i}.head" data-lines="1">${esc(c.head)}</div>` +
+        sz.map((s, j) => `<div class="sz" style="left:${XC}pt;top:${y + 27 + j*LH}pt;width:${WC}pt;height:${LH}pt" data-slot="${pre}.b${i}.size${j}" data-lines="1">${esc(s[0])}${s[1] ? `<i>&nbsp; ${esc(s[1])}</i>` : ''}</div>`).join('') +
+        para('pp', `${pre}.b${i}.text`, c.text, XC, y + BH - n*BL, WC, n, BL) + `</div>`;
+    });
+    return h;
+  }
+  const top = () => bands(C.top || {}, 'top', true);
+  const bottom = () => bands(C.bottom || {}, 'bottom', false);
+
+  const panels = {front: cover(), back: back(), top: top(), bottom: bottom()};
+  const panel = (cls, h) => `<div class="panel ${cls||''}">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside"><div class="half top">${panel('flip', panels.back)}</div><div class="half bottom">${panel('', panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside"><div class="half top">${panel('', panels.top)}</div><div class="half bottom">${panel('', panels.bottom)}</div></div>`;
+  } else {
+    for(const id of ['front','top','bottom','back']) html += `<div class="page" data-page="${id}">${panel('', panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  LV.fitLogos();
+  ContactCard.fit(document);
+  document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  window.brochureCheck = () => LV.check(D, issues);
+})();
+</script>
+</body>
+</html>

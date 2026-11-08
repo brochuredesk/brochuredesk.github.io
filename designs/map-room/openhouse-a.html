@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · The Map Room open house flyer · Cover Page</title>
+<link rel="stylesheet" href="map-room.css">
+<script src="map-room.js"></script>
+<script src="../engine/setpieces.js"></script>
+<!--
+  The Map Room · Open House flyer a "Cover Page" (trim 612 x 792 pt; print: white margin around the white field).
+  The fold-over's cover, made into a flyer: the event on top (label in tracked blue caps, the date in the navy serif as the
+  largest type on the page, the time under it, the broker / REALTOR(R) lines right of the time, only when filled), then the
+  whole house with a stack of three interiors beside it, the address with city, state and ZIP under it, the big fact numbers
+  in a row (small caps labels), a write-up on the left and a "On the tour" list of square bullets with the blue tag on the right,
+  then the standard contact card (Right panel), which carries the one logo.
+  Open House rules (templates/_shared/ohstandard.js): city, state and ZIP, no RSVP, no QR, no price. Copy: data.copy.pc.oh.a.
+-->
+<style>
+  .cc{--cc-paper:#ffffff;--cc-ink:#1d3557;--cc-muted:#5b6b82;--cc-accent:#1f6391;--cc-line:rgba(29,53,87,.22)}
+  .oh-lbl{font:700 20pt/22pt var(--font-body);letter-spacing:3pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+  .oh-date{font:400 54pt/60pt var(--font-display);letter-spacing:-.8pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+  .oh-time{font:600 24pt/28pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
+  .oh-strong{font:600 10.5pt/14pt var(--font-body);color:var(--ink);text-align:right}
+  .oh-note{font:400 10.5pt/14pt var(--font-body);color:var(--text);text-align:right}
+  .ab{font-size:10pt;line-height:15pt;color:var(--text)}
+  .blist div{font:600 9.5pt/13pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden;padding-left:11pt;position:relative}
+  .blist div:before{content:"";position:absolute;left:0;top:4pt;width:5pt;height:5pt;background:var(--accent)}
+  .facts .f{flex:0 0 25%}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const esc = SP.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), C = (PC.oh || {}).a || {};
+  const issues = await SP.ready(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const O = SP.openHouse(D), X = 36, W = 540;
+  let h = '';
+
+  // the event
+  h += `<div class="abs oh-lbl" style="left:${X}pt;top:32pt;width:${W}pt;height:22pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
+  h += `<div class="abs oh-date" style="left:${X - 2}pt;top:56pt;width:${W + 2}pt;height:60pt" data-slot="oh.date" data-lines="1" data-fit="36">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X}pt;top:120pt;width:250pt;height:28pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  let dy = 0;   // the broker / REALTOR(R) lines sit right of the time; past two lines the header grows and the photo gives up the difference
+  { const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note']].filter(l => l[0]);
+    if(ls.length){ const pre = SP.eventLines(ls, 300, 0, 276, 14, 0); dy = Math.max(0, pre.h - 28); h += SP.eventLines(ls, 300, 148 - pre.h + dy, 276, 14, 0).html; } }
+  h += `<div class="rule" style="left:${X}pt;top:${158 + dy}pt;width:${W}pt"></div>`;
+
+  // the whole house, with three interiors stacked beside it (the fold-over cover)
+  const T = 168 + dy, HH = 252 - dy, HW = 350, g = 10, sw = W - HW - g, sh = (HH - 2*g)/3;
+  let ph = SP.photo(D, C.hero || 'front', X, T, HW, HH, 'oh.hero');
+  (C.stack || []).slice(0, 3).forEach((id, i) => { ph += SP.photo(D, id, X + HW + g, T + i*(sh + g), sw, sh, 'oh.photo' + i); });
+  h += `<div class="abs" data-gapcheck="oh.photos" style="left:0;top:0">${ph}</div>`;
+
+  // the address, then the fact numbers in a row
+  const by = T + HH;
+  h += `<div class="abs addr" style="left:${X - 1}pt;top:${by + 8}pt;width:${W}pt;height:40pt;font-size:36pt;line-height:40pt" data-slot="address" data-lines="1" data-fit="26">${esc(L.address)}</div>`;
+  h += `<div class="abs kick" style="left:${X}pt;top:${by + 50}pt;width:${W}pt;height:10pt" data-slot="place" data-lines="1">${esc(SP.placeZip(L).toUpperCase())}</div>`;
+  const fp = SP.factPairs(L, 6).filter(f => !/^Stor/.test(f[1]) && !/^Half/.test(f[1])).slice(0, 4);
+  h += `<div class="abs facts" style="left:${X}pt;top:${by + 66}pt;width:${W}pt;height:38pt">${fp.map((f, i) => `<div class="f"><div class="v" data-slot="oh.fact${i}.v" data-lines="1">${esc(f[0])}</div><div class="l" data-slot="oh.fact${i}.l" data-lines="1">${esc(f[1])}</div></div>`).join('')}</div>`;
+  const ry = by + 112;
+  h += `<div class="rule" style="left:${X}pt;top:${ry}pt;width:${W}pt"></div>`;
+
+  // the write-up, and the list with the tag
+  const lw = 296, rx = X + lw + 24, rw = W - lw - 24, ty = ry + 24, lines = Math.max(3, Math.floor((660 - ty)/15));
+  h += `<div class="abs kick" style="left:${X}pt;top:${ry + 9}pt;width:${lw}pt;height:10pt" data-slot="oh.head" data-lines="1">The house</div>`;
+  h += `<div class="abs ab" style="left:${X}pt;top:${ty}pt;width:${lw}pt;height:${lines*15}pt" data-slot="oh.blurb" data-para="1" data-min="4" data-fillbox="1">${esc(C.text || '')}</div>`;
+  h += `<div class="abs kick" style="left:${rx}pt;top:${ry + 9}pt;width:${rw}pt;height:10pt" data-slot="oh.listhead" data-lines="1">On the tour</div>`;
+  h += `<div class="abs blist" style="left:${rx}pt;top:${ty}pt;width:${rw}pt">${(C.items || []).slice(0, 4).map((t, i) => `<div style="margin-bottom:4pt" data-slot="oh.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div>`;
+  if(C.tag) h += `<div class="abs" style="left:${rx}pt;top:${ty + lines*15 - 16}pt;height:16pt"><span class="tag" data-slot="oh.tag" data-lines="1">${esc(C.tag)}</span></div>`;
+
+  h += SP.card(D, [X, 670, W, 88], {layout: 'panel', fieldAccent: true});
+  h += `<div class="abs" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  await SP.finish(D, 612, 792, h, issues);
+})();
+</script>
+</body>
+</html>

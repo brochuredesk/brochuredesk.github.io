@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Room Proportions two-sided flyer</title>
+<link rel="stylesheet" href="rp.css">
+<script src="rp.js"></script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<!--
+  Room Proportions · two-sided 8.5 x 11 listing flyer (trim 612 x 792 pt, 18 pt white margin in print; content on the 36 pt column like the
+  Open House flyer). data.piece.side = "front" | "back". Same family as the fold-over: white paper, Space Grotesk and Source Sans 3, rust
+  kickers, the gold-square fact rows, captions with the room's size in the accent color, the plan with the rooms drawn to one scale under it.
+
+  Needs a floor plan (pieces.json requiresFloorPlan): this design has no no-plan version.
+
+  FRONT  The whole house across the top (a tall, narrow house takes a left column instead, the way the fold-over's tall cover does), the
+         address in the display face, the details grid (gold-square rows: a fifth line, the lot size, when the listing has one; otherwise the
+         four lines grow to fill the height), the write-up beside it (same top and bottom edge), three captioned photos, the card.
+  BACK   Header, the agent's own plan at one scale with "Reading the plan" beside it, the rooms drawn to one scale with the scale bar, three
+         room photos cut to their rooms' shapes with captions, the card.
+
+  Rules (product.md: "Two-sided 8.5x11 flyer rules" 10/28 and the owner's Round 4 standing rules 11/1/2026): one brokerage logo per side (the
+  contact card's); no listing price, no QR, no photo numbers; room sizes in feet only (18' x 12'); the half bath's 1/2 at full size (BD.baths);
+  text fills its box and lines up with the photo and rule edges; a captioned row all runs the same number of lines.
+
+  Copy: data.companion.flyer = {
+    front: {hero: id, about: [sentence, ...], caps: [{photo: id, t, s: [sentence, ...]} x3]},
+    back:  {kicker?, title?, read: [sentence, ...], row: [{photo: id, t, s: [sentence, ...]} x3]}}
+  Each text box takes the longest run of those sentences that sets in its exact line count with the last line 3/4 full (RP.fillAll).
+-->
+<style>
+  .fl-place{font:600 8.5pt/1 var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--warm);white-space:nowrap;overflow:hidden}
+  .fl-addr{font-family:var(--font-display);font-weight:500;color:var(--ink);letter-spacing:-.8pt;white-space:nowrap;overflow:hidden}
+  .stack-f{position:absolute;display:flex;flex-direction:column;justify-content:space-evenly}
+  .stack-f .r{display:flex;align-items:center;gap:9pt;border-top:.6pt solid var(--line);flex:1;font:600 14pt/16pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden}
+  .stack-f .r:last-child{border-bottom:.6pt solid var(--line)}
+  .stack-f .r b{width:5pt;height:5pt;background:var(--gold);flex:none}
+  .read-k{font:700 10.5pt/13pt var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+  .scale-k{font:700 9.5pt/12pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+  .tick{position:absolute;width:.8pt;height:7pt;background:var(--ink)}
+  .tickn{position:absolute;font:400 8pt/9pt var(--font-body);color:var(--ink);text-align:center;width:30pt;white-space:nowrap}
+  .fl-title{font-size:34pt;line-height:40pt;font-weight:500}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+RP.whenFonts(function(){
+  const D = RP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = RP.esc, b = D.brand || {}, L = D.listing, C = D.companion || {}, FL = C.flyer || {}, P = D.photos || {};
+  document.body.dataset.mode = D.mode || 'email';
+  RP.applyBrand(b);
+  const side = (D.piece || {}).side === 'back' ? 'back' : 'front';
+  const planIssues = [], byId = RP.byId(D), X0 = 36, CW = 540, GAP = 14;
+  const num = v => Number(v).toLocaleString('en-US');
+  // room sizes in feet only, the inches dropped and never rounded up (owner Round 4, 11/1/2026): 18' x 12'
+  const ft = (w, d) => `${Math.floor(w + 1e-9)}' x ${Math.floor(d + 1e-9)}'`;
+  RP.dimsText = ft;                                   // the scale boxes under the plan use it too
+  const feetOnly = t => String(t == null ? '' : t).replace(/(\d+)(?:\.\d+)?(?:'\s?\d+(?:\.\d+)?"?)?'?\s*x\s*(\d+)(?:\.\d+)?(?:'\s?\d+(?:\.\d+)?"?)?'?/g, "$1' x $2'");
+  const sents = a => (a || []).map(feetOnly);
+  const sentBox = (slot, x, y, w, n, lh, size, ss, extra) => RP.sentBox(slot, x, y, w, n, lh, size, sents(ss), extra);
+  // a caption: the room's name with its real size in the accent color, then the sentences filled to n lines
+  const capHTML = (c, x, y, w, n) => {
+    c.id = c.photo || c.id;
+    const it = byId[c.id], dm = it && it.sz ? ft(it.sz[0], it.sz[1]) : '';
+    return `<div class="abs cap" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="t" data-slot="cap.${c.id}.t" data-lines="1">${esc(c.t)}${dm ? `<i>${esc(dm)}</i>` : ''}</div>`
+      + `<div class="b" data-slot="cap.${c.id}.b" data-lines="${n}" data-fill="${n}" data-sents="${esc(JSON.stringify(sents(c.s)))}" style="height:${n*11.2}pt"></div></div>`;
+  };
+  const photo = (id, x, y, w, h) => RP.pframe(D, id, `left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt`);
+  const fine = esc(C.fineprint || 'Information deemed reliable but not guaranteed; buyer to verify. Room sizes are approximate, from the listing.');
+  const cardAndFine = () => RP.card(D, {x: 36, y: 664, w: 540, h: 92})
+    + `<div class="abs" style="left:36pt;top:764pt;width:540pt;font-size:6pt;line-height:8pt;height:8pt;white-space:nowrap;color:var(--muted)" data-slot="fineprint" data-lines="1" data-fine="1">${fine}</div>`;
+  // the details grid: gold-square rows; the lot size is the fifth line when the listing has one, otherwise the four lines grow to fill
+  const gridRows = () => {
+    const r = [], bn = BD.baths(L);
+    if(L.beds) r.push(`${L.beds} Bedroom${L.beds == 1 ? '' : 's'}`);
+    if(L.baths || L.halfBaths) r.push(bn.main);
+    if(bn.half) r.push(bn.half);
+    if(L.sqft) r.push(`${num(L.sqft)} Square Feet`);
+    const lot = String(L.lotSize || '').trim(), yr = L.yearBuilt ? `Built in ${L.yearBuilt}` : '';
+    if(yr && r.length + 1 + (lot ? 1 : 0) <= 5) r.push(yr);
+    if(lot) r.push(lot);
+    return r.slice(0, 5);
+  };
+  const stack = (rows, x, y, w, h) => `<div class="stack-f" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt">${rows.map((s, i) => `<div class="r" data-slot="front.stat${i}" data-lines="1"><b></b><span>${s}</span></div>`).join('')}</div>`;
+
+  let h = '', after = () => {};
+
+  // ======================================= FRONT =======================================
+  if(side === 'front'){
+    const K = FL.front || {}, caps = (K.caps || []).slice(0, 3);
+    caps.forEach(c => { c.id = c.photo || c.id; });
+    const heroId = K.hero || Object.keys(P)[0], hp = P[heroId] || {}, ap = (hp.w && hp.h) ? hp.w/hp.h : 1.5, bx = hp.box;
+    const place = [L.neighborhood, RP.placeZip(L)].filter(Boolean).join(' · ');
+    const rows = gridRows();
+    const cw = (CW - 2*GAP)/3;
+    const N = RP.bestN(caps.map(c => ({s: sents(c.s), w: cw})), 4), capH = RP.capH(N);
+    // the whole house must fit its frame: a frame this wide shows 1/ratio of the photo's height
+    const heroMin = bx ? Math.ceil(CW*((bx[3] - bx[1]) + 0.03)/ap) : 0, tall = heroMin > 275;
+    if(!tall){
+      // ---- A: the house across the top, address under it, the write-up and the grid side by side, three captioned photos, the card
+      let pick = null;
+      for(const ph of [104, 100, 96, 92, 88]){
+        const rowTop = 650 - capH - 6 - ph, heroH = Math.max(heroMin, 250), blockTop = 36 + heroH + 84, blockH = rowTop - 14 - blockTop;
+        if(blockH >= 96){ pick = {ph, rowTop, heroH, blockTop, blockH}; break; }
+      }
+      if(!pick){ const ph = 88, rowTop = 650 - capH - 6 - ph, heroH = Math.max(heroMin, 240); pick = {ph, rowTop, heroH, blockTop: 36 + heroH + 84, blockH: rowTop - 14 - (36 + heroH + 84)}; }
+      const {ph, rowTop, heroH, blockTop, blockH} = pick, end = 36 + heroH, LW = 318, GX = X0 + LW + 24, GW = X0 + CW - GX;
+      h += photo(heroId, 36, 36, CW, heroH);
+      h += `<div class="abs fl-place" style="left:36pt;top:${end + 12}pt;width:540pt;height:10pt" data-slot="front.place" data-lines="1">${esc(place)}</div>`;
+      h += `<div class="abs fl-addr" style="left:35pt;top:${end + 26}pt;width:541pt;height:52pt;font-size:46pt;line-height:52pt" data-slot="front.street" data-lines="1">${esc(L.address)}</div>`;
+      const n = Math.floor((blockH - 2)/14), lh = (blockH - 2)/n;
+      h += sentBox('front.about', X0, blockTop, LW, n, lh, 10.5, K.about, `color:var(--ink);height:${blockH}pt`);
+      h += stack(rows, GX, blockTop, GW, blockH);
+      caps.forEach((c, i) => { const x = X0 + i*(cw + GAP); h += photo(c.id, x, rowTop, cw, ph) + capHTML(c, x, rowTop + ph + 6, cw, N); });
+      after = () => document.querySelectorAll('.fl-addr').forEach(el => { let z = 46; while(el.scrollWidth > el.clientWidth + 1 && z > 34){ z -= 1; el.style.fontSize = z + 'pt'; } });
+    } else {
+      // ---- B: a tall, narrow house stands in a left column; the address, the grid and the write-up fill the column beside it
+      const ph = 100, rowTop = 650 - capH - 6 - ph, HH = rowTop - 14 - 36, HW = 300, RX = X0 + HW + 20, RW = X0 + CW - RX;
+      h += photo(heroId, 36, 36, HW, HH);
+      h += `<div class="abs fl-place" style="left:${RX}pt;top:36pt;width:${RW}pt;height:10pt" data-slot="front.place" data-lines="1">${esc(place)}</div>`;
+      // the address wraps at 36 pt; if that leaves a short last line (the owner's 3/4 rule, 11/2/2026), it steps down until it sits on one line
+      const addrAt = f => `<div class="fl-addr" style="font-size:${f}pt;line-height:${f*7/6}pt;white-space:normal;letter-spacing:-.8pt">${esc(L.address)}</div>`;
+      const lastFill = f => { const m = document.createElement('div'); m.style.cssText = `position:absolute;left:-9999pt;top:0;width:${RW - 6}pt;visibility:hidden`; m.innerHTML = addrAt(f); document.body.appendChild(m);
+        const rg = document.createRange(); rg.selectNodeContents(m.firstChild); const rows = [];
+        [...rg.getClientRects()].filter(q => q.width > .5).forEach(q => { const r = rows.find(x => Math.abs(x.top - q.top) < 4); if(r){ r.l = Math.min(r.l, q.left); r.r = Math.max(r.r, q.right); } else rows.push({top: q.top, l: q.left, r: q.right}); });
+        const w = m.firstChild.getBoundingClientRect().width; m.remove(); rows.sort((a, b) => a.top - b.top); const l = rows[rows.length - 1]; return {n: rows.length, k: (l.r - l.l)/w}; };
+      let afs = 36;
+      { const f0 = lastFill(36); if(f0.n > 1 && f0.k < .75){ for(let f = 35; f >= 26; f--){ if(lastFill(f).n === 1){ afs = f; break; } } } }
+      const aH = RP.measure(addrAt(afs), RW - 6), alh = afs*7/6;
+      h += `<div class="abs fl-addr" style="left:${RX - 1}pt;top:52pt;width:${RW + 1}pt;height:${aH + 2}pt;font-size:${afs}pt;line-height:${alh}pt;white-space:normal" data-slot="front.street" data-lines="${Math.round(aH/alh)}">${esc(L.address)}</div>`;
+      const gTop = 52 + aH + 16, gH = rows.length*25;
+      h += stack(rows, RX, gTop, RW, gH);
+      const wTop = gTop + gH + 14, wH = 36 + HH - wTop, n = Math.floor((wH - 2)/14.4), lh = (wH - 2)/n;
+      h += sentBox('front.about', RX, wTop, RW, n, lh, 10.5, K.about, `color:var(--ink);height:${wH}pt`);
+      caps.forEach((c, i) => { const x = X0 + i*(cw + GAP); h += photo(c.id, x, rowTop, cw, ph) + capHTML(c, x, rowTop + ph + 6, cw, N); });
+    }
+    h += cardAndFine();
+  }
+
+  // ======================================= BACK =======================================
+  else {
+    const B = FL.back || {}, row = (B.row || []).slice(0, 3);
+    h += `<div class="abs kick" style="left:36pt;top:36pt;width:540pt;height:10pt" data-slot="back.kicker" data-lines="1">${esc(B.kicker || L.address)}</div>`;
+    h += `<div class="abs display fl-title" style="left:35pt;top:50pt;width:541pt;height:40pt" data-slot="back.title" data-lines="1">${esc(B.title || 'Floor Plan')}</div>`;
+    h += `<div class="abs" style="left:36pt;top:94pt;width:540pt;height:1pt;background:var(--ink);opacity:.55"></div>`;
+    const PY = 106, ZMAX = 228;
+    // the plan at one scale: a narrower plan frame leaves "Reading the plan" a wider column; a wide, short plan frames itself to its height
+    let TW = 190, PW = CW - TW - 18, run = RPPlan.draw(D.plan, {x: X0, y: PY, w: PW, h: ZMAX}, {allowRotate: true});
+    if(run.usedH < 0.8*ZMAX){ PW = 360; TW = CW - PW - 18; run = RPPlan.draw(D.plan, {x: X0, y: PY, w: PW, h: ZMAX}, {allowRotate: true}); }
+    const Z = Math.min(ZMAX, Math.max(150, Math.ceil(run.usedH) + 6));
+    // the plan sits centered in a box of its own height
+    run = RPPlan.draw(D.plan, {x: X0, y: PY, w: PW, h: Z}, {allowRotate: true, angle: run.angle});
+    planIssues.push(...run.issues); h += run.html.replace(/(\d+)\s*x\s*(\d+)(?![\d'])/g, "$1' x $2'"); document.body.dataset.planAngle = run.angle;
+    // Reading the plan: the same top and bottom edge as the plan
+    const RX = X0 + PW + 18, n = Math.floor((Z - 21)/15), lh = (Z - 21)/n;
+    h += `<div class="abs read-k" style="left:${RX}pt;top:${PY}pt;width:${TW}pt;height:13pt" data-slot="back.readk" data-lines="1">Reading the plan</div>`;
+    h += sentBox('back.read', RX, PY + 21, TW, n, lh, 11, B.read, `color:var(--ink);height:${Z - 21}pt`);
+    // the room photos' frames follow their rooms' shapes
+    row.forEach(c => { c.id = c.photo || c.id; });
+    const ratio = c => RP.frameRatio(byId[c.id] || {}), sumR = row.reduce((a, c) => a + ratio(c), 0);
+    const RH = Math.max(120, Math.min(150, (CW - 2*GAP)/sumR)), rw = row.map(c => ratio(c)*RH), extra = (CW - rw.reduce((a, c) => a + c, 0))/(row.length - 1);
+    const rn = RP.bestN(row.map((c, i) => ({s: sents(c.s), w: rw[i]})), 4), rcH = RP.capH(rn);
+    const rowTop = 650 - rcH - 6 - RH;
+    // rooms drawn to one scale (the strip takes the height between the plan and the photos)
+    const sTop = PY + Z + 10, sH = rowTop - 10 - sTop - 24;
+    const sb = RP.scaleBoxes(D, CW, sH, 7);
+    h += `<div class="hair" style="left:36pt;width:540pt;top:${PY + Z + 5}pt;background:var(--ink);opacity:.4"></div>`;
+    h += `<div class="abs scale-k" style="left:36pt;top:${sTop}pt;width:420pt;height:12pt" data-slot="scale.k" data-lines="1">Rooms drawn to one scale: 1 inch = ${sb.ftPerIn} feet</div>`;
+    const bw = 72, bx0 = 576 - bw - 34, by = sTop + 7;
+    h += `<div class="abs" style="left:${bx0}pt;top:${by}pt;width:${bw}pt;height:5pt;border:.8pt solid var(--ink);border-top:0"></div>`;
+    const tk = sb.ftPerIn % 4 ? 2 : 4;
+    for(let k = 0; k <= tk; k++) h += `<div class="tick" style="left:${bx0 + bw*k/tk}pt;top:${by - 7}pt"></div><div class="tickn" style="left:${bx0 + bw*k/tk - 15}pt;top:${by + 8}pt">${Math.round(sb.ftPerIn*k/tk)}</div>`;
+    h += `<div class="abs" style="left:${bx0 + bw + 8}pt;top:${by + 8}pt;font:400 8pt/9pt var(--font-body);color:var(--ink)">feet</div>`;
+    h += `<div class="abs" style="left:36pt;top:${sTop + 24}pt;width:540pt;height:${sH}pt">${sb.html}</div>`;
+    let x = X0;
+    row.forEach((c, i) => { h += photo(c.id, x, rowTop, rw[i], RH) + capHTML(c, x, rowTop + RH + 6, rw[i], rn); x += rw[i] + extra; });
+    h += cardAndFine();
+  }
+
+  const f = RP.frame(D, 612, 792, `<div class="panel" style="position:absolute;left:0;top:0;width:612pt;height:792pt">${h}</div>`);
+  document.getElementById('pages').innerHTML = f.html;
+  RP.shapeLogos();
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  after();
+  ContactCard.fit(document);
+  RP.fillAll();
+  window.brochureCheck = () => RP.check(planIssues.concat(RP.emptyChecks(), window.RPPlan ? RPPlan.check() : []));
+  // frames settle once the photos have loaded (the renderer waits for this promise)
+  return Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; }))).then(() => { RP.fitFrames(); ContactCard.fit(document); });
+});
+</script>
+</body>
+</html>

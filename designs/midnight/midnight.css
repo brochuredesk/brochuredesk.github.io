@@ -1,0 +1,86 @@
+/* Midnight Residence: set style file. Deep navy field, thin gold rules, gold small-caps kickers, white serif headings, photo-led.
+   Landscape 11 x 17 half-fold (fold "horizontal": panels stack). Lengths are pt (1/72 in). */
+:root{
+  --paper:#121a2b;          /* midnight navy field, every panel */
+  --ink:#ffffff;            /* titles, names */
+  --text:#dfe3ec;           /* body copy on navy */
+  --muted:#aeb6c6;
+  --accent:#c9a96a;         /* gold: kickers, rules, small caps */
+  --line:rgba(201,169,106,.55);
+  --font-display:'Newsreader',Georgia,'Times New Roman',serif;
+  --font-body:'Source Sans 3',Helvetica,Arial,sans-serif;
+  --m:24pt;
+}
+@font-face{font-family:'Newsreader';font-weight:400;src:url(../../fonts/pool/newsreader-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Newsreader';font-weight:500;src:url(../../fonts/pool/newsreader-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Newsreader';font-weight:600;src:url(../../fonts/pool/newsreader-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:400;src:url(../../fonts/pool/source-sans-3-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:600;src:url(../../fonts/pool/source-sans-3-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:700;src:url(../../fonts/pool/source-sans-3-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#555}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+.page{position:relative;background:var(--paper);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+body[data-mode=proof] .page{width:810pt;height:630pt}
+body[data-mode=print] .page{width:810pt;height:1242pt}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.5)}}
+@media print{body[data-mode=proof] .page{page:proof}body[data-mode=print] .page{page:spread}}
+@page proof{size:810pt 630pt}
+@page spread{size:810pt 1242pt}
+.panel{position:absolute;width:792pt;height:612pt;left:9pt;top:9pt}
+.half{position:absolute;left:0;width:810pt;height:621pt;overflow:hidden;background:var(--paper)}
+.half.top{top:0}.half.bottom{top:621pt}
+.half.top .panel{top:9pt}.half.bottom .panel{top:0}
+.half .panel.flip{transform:rotate(180deg);transform-origin:396pt 306pt}
+
+/* type */
+.kick{font:700 8.5pt/10pt var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+.title{font:500 27pt/32pt var(--font-display);letter-spacing:-.1pt;color:var(--ink);overflow:hidden}
+.title.one{white-space:nowrap}
+.rule{position:absolute;height:.7pt;background:var(--line)}
+.body{font-size:10pt;line-height:14pt;color:var(--text);overflow:hidden}
+
+/* photos: tight, to the margins, never in a box */
+.ph{position:absolute;overflow:hidden;background:#1d2840;flex:none}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.logo{position:absolute;display:flex;align-items:center;justify-content:flex-end}
+.logo img{display:block}
+
+/* captions: serif name, small gold detail, light body */
+.cap{overflow:hidden}
+.cap .nm{font:500 12.5pt/15pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;height:15pt}
+.cap .nm b{font-weight:500}
+.cap .nm span{font:600 8pt/15pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--accent);margin-left:7pt}
+.cap .tx{font-size:10pt;line-height:13pt;color:var(--text);overflow:hidden;margin-top:2pt}
+.cap.lead .nm{font:500 17pt/20pt var(--font-display);height:20pt}
+.cap.lead .nm span{font-size:8.5pt;line-height:20pt}
+.cap.lead .tx{font-size:11.5pt;line-height:15pt}
+
+/* back */
+.board{position:absolute;background:#fff}
+.plan{position:absolute}
+.plan.lv{position:absolute;overflow:visible}
+.plan.lv .in{position:absolute}
+.plan.lv img{display:block;width:100%;height:100%}
+.plan.flr{position:absolute;text-align:center;font:700 8pt/10pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:#121a2b;white-space:nowrap;overflow:hidden}
+.pnote{position:absolute;left:0;right:0;text-align:center;font:400 6.5pt/8pt var(--font-body);color:#5b6578;white-space:nowrap;overflow:hidden}
+.big{font:500 21pt/24pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden}
+.around .r{display:flex;align-items:baseline;border-top:.6pt solid var(--line);height:15pt;padding-top:2pt}
+.around .r .d{font:500 12pt/13pt var(--font-display);color:var(--accent);flex:none;width:88pt;white-space:nowrap;overflow:hidden}
+.around .r .d small{font:600 8pt/10pt var(--font-body);letter-spacing:1pt;text-transform:uppercase;margin-left:2pt}
+.around .r .p{font:600 9pt/13pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
+
+/* cover */
+.addr{font:500 36pt/40pt var(--font-display);letter-spacing:-.3pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.facts{display:flex;justify-content:space-between}
+.facts div{font:600 8pt/16pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+.facts div b{font:500 17pt/16pt var(--font-display);letter-spacing:0;color:var(--ink);margin-right:3pt;text-transform:none}
+
+/* the standard contact card, set in the set's colors: sits on the navy field, white type, gold labels, gold hairline */
+.panel .cc{--cc-paper:#121a2b;--cc-ink:#ffffff;--cc-muted:#c3cad8;--cc-accent:#c9a96a;--cc-line:rgba(201,169,106,.55);--cc-display:'Newsreader',Georgia,serif}
+.panel .cc .cc-fine{color:#c3cad8}

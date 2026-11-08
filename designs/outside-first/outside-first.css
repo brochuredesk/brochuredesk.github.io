@@ -1,0 +1,103 @@
+/* Outside First: set style file. The outdoor spaces open the story, then the rooms in walking order.
+   Landscape 11 x 17 half-fold (fold "horizontal": panels stack). Lengths are pt (1/72 in). */
+:root{
+  --paper:#fbf3e8;          /* warm cream field */
+  --ink:#1f2b2c;            /* titles, names, facts */
+  --text:#3a4647;           /* body copy */
+  --muted:#6a6f6c;
+  --accent:#bf6a2a;         /* copper: kickers, tags, rules */
+  --hot:#b8343b;            /* the one big claim */
+  --band:#f0e4d0;          /* tan band */
+  --line:rgba(31,43,44,.20);
+  --font-display:'Space Grotesk',Helvetica,Arial,sans-serif;
+  --font-body:'Source Sans 3',Helvetica,Arial,sans-serif;
+  --m:24pt;
+}
+@font-face{font-family:'Space Grotesk';font-weight:400;src:url(../../fonts/pool/space-grotesk-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Space Grotesk';font-weight:500;src:url(../../fonts/pool/space-grotesk-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Space Grotesk';font-weight:600;src:url(../../fonts/pool/space-grotesk-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Space Grotesk';font-weight:700;src:url(../../fonts/pool/space-grotesk-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:400;src:url(../../fonts/pool/source-sans-3-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:600;src:url(../../fonts/pool/source-sans-3-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:700;src:url(../../fonts/pool/source-sans-3-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+.page{position:relative;background:var(--paper);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+body[data-mode=proof] .page{width:810pt;height:630pt}
+body[data-mode=print] .page{width:810pt;height:1242pt}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+@media print{body[data-mode=proof] .page{page:proof}body[data-mode=print] .page{page:spread}}
+@page proof{size:810pt 630pt}
+@page spread{size:810pt 1242pt}
+.panel{position:absolute;width:792pt;height:612pt;left:9pt;top:9pt}
+.half{position:absolute;left:0;width:810pt;height:621pt;overflow:hidden}
+.half.top{top:0}.half.bottom{top:621pt}
+.half.top .panel{top:9pt}.half.bottom .panel{top:0}
+.half .panel.flip{transform:rotate(180deg);transform-origin:396pt 306pt}
+
+/* type */
+.kick{font:700 8.5pt/10pt var(--font-display);letter-spacing:1.4pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+.title{font:700 27pt/32pt var(--font-display);letter-spacing:-.3pt;color:var(--ink);overflow:hidden}
+.title.one{white-space:nowrap}
+.rule{position:absolute;height:.7pt;background:var(--line)}
+.body{font-size:9pt;line-height:12pt;color:var(--text);overflow:hidden}
+
+/* photos */
+.ph{position:absolute;overflow:hidden;background:#ddd;flex:none}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.logo{position:absolute;display:flex;align-items:center;justify-content:flex-end}
+.logo img{display:block}
+
+/* captions */
+.cap{overflow:hidden}
+.cap .nm{font:700 8.5pt/11pt var(--font-body);letter-spacing:.5pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;overflow:hidden;height:11pt}
+.cap .nm span{font-weight:600;letter-spacing:.2pt;text-transform:none;color:var(--accent);margin-left:5pt}
+.cap .tx{font-size:8.5pt;line-height:11pt;color:var(--text);overflow:hidden;margin-top:1pt}
+
+/* chapter heading: copper caps with a line running to the end */
+.chap{display:flex;align-items:center;gap:8pt;height:12pt;flex:none}
+.chap .h{font:700 8pt/12pt var(--font-display);letter-spacing:1.3pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden;flex:none;max-width:100%}
+.chap .l{flex:1;height:.7pt;background:var(--accent);position:relative}
+.chap .l:after{content:"";position:absolute;right:0;top:-2.5pt;width:.7pt;height:5.7pt;background:var(--accent)}
+.arrow{position:absolute;width:19pt;height:19pt;border-radius:50%;background:var(--accent);color:#fff;font:700 12pt/19pt var(--font-body);text-align:center}
+
+/* back */
+.nearby .d{font:700 21pt/24pt var(--font-display);color:var(--accent);white-space:nowrap;overflow:hidden}
+.nearby .d small{font:600 8pt/10pt var(--font-display);letter-spacing:1.2pt;text-transform:uppercase;margin-left:3pt}
+.nearby .p{font:600 9pt/11pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
+.band{position:absolute;background:var(--band);display:flex;align-items:stretch}
+.band .big{font:700 24pt/26pt var(--font-display);letter-spacing:.2pt;color:var(--hot);text-transform:uppercase;overflow:hidden}
+.band .sm{font-size:8.5pt;line-height:11pt;color:var(--text);overflow:hidden}
+.band .grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);gap:5pt 20pt}
+.band .grid div{font:600 9pt/12pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden;padding-left:9pt;position:relative}
+.band .grid div:before{content:"";position:absolute;left:0;top:4pt;width:4pt;height:4pt;background:var(--accent)}
+.plan{position:absolute}
+.plan.lv{position:absolute;overflow:visible}
+.plan.lv .in{position:absolute}
+.plan.lv img{display:block;width:100%;height:100%}
+.plan.flr{position:absolute;text-align:center;font:700 8pt/10pt var(--font-display);letter-spacing:1.3pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;overflow:hidden}
+.floors{position:absolute;display:flex;gap:18pt}
+.floors .f{flex:1;min-width:0;border-top:1.4pt solid var(--accent);padding-top:6pt}
+.floors .f .n{font:700 64pt/64pt var(--font-display);color:var(--ink)}
+.floors .f .fl{font:700 9pt/12pt var(--font-display);letter-spacing:1.3pt;text-transform:uppercase;color:var(--accent);margin-top:2pt;white-space:nowrap;overflow:hidden}
+.floors .f .sm{font-size:10pt;line-height:14pt;color:var(--text);margin-top:5pt;overflow:hidden}
+.floors table{width:100%;border-collapse:collapse;margin-top:6pt}
+.floors td{font-size:10pt;line-height:12pt;padding:4pt 0;border-top:.5pt solid var(--line);color:var(--text);white-space:nowrap}
+.floors td:first-child{font-weight:600;color:var(--ink);overflow:hidden}
+.floors td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+
+/* cover */
+.specs div{display:flex;justify-content:space-between;align-items:baseline;border-top:.7pt solid var(--line);height:21pt;padding-top:3pt}
+.specs div:first-child{border-top:1.4pt solid var(--accent)}
+.specs .l{font:600 9pt/14pt var(--font-display);letter-spacing:.8pt;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.specs .v{font:600 12.5pt/14pt var(--font-display);color:var(--ink);white-space:nowrap}
+.addr{font:700 29pt/32pt var(--font-display);letter-spacing:-.3pt;white-space:nowrap;overflow:hidden}
+.facts{font:600 8.5pt/11pt var(--font-body);letter-spacing:.3pt;color:var(--muted);white-space:nowrap;overflow:hidden}
+.tag{display:inline-block;background:var(--hot);color:#fff;font:700 8.5pt/16pt var(--font-display);letter-spacing:1.3pt;text-transform:uppercase;padding:0 9pt;height:16pt;white-space:nowrap}
+.tag.n{background:var(--ink)}

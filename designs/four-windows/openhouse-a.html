@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · The Four Windows open house flyer · Four Panes</title>
+<link rel="stylesheet" href="four-windows.css">
+<script src="four-windows.js"></script>
+<script src="../engine/setpieces.js"></script>
+<!--
+  The Four Windows · Open House flyer a "Four Panes" (trim 612 x 792 pt; print: 0.25 in white margin around the green field).
+  The event leads on the field: the label in the set's mint pill, the date in heavy sans as the largest type on the page, the
+  time in mint under it, and the broker / REALTOR(R) lines (only on those opens, only when filled) right of the time.
+  Then the cover's four-window grid: the whole house as the big window and three room views stacked beside it. Under it the
+  address, city, state and ZIP (with the mint tag when the listing says it has never flooded), the facts row between thin rules,
+  a write-up, and the standard contact card (templates/_shared/agentcard.js, Right panel), which carries the one logo.
+  Open House rules (templates/_shared/ohstandard.js): city, state and ZIP, no RSVP, no QR, no price. Copy: data.copy.pc.oh.a.
+-->
+<style>
+  .cc{--cc-paper:#182d2d;--cc-ink:#ffffff;--cc-muted:#cfe3da;--cc-accent:#8fd3b8;--cc-line:rgba(255,255,255,.34)}
+  .pill{display:inline-block;background:var(--accent);color:#13302b;font:800 20pt/30pt var(--font-display);letter-spacing:1.6pt;text-transform:uppercase;padding:0 12pt;height:30pt;white-space:nowrap}
+  .oh-date{font:800 52pt/58pt var(--font-display);letter-spacing:-1.2pt;color:#fff;white-space:nowrap;overflow:hidden}
+  .oh-time{font:700 24pt/28pt var(--font-display);letter-spacing:-.2pt;color:var(--accent);white-space:nowrap;overflow:hidden}
+  .oh-strong{font:700 10.5pt/14pt var(--font-body);color:#fff;text-align:right}
+  .oh-note{font:400 10.5pt/14pt var(--font-body);color:var(--text);text-align:right}
+  .ab{font-size:11pt;line-height:16pt;color:var(--text)}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = SP.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), C = (PC.oh || {}).a || {};
+  const issues = await SP.ready(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const O = SP.openHouse(D), X = 36, W = 540;
+  let h = '';
+
+  // the event
+  h += `<div class="abs" style="left:${X}pt;top:30pt;width:${W}pt;height:30pt;overflow:visible"><span class="pill" data-slot="oh.label" data-lines="1">${esc(O.label)}</span></div>`;
+  h += `<div class="abs oh-date" style="left:${X - 2}pt;top:64pt;width:${W + 2}pt;height:58pt" data-slot="oh.date" data-lines="1" data-fit="34">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X}pt;top:124pt;width:250pt;height:28pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  let dy = 0;   // the broker / REALTOR(R) lines sit right of the time; past two lines the header grows and the grid gives up the difference
+  { const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note']].filter(l => l[0]);
+    if(ls.length){ const pre = SP.eventLines(ls, 300, 0, 276, 14, 0); dy = Math.max(0, pre.h - 28); h += SP.eventLines(ls, 300, 152 - pre.h + dy, 276, 14, 0).html; } }
+  h += `<div class="rule" style="left:${X}pt;top:${162 + dy}pt;width:${W}pt"></div>`;
+
+  // the four windows: the whole house big, three room views beside it
+  const gt = 172 + dy, gh = 300 - dy, hw = 352, rx = X + hw + 12, rw = X + W - rx, sh = (gh - 24)/3;
+  const ids = (C.photos || []).slice(0, 3);
+  let g = SP.photo(D, C.hero || 'front', X, gt, hw, gh, 'oh.hero');
+  ids.forEach((id, i) => { g += SP.photo(D, id, rx, gt + i*(sh + 12), rw, sh, 'oh.photo' + i); });
+  h += `<div class="abs" data-gapcheck="oh.windows" style="left:0;top:0">${g}</div>`;
+
+  // the address, city, the tag, the facts row
+  const flood = SP.floodStated(L.description);
+  h += `<div class="abs addr" style="left:${X - 1}pt;top:482pt;width:${W}pt;height:38pt;font-size:32pt;line-height:38pt" data-slot="address" data-lines="1" data-fit="22">${esc(L.address)}</div>`;
+  h += `<div class="abs city" style="left:${X}pt;top:523pt;width:340pt;height:12pt" data-slot="place" data-lines="1">${esc(SP.placeZip(L).toUpperCase())}</div>`;
+  if(flood) h += `<div class="abs" style="left:${X + 240}pt;top:520pt;width:${W - 240}pt;height:17pt;text-align:right"><span class="tag" data-slot="front.tag" data-lines="1">Never flooded</span></div>`;
+  h += `<div class="abs facts" style="left:${X}pt;top:542pt;width:${W}pt">${SP.stats(L).map((t, i) => `<span data-slot="oh.fact${i}" data-lines="1">${esc(t)}</span>`).join('')}</div>`;
+  h += `<div class="abs ab" style="left:${X}pt;top:580pt;width:${W}pt;height:80pt" data-slot="oh.blurb" data-para="1" data-min="4" data-fillbox="1">${esc(C.text || '')}</div>`;
+
+  h += SP.card(D, [X, 670, W, 86], {layout: 'panel', fieldAccent: true});
+  h += `<div class="abs" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  await SP.finish(D, 612, 792, h, issues);
+})();
+</script>
+</body>
+</html>

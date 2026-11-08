@@ -1,0 +1,48 @@
+/* fxs-13: design set built from the FX13 two-sided flyer (warm white page, the address set vertically up the left edge, a round
+   neighborhood seal, Bodoni Moda / Cormorant Garamond / Montserrat, gold hairline labels). The look lives in fxs13-tokens.css;
+   every piece (fold-over, flyer, Open House flyer and email, postcards, socials, carousels) reads those variables.
+   Lengths are pt. Source: docs/design/two-sided-flyers/canvas/FX13-front.dc.html and FX13-back.dc.html. */
+@import url(fxs13-tokens.css);
+@import url(fxs13-marks.css);
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#8a8a8a}
+body{font-family:var(--fx-font);color:var(--fx-ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+.page{position:relative;background:var(--fx-paper);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+.panel{position:absolute;left:9pt;top:9pt;width:612pt;height:792pt;background:var(--fx-paper)}
+.half{position:absolute;top:0;height:810pt;width:621pt;overflow:hidden}
+.half.l{left:0}.half.r{left:621pt}
+.half.r .panel{left:0}
+.bg-paper{position:absolute;left:-9pt;top:-9pt;right:-9pt;bottom:-9pt;background:var(--fx-paper)}
+
+/* floor plan (IvoryPlan reads these) */
+.plan-legend{position:absolute;display:flex;gap:18pt;font:600 8.5pt/11pt var(--fx-font);color:var(--fx-ink);white-space:nowrap}
+.plan-legend i{display:inline-block;width:11pt;height:11pt;margin-right:5pt;vertical-align:-2pt;border:.6pt solid rgba(0,0,0,.4)}
+.plan-disclosure{position:absolute;font-size:7pt;line-height:9pt;color:var(--fx-mute);white-space:nowrap;overflow:hidden;text-align:right}
+.plan-room{position:absolute;text-align:center;font:400 8pt/9.5pt var(--fx-font);color:var(--fx-ink);white-space:nowrap}
+.plan-room b{display:block;font-weight:600;font-size:8pt;line-height:9.5pt}
+.plan-room span{display:block;color:var(--fx-mute);font-size:8pt;line-height:9.5pt}
+.plan-level{text-align:center;font:700 10pt/12pt var(--fx-font);letter-spacing:1.5pt;text-transform:uppercase;color:var(--fx-accent);white-space:nowrap;overflow:hidden}
+.plan-svg{position:absolute;overflow:visible}
+
+/* logos float: never boxed */
+.logo{display:flex;align-items:center;justify-content:flex-start;overflow:hidden}
+.logo img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+.logo .word{font:700 12pt/14pt var(--fx-font);color:var(--fx-ink);letter-spacing:.4pt;text-transform:uppercase;white-space:nowrap}
+
+/* mail-vendor zones on postcard proofs */
+.mg{position:absolute;box-sizing:border-box;color:rgba(0,0,0,.45);font:600 6pt/1.4 var(--fx-font);letter-spacing:.45pt;text-transform:uppercase}
+.mg-stamp{border:.75pt dashed rgba(0,0,0,.35);text-align:center;padding-top:36pt}
+.mg-addr{border:.75pt solid rgba(0,0,0,.2)}
+.mg-bar{border:.75pt dashed rgba(0,0,0,.3)}
+.mg .gl{position:absolute}
+.mg .aline{position:absolute;height:.75pt;background:rgba(0,0,0,.2)}
+
+/* the shared agent card in this set's hand */
+body .cc .cc-name{font-weight:600}
+body .cc .cc-phone{font-weight:600}
+.hsbox{overflow:hidden;background:var(--fx-card)}
+.hsbox img{width:100%;height:100%;object-fit:cover;object-position:center 22%}

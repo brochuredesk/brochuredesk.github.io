@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · The Room Strips open house flyer · Address Strips</title>
+<link rel="stylesheet" href="room-strips.css">
+<script src="room-strips.js"></script>
+<script src="../engine/setpieces.js"></script>
+<!--
+  The Room Strips · Open House flyer b "Address Strips" (trim 612 x 792 pt; print: 0.25 in white margin, the band keeps inside it).
+  The event is a slimmer red band: the label and the time share the top line (the time right-aligned), the date under them in
+  white condensed bold as the largest type on the page, the broker / REALTOR(R) lines (only on those opens, only when filled)
+  across the foot of the band. Then the address as the page's heading, a red rule, the whole house at left with the fact
+  numbers stacked at its right, and a row of three captioned interiors (a red rule over each, the room name, the red size
+  line, a caption). The standard contact card (Right panel, color logo) closes the page and carries the one logo.
+  Open House rules (templates/_shared/ohstandard.js): city, state and ZIP, no RSVP, no QR, no price. Copy: data.copy.pc.oh.b.
+-->
+<style>
+  .cc{--cc-paper:#ffffff;--cc-ink:#1b1b1d;--cc-muted:#6c6c70;--cc-accent:#c0292f;--cc-line:rgba(27,27,29,.22)}
+  .band{position:absolute;background:var(--accent)}
+  .oh-lbl{font:600 20pt/22pt var(--font-display);letter-spacing:3.5pt;text-transform:uppercase;color:#fff;white-space:nowrap;overflow:hidden}
+  .oh-date{font:700 54pt/58pt var(--font-display);letter-spacing:-.2pt;color:#fff;white-space:nowrap;overflow:hidden}
+  .oh-time{font:500 24pt/26pt var(--font-display);letter-spacing:.6pt;color:#fff;white-space:nowrap;overflow:hidden;text-align:right}
+  .oh-strong{font:600 10.5pt/14pt var(--font-body);color:#fff}
+  .oh-note{font:400 10.5pt/14pt var(--font-body);color:#fff}
+  .ad{font:700 38pt/42pt var(--font-display);letter-spacing:-.2pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+  .pl{font:600 9.5pt/12pt var(--font-body);letter-spacing:1.8pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+  .fc{position:absolute;display:flex;flex-direction:column;justify-content:space-between}
+  .fc div{display:flex;flex-direction:column;border-top:.7pt solid var(--line);padding-top:3pt;flex:1;white-space:nowrap;overflow:hidden}
+  .fc div:first-child{border-top:2pt solid var(--accent)}
+  .fc b{font:600 28pt/32pt var(--font-display);color:var(--ink)}
+  .fc span{font:600 8.5pt/11pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--muted)}
+  .cb{position:absolute}
+  .cb .nm{position:absolute;left:0;right:0;top:8pt;font:600 15pt/18pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;height:18pt}
+  .cb .sz{position:absolute;left:0;right:0;top:27pt;font:600 9pt/12pt var(--font-body);letter-spacing:.2pt;color:var(--accent);white-space:nowrap;overflow:hidden;height:12pt}
+  .cb .tx{position:absolute;left:0;right:0;top:46pt;font-size:9pt;line-height:11pt;color:var(--text);overflow:hidden}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const esc = SP.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), C = (PC.oh || {}).b || {};
+  const issues = await SP.ready(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const P = D.piece || {}, inset = (D.mode === 'print' && P.print === 'margin') ? (P.margin || 18) : 0;
+  const O = SP.openHouse(D), X = 36, W = 540;
+  let h = '';
+
+  // the band: label and time on the top line, the date under them, the broker / REALTOR(R) lines across the foot
+  let dy = 0, ev = '';
+  { const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note']].filter(l => l[0]);
+    if(ls.length){ const pre = SP.eventLines(ls, 0, 0, W, 14, 0); dy = pre.h + 6; ev = SP.eventLines(ls, X, 116, W, 14, 0).html; } }
+  h += `<div class="band" style="left:${inset}pt;top:${inset}pt;width:${612 - 2*inset}pt;height:${126 + dy - inset}pt"></div>`;
+  h += `<div class="abs oh-lbl" style="left:${X}pt;top:30pt;width:300pt;height:22pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X + 300}pt;top:30pt;width:${W - 300}pt;height:26pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  h += `<div class="abs oh-date" style="left:${X - 1}pt;top:56pt;width:${W + 1}pt;height:58pt" data-slot="oh.date" data-lines="1" data-fit="36">${esc(O.long)}</div>`;
+  h += ev;
+
+  // the address as the heading, the whole house with the fact numbers stacked at its right
+  const ay = 138 + dy;
+  h += `<div class="abs ad" style="left:${X - 1}pt;top:${ay}pt;width:${W}pt;height:44pt" data-slot="address" data-lines="1" data-fit="26">${esc(L.address)}</div>`;
+  h += `<div class="abs pl" style="left:${X}pt;top:${ay + 44}pt;width:${W}pt;height:12pt" data-slot="place" data-lines="1">${esc(SP.placeZip(L))}</div>`;
+  const hy = ay + 66, hh = 424 - hy, hid = C.hero || 'front', hp = (D.photos || {})[hid] || {}, hb = hp.box, mr = hb && hp.w ? (hp.w/hp.h)/(hb[3] - hb[1])*0.97 : 1.9, hw = Math.min(380, Math.floor(hh*Math.min(1.9, mr))), fx = X + hw + 14;
+  h += SP.photo(D, C.hero || 'front', X, hy, hw, hh, 'oh.hero');
+  h += `<div class="fc" style="left:${fx}pt;top:${hy}pt;width:${X + W - fx}pt;height:${hh}pt">${SP.factPairs(L, 4).map((p, i) => `<div data-slot="oh.fact${i}" data-lines="1"><b>${esc(p[0])}</b><span>${esc(p[1])}</span></div>`).join('')}</div>`;
+
+  // three captioned interiors, each under its own red rule
+  const cs = (C.caps || []).slice(0, 3), g = 12, pw = (W - 2*g)/3, ph = 133, py = 436, N = 3;
+  let row = '', cp = '';
+  cs.forEach((c, i) => { const x = X + i*(pw + g);
+    row += SP.photo(D, c.id, x, py, pw, ph, 'oh.photo' + i);
+    cp += `<div class="rule" style="left:${x}pt;top:${py + ph + 8}pt;width:${pw}pt;height:2pt"></div>
+      <div class="cb" style="left:${x}pt;top:${py + ph + 8}pt;width:${pw}pt;height:${46 + N*11}pt"><div class="nm" data-slot="oh.cap${i}.t" data-lines="1">${esc(c.t)}</div><div class="sz" data-slot="oh.cap${i}.s" data-lines="1">${esc(c.s)}</div>
+      <div class="tx" style="height:${N*11}pt" data-slot="oh.cap${i}" data-cap="1" data-row="oh" data-para="1" data-min="3">${esc(c.a)}</div></div>`; });
+  h += `<div class="abs" data-gapcheck="oh.row" style="left:0;top:0">${row}</div>` + cp;
+
+  h += SP.card(D, [X, 674, W, 84], {layout: 'panel', fieldAccent: true});
+  h += `<div class="abs" style="left:${X}pt;top:766pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  await SP.finish(D, 612, 792, h, issues);
+})();
+</script>
+</body>
+</html>

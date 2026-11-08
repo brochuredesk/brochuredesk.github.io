@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rooms and Their Connections open house flyer</title>
+<link rel="stylesheet" href="connections.css">
+<link rel="stylesheet" href="connections-cards.css">
+<script src="connections.js"></script>
+<script src="connections-cards.js"></script>
+<script src="../engine/agentcard.js"></script>
+<!--
+  Rooms and Their Connections · Open House flyer 8.5 x 11 (trim 612 x 792 pt; print: 0.25 in white margin around the slate field).
+  Same look as the fold-over: the deep slate-teal field, sand small caps, serif titles over a thin sand rule, rooms named in serif
+  with their sizes in sand caps. The event leads: the label (22 pt tracked caps in sand), the date as the largest type on the page
+  (serif), the time at 24 pt, and the broker / REALTOR(R) lines (only on those opens, only when filled; refreshments in a white box)
+  to the right of the time. Then the whole house, the address with city, state and ZIP under it and the facts beside it, two rooms
+  with their sizes and captions, and the standard contact card (templates/_shared/agentcard.js), which carries the one brokerage logo.
+  Open House rules: no RSVP, no QR, no price. Copy: data.copy.pc.oh (rooms: whole sentences, picked to fill their boxes).
+-->
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = CN.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const L = D.listing, PC = ((D.copy || {}).pc || {}), OHC = PC.oh || {};
+  const issues = [];
+  await CN.setupCards(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const O = CN.openHouse(D), hero = OHC.hero || 'front', X = 36, W = 540, LH = 13;
+  const sattr = s => esc(JSON.stringify([].concat(s))).replace(/'/g, '&#39;');
+  function esc(s){ return CN.esc(s); }
+  let h = '';
+
+  // the event
+  h += `<div class="abs oh-lbl" style="left:${X}pt;top:26pt;width:${W}pt;height:26pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
+  h += `<div class="abs oh-date" id="date" style="left:${X-1}pt;top:52pt;width:${W}pt;height:62pt;font-size:56pt;line-height:62pt" data-slot="oh.date" data-lines="1">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X}pt;top:116pt;width:270pt;height:30pt;font-size:24pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  const ev = CN.eventLines([[O.note, 'oh.note', 'oh-note'], [O.refreshments, 'oh.refreshments', 'oh-refresh']], X + W - 256, 116, 256, 5);
+  const dy = Math.max(0, Math.ceil(ev.h - 30));
+  h += ev.html;
+  h += `<div class="hrule" style="top:${152 + dy}pt;left:${X}pt;right:${X}pt"></div>`;
+
+  // the whole house, then the address with its city, state and ZIP, and the facts beside it
+  h += `<div class="abs" style="left:${X}pt;top:${162 + dy}pt;width:${W}pt;height:250pt">${CN.photo(D, hero, 'position:absolute;inset:0', 'oh.hero')}</div>`;
+  const ay = 420 + dy, st = CN.stats(L);
+  h += `<div class="abs dsp" id="addr" style="left:${X-1}pt;top:${ay}pt;width:360pt;height:40pt;font-size:36pt;line-height:40pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
+  h += `<div class="abs kicker" style="left:${X}pt;top:${ay + 42}pt;width:360pt;height:11pt" data-slot="place" data-lines="1">${esc([L.neighborhood, CN.placeZip(L)].filter(Boolean).join(' · '))}</div>`;
+  h += `<div class="abs stk" style="left:${X + W - 160}pt;top:${ay}pt;width:160pt;height:56pt">${st.slice(0, 4).map((t, i) => `<div data-slot="oh.facts${i}" data-lines="1">${esc(t)}</div>`).join('')}</div>`;
+  h += `<div class="hrule" style="top:${ay + 58}pt;left:${X}pt;right:${X}pt"></div>`;
+
+  // two rooms with their sizes
+  const rowTop = ay + 66, cardTop = 672, rowH = cardTop - 8 - rowTop, CL = (rowH - (6 + 18 + 3*LH) >= 90) ? 3 : 2;
+  const cap = (c, slot) => `<div class="cap cap2"><div class="h" data-slot="${slot}.h" data-lines="1">${esc(c.title)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div>
+      <div class="a" data-slot="${slot}" data-lh="${LH}" data-lines="${CL}" data-lead="" data-s='${sattr(c.s)}' style="height:${CL*LH}pt"></div></div>`;
+  h += `<div class="row abs" style="left:${X}pt;top:${rowTop}pt;width:${W}pt;height:${rowH}pt;gap:14pt">${(OHC.rooms || []).slice(0, 2).map((c, i) => `<div class="item" style="flex:1 1 0">${CN.photo(D, c.photo, '', 'oh.room' + i)}${cap(c, 'oh.room' + i)}</div>`).join('')}</div>`;
+
+  h += CN.cardBox(D, [X, cardTop, W, 90], {layout: 'panel'});
+  h += `<div class="abs fine" style="left:${X}pt;top:${cardTop + 93}pt;width:${W}pt;height:8pt;white-space:nowrap;font-size:6.5pt;line-height:8pt;color:#c9d3d1" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  const f = CN.frame(D, 612, 792, h);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await CN.settle();
+  CN.fitLine(document.getElementById('date'), 40);
+  CN.fitLine(document.getElementById('addr'), 24);
+  CN.fill();
+  issues.push(...CN.fitHouse(D));
+  ContactCard.fit(document);
+  window.photoPlacements = CN.placements;
+  window.brochureCheck = () => CN.checkSingle(D, issues);
+})();
+</script>
+</body>
+</html>

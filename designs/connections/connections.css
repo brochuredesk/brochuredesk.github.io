@@ -1,0 +1,114 @@
+/* Rooms and Their Connections: one dark slate-teal field on every page, serif titles over a thin sand rule, small caps kickers.
+   11 x 17 book fold: four upright 8.5 x 11 pages. Lengths are pt (1/72 in). Type on the dark field runs 9.5 pt and up. */
+:root{
+  --field:#22383e;           /* deep slate teal (the agent's brand color overrides it when given) */
+  --field-deep:#1a2c31;
+  --sand:#d8c6a1;            /* accent: kickers, sizes, rules */
+  --on:#ffffff;              /* headlines */
+  --soft:#e6ecea;            /* body copy on the field (11:1) */
+  --ink:#1c2f35;             /* type on the light plan board */
+  --muted:#566468;
+  --paper:#f5f1e8;           /* the plan board */
+  --accent:#22383e;
+  --line:rgba(216,198,161,.55);
+  --font-display:'Cormorant Garamond',Georgia,serif;
+  --font-body:'Karla',Helvetica,Arial,sans-serif;
+  --m:29pt;
+}
+@font-face{font-family:'Cormorant Garamond';font-weight:500;src:url(../../fonts/pool/cormorant-garamond-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Cormorant Garamond';font-weight:600;src:url(../../fonts/pool/cormorant-garamond-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Cormorant Garamond';font-weight:700;src:url(../../fonts/pool/cormorant-garamond-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Karla';font-weight:400;src:url(../../fonts/pool/karla-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Karla';font-weight:500;src:url(../../fonts/pool/karla-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Karla';font-weight:600;src:url(../../fonts/pool/karla-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Karla';font-weight:700;src:url(../../fonts/pool/karla-latin-700-normal.woff2) format('woff2')}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--soft);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+.page{position:relative;background:var(--field);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+.panel{position:absolute;left:9pt;top:9pt;width:612pt;height:792pt}
+.half{position:absolute;top:0;height:810pt;width:621pt;overflow:hidden}
+.half.l{left:0}.half.r{left:621pt}
+.half.r .panel{left:0}
+.bg-field{position:absolute;left:-9pt;top:-9pt;right:-9pt;bottom:-9pt;background:var(--field)}
+
+.kicker{font:600 9pt/11pt var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;color:var(--sand);white-space:nowrap;overflow:hidden}
+.title{font-family:var(--font-display);font-weight:600;font-size:31pt;line-height:36pt;letter-spacing:-.1pt;color:var(--on);white-space:nowrap;overflow:hidden}
+.hd-kick{position:absolute;left:var(--m);top:30pt;width:420pt}
+.hd-title{position:absolute;left:var(--m);top:43pt;width:554pt}
+.rule{position:absolute;left:var(--m);right:var(--m);height:.7pt;background:var(--line)}
+.intro{font-size:10pt;line-height:14pt;color:var(--soft);overflow:hidden}
+
+.ph{position:relative;overflow:hidden;background:#33494f;min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:8pt;min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0;gap:8pt}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;left:var(--m);right:var(--m);display:flex;flex-direction:column;gap:8pt}
+
+/* captions: the room's name in serif with its size in sand, then the text */
+.cap{flex:none;padding-top:6pt}
+.cap .h{font-family:var(--font-display);font-weight:600;font-size:14.5pt;line-height:17pt;color:var(--on);white-space:nowrap;overflow:hidden}
+.cap .h i{font:600 8.5pt/17pt var(--font-body);font-style:normal;letter-spacing:1.1pt;color:var(--sand);margin-left:9pt;text-transform:uppercase}
+.cap .a{font-size:9.5pt;line-height:12.5pt;color:var(--soft);overflow:hidden;margin-top:1pt}
+
+/* cover */
+.street{font-family:var(--font-display);font-weight:600;font-size:42pt;line-height:46pt;letter-spacing:-.4pt;color:var(--on);white-space:nowrap;overflow:hidden}
+.lowl{position:absolute;display:flex;flex-direction:column}
+.rule2{height:.7pt;background:var(--line);margin:9pt 0 9pt;flex:none}
+.stats{display:grid;grid-template-columns:1fr 1fr;column-gap:12pt;row-gap:4pt;flex:none;margin-bottom:11pt}
+.stats div{font:600 9.5pt/12pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--on);white-space:nowrap;overflow:hidden}
+.para{font-size:10pt;line-height:14pt;color:var(--soft);overflow:hidden}
+.lowr{position:absolute;display:flex;flex-direction:column}
+
+/* back */
+.board{position:absolute;background:var(--paper);border:.7pt solid rgba(216,198,161,.9)}
+.planwrap{--paper:#f5f1e8;--ink:#1c2f35;--muted:#566468;--accent:#22383e}
+.plan-room{position:absolute;text-align:center;font:400 8pt/9.5pt var(--font-body);color:var(--ink);white-space:nowrap}
+.plan-room b{display:block;font-weight:600;font-size:8pt;line-height:9.5pt}
+.plan-room span{display:block;color:var(--muted);font-size:8pt;line-height:9.5pt}
+.plan-level{text-align:center;font:600 10pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:#6b5a33;white-space:nowrap;overflow:hidden}
+.plan-svg{position:absolute;overflow:visible}
+.plan-legend{position:absolute;display:flex;gap:16pt;font:600 8.5pt/11pt var(--font-body);color:var(--ink);white-space:nowrap}
+.plan-legend i{display:inline-block;width:11pt;height:11pt;margin-right:5pt;vertical-align:-2pt;border:.6pt solid rgba(0,0,0,.4)}
+.plan-disclosure{position:absolute;font-size:7pt;line-height:9pt;color:var(--muted);white-space:nowrap;overflow:hidden}
+.places{flex:none;display:flex;flex-direction:column}
+.places .pk{font:600 9pt/11pt var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;color:var(--sand);white-space:nowrap;border-bottom:.7pt solid var(--line);padding-bottom:5pt;overflow:hidden}
+.places .pr{display:flex;justify-content:space-between;align-items:baseline;gap:8pt;border-bottom:.7pt dotted rgba(216,198,161,.5);padding:4pt 0 3pt;white-space:nowrap}
+.places .pn{font:600 10pt/12pt var(--font-body);color:var(--on);overflow:hidden;min-width:0}
+.places .pd{font:600 9pt/12pt var(--font-body);letter-spacing:.6pt;color:var(--sand);flex:none}
+.bathhead{font-family:var(--font-display);font-weight:600;font-size:19pt;line-height:22pt;color:var(--on);white-space:nowrap;overflow:hidden}
+.bathhead i{font:600 8.5pt/22pt var(--font-body);font-style:normal;letter-spacing:1.1pt;color:var(--sand);margin-left:9pt;text-transform:uppercase}
+.sidek{font:600 9pt/11pt var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;color:var(--sand);white-space:nowrap}
+.sidenote{font-size:8pt;line-height:10pt;color:#c9d3d1}
+.panel .cc{--cc-paper:var(--field);--cc-ink:#fff;--cc-muted:#dbe3e1;--cc-accent:var(--sand);--cc-line:rgba(255,255,255,.4)}
+.panel .cc .cc-fine{font-size:6.5pt;line-height:8pt;color:#dbe3e1}
+
+.places.hz .cells{display:flex;gap:0;padding-top:5pt}
+.places.hz .pc{flex:1;min-width:0;padding-left:10pt;border-left:.7pt solid var(--line)}
+.places.hz .pc:first-child{padding-left:0;border-left:0}
+.places.hz .pn{font:600 10pt/12pt var(--font-body);color:var(--on);white-space:nowrap;overflow:hidden}
+.places.hz .pd{font:600 8.5pt/11pt var(--font-body);letter-spacing:.5pt;color:var(--sand);white-space:nowrap;overflow:hidden}
+.places.hz .pk{border-bottom:0;padding-bottom:0}
+
+/* text beside a photo (a single wide photo on the right page) */
+.pair{display:flex;gap:12pt;min-height:0}
+.pair > .pw{display:flex;min-width:0}
+.pair > .pw > .ph{flex:1}
+.btxt{flex:1;min-width:0;display:flex;flex-direction:column;padding-top:1pt}
+.btxt .h{font-family:var(--font-display);font-weight:600;font-size:14.5pt;line-height:17pt;color:var(--on);white-space:nowrap;overflow:hidden}
+.btxt .h i{font:600 8.5pt/17pt var(--font-body);font-style:normal;letter-spacing:1.1pt;color:var(--sand);margin-left:9pt;text-transform:uppercase}
+.btxt .a{font-size:9.5pt;line-height:12.5pt;color:var(--soft);overflow:hidden;margin-top:3pt}
+
+.places.narrow .pr{flex-direction:column;align-items:flex-start;gap:0;padding:5pt 0 4pt}
+.places.narrow .pn{font-size:10pt;line-height:12pt}
+.places.narrow .pd{font-size:8.5pt;line-height:11pt}
+
+/* a long thin second photo under a wide room's write-up */
+.btxt .thin{position:relative;flex:1 1 0;min-height:60pt;margin-top:8pt;overflow:hidden}
+.btxt .thin .ph{min-height:0}

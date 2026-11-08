@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · The Red Line postcard</title>
+<link rel="stylesheet" href="red-line.css">
+<script src="../engine/baths.js"></script>
+<script src="../engine/setpieces.js"></script>
+<!--
+  The Red Line · Just Listed and Just Sold postcards. data.piece: card "listed" | "sold", size "6x9" (trim 648 x 432 pt) |
+  "6x11" (trim 792 x 432 pt), side "front" | "back". Print adds 0.125 in (9 pt) bleed (TrimBox set by the renderer).
+
+  Front: the fold-over cover's red rail runs the full height of the left edge with the street turned on its side in white
+  condensed caps. The whole house bleeds off the top, beside a column with a red kicker, the status in heavy condensed
+  type over a red rule, the city, state and ZIP, and the facts as red-ruled rows (Just Listed) or the agent's name and
+  number (Just Sold). Under the photo a heavy red rule and a write-up (and, on Just Sold, the invitation in red).
+  Back: a narrow red rail down the left edge and a heavy red rule under the status line. The return address top right; Just
+  Listed: captioned photos in one row, one beside the address block, a write-up; Just Sold: two interiors, "How I'd start" as
+  red-square steps (four on the 6x9, six on the 6x11), when we meet, the invitation and the agent's number. A red board under
+  the postage box carries one line in white. The postcard contact card (templates/_shared/agentcard.js, postcard true) runs
+  full width under the address block and above the barcode strip under a heavy red rule; it carries the back's one logo, and
+  the two-line disclaimer sits beside the barcode strip. Mail zones: templates/_shared/setpieces.js SP.mail.
+  No price, no QR, no photo numbers, no "virtually staged". Copy: data.copy.pc.jl / data.copy.pc.js.
+-->
+<style>
+  .cc{--cc-paper:#ffffff;--cc-ink:#1b1b1d;--cc-muted:#5d6266;--cc-accent:#d7262b;--cc-line:rgba(215,38,43,.40);--cc-display:'Oswald',Impact,sans-serif}
+  .rail{position:absolute;background:var(--accent);overflow:hidden}
+  .stv{position:absolute;writing-mode:vertical-rl;transform:rotate(180deg);font:700 26pt/30pt var(--font-display);letter-spacing:1.5pt;text-transform:uppercase;color:#fff;white-space:nowrap;overflow:hidden}
+  .stt{font:700 46pt/46pt var(--font-display);letter-spacing:.1pt;color:var(--ink);overflow:hidden}
+  .ab{font-size:10.5pt;line-height:15pt;color:var(--text)}
+  .flist div{font:600 13pt/16pt var(--font-display);letter-spacing:1pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;overflow:hidden;border-top:1.2pt solid var(--accent)}
+  .bst{display:flex;align-items:baseline;gap:10pt;white-space:nowrap;overflow:hidden}
+  .bst .s{font:700 24pt/28pt var(--font-display);letter-spacing:.1pt;color:var(--ink)}
+  .bst .a{font:600 9pt/10pt var(--font-display);letter-spacing:1.5pt;text-transform:uppercase;color:var(--accent)}
+  .ret{font:400 8pt/10pt var(--font-body);color:var(--text);white-space:nowrap;overflow:hidden}
+  .ret b{font:600 8pt/10pt var(--font-display);letter-spacing:.9pt;text-transform:uppercase;color:var(--ink)}
+  .cap .nm{font:600 11pt/14pt var(--font-display);letter-spacing:.5pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;overflow:hidden;height:14pt}
+  .ctx{font-size:9pt;line-height:11.5pt;color:var(--text)}
+  .steps{display:grid;grid-auto-flow:column;column-gap:14pt;row-gap:4pt;list-style:none;overflow:hidden}
+  .steps li{font:600 10pt/13pt var(--font-body);color:var(--ink);position:relative;padding-left:11pt;overflow:hidden}
+  .steps.b li{font-size:11pt;line-height:14pt}
+  .steps li:before{content:"";position:absolute;left:0;top:4pt;width:5pt;height:5pt;background:var(--accent)}
+  .board{position:absolute;background:var(--accent)}
+  .bigb{font:700 15pt/17pt var(--font-display);letter-spacing:.3pt;text-transform:uppercase;color:#fff;overflow:hidden}
+  .cta{font:700 17pt/20pt var(--font-display);color:var(--ink);overflow:hidden}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const esc = SP.esc, L = D.listing, A = D.agent || {};
+  const issues = await SP.ready(D);
+  const sold = D.piece.card === 'sold', big = D.piece.size === '6x11', front = D.piece.side === 'front';
+  const PCall = ((D.copy || {}).pc || {}), C = (sold ? PCall.js : PCall.jl) || {};
+  document.body.dataset.mode = D.mode || 'email';
+  const W = big ? 792 : 648, H = 432, M = 24, status = sold ? 'Just Sold' : 'Just Listed';
+  let h = '';
+  // the facts as rows: bedrooms, baths (the baths wording rule), square feet, year built, lot
+  const facts = () => { const B = BD.baths(L), r = [];
+    if(L.beds) r.push(`${L.beds} ${L.beds == 1 ? 'Bedroom' : 'Bedrooms'}`);
+    if(L.baths) r.push(B.main); if(B.half) r.push(B.half);
+    if(L.sqft) r.push(`${Number(L.sqft).toLocaleString('en-US')} Square Feet`);
+    if(L.yearBuilt || L.year) r.push(`Built in ${L.yearBuilt || L.year}`);
+    if(SP.lotText(L)) r.push(SP.lotText(L)); return r; };
+  let after = null;
+
+  if(front){
+    // ---------- front ----------
+    const RW = 44, ph = 296, pw = big ? 512 : 400, cx = RW + pw + 16, cw = W - M - cx;
+    h += `<div class="rail" style="left:-9pt;top:-9pt;width:${RW + 9}pt;height:${H + 18}pt"><div class="stv" data-slot="front.street" data-lines="1" style="left:${9 + (RW - 34)/2}pt;bottom:30pt;width:34pt;height:${H + 18 - 60}pt">${esc(L.address)}</div></div>`;
+    h += SP.photo(D, C.hero || 'front', RW, -9, pw, ph + 9, 'front.hero');
+    const sfs = big ? 54 : 46, rt = big ? 38 + 2*sfs + 8 : 38 + 2*sfs + 8;
+    h += `<div class="abs kick" style="left:${cx}pt;top:22pt;width:${cw}pt;height:11pt;font-size:${big ? 10 : 8.5}pt" data-slot="front.kick" data-lines="1">${esc(sold ? 'Recently sold' : 'New on the market')}</div>`;
+    h += `<div class="abs stt" style="left:${cx - 1}pt;top:38pt;width:${cw + 1}pt;height:${2*sfs}pt;font-size:${sfs}pt;line-height:${sfs}pt" data-slot="status" data-lines="2">${esc(status.split(' ')[0])}<br>${esc(status.split(' ')[1])}</div>`;
+    h += `<div class="rule" style="left:${cx}pt;top:${rt}pt;width:${cw}pt;height:2.2pt"></div>`;
+    h += `<div class="abs kick" style="left:${cx}pt;top:${rt + 9}pt;width:${cw}pt;height:12pt;font-size:${big ? 10 : 9}pt;line-height:12pt;color:var(--ink)" data-slot="place" data-lines="1">${esc(SP.placeZip(L).toUpperCase())}</div>`;
+    const ft = rt + 30, bot = ph - 2;
+    if(!sold){
+      const fl = facts(), rowH = (bot - ft)/fl.length, ffs = Math.min(big ? 15 : 13, rowH*0.5);
+      h += `<div class="abs flist" style="left:${cx}pt;top:${ft}pt;width:${cw}pt;height:${bot - ft}pt;display:flex;flex-direction:column">${fl.map((t, i) => `<div style="flex:1;display:flex;align-items:center;font-size:${ffs}pt;line-height:${ffs + 3}pt" data-slot="front.fact${i}" data-lines="1"><span>${t}</span></div>`).join('')}</div>`;
+    } else {
+      const nfs = big ? 30 : 26;
+      h += `<div class="abs" style="left:${cx}pt;top:${ft + 2}pt;width:${cw}pt;height:${bot - ft - 2}pt;display:flex;flex-direction:column;justify-content:space-between;border-top:1.2pt solid var(--accent);padding-top:8pt">
+        <div style="font:700 ${nfs}pt/${nfs + 2}pt var(--font-display);color:var(--ink);overflow:hidden" data-slot="agent.name" data-lines="2">${esc(A.name || '')}</div>
+        ${A.nar ? `<div class="kick" style="font-size:${big ? 10 : 8.5}pt" data-slot="agent.desig" data-lines="1">REALTOR®</div>` : ''}
+        <div><div class="kick" style="font-size:${big ? 10 : 8.5}pt" data-slot="agent.phoneLabel" data-lines="1">Call / Text</div>
+        <div style="font:700 ${big ? 22 : 19}pt/${big ? 28 : 24}pt var(--font-display);color:var(--accent);letter-spacing:.3pt;white-space:nowrap;overflow:hidden" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div></div></div>`;
+    }
+    const nl = sold ? 3 : 5, lh = big ? 20 : 19, fs = big ? 15 : 13.5, tx = RW + 20;
+    h += `<div class="rule" style="left:${tx}pt;top:${ph + 8}pt;width:${W - M - tx}pt;height:2.2pt"></div>`;
+    h += `<div class="abs ab" style="left:${tx}pt;top:${ph + 18}pt;width:${W - M - tx}pt;height:${nl*lh}pt;font-size:${fs}pt;line-height:${lh}pt" data-slot="${sold ? 'front.sold' : 'front.about'}" data-para="1" data-min="${nl}" data-fillbox="1">${esc(big ? C.front11 : C.front9)}</div>`;
+    if(sold) h += `<div class="abs" style="left:${tx}pt;top:${ph + 18 + nl*lh + 8}pt;width:${W - M - tx}pt;height:28pt;font:700 ${big ? 22 : 20}pt/28pt var(--font-display);color:var(--accent);white-space:nowrap;overflow:hidden" data-slot="sold.cta" data-lines="1">${esc(C.cta || 'Thinking about selling? Let’s talk.')}</div>`;
+    after = async () => {   // the street on the rail: the largest size up to 26 pt that fits its length
+      const el = document.querySelector('[data-slot="front.street"]'); if(!el) return;
+      let fs = 26; const room = el.clientHeight*72/96, len = () => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().height*72/96; };
+      el.style.fontSize = fs + 'pt'; while(len() > room && fs > 10){ fs -= 1; el.style.fontSize = fs + 'pt'; } };
+  } else {
+    // ---------- back ----------
+    const Z = SP.mail(W), X = 30, LZ = Z.zA[0] - 12, rW = Z.zP[0] - 12 - Z.zA[0], pTop = 56;
+    h += `<div class="rail" style="left:-9pt;top:-9pt;width:21pt;height:${H + 18}pt"></div>`;
+    const ret = SP.returnLines(D);
+    h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:16pt;width:${rW}pt;height:32pt;text-align:right"><b data-slot="return0" data-lines="1" style="display:block">${esc(ret[0] || '')}</b>${ret.slice(1).map((r, i) => `<span data-slot="return${i + 1}" data-lines="1" style="display:block">${esc(r)}</span>`).join('')}</div>`;
+    h += `<div class="abs bst" style="left:${X}pt;top:14pt;width:${LZ - X}pt;height:30pt"><span class="s" data-slot="back.status.s">${esc(status)}</span><span class="a" data-slot="back.status.a">${esc(L.address)}</span></div>`;
+    h += `<div class="rule" style="left:${X}pt;top:46pt;width:${LZ - X}pt;height:2.2pt"></div>`;
+    const cfs = big ? 9.5 : 9, clh = big ? 12 : 11.5;
+    const cap = (c, x, y, w, slot, row) => `<div class="abs cap" style="left:${x}pt;top:${y + 4}pt;width:${w}pt"><div class="nm" data-slot="${slot}.t" data-lines="1"${big ? ' style="font-size:12.5pt"' : ''}>${esc(c.t)}</div></div>
+      <div class="abs ctx" style="left:${x}pt;top:${y + 21}pt;width:${w}pt;font-size:${cfs}pt;line-height:${clh}pt" data-slot="${slot}" data-cap="1" data-row="${row}" data-para="1" data-min="3">${esc(big && c.a11 ? c.a11 : c.a)}</div>`;
+    let g = '';
+    if(!sold){
+      const bk = C.back || [], n = big ? 4 : 3, items = bk.slice(0, n), rItem = bk[4], gap = 10, ph = 72;
+      const pw = (LZ - X - (n - 1)*gap)/n;
+      items.forEach((c, i) => { const x = X + i*(pw + gap); g += SP.photo(D, c.id, x, pTop, pw, ph, 'back.photo' + i); h += cap(c, x, pTop + ph, pw, 'back.cap' + i, 'back'); });
+      if(rItem){ g += SP.photo(D, rItem.id, Z.zA[0], pTop, rW, ph, 'back.photoR'); h += cap(rItem, Z.zA[0], pTop + ph, rW, 'back.capR', 'back'); }
+      const ty = pTop + ph + 21 + 3*clh + 12, afs = big ? 12.5 : 10.5, alh = big ? 16 : 15;
+      h += `<div class="abs ab" style="left:${X}pt;top:${ty}pt;width:${LZ - X}pt;height:${Math.floor((Z.cardY - 10 - ty)/alh)*alh}pt;font-size:${afs}pt;line-height:${alh}pt" data-slot="back.about" data-para="1" data-min="3" data-fillbox="1">${esc(big ? C.about11 : C.about9)}</div>`;
+    } else {
+      const ids = C.photos || [], gap = 10, pw = (LZ - X - gap)/2, ph = 88;
+      ids.slice(0, 2).forEach((id, i) => { g += SP.photo(D, id, X + i*(pw + gap), pTop, pw, ph, 'back.photo' + i); });
+      // the invitation, the agent's number and a third interior in the column beside the photos
+      h += `<div class="rule" style="left:${Z.zA[0]}pt;top:${pTop}pt;width:${rW}pt;height:2.2pt"></div>`;
+      h += `<div class="abs cta" style="left:${Z.zA[0]}pt;top:${pTop + 8}pt;width:${rW}pt;height:72pt;font-size:${big ? 17 : 16}pt;line-height:18pt" data-slot="sold.cta" data-lines="4">${esc(C.cta || '')}</div>`;
+      h += `<div class="abs kick" style="left:${Z.zA[0]}pt;top:${pTop + 84}pt;width:${rW}pt;height:11pt" data-slot="sold.callLabel" data-lines="1">Call or text</div>`;
+      h += `<div class="abs" style="left:${Z.zA[0]}pt;top:${pTop + 96}pt;width:${rW}pt;height:24pt;font:700 ${big ? 20 : 19}pt/24pt var(--font-display);color:var(--accent);letter-spacing:.3pt;white-space:nowrap;overflow:hidden" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div>`;
+      const sy = pTop + ph + 12, st = (big ? C.steps11 : C.steps9) || [], cols = big ? 3 : 2, rows = Math.ceil(st.length/cols);
+      h += `<div class="abs kick" style="left:${X}pt;top:${sy}pt;width:${LZ - X}pt;height:11pt" data-slot="sold.stepsLabel" data-lines="1">${esc(C.stepsLabel || 'How I’d start')}</div>`;
+      h += `<ul class="abs steps${big ? ' b' : ''}" style="left:${X}pt;top:${sy + 17}pt;width:${LZ - X}pt;height:${rows*(big ? 28 : 26) + (rows - 1)*4}pt;grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr)">${st.map((s, i) => `<li data-slot="sold.step${i}" data-para="1" data-min="2">${esc(s)}</li>`).join('')}</ul>`;
+      const my = sy + 17 + rows*(big ? 28 : 26) + (rows - 1)*4 + 8, mlh = big ? 14 : 12.5;
+      h += `<div class="abs kick" style="left:${X}pt;top:${my}pt;width:${LZ - X}pt;height:11pt" data-slot="sold.meetLabel" data-lines="1">${esc(C.meetLabel || 'When we meet')}</div>`;
+      h += `<div class="abs ab" style="left:${X}pt;top:${my + 13}pt;width:${LZ - X}pt;height:${Math.floor((Z.cardY - 8 - my - 13)/mlh)*mlh}pt;font-size:${big ? 11.5 : 10}pt;line-height:${mlh}pt" data-slot="sold.meet" data-para="1" data-min="3" data-fillbox="1">${esc(big ? C.meet11 : C.meet9)}</div>`;
+    }
+    h += `<div class="abs" data-gapcheck="back.photos" style="left:0;top:0">${g}</div>`;
+    // the red board under the postage box, bleeding off the right edge
+    const sl = C.slab || {};
+    h += `<div class="board" data-blk="1" style="left:${Z.zP[0]}pt;top:${Z.zP[1] + Z.zP[3] + 8}pt;width:${W - Z.zP[0] + 9}pt;height:${Z.zA[1] - Z.zP[1] - Z.zP[3] - 16}pt;padding:6pt 18pt 6pt 10pt;display:flex;flex-direction:column;justify-content:center"><div class="bigb" data-slot="slab.big" data-lines="3">${esc(sl.big || '')}</div></div>`;
+    h += `<div class="rule" style="left:${X}pt;top:${Z.cardY - 4}pt;width:${W - M - X}pt;height:2.2pt"></div>`;
+    h += SP.postCard(D, Z, W, {x: X - 6});
+    h += SP.fine(D, X, 396, Z.zB[0] - 12 - X, 'var(--text)');
+    h += SP.mailGuides(D, Z);
+  }
+
+  await SP.finish(D, W, H, h, issues, after);
+})();
+</script>
+</body>
+</html>

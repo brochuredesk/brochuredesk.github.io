@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · The Four Windows open house flyer · Corner Date</title>
+<link rel="stylesheet" href="four-windows.css">
+<script src="four-windows.js"></script>
+<script src="../engine/setpieces.js"></script>
+<!--
+  The Four Windows · Open House flyer b "Corner Date" (trim 612 x 792 pt; print: 0.25 in white margin around the green field).
+  A mint block sits in the top-left corner of the field and carries the event: the label in dark tracked caps, the date in
+  heavy sans as the largest type on the page, the time, and the broker / REALTOR(R) lines (only on those opens, only when
+  filled) bottom right of the block. Under it the whole house as one window, with the address, city, state and ZIP, the mint
+  tag (when the listing says it has never flooded) and the label / value facts list beside it; then a row of three captioned
+  room windows (the fold-over's bold names), a write-up, and the standard contact card (Right panel), which carries the one logo.
+  Open House rules (templates/_shared/ohstandard.js): city, state and ZIP, no RSVP, no QR, no price. Copy: data.copy.pc.oh.b.
+-->
+<style>
+  .cc{--cc-paper:#182d2d;--cc-ink:#ffffff;--cc-muted:#cfe3da;--cc-accent:#8fd3b8;--cc-line:rgba(255,255,255,.34)}
+  .oh-lbl{font:800 20pt/22pt var(--font-display);letter-spacing:2.4pt;text-transform:uppercase;color:#1c5d4a;white-space:nowrap;overflow:hidden}
+  .oh-date{font:800 52pt/58pt var(--font-display);letter-spacing:-1.2pt;color:#10261f;white-space:nowrap;overflow:hidden}
+  .oh-time{font:700 24pt/28pt var(--font-display);letter-spacing:-.2pt;color:#10261f;white-space:nowrap;overflow:hidden}
+  .oh-strong{font:700 10pt/13pt var(--font-body);color:#10261f;text-align:right}
+  .oh-note{font:500 10pt/13pt var(--font-body);color:#1c4a3d;text-align:right}
+  .ab{font-size:11pt;line-height:16pt;color:var(--text)}
+  .side{display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+  .side .ad{font:800 24pt/27pt var(--font-display);letter-spacing:-.6pt;color:#fff;overflow:hidden}
+  .side .specs div:first-child{border-top:1.2pt solid var(--accent)}
+  .bcap .nm{font:700 12pt/15pt var(--font-display);letter-spacing:-.1pt;color:#fff;white-space:nowrap;overflow:hidden;height:15pt}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = SP.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), C = (PC.oh || {}).b || {};
+  const issues = await SP.ready(D);
+  document.body.dataset.mode = D.mode || 'email';
+  const O = SP.openHouse(D), X = 36, W = 540;
+  const ins = (D.mode === 'print' && (D.piece || {}).print === 'margin') ? ((D.piece || {}).margin || 18) : 0;
+  let h = '';
+
+  // the corner block: the event
+  let dy = 0;
+  const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note']].filter(l => l[0]);
+  let ev = '';
+  if(ls.length){ const pre = SP.eventLines(ls, 0, 0, 262, 13, 0); dy = Math.max(0, pre.h - 28); ev = SP.eventLines(ls, X + W - 262, 148 - pre.h + dy, 262, 13, 0).html; }
+  h += `<div class="abs" data-blk="1" style="left:${ins}pt;top:${ins}pt;width:${X + W - ins}pt;height:${164 + dy - ins}pt;background:var(--accent)"></div>`;
+  h += `<div class="abs oh-lbl" style="left:${X}pt;top:36pt;width:${W}pt;height:22pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
+  h += `<div class="abs oh-date" style="left:${X - 2}pt;top:60pt;width:${W - 28}pt;height:58pt" data-slot="oh.date" data-lines="1" data-fit="30">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X}pt;top:120pt;width:250pt;height:28pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  h += ev;
+
+  // the whole house as one window, with the address and the facts list beside it
+  const top = 176 + dy, hw = 308, hh = 200, sx = X + hw + 16, sw = X + W - sx;
+  h += `<div class="abs" data-gapcheck="oh.hero" style="left:0;top:0">${SP.photo(D, C.hero || 'front', X, top, hw, hh, 'oh.hero')}</div>`;
+  const flood = SP.floodStated(L.description), fp = SP.factPairs(L, flood ? 4 : 5);
+  h += `<div class="abs side" style="left:${sx}pt;top:${top}pt;width:${sw}pt;height:${hh}pt">
+    <div><div class="ad" style="margin-left:-1pt" data-slot="address" data-lines="2" data-fit="20">${esc(L.address)}</div><div class="city" style="margin-top:7pt;height:12pt" data-slot="place" data-lines="1" data-fit="7">${esc(SP.placeZip(L).toUpperCase())}</div></div>
+    ${flood ? `<div><span class="tag" data-slot="front.tag" data-lines="1">Never flooded</span></div>` : ''}
+    <div class="specs">${fp.map((p, i) => `<div style="height:${fp.length > 4 ? 21 : 23}pt;padding-top:${fp.length > 4 ? 3 : 5}pt"><span class="l" data-slot="oh.fact${i}.l" data-lines="1">${esc(p[1])}</span><span class="v" data-slot="oh.fact${i}.v" data-lines="1">${esc(p[0])}</span></div>`).join('')}</div></div>`;
+
+  // three captioned room windows
+  const cs = (C.caps || []).slice(0, 3), g = 10, pw = (W - 2*g)/3, ph = 128 - dy, ry = top + hh + 12;
+  let row = '';
+  cs.forEach((c, i) => { const x = X + i*(pw + g);
+    row += SP.photo(D, c.id, x, ry, pw, ph, 'oh.photo' + i);
+    row += `<div class="abs cap bcap" style="left:${x}pt;top:${ry + ph + 4}pt;width:${pw}pt"><div class="nm" data-slot="oh.cap${i}.t" data-lines="1">${esc(c.t)}</div></div>`;
+    row += `<div class="abs" style="left:${x}pt;top:${ry + ph + 21}pt;width:${pw}pt;font-size:9pt;line-height:11pt;color:var(--text)" data-slot="oh.cap${i}" data-cap="1" data-row="oh" data-para="1" data-min="3">${esc(c.a)}</div>`; });
+  h += `<div class="abs" data-gapcheck="oh.row" style="left:0;top:0">${row}</div>`;
+  const wy = ry + ph + 21 + 33 + 12;
+  h += `<div class="abs ab" style="left:${X}pt;top:${wy}pt;width:${W}pt;height:${Math.floor((664 - wy)/16)*16}pt" data-slot="oh.blurb" data-para="1" data-min="4" data-fillbox="1">${esc(C.text || '')}</div>`;
+
+  h += SP.card(D, [X, 672, W, 84], {layout: 'panel', fieldAccent: true});
+  h += `<div class="abs" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+
+  await SP.finish(D, 612, 792, h, issues);
+})();
+</script>
+</body>
+</html>

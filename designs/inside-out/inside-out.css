@@ -1,0 +1,90 @@
+/* Inside to Outside: navy field, bold white sans titles, amber small caps, a four-page book (11 x 17 folded down the middle).
+   Lengths are pt (1/72 in). */
+:root{
+  --field:#1c2436;          /* navy page field */
+  --paper:#ffffff;          /* the plan board and anything printed white */
+  --ink:#ffffff;            /* titles, names */
+  --text:#d9dde7;           /* body copy on the navy (contrast 11:1) */
+  --signal:#e2b45e;         /* amber: kickers, sizes, distances */
+  --accent:#1c2436;
+  --muted:#b4bccb;
+  --line:rgba(226,180,94,.62);
+  --font-display:'Schibsted Grotesk',Helvetica,Arial,sans-serif;
+  --font-body:'Public Sans',Helvetica,Arial,sans-serif;
+  --m:24pt;
+}
+@font-face{font-family:'Schibsted Grotesk';font-weight:500;src:url(../../fonts/pool/schibsted-grotesk-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Schibsted Grotesk';font-weight:600;src:url(../../fonts/pool/schibsted-grotesk-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Schibsted Grotesk';font-weight:700;src:url(../../fonts/pool/schibsted-grotesk-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Public Sans';font-weight:400;src:url(../../fonts/pool/public-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Public Sans';font-weight:600;src:url(../../fonts/pool/public-sans-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Public Sans';font-weight:700;src:url(../../fonts/pool/public-sans-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+/* ---------- type ---------- */
+.kicker{font:600 8.5pt/10pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.title{font-family:var(--font-display);font-weight:700;font-size:22pt;line-height:27pt;height:27pt;letter-spacing:-.2pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+.sect{font:600 8.5pt/10pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.hrule{position:absolute;left:var(--m);right:var(--m);height:.7pt;background:var(--line)}
+.fine{font-size:6.5pt;line-height:8pt;color:var(--muted);overflow:hidden}
+.body{font-size:9pt;line-height:12.5pt;color:var(--text)}
+
+/* ---------- photos and captions ---------- */
+.ph{position:relative;overflow:hidden;background:#2b3552;min-height:24pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.flow{position:absolute;left:var(--m);right:var(--m);display:flex;flex-direction:column;min-height:0}
+.row{display:flex;gap:8pt;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.cap{flex:none;padding-top:6pt}
+.cap .h{font:700 11pt/13pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.05pt}
+.cap .h i{font:600 8.5pt/13pt var(--font-body);font-style:normal;color:var(--signal);margin-left:6pt;letter-spacing:.2pt}
+.cap .a{font-size:8.5pt;line-height:11.5pt;color:var(--text)}
+.colhead{flex:none;display:flex;gap:8pt;height:20pt}
+.colhead div{flex:1 1 0;border-bottom:.7pt solid var(--line);padding-top:4pt}
+
+/* ---------- cover ---------- */
+.addr{position:absolute;left:var(--m);top:34pt;font-family:var(--font-display);font-weight:700;line-height:50pt;letter-spacing:-.6pt;color:var(--ink);white-space:nowrap}
+.stats div{font:700 10pt/18pt var(--font-display);letter-spacing:.9pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;border-bottom:.6pt solid rgba(226,180,94,.35)}
+.stats div:last-child{border-bottom:0}
+.intro{color:var(--text)}
+
+/* ---------- back ---------- */
+.places .rows{display:grid;grid-template-columns:1fr 1fr;column-gap:20pt}
+.places .r{display:flex;align-items:baseline;justify-content:space-between;height:16pt;border-bottom:.6pt dotted rgba(217,221,231,.45);padding-top:2pt}
+.places .r .p{font:600 9pt/12pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
+.places .r .d{font:600 9pt/12pt var(--font-body);color:var(--signal);white-space:nowrap;margin-left:8pt}
+.board{position:absolute;background:#fff;--paper:#fff;--ink:#1c2436;--accent:#1c2436;--text:#33394c;--muted:#59627a;--signal:#8c5b12;--line:rgba(28,36,54,.28)}
+.boardvars{position:absolute;left:0;top:0;width:612pt;height:792pt;pointer-events:none;--paper:#fff;--ink:#1c2436;--accent:#1c2436;--text:#33394c;--muted:#59627a;--signal:#8c5b12;--line:rgba(28,36,54,.28)}
+.boardvars .lg,.boardvars .disc,.boardvars .pt{position:absolute}
+.boardvars .lg{position:absolute;text-align:center;font:600 8pt/10pt var(--font-body);color:#1c2436;white-space:nowrap}
+.boardvars .disc{position:absolute;text-align:center;white-space:nowrap}
+.boardvars .pt{position:absolute;font:700 8.5pt/10pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:#8c5b12;white-space:nowrap}
+
+/* ---------- floor plans (inside-out-plan.js) ---------- */
+.plan-svg{position:absolute;overflow:visible}
+.plan-room{position:absolute;text-align:center;font:400 8pt/9.5pt var(--font-body);color:var(--ink);white-space:nowrap}
+.plan-room b{display:block;font-weight:600;font-size:8pt;line-height:9.5pt}
+.plan-room span{display:block;color:var(--muted);font-size:8pt;line-height:9.5pt}
+.plan-level{text-align:center;font:600 10pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.plan-note{text-align:center;font:400 6.5pt/8pt var(--font-body);color:var(--muted);white-space:nowrap;overflow:hidden}
+
+/* ---------- the standard contact card, set in this design's colors: navy, white type, amber labels and hairline ---------- */
+.panel .cc{--cc-paper:#1c2436;--cc-ink:#ffffff;--cc-muted:#c4cbd9;--cc-accent:#e2b45e;--cc-line:rgba(226,180,94,.6);--cc-display:'Schibsted Grotesk',Helvetica,Arial,sans-serif;--cc-body:'Public Sans',Helvetica,Arial,sans-serif}
+.panel .cc .cc-fine{color:#c4cbd9}
+
+/* ---------- pages ---------- */
+.page{position:relative;background:var(--field);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+.panel{position:absolute;left:9pt;top:9pt;width:612pt;height:792pt}
+.half{position:absolute;top:0;height:810pt;width:621pt;overflow:hidden;background:var(--field)}
+.half.l{left:0}.half.r{left:621pt}
+.half.r .panel{left:0}
+
+.stack{display:flex;flex-direction:column;gap:8pt}

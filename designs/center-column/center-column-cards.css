@@ -1,0 +1,59 @@
+/* The Center Column: single-page pieces (Open House flyer, postcards). Builds on center-column.css. */
+.page.sg{background:#fff;margin:0}
+@media screen{.page.sg{margin:12pt auto;box-shadow:none}}
+.field{position:absolute;background:var(--paper)}
+.sheet{position:absolute}
+.sheet .cc{--cc-paper:#1e2e2d;--cc-ink:#ffffff;--cc-muted:#c9d3cf;--cc-accent:#c2a36b;--cc-line:rgba(194,163,107,.55);--cc-display:'EB Garamond',Georgia,'Times New Roman',serif;--cc-body:'Mulish',Helvetica,Arial,sans-serif}
+.sheet .cc .cc-fine{color:#c9d3cf}
+.dsp{font-family:var(--font-display);font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:0}
+.oh-lbl{font:700 20pt/24pt var(--font-body);letter-spacing:3.4pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+.oh-date{font-family:var(--font-display);font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.6pt}
+.oh-time{font:500 29pt/34pt var(--font-display);color:var(--signal);white-space:nowrap;overflow:hidden}
+.oh-strong{font:700 11.5pt/16pt var(--font-body);color:var(--ink);overflow:hidden;letter-spacing:.2pt}
+.oh-note{font:600 11.5pt/16pt var(--font-body);color:var(--text);overflow:hidden;letter-spacing:.2pt}
+.oh-note.box{background:#fff;color:#1e2e2d;padding:3pt 8pt}
+.ptxt{font-size:9.5pt;line-height:13.5pt;color:var(--text);overflow:hidden}
+.ptxt2{font-size:10.5pt;line-height:15pt;color:var(--text);overflow:hidden}
+.jt{text-align:justify;text-align-last:left;hyphens:none}
+/* facts: value over a brass label, hairlines between, as the cover's facts row */
+.fx{display:flex;border-top:.8pt solid var(--line);border-bottom:.8pt solid var(--line)}
+.fx .f{flex:1;padding:4pt 0 3pt 8pt;border-left:.6pt solid var(--hair);min-width:0}
+.fx .f:first-child{border-left:0;padding-left:0}
+.fx .v{font:500 18pt/20pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden}
+.fx .l{font:700 8pt/10pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--signal);white-space:nowrap;overflow:hidden}
+/* room text beside a photo of the column */
+.rm{display:flex;flex-direction:column;justify-content:flex-start}
+.rm .rh{display:flex;justify-content:space-between;align-items:baseline;gap:8pt;border-bottom:.8pt solid var(--line);padding-bottom:3pt;margin-bottom:6pt}
+.rm .t{font:500 18pt/21pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden}
+.rm .d{font:500 15pt/21pt var(--font-display);color:var(--signal);white-space:nowrap;overflow:hidden;flex:none}
+.rm .a{font-size:9.5pt;line-height:13.5pt;color:var(--text);overflow:hidden}
+/* postcard captions */
+.cap2 .h{font:500 13pt/15pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;padding-top:5pt;display:flex;justify-content:space-between;gap:6pt}
+.cap2 .h i{font:500 11.5pt/15pt var(--font-display);font-style:normal;color:var(--signal);flex:none}
+.cap2 .h span{overflow:hidden;min-width:0}
+.cap2 .a{font-size:9pt;line-height:12pt;color:var(--text);overflow:hidden}
+.head{font-family:var(--font-display);font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.8pt}
+.head b{color:var(--signal);font-weight:500;font-style:italic}
+.rc{display:flex;flex-direction:column;justify-content:space-between}
+.stk div{font:700 8.5pt/12.5pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--ink);white-space:nowrap;border-bottom:.6pt solid rgba(194,163,107,.4)}
+.stk div:last-child{border-bottom:0}
+.bnd{position:absolute;background:var(--signal)}
+.mailp{position:absolute;background:#f3efe4}
+.mret{font:400 8pt/10.5pt var(--font-body);color:#1e2e2d;white-space:nowrap}
+.mret b{font-weight:700;letter-spacing:.5pt;text-transform:uppercase;color:#1e2e2d}
+.mailg{position:absolute}
+.mailg .guide{position:absolute;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#8c8a80;text-transform:uppercase;white-space:nowrap}
+.mailg.stamp{border:.75pt dashed #aaa59a;text-align:center;padding-top:36pt;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#8c8a80;text-transform:uppercase}
+.mailg .aline{position:absolute;height:.75pt;background:#d4d0c5}
+.slab{position:absolute;background:var(--signal);color:#1e2e2d;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.slab .big{font-family:var(--font-display);font-weight:600;font-size:16pt;line-height:17pt;white-space:nowrap}
+.slab .sub{font:700 8pt/9.5pt var(--font-body);margin-top:4pt}
+.svc{display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.svc .it{display:flex;gap:6pt;align-items:baseline;font:400 9.5pt/12pt var(--font-body);color:var(--ink)}
+.svc .bx{width:4pt;height:.8pt;background:var(--signal);flex:none;transform:translateY(-2.5pt);width:8pt}
+.rm.cp .rh{border-bottom:0;padding-bottom:0;margin-bottom:0;align-items:baseline}
+.rm.cp .t{font:500 11pt/12pt var(--font-display)}
+.rm.cp .d{font:500 11pt/12pt var(--font-display)}
+.rm .a.ohw{overflow:visible}
+.fx .f:nth-child(2){flex:1.5}
+.svc.b11 .it{font-size:10.5pt;line-height:13pt}
