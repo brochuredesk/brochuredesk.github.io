@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · fxs-40 two-sided flyer</title>
+<link rel="stylesheet" href="fxs40.css">
+<script src="fxs40.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/agentcard.js"></script>
+<!--
+  fxs-40 · two-sided 8.5 x 11 flyer (trim 612 x 792 pt), the FX40 front and back as a real template.
+  FRONT: the address set vertically up the left edge in Bodoni with a short gold rule and the vertical place line; the whole house across
+  the page; two rooms under it with the round neighborhood seal (this house's own neighborhood) over their join; the write-up in
+  italic Cormorant; the four-stat row between hairlines; the agent and the one logo at the foot.
+  BACK: the vertical address again; four captioned room photos (gold labels) with the small "Built" seal at the top join, or the floor plan
+  and two photos; About the house; the two notes cards; the standard agent card and the fine print.
+  Copy: data.companion.flyer (whole sentences; the fill pass picks the ones that set with the last line at least 3/4 full). Tokens: fxs40-tokens.css.
+  Print: white 0.25 in margin (the sheet is clipped to it).
+-->
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const P = D.piece || {};
+  document.body.dataset.mode = D.mode || 'email';
+  await SW.setup(D);
+  const issues = [];
+  let h = '';
+  if(P.side === 'back'){ const r = FXS.back(D, {}); h = r.html; issues.push(...r.issues); }
+  else h = FXS.cover(D, {});
+  const f = SW.frame(D, 612, 792, h);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  SW.fill();
+  SW.fitLogos();
+  if(window.ContactCard) ContactCard.fit(document);
+  issues.push(...SW.focus(D));
+  window.brochureCheck = () => SW.check(D, (window.planIssues || []).concat(issues));
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>

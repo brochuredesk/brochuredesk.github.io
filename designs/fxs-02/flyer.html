@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · fxs-02 two-sided flyer</title>
+<link rel="stylesheet" href="fxs02.css">
+<script src="fxs02.js"></script>
+<script src="fxs02-tk.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/agentcard.js"></script>
+<!--
+  fxs-02 · two-sided 8.5 x 11 flyer (trim 612 x 792 pt), the FX02 front and back as a real template.
+  FRONT (D.piece.side = "front"): the warm gray band down the left edge; the room photo with the round left end (the arch) crossing the
+  band's edge; the light number over the heavy caps street; the outline-icon fact grid, hairline, pin and place; the write-up; the whole house
+  in its own plain frame; hairline and the agent (name, REALTOR(R), cell, email); the one logo floating across the band's edge at the foot.
+  BACK ("back"): the arch photo and the room photos on the left, "THE HOUSE" light over heavy, labeled write-ups divided by hairlines, then the
+  nearby row; the standard agent card (templates/_shared/agentcard.js, Right panel) with its black bar. With a floor plan the plan fills the
+  top of the page and the write-ups cut to the room that is left. Copy: data.companion.flyer (whole sentences; the fill pass picks the ones
+  that set in a box with the last line at least 3/4 full). Tokens: fxs02.css. Print: white 0.25 in margin (the sheet is clipped to it).
+-->
+<style>
+  .fact .fl{font-size:10pt;line-height:12pt}
+  .fact .fv{font-size:17.5pt;line-height:21pt}
+  .lbl{font-size:10.5pt;line-height:14pt}
+  .near.compact .d{font-size:21pt;line-height:25pt}
+  .near.compact .p{font-size:9pt;line-height:11pt}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const esc = SW.esc, b = D.brand || {}, A = D.agent || {}, L = D.listing, P = D.piece || {}, FL = (D.companion || {}).flyer || {};
+  document.body.dataset.mode = D.mode || 'email';
+  await SW.setup(D);
+  const issues = [];
+  const side = P.side === 'back' ? 'back' : 'front';
+  const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot) || '';
+  const place = [L.neighborhood, `${L.city}, ${/^texas$/i.test(L.state) ? 'TX' : L.state} ${L.zip || ''}`.trim()].filter(Boolean);
+  const sentData = c => `data-s='${esc(JSON.stringify([].concat(c))).replace(/'/g,'&#39;')}'`;
+  const bandBg = `<div class="abs" aria-hidden="true" style="left:0;top:0;width:var(--fx-band-w);height:792pt;background:var(--fx-band)"></div>`;
+  let h = bandBg;
+
+  if(side === 'front'){
+    // the fold-over cover carried over (owner review r2): photos and the address only, no agent and no brokerage on the front of a flyer; the write-up is the flyer's own copy
+    const F = FL.front || {}, PLc = (D.sw || {}).plan || {}, cov = PLc.cover || {};
+    const archId = cov.arch, smalls = (cov.smalls || []).slice(0, 2), heroId = cov.hero || F.hero || 'front';
+    const X = 345, RW = 240, BOTM = 752;
+    const ph = (id, x, y, w, hh, slot, rad) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hh}pt">${SW.photo(D, id, `position:absolute;inset:0;border-radius:${rad}pt 0 0 ${rad}pt`, slot)}</div>`;
+    const heroW = smalls.length ? 352 : 540; let heroH = 286; while(heroH < 340 && !SW.fits(D, heroId, heroW, heroH)) heroH += 4;
+    const heroTop = BOTM - heroH, archBot = heroTop - 14, archH = archBot - 36;
+    h += `<div class="abs" style="left:40pt;top:36pt;width:290pt;height:${archH}pt">${SW.photo(D, archId, `position:absolute;inset:0;border-radius:${Math.min(88, archH*.2)}pt 0 0 ${Math.min(88, archH*.2)}pt`, 'front.arch')}</div>`;
+    h += ph(heroId, 40, heroTop, heroW, heroH, 'front.house', 26);
+    if(smalls.length){ const sw_ = 540 - heroW - 12, sh_ = (heroH - 12)/2; smalls.forEach((id, i) => { h += ph(id, 40 + heroW + 12, heroTop + i*(sh_ + 12), sw_, sh_, 'front.room' + i, 22); }); }
+    const sb = FXS.streetBlock(L.address, X, 38, RW, 52.5, 'address'); h += sb.html;
+    let y = 38 + sb.h + 20;
+    let facts = FXS.facts(L, {more: true}); if(facts.length % 2) facts = facts.filter(f => f[0] !== 'stories');
+    const fg = FXS.factGrid(facts, X, y, RW, 36, 28.5, 'fact'); h += fg.html; y += fg.h - 4;
+    h += `<div class="hr" style="left:${X + 1.5}pt;top:${y}pt;width:${RW - 1.5}pt"></div>`; y += 18;
+    h += `<div class="abs" style="left:${X}pt;top:${y}pt">${FXS.icon('pin', 22.5)}</div>`;
+    h += `<div class="abs place" data-slot="place" data-lines="${place.length}" style="left:${X + 33}pt;top:${y - 1}pt;width:${RW - 33}pt;height:${place.length*18.9 + 1}pt;line-height:18.9pt;font-size:13.5pt">${place.map(esc).join('<br>')}</div>`;
+    y += place.length*18.9 + 10;
+    const wuAvail = archBot - y, lh = 19.2, maxL = Math.floor(wuAvail/lh), tries = []; for(let t = maxL; t >= Math.max(3, maxL - 3); t--) tries.push(t);
+    h += `<div class="abs body" data-slot="front.summary" data-bottom="${archBot}" data-lines="${maxL}" data-try="${tries.join(',')}" data-lh="${lh}" ${sentData(F.intro || [])} style="left:${X}pt;top:${y}pt;width:${RW}pt;height:${maxL*lh}pt;font-size:12pt;line-height:${lh}pt"></div>`;
+  } else {
+    const B = FL.back || {}, hasPlan = !!D.plan;
+    const T = (hasPlan ? B.plan : B.noplan) || {};
+    const ph = (c, x, y, w, hh, slot, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hh}pt">${SW.photo(D, c.photo, `position:absolute;inset:0;${css||''}`, slot)}</div>`;
+    // the back shows rooms (the whole house is on the front): the flyer's own back photos, then the front's row, then the rest, no house shots
+    const isHouse = id => !!((D.photos || {})[id] || {}).fullHouse;
+    const frontArch = (((FL.front || {}).row || []).map(r => r.photo).sort((a, b) => ((D.photos[b]||{}).fullHouse ? -9 : /^(family|living|great|open)/.test(b) ? 3 : /^(dining|primary)(?!.*bath)/.test(b) ? 2 : /kitchen|bar|bath/.test(b) ? 0 : 1) - ((D.photos[a]||{}).fullHouse ? -9 : /^(family|living|great|open)/.test(a) ? 3 : /^(dining|primary)(?!.*bath)/.test(a) ? 2 : /kitchen|bar|bath/.test(a) ? 0 : 1))[0]);
+    const want = [].concat(((hasPlan ? B.photos : (B.photosNoplan || B.photos)) || []).map(c => c.photo), ((FL.front || {}).row || []).map(r => r.photo), Object.keys(D.photos || {}));
+    const cv = (((D.sw || {}).plan || {}).cover) || {}, frontIds = new Set([cv.arch, cv.hero || 'front'].concat(cv.smalls || []).filter(Boolean));   // owner review r4: no photo on both sides of the flyer
+    const ids = [...new Set(want)].filter(id => (D.photos || {})[id] && !isHouse(id) && !frontIds.has(id) && !/^pv\d|^plan/.test(id));
+    const roomOf = id => ((D.photos || {})[id] || {}).roomKey || String(id).replace(/\d+[a-z]?$/, ''), ONEF = +L.stories === 1, seenR = new Set(frontIds.size ? [...frontIds].map(roomOf) : []);
+    // the plan back's lone photo sits beside the floor text: a second-floor living room (dining, kitchen, family) the front does not use
+    if(hasPlan) ids.sort((x, y) => (/^(dining|kitchen|family|living|openplan)/.test(x) ? 0 : 1) - (/^(dining|kitchen|family|living|openplan)/.test(y) ? 0 : 1));
+    const photos = ids.filter(id => { const r = roomOf(id); if((!ONEF || r === 'backyard') && r !== 'outdoor' && seenR.has(r)) return false; seenR.add(r); return true; }).slice(0, 5).map(photo => ({photo}));   // one room once on the flyer, front and back (owner review r6)
+    const title = hasPlan ? (/outside/i.test(T.kicker || '') ? 'Inside and plan' : (T.kicker || 'The plan')) : 'The house';   // the sections are floors and the kitchen, so the title says inside
+    const COLX = 337.5, COLW = 247.5;
+    // ---- sections: the floors, then the labeled items, then the nearby row
+    const secs = [];
+    (B.floors || []).forEach(f => secs.push({label: String(f.n || '').toUpperCase(), s: f.s}));
+    if(hasPlan && secs.length >= 4){   // a four-floor plan back: one block from the rooftop to the ground floor, long enough to reach the arch photo's foot (owner review r3 fixes)
+      const fl = n => (secs.find(x => new RegExp('^' + n, 'i').test(x.label)) || {s: []}).s.map(x => [].concat(x)[0]);
+      const f4 = fl('fourth'), f3 = fl('third'), f2 = fl('second'), f1 = fl('first');
+      secs.splice(0, secs.length, {label: 'TOP TO BOTTOM', s: [].concat(f4, f3.slice(0, 3), f1.slice(0, 1), f3.slice(3, 4), f1.slice(1, 2), f2.slice(0, 2), f1.slice(2, 4), f3.slice(4), f2.slice(2))});
+    }
+    const BX = (D.sw && D.sw.left && D.sw.left.box) || B.box || null;   // the FX02 black box with the round left end (as on the fold-over's inside left): the kitchen or what's new
+    const near = BX ? [] : (B.nearby || []).slice(0, 3);
+    let topY = 45;
+    if(hasPlan){
+      // the plan across the top, on its own white card
+      h += `<div class="abs ttl" style="left:45pt;top:36pt;width:540pt;height:36pt;font-size:28pt;line-height:36pt;text-transform:uppercase" data-slot="back.title" data-lines="1">${FXS.lightBold(title)}</div>`;
+      const planRot = (() => { const r0 = IvoryPlan.draw(D.plan, {x: 66.6, y: 0, w: 496.8, h: 250}, {allowRotate: false}); return (r0.issues || []).some(i => /label-wont-fit/.test(i.kind)); })();   // turned on its side only when a label cannot fit upright
+      const fitPlan = maxH => { for(let hh = maxH; hh >= 150; hh -= 6){ const big = IvoryPlan.draw(D.plan, {x: 66.6, y: 0, w: 496.8, h: hh}, {allowRotate: planRot}); if(!(big.issues || []).some(i => i.kind === 'plan-under-300ppi')) return Math.min(hh, Math.ceil(big.usedH || hh) + 6); } return 236; };   // the plan group fills the card's width (about 0.3 in at each side); the box is only as tall as that needs
+      const planH = fitPlan(236), py = 82;
+      const r = IvoryPlan.draw(D.plan, {x: 66.6, y: py + 6, w: 496.8, h: planH - 4}, {allowRotate: planRot});
+      window.planIssues = r.issues;
+      h += `<div class="abs" style="left:45pt;top:${py}pt;width:540pt;height:${planH + 34}pt;background:var(--fx-paper);border:var(--fx-rule-w) solid var(--fx-rule)"></div><div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt;--paper:var(--fx-paper)">${r.html}</div>`;
+      const zs = IvoryPlan.zonesOf(D.plan);
+      const leg = Object.entries(IvoryPlan.ZONES).filter(([k]) => zs.includes(k)).map(([k, z]) => `<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, var(--fx-paper))"></i>${z.label}</span>`);
+      if(zs.includes('outdoor')) leg.push(`<span><i style="background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--accent) 35%, var(--fx-paper)) 0 .6pt, var(--fx-paper) .6pt 2.8pt)"></i>Outdoor</span>`);
+      const note = (D.plan.source || 'The listing floor plan, placed as given.') + ' Sizes are approximate.' + ((r.angle === 90 || r.angle === 270) ? ' Turned on its side.' : '');
+      const ly = py + planH + 4;
+      h += `<div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt;--paper:var(--fx-paper)"><div class="plan-legend" style="left:55pt;top:${ly}pt">${leg.join('')}</div><div class="plan-disclosure" style="left:55pt;width:520pt;top:${ly + 14}pt;text-align:left" data-slot="back.plannote" data-lines="1" data-fine="1">${esc(note)}</div></div>`;
+      topY = py + planH + 34 + 14;
+    }
+    // ---- left column: the arch photo and the room photos
+    const LX = 45, LW = 262.5, boxH = BX ? 156 : 0, boxTop = 690 - boxH, colBottom = BX ? boxTop - 14 : 674;
+    let cy = topY;
+    if(hasPlan){
+      // the plan took the top: arch photo (capsule) and a wide photo under it
+      const avail = colBottom - cy;
+      if(photos[0]) h += ph(photos[0], LX, cy, LW, avail, 'back.photo0', FXS.arch(LW, avail));
+    } else {
+      const avail = colBottom - cy, ah = Math.round((avail - 12)*.64), sy = cy + ah + 12, sw_ = (LW - 15)/2, sh = colBottom - sy;
+      if(photos[0]) h += ph(photos[0], LX, cy, LW, ah, 'back.photo0', FXS.arch(LW, ah));
+      if(photos[1]) h += ph(photos[1], LX, sy, sw_, sh, 'back.photo1');
+      if(photos[2]) h += ph(photos[2], LX + sw_ + 15, sy, sw_, sh, 'back.photo2');
+    }
+    // ---- right column: the title, the sections, the nearby row
+    if(!hasPlan){
+      h += `<div class="abs ttl" style="left:${COLX}pt;top:${topY - 4}pt;width:${COLW}pt;height:40pt;font-size:33pt;line-height:40pt;text-transform:uppercase" data-slot="back.title" data-lines="1">${FXS.lightBold(title)}</div>`;
+    }
+    const rTop = hasPlan ? topY : topY + 52, rBot = colBottom, rH = rBot - rTop;
+    const nearH = near.length ? 70 : 0;
+    const nSec = hasPlan ? Math.min(BX ? 1 : 3, secs.length) : Math.min(BX ? 4 : 6, secs.length);
+    const use = secs.slice(0, nSec);
+    const lh = 18.5, per = (rH - nearH - 40 - nSec*(14 + 5 + 21))/lh/Math.max(1, nSec);
+    const base = hasPlan && use.length === 1 ? Math.max(2, Math.floor((rH - 19 - 4)/lh) - 1) : Math.max(2, Math.floor(per));   // the four-floor block runs to the arch photo's foot
+    let sh_ = '';
+    use.forEach((s, i) => {
+      const tr = []; for(let t = base + 1; t >= 2; t--) tr.push(t);
+      sh_ += `${i ? '<div class="hr" style="position:static;flex:none;margin:8.6pt 0 10.8pt"></div>' : ''}<div style="flex:none"><div class="lbl" data-slot="back.sec${i}.label" data-lines="1">${esc(s.label)}</div><div class="body" style="margin-top:5pt;font-size:12pt;line-height:${lh}pt" data-slot="back.sec${i}" data-narrow="12" data-lines="${base}" data-try="${tr.join(',')}" data-lh="${lh}" ${sentData(s.s)}></div></div>`;
+    });
+    h += `<div class="abs" style="left:${COLX}pt;top:${rTop}pt;width:${COLW}pt;height:${rH}pt;display:flex;flex-direction:column;justify-content:flex-start">${sh_}${near.length ? `<div style="flex:none;height:11pt"></div><div class="near compact" style="margin-top:auto;padding-top:9pt">${near.map((x, i) => `<div class="c"><div class="d" data-slot="back.near${i}.dist" data-lines="1">${esc(x.dist)}</div><div class="p" data-slot="back.near${i}.place" data-lines="2">${esc(x.place)}</div></div>`).join('')}</div>` : ''}</div>`;
+    if(BX){
+      // owner review r3 (11/7): the black bar is four photos, each with its own short room description (rooms the flyer does not already show; one space once)
+      const usedRooms = new Set([...frontIds].map(roomOf)); photos.slice(0, hasPlan ? 1 : 3).forEach(c => usedRooms.add(roomOf(c.photo)));
+      const KS = D.sw || {}, own = {}; [].concat((KS.left || {}).photos || [], ...(((KS.right || {}).rows) || []), (KS.back || {}).photos || [], (KS.back || {}).photosNoplan || [], B.photos || [], B.photosNoplan || []).forEach(c => { if(c && c.photo && (c.s || []).length > 2 && !own[c.photo]) own[c.photo] = c; });
+      const RL = (D.companion || {}).roomLines || {};
+      // more whole sentences from the room's photo notes for the fill pass to choose from (no phrase of 4 words twice in a caption)
+      const g4 = t => { const w = String(t).toLowerCase().match(/[a-z0-9]+/g) || []; const o = new Set(); for(let i = 0; i + 4 <= w.length; i++) o.add(w.slice(i, i + 4).join(' ')); return o; };
+      const richer = c => { const out = c.s.slice(), have = out.flatMap(x => [...g4([].concat(x)[0])]); const hs = new Set(have); ((RL[c.photo] || {}).all || []).forEach(t => { const gs = [...g4(t)]; if(!gs.some(x => hs.has(x))){ out.push(t); gs.forEach(x => hs.add(x)); } }); return Object.assign({}, c, {s: out}); };
+      const ROOMLEAD = {dining: 'Dining area', primary: 'Primary bedroom', primarybath: 'Primary bath', bed2: 'Second bedroom', bed3: 'Third bedroom', bed4: 'Fourth bedroom', game: 'Game room', flex: 'Flex room', closet: 'Primary closet', nook: 'Breakfast nook', bar: 'Bar', entry: 'Entry', bath2: 'Bath', bath3: 'Bath', hallbath: 'Hall bath', powder: 'Powder room', laundry: 'Laundry', living: 'Living room', kitchen: 'Kitchen', backyard: 'Backyard', rooftop: 'Rooftop', balcony: 'Balcony', park: 'Park', alley: 'Alley'};
+      const cardOf0 = id => own[id] || (RL[id] && (RL[id].all || []).length > 2 ? {photo: id, lead: (ROOMLEAD[roomOf(id)] || String(id).replace(/\d+[a-z]?$/, '').replace(/^./, c => c.toUpperCase())) + '.', s: RL[id].all} : null);
+      const cardOf = id => { const c = cardOf0(id); if(!c) return c; return cardOvr(richer(c)); };
+      // reviewer and marketing fixes (11/7): per story, a room's caption sentences replaced or cut (every line is a sentence of the house's own notes), rooms kept off the strip
+      const NS = +L.stories, OVR = {1: {primary: {drop: [/king bed/i], first: 'Windows on two walls and a double-door closet.'}},
+        2: {primary: {drop: [/carpet runs|bank of windows|bath/i], first: 'New carpet runs wall to wall, and a wide bank of windows fills one wall.'}},
+        3: {primary: {drop: [/glass door|balcony/i], first: 'A glass door opens to the balcony.'}, game: {drop: [/./], first: 'Gray carpet runs the length of the room.', add: ['It is wide enough for a game table and a media wall.']}},
+        4: {primary: {drop: [/soaking tub/i]}}}[NS] || {};
+      const EXCL = {2: ['bath2'], 3: ['dining']}[NS] || [];
+      const cardOvr = c => { const o = OVR[roomOf(c.photo)]; if(!o) return c; const keep = c.s.filter(x => !(o.drop || []).some(re => re.test([].concat(x)[0])) && !(o.first && [].concat(x)[0] === o.first)); return Object.assign({}, c, {s: (o.first ? [o.first] : []).concat(keep, o.add || []), must: !!o.first}); };
+      const RANK = [/^dining$/, /^primary$/, /^primarybath$/, /^(game|flex)$/, /^bed2$/, /^bed3$/, /^nook$/, /^bar$/, /^closet$/, /^entry$/, /^laundry$/, /^living$/, /^kitchen$/, /^(backyard|rooftop|balcony|park|alley)$/, /^(bath2|bath3|hallbath|powder)$/];
+      const rk = id => { const r = roomOf(id), k = RANK.findIndex(re => re.test(r)); return NS === 3 && r === 'backyard' ? 2.5 : k < 0 ? 99 : k; };
+      const pick = [], pool = id => { const c = cardOf(id); return c && c.must ? 999 : c ? (c.lead || '').length + c.s.map(x => [].concat(x)[0]).join(' ').length : 0; };   // a card with too few sentences cannot fill a caption: it goes last
+      Object.keys(D.photos || {}).filter(id => !isHouse(id) && !/^pv\d|^plan/.test(id) && !frontIds.has(id) && !EXCL.includes(roomOf(id)) && cardOf(id)).sort((a, b) => ((pool(a) < 150) - (pool(b) < 150)) || rk(a) - rk(b) || (own[b] ? 1 : 0) - (own[a] ? 1 : 0)).forEach(id => { const r = roomOf(id); if(pick.length < 4 && !usedRooms.has(r)){ usedRooms.add(r); pick.push(id); } });
+      const g = 12, pw = (540 - 3*g)/4, phH = 112, CL = 3, clh = 11.5;
+      h += '<div class="row" style="position:static;display:block">';
+      pick.forEach((id, i) => { const c = cardOf(id), x = 45 + i*(pw + g);
+        h += `<div class="abs" data-spph="1" ${i === 0 ? 'data-spstrip="' + boxTop + '"' : ''} style="left:${x}pt;top:${boxTop}pt;width:${pw}pt;height:${phH}pt">${SW.photo(D, id, 'position:absolute;inset:0;' + (i === 0 ? 'border-radius:22pt 0 0 22pt' : ''), 'back.sp' + i)}</div>`;
+        h += `<div class="abs cap" style="left:${x}pt;top:${boxTop + phH}pt;width:${pw}pt;height:${5 + CL*clh}pt"><div class="a" style="font-size:9pt;line-height:${clh}pt;height:${CL*clh}pt" data-slot="back.sp${i}" ${c.must ? '' : 'data-free="1"'} data-narrow="0" data-lh="${clh}" data-lines="${CL}" ${sentData(c.s)} ${c.must ? 'data-must="1"' : ''} data-lead="${esc(c.lead || '')}"></div></div>`; });
+      h += '</div>';
+      if(pick.length < 4) issues.push({slot: 'back.sp', kind: 'few-room-photos', detail: 'only ' + pick.length + ' unused rooms'});
+    }
+    // ---- the standard agent card, black bar, and the fine print
+    // the broker block, small, between the gray bar and the right side (owner review r2; same as the fold-over back)
+    {
+      const x0 = 172, x1 = 585, RULE = 694, CARDH = 61.5, y0 = RULE + (792 - RULE - CARDH)/2 + 2, hs = hsSrc ? 48 : 0, tx = x0 + (hs ? hs + 12 : 0), lgW = 118;
+      h += `<div class="hr" style="left:${x0}pt;top:${RULE}pt;width:${x1 - x0}pt"></div>`;   // owner review r4 (11/7): the agent block is centered between this bar and the foot of the page
+      if(hsSrc) h += `<div class="abs hsbox" style="left:${x0}pt;top:${y0}pt;width:${hs}pt;height:${hs}pt"><img src="${esc(hsSrc)}" alt=""></div>`;
+      h += `<div class="abs agentline" style="left:${tx}pt;top:${y0 - 2}pt;width:${x1 - lgW - 14 - tx}pt"><div class="n" style="font-size:15pt;line-height:18pt" data-slot="agent.name" data-lines="1">${esc(A.name || '')}</div><div class="p" style="font-size:12pt;line-height:15pt;margin-top:1pt;font-weight:600" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div><div style="font:400 9pt/12pt var(--fx-font);color:var(--fx-mute);white-space:nowrap;overflow:hidden" data-slot="agent.email" data-lines="1">${esc(A.email || '')}</div></div>`;
+      h += FXS.logo(D, x1 - lgW, y0 - 2, lgW, 24, 'flex-end');
+      const off = [].concat(b.returnAddress || b.address || []).flatMap(a => String(a).split('\n')).slice(0, 2).concat(b.phone ? [`${b.officeLabel || 'Office'} ${b.phone}`] : []);
+      h += `<div class="abs" style="left:${x1 - lgW - 20}pt;top:${y0 + 26}pt;width:${lgW + 20}pt;height:${off.length*10.5}pt;font:400 8pt/10.5pt var(--fx-font);color:var(--fx-text-dark);white-space:nowrap;overflow:hidden;text-align:right" data-slot="broker.lines" data-fine="1" data-lines="${off.length}">${off.map(esc).join('<br>')}</div>`;
+      h += `<div class="abs fine" style="left:${x0}pt;top:${y0 + 51.5}pt;width:${x1 - lgW - 26 - x0}pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">Information deemed reliable but not guaranteed.</div>`;
+    }
+  }
+
+  const f = SW.frame(D, 612, 792, h);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  SW.fill();
+  // the four room captions run to the photo's edge (no narrowing): the type steps down from 9.5 pt (never under 8 pt) until whole sentences fill every caption in the row alike
+  { const cs = [...document.querySelectorAll('.cap .a[data-slot^="back.sp"]')];
+    if(cs.length){ let ok = false, T = 3, fsz = 9.5;
+      for(const nar of [0, 2, 4]){   // full width first; a caption narrows (2.5 pt a step, left aligned) only when no whole-sentence set fills the row at full width
+        cs.forEach(e => { e.dataset.narrow = nar; e.dataset.nstep = 2.5; });
+        for(T of [3, 4, 2]){ for(fsz of [9.5, 9.25, 9, 8.75, 8.5, 8.25, 8]){
+          cs.forEach(e => { e.style.fontSize = fsz + 'pt'; e.style.lineHeight = (fsz*1.28) + 'pt'; e.dataset.lh = fsz*1.28; e.dataset.lines = T; });
+          SW.fill();
+          if(cs.every(e => !e.dataset.diag) && new Set(cs.map(e => e.dataset.lines)).size === 1){ ok = true; break; } }
+          if(ok) break; }
+        if(ok) break; }
+      // the photos take the height the captions leave (the strip is fixed: top to 690)
+      const n = +cs[0].dataset.lines, capH = 5 + n*fsz*1.28, stripTop = +document.querySelector('[data-spstrip]').dataset.spstrip, phh = 690 - stripTop - capH;
+      document.querySelectorAll('[data-spph]').forEach(el => { el.style.height = phh + 'pt'; });
+      cs.forEach(e => { e.parentElement.style.top = (stripTop + phh) + 'pt'; e.parentElement.style.height = capH + 'pt'; e.style.height = (n*fsz*1.28) + 'pt'; }); } }
+  document.querySelectorAll('[data-bottom]').forEach(el => { el.style.top = (+el.dataset.bottom - (+el.dataset.lines)*(+el.dataset.lh)) + 'pt'; });
+  SW.fitLogos();
+  if(window.ContactCard) ContactCard.fit(document);
+  issues.push(...SW.focus(D));
+  document.querySelectorAll('.ph[data-photo]').forEach(el => { if(/^(powder|hallbath|bath\d[a-z]?)$/.test(el.dataset.photo) && side === 'front') issues.push({slot: el.dataset.slotPhoto, kind: 'toilet-forward-bath-on-front', detail: el.dataset.photo + ' is a bath photo on a front'}); });
+  window.brochureCheck = () => SW.check(D, (window.planIssues || []).concat(issues));
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>

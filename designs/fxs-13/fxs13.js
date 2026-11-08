@@ -299,6 +299,7 @@
     const box = (px, py, pw, ph, pid, sl) => `<div class="abs" style="left:${px}pt;top:${py}pt;width:${pw}pt;height:${ph}pt">${SW.photo(D, pid, 'position:absolute;inset:0', sl)}</div>`;
     if(!side || !side.length || SW.fits(D, id, w, h)) return box(x, y, w, h, id, slot);
     const w1 = Math.round(h*1.3), gap = 12, w2 = w - w1 - gap, hh = (h - 10)/2;
+    if(w2 < 60) return box(x, y, w, h, id, slot);   // the frame is already narrower than 1.3 : 1: no room for the two side photos (they came out with a negative width); the crop check still reports a cut house
     return box(x, y, w1, h, id, slot) + box(x + w1 + gap, y, w2, hh, side[0], slot + '.side0') + box(x + w1 + gap, y + hh + 10, w2, hh, side[1], slot + '.side1');
   };
 
@@ -732,8 +733,8 @@
     return {html: h, issues};
   };
   // kicker label + a one-line Cormorant title (fits its width) + an italic intro of whole sentences; returns {html, bottom}
-  FXS.pageHead = (kicker, title, intro, slot, lines, x0) => { const X0 = x0 == null ? 90 : x0, CW = 498, Y0 = 27;
-    const ts = FXS.fitSize(title, "font-family:'Cormorant Garamond';font-weight:500", CW, 31, 22), lh = 21, tr = []; for(let t = lines; t >= 2; t--) tr.push(t);
+  FXS.pageHead = (kicker, title, intro, slot, lines, x0, minLines) => { const X0 = x0 == null ? 90 : x0, CW = 498, Y0 = 27;
+    const ts = FXS.fitSize(title, "font-family:'Cormorant Garamond';font-weight:500", CW, 31, 22), lh = 21, tr = []; for(let t = lines; t >= (minLines || 2); t--) tr.push(t);
     const ty = Y0 + 18, iy = ty + ts*1.2 + 12;
     return {html: `<div class="abs" style="left:${X0}pt;top:${Y0}pt">${FXS.label(kicker, slot + '.kicker')}</div>
       <div class="abs" style="left:${X0}pt;top:${ty}pt;width:${CW}pt;height:${ts*1.2}pt;font:500 ${ts}pt/${ts*1.2}pt var(--fx-serif);color:var(--fx-ink);white-space:nowrap;overflow:hidden" data-slot="${slot}.title" data-lines="1">${esc(title)}</div>

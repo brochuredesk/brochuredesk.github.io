@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · fxs-09 two-sided flyer</title>
+<link rel="stylesheet" href="fxs09.css">
+<script src="fxs09-head.js"></script>
+<script src="fxs09.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/agentcard.js"></script>
+<!--
+  fxs-09 · two-sided 8.5 x 11 flyer (trim 612 x 792 pt), the FX09 front and back as a real template.
+  FRONT (D.piece.side = "front", navy): kicker row, the white serif address, the place in italic copper, the whole house with two rooms beside it,
+  the big-numerals stat row, the write-up beside its copper bar, hairline and the agent (name, REALTOR(R), phone, email) with the one logo.
+  BACK ("back", cream): kicker and serif title over the thick navy rule, the plan (when there is one) and the room photos on the left, labeled
+  write-ups divided by hairlines on the right, the navy band with the three nearby numerals, the standard agent card (templates/_shared/agentcard.js).
+  Copy: data.companion.flyer (whole sentences; the fill pass picks the ones that set in a box with the last line at least 3/4 full).
+  Tokens: fxs09-tokens.css. Print: white 0.25 in margin (the sheet is clipped to it).
+-->
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const esc = SW.esc, b = D.brand || {}, A = D.agent || {}, L = D.listing, P = D.piece || {}, FL = (D.companion || {}).flyer || {};
+  document.body.dataset.mode = D.mode || 'email';
+  await SW.setup(D);
+  const issues = [];
+  const side = P.side === 'back' ? 'back' : 'front';
+  const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot) || '';
+  const place = [L.neighborhood, `${L.city}, ${/^texas$/i.test(L.state) ? 'TX' : L.state} ${L.zip || ''}`.trim()].filter(Boolean);
+  const sentData = c => `data-s='${esc(JSON.stringify([].concat(c))).replace(/'/g,'&#39;')}'`;
+  let h = '';
+
+  if(side === 'front'){
+    const F = FL.front || {};
+    h += FXS.cover(D, {hero: F.hero, row: F.row}, [].concat(F.intro || [], (((D.sw || {}).front || {}).summary) || []).filter((x, i, a) => a.findIndex(y => SW.sameFact([].concat(y)[0], [].concat(x)[0])) === i).filter(x => !/second floor/i.test([].concat(x)[0])).filter((x, i, a) => !(/miles away/.test([].concat(x)[0]) && a.some(y => y !== x && new RegExp([].concat(x)[0].split(' is ')[0], 'i').test([].concat(y)[0])))).sort((x, y) => /\broof\b/i.test([].concat(x)[0]) - /\broof\b/i.test([].concat(y)[0])));
+  } else {
+    const B = FL.back || {}, hasPlan = !!D.plan, X0 = 22, CW = 568, X1 = 590;
+    const T = (hasPlan ? B.plan : B.noplan) || {};
+    const ph = (c, x, y, w, hh, slot, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hh}pt">${SW.photo(D, c.photo, `position:absolute;inset:0;${css||''}`, slot)}</div>`;
+    // the back shows rooms (the whole house is on the front): the flyer's own back photos, then the front's row, then the rest, no house shots
+    const isHouse = id => !!((D.photos || {})[id] || {}).fullHouse;
+    const frontSides = ((FL.front || {}).row || []).map(r => r.photo);
+    const cp0 = FXS.coverPhotos(D, FL.front || {}), frontFams = new Set([cp0.heroId].concat(cp0.sides).map(SW.famOf));
+    const want = [].concat(((hasPlan ? B.photos : (B.photosNoplan || B.photos)) || []).map(c => c.photo), Object.keys(D.photos || {}));
+    const ids = [...new Set(want)].filter(id => (D.photos || {})[id] && !isHouse(id) && !/^pv\d|^plan/.test(id) && !frontSides.slice(0, 3).includes(id) && !frontFams.has(SW.famOf(id))).filter((id, i, arr) => arr.findIndex(o => SW.famOf(o) === SW.famOf(id)) === i);
+    const photos = ids.slice(0, 5).map(photo => ({photo}));
+    const title = T.title || (hasPlan ? 'The plan' : 'The house');
+    h += `<div class="kick" style="left:${X0}pt;top:30pt;width:400pt;height:12pt;color:var(--fx-ink2)" data-slot="back.kicker" data-lines="1">${esc(String(T.kicker || (hasPlan ? 'The plan' : 'The house')).toUpperCase())}</div>`;
+    h += `<div class="abs ttl fit" style="left:${X0}pt;top:44pt;width:${CW}pt;height:40pt;font-size:30pt;line-height:40pt" data-slot="back.title" data-lines="1">${esc(title)}</div><div class="hr" style="left:${X0}pt;top:90pt;width:${CW}pt;background:var(--fx-copper)"></div>`;
+    // ---- sections: the floors, then the labeled items
+    const secs = [];
+    (B.floors || []).forEach(f => secs.push({label: String(f.n || '').toUpperCase(), s: f.s}));
+    ((B.box || {}).items || []).forEach(i => secs.push({label: String(i.l).toUpperCase(), s: i.s}));
+    const near = (B.nearby || []).slice(0, 3);
+    let topY = 106;
+    const nearH = near.length ? 62 : 0, nearTop = 636 - nearH, colBottom = nearTop - 14;
+    if(hasPlan){
+      const planRot = (() => { if(D.plan.levels.length === 1 && D.plan.levels[0].kind === 'image') return true; const r0 = IvoryPlan.draw(D.plan, {x: X0 + 22, y: 0, w: CW - 44, h: 250}, {allowRotate: false}); return (r0.issues || []).some(i => /label-wont-fit/.test(i.kind)); })();
+      const fitPlan = maxH => { for(let hh = maxH; hh >= 150; hh -= 6){ const big = IvoryPlan.draw(D.plan, {x: X0 + 22, y: 0, w: CW - 44, h: hh}, {allowRotate: planRot}); if(!(big.issues || []).some(i => i.kind === 'plan-under-300ppi')) return Math.min(hh, Math.ceil(big.usedH || hh) + 6); } return 236; };
+      const planH = fitPlan(236), py = topY;
+      const r = IvoryPlan.draw(D.plan, {x: X0 + 22, y: py + 6, w: CW - 44, h: planH - 4}, {allowRotate: planRot});
+      window.planIssues = r.issues;
+      h += `<div class="abs" style="left:${X0}pt;top:${py}pt;width:${CW}pt;height:${planH + 34}pt;background:#fbf8f1;border:var(--fx-rule-w) solid var(--fx-rule)"></div><div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt;--paper:#fbf8f1">${r.html}</div>`;
+      const zs = IvoryPlan.zonesOf(D.plan);
+      const leg = Object.entries(IvoryPlan.ZONES).filter(([k]) => zs.includes(k)).map(([k, z]) => `<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, #fbf8f1)"></i>${z.label}</span>`);
+      if(zs.includes('outdoor')) leg.push(`<span><i style="background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--accent) 35%, #fbf8f1) 0 .6pt, #fbf8f1 .6pt 2.8pt)"></i>Outdoor</span>`);
+      const note = (D.plan.source || 'The listing floor plan, placed as given.') + ' Sizes are approximate.' + ((r.angle === 90 || r.angle === 270) ? ' Turned on its side.' : '');
+      const ly = py + planH + 4;
+      h += `<div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt;--paper:#fbf8f1"><div class="plan-legend" style="left:${X0 + 10}pt;top:${ly}pt">${leg.join('')}</div><div class="plan-disclosure" style="left:${X0 + 10}pt;width:${CW - 20}pt;top:${ly + 14}pt;text-align:left" data-slot="back.plannote" data-lines="1" data-fine="1">${esc(note)}</div></div>`;
+      topY = py + planH + 34 + 14;
+    }
+    // ---- left column: room photos, square
+    const LX = X0, LW = 268, cy = topY;
+    if(hasPlan){
+      const avail = colBottom - cy;
+      if(photos[0]) h += ph(photos[0], LX, cy, LW, avail, 'back.photo0');
+    } else {
+      const avail = colBottom - cy, ah = Math.round(avail*.46), sh = Math.round(avail*.24), sy = cy + ah + 12, sw_ = (LW - 14)/2;
+      if(photos[0]) h += ph(photos[0], LX, cy, LW, ah, 'back.photo0');
+      if(photos[1]) h += ph(photos[1], LX, sy, sw_, sh, 'back.photo1');
+      if(photos[2]) h += ph(photos[2], LX + sw_ + 14, sy, sw_, sh, 'back.photo2');
+      if(photos[3]) h += ph(photos[3], LX, sy + sh + 12, LW, colBottom - (sy + sh + 12), 'back.photo3');
+    }
+    // ---- right column: the labeled sections
+    const COLX = LX + LW + 14, COLW = X1 - COLX, rTop = cy, rH = colBottom - rTop;
+    const nSec = Math.max(1, Math.min(hasPlan ? 3 : 6, secs.length, Math.floor(rH/70)));
+    const use = secs.slice(0, nSec);
+    const lh = 16.3, per = (rH - nSec*(12 + 5 + 21))/lh/Math.max(1, nSec), base = Math.max(2, Math.floor(per));
+    let sh_ = '';
+    use.forEach((s, i) => {
+      const tr = []; for(let t = base + 1; t >= 2; t--) tr.push(t);
+      sh_ += `${i ? '<div class="hr" style="position:static;flex:none;margin:8.6pt 0 10.8pt"></div>' : ''}<div style="flex:none"><div class="lbl" data-slot="back.sec${i}.label" data-lines="1">${esc(s.label)}</div><div class="body" style="margin-top:5pt;font-size:10.5pt;line-height:${lh}pt" data-slot="back.sec${i}" data-narrow="0" data-fill="0.9" data-lfill="0.8" data-justify="1" data-lines="${base}" data-try="${tr.join(',')}" data-lh="${lh}" ${sentData(s.s)}></div></div>`;
+    });
+    h += `<div class="abs floorscol" style="left:${COLX}pt;top:${rTop}pt;width:${COLW}pt;height:${rH}pt;display:flex;flex-direction:column;justify-content:flex-start">${sh_}</div>`;   // owner 11/7/2026: no blank space: SW.fillColumns grows the write-ups and their type until the column is full
+    // ---- the navy band: three nearby numerals
+    if(near.length){ const cw = CW/near.length; h += `<div class="abs inkbox" style="left:${X0}pt;top:${nearTop}pt;width:${CW}pt;height:${nearH - 4}pt"></div>` + near.map((x, i) => `${i ? `<div class="abs" style="left:${X0 + i*cw}pt;top:${nearTop + 10}pt;width:.75pt;height:${nearH - 24}pt;background:rgba(245,239,228,.3)"></div>` : ''}<div class="abs" style="left:${X0 + i*cw + 18}pt;top:${nearTop + 7}pt;width:${cw - 28}pt"><div style="font:400 24pt/27pt var(--fx-serif);color:var(--fx-ink);white-space:nowrap;overflow:hidden" data-slot="back.near${i}.dist" data-lines="1">${esc(x.dist)}</div><div style="font:500 8.25pt/11pt var(--fx-font);letter-spacing:2pt;text-transform:uppercase;color:var(--fx-copper);margin-top:1pt;height:22pt;overflow:hidden" data-slot="back.near${i}.place" data-lines="2">${esc(x.place)}</div></div>`).join(''); }
+    // ---- the standard agent card and the fine print
+    h += `<div class="hr" style="left:${X0}pt;top:651pt;width:${CW}pt;background:var(--fx-copper)"></div>`;
+    h += ContactCard.html([X0, 665, CW, 80], Object.assign({}, A, {headshot: hsSrc}), Object.assign({}, b, {logo: b.logoOnDark || b.logo}), {layout: 'panel', size: 'mid', fine: '', bottomGap: 0.5, fieldAccent: true});
+    h += `<div class="abs fine" style="left:${X0}pt;top:762pt;width:${CW}pt;height:8pt;text-align:center" data-slot="fineprint" data-lines="1" data-fine="1">Information deemed reliable but not guaranteed.</div>`;
+  }
+
+  const f = SW.frame(D, 612, 792, h, side === 'back' ? 'cream' : '');
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  document.querySelectorAll('.ttl.fit').forEach(el => { let fs = 30; while(el.scrollWidth > el.clientWidth + 1 && fs > 20){ fs -= .5; el.style.fontSize = fs + 'pt'; } });
+  SW.fill();
+  SW.fillColumns();
+  document.querySelectorAll('[data-bar-for]').forEach(b => { const t = document.querySelector(`[data-slot="${b.dataset.barFor}"]`); if(!t) return; const n = SW.lines(t).n, lh = +t.dataset.lh || 21; b.style.height = (n*lh - 4) + 'pt'; });
+  SW.fitLogos();
+  if(window.ContactCard) ContactCard.fit(document);
+  issues.push(...SW.focus(D));
+  window.brochureCheck = () => SW.check(D, (window.planIssues || []).concat(issues));
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>

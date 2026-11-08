@@ -1,0 +1,61 @@
+/* fxs-40 marks shared by every page: the script agent name, tracked slate caps labels with a hairline underline, the pale blue badge,
+   one-line slate boxes, the icon facts. Read the tokens in fxs40-tokens.css. */
+@import url(fxs40-tokens.css);
+.script{font-family:var(--fx-script);font-weight:600;color:var(--fx-accent);white-space:nowrap;overflow:visible}
+.vrule{position:absolute;width:var(--fx-rule-w);background:var(--fx-accent)}
+.gold{display:none}
+.bluebar{position:absolute;background:var(--fx-blue)}
+.badge{position:absolute;border-radius:50%;background:var(--fx-blue);color:var(--fx-ink);text-align:center;overflow:hidden}
+.badge .k{position:absolute;left:0;right:0;font:600 8.5pt/10pt var(--fx-font);letter-spacing:4pt;padding-left:4pt;color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.badge .a{position:absolute;left:0;right:0;font:500 54pt/.98 var(--fx-display);color:var(--fx-ink);letter-spacing:.7pt;white-space:nowrap;overflow:hidden}
+.ico{display:block;margin:0 auto}
+.icof{position:absolute;text-align:center}
+.icof .t{font:500 8.4pt/10pt var(--fx-font);letter-spacing:.1pt;color:var(--fx-ink);margin-top:5pt;white-space:nowrap;text-transform:uppercase;overflow:hidden}
+
+.lbl{display:inline-block;font:var(--fx-label-w) 9pt/12pt var(--fx-font);letter-spacing:var(--fx-label-track);text-transform:uppercase;color:var(--fx-accent);white-space:nowrap;overflow:hidden;text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:4pt}
+.ttl{font-family:var(--fx-display);font-weight:500;color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.ttl b{font-weight:600}
+.body{font:300 10.5pt/16pt var(--fx-font);color:var(--fx-text);overflow:hidden}
+.wu{font:300 11.5pt/18pt var(--fx-font);color:var(--fx-text);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font:300 6.6pt/8pt var(--fx-font);color:var(--fx-mute);white-space:nowrap;overflow:hidden}
+
+.ph{position:relative;overflow:hidden;background:#1b1b1b;min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font:300 9.5pt/12.5pt var(--fx-font);color:var(--fx-mute);overflow:hidden}
+.cap .a b{font-weight:600;color:var(--fx-ink)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+/* stats row: gold hairlines above and below, Cormorant numerals, tracked caps labels */
+.stats{position:absolute;display:flex;border-top:var(--fx-rule-w) solid var(--fx-rule);border-bottom:var(--fx-rule-w) solid var(--fx-rule)}
+.stats .s{flex:1;text-align:center;white-space:nowrap;display:flex;align-items:baseline;justify-content:center;padding-top:5pt;border-left:var(--fx-rule-w) solid var(--fx-rule)}
+.stats .s:first-child{border-left:0}
+
+/* the box: one thin slate line, white inside (FX40 "What is new") */
+.card{position:absolute;background:transparent;border:var(--fx-rule-w) solid var(--fx-rule-hard)}
+.card{background:#fff;border-width:.75pt}
+.card.plain{background:var(--fx-seal);border-color:var(--fx-rule-hard)}
+.bul{position:absolute;display:flex;align-items:center;gap:8pt;font:300 10.5pt/14pt var(--fx-font);color:var(--fx-text);white-space:nowrap;overflow:hidden}
+.bul:before{content:"";width:3.75pt;height:3.75pt;border-radius:50%;background:var(--fx-accent);flex:none}
+
+.agentline .n{font:500 30pt/34pt var(--fx-display);color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.agentline .d{font:500 8.5pt/11pt var(--fx-font);letter-spacing:2.6pt;color:var(--fx-accent);white-space:nowrap}
+.agentline .p{font:500 15pt/20pt var(--fx-font);letter-spacing:.7pt;color:var(--fx-ink);white-space:nowrap}
+.agentline .e{font:300 10.5pt/14pt var(--fx-font);color:var(--fx-text);white-space:nowrap;overflow:hidden}
+
+.near{flex:none;display:flex;gap:0;border-top:var(--fx-rule-w) solid var(--fx-rule);padding-top:9pt}
+.near .c{flex:1;min-width:0;padding-left:14pt;border-left:var(--fx-rule-w) solid var(--fx-rule)}
+.near .c:first-child{padding-left:0;border-left:0}
+.near .d{font:500 19pt/23pt var(--fx-serif);color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.near .p{font:500 8pt/10pt var(--fx-font);letter-spacing:1pt;text-transform:uppercase;color:var(--fx-accent);overflow:hidden;margin-top:1pt;min-height:20pt}
+
+/* the script name's swash reaches left of its first letter: never clipped (review r1) */
+body .cc .cc-nameblock{overflow:visible!important}
+body .cc .cc-name{font-family:'Montserrat',sans-serif;font-weight:600;overflow:visible!important}   /* owner 11/7: normal font */

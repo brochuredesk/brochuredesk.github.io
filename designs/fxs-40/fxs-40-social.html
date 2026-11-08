@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · FX extras · FX40 socials</title>
+<link rel="stylesheet" href="fx.css">
+<link rel="stylesheet" href="fxs40-tokens.css">
+<link rel="stylesheet" href="fxs40-marks.css">
+<script src="fxs40-tk.js"></script>
+<script src="fxs40.js"></script>
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script src="fxpage.js"></script>
+<script src="fxs40-patch.js"></script>
+<!--
+  fxs-40 socials: Open House, Just Listed and Just Sold in every size, plus the carousel slides. One page; it draws by FXP.kind(D) and D.piece.shape.
+  The flyer's pieces carry through, doing the same job: the address set vertically up the left edge (Bodoni) with a short gold rule; the whole house
+  in one large hero with the round neighborhood seal in its corner; the event (or the status) between two hairlines in Oswald over caps; the
+  REALTOR(R) perks on a white notes card; the agent in Oswald with the one logo; square corners everywhere. No new copy.
+  Too much for a size: the notes go first, then what's served (the caption carries them).
+-->
+<style>
+  .abs{position:absolute}
+  .wu{font:300 var(--sw,13pt)/1.4 'Montserrat'}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+FXS.hookCheck();
+FXP.start(['400 20pt "Great Vibes"', '500 20pt Oswald', '600 20pt Oswald', '700 20pt Oswald', '800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserrat"', '500 20pt "Montserrat"', '400 20pt "Montserrat"', '300 20pt "Montserrat"'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {}, A = D.agent || {};
+  const kind = FXP.kind(D), shape = D.piece.shape, {W, H} = FXP.size(D), F = FXP.floor(shape); F.ev = F.event;
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight'), BRK = (D.piece || {}).__break || '';   // __break: used only by out/fxsets/fxs-40/proof.py to prove each check fails when its rule is broken
+  if(E.time) E.time = E.time.replace(/(\d)\s+(am|pm)\b/gi, '$1 $2');
+  const INK = TK.ink, SOFT = TK.text, MONT = "font-family:'Montserrat'";
+  const back = [], mid = [], front = [], tiny = [];
+  const rect = (x, y, w, h, css) => `<div class="abs" aria-hidden="true" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css || ''}"></div>`;
+  const pic = (id, x, y, w, h, css) => OHL.photo(D, id, `left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css || ''}`);
+  const archCss = () => '';
+  const wdt = (t, css, rich) => { const m = document.createElement('span'); m.style.cssText = `position:absolute;left:-9999pt;visibility:hidden;white-space:nowrap;${css}`; if(rich) m.innerHTML = t; else m.textContent = t; document.body.appendChild(m); const w = m.getBoundingClientRect().width*.75; m.remove(); return w; };
+  // text that fits: the biggest size from max to min at which it runs in <= lines lines in width w. o.rich: html for the body
+  const T = o => { const r = T0(o); return o.parts && r.n >= 99 ? T0(Object.assign({}, o, {parts: null, lines: Math.max(o.lines || 1, 3)})) : r; };
+  const T0 = o => {
+    if(o.slot === 'place') return {html: '', h: 0, s: 0, n: 0, w: 0, ok: true};
+    const lines = o.lines || 1, lhk = o.lh || 1.15, txt = o.parts ? o.parts.join(' ') : o.text;
+    const css = s => `${MONT};${o.css};font-size:${s}pt;line-height:${(s*lhk).toFixed(2)}pt`;
+    const cnt = s => o.rich ? (wdt(o.rich, css(s), true) <= o.w + .3 ? 1 : 99) : o.parts ? (o.parts.every(p => FXP.width(p, css(s)) <= o.w + .3) ? o.parts.length : 99) : FXP.lines(txt, css(s), o.w);
+    let s = o.max, n = cnt(s);
+    while(n > lines && s > o.min){ s -= .5; n = cnt(s); }
+    if(s < o.min) s = o.min;
+    n = cnt(s);
+    const nn = Math.min(n, 99), h = Math.ceil(nn*s*lhk*100)/100 + 1.4 + (nn > 1 ? 2.5 : 0);
+    const wid = nn === 1 ? (o.rich ? wdt(o.rich, css(s), true) : FXP.width(txt, css(s))) : o.w;
+    const body = o.rich || (o.parts ? o.parts.map(esc).join('<br>') : esc(txt));
+    const html = `<div class="abs" style="left:${o.x}pt;top:${o.y}pt;width:${o.w}pt;height:${h}pt;${css(s)};text-align:${o.align || 'left'};white-space:${nn === 1 ? 'nowrap' : 'normal'};overflow:${/Great Vibes/.test(o.css || '') ? 'visible' : 'hidden'}"${o.small ? ' data-small="1"' : ''} data-slot="${o.slot}" data-lines="${nn}">${body}</div>`;
+    return {html, h, s, n: nn, w: wid, ok: n <= lines};
+  };
+  const caps = (wt, tr, col) => `font-weight:${wt};letter-spacing:${tr}pt;text-transform:uppercase;color:${col}`;
+
+  // ---------- px helpers: the page is drawn in pt at K = 0.375 pt per image pixel; sizes below are image pixels ----------
+  const K = FXP.K, p = v => v*K, WP = D.piece.px[0], HP = D.piece.px[1], SC = WP/1080;
+  const MG = Math.round(54*SC);
+  const tp = o => T(Object.assign({}, o, {x: p(o.x), y: p(o.y), w: p(o.w), max: p(o.max), min: o.minPx != null ? p(o.minPx) : (o.min == null ? F.body : o.min)}));
+  const LN = 'font-variant-numeric:lining-nums;';
+  const GOLD = 'var(--fx-accent)';
+  const goldRule = () => '';
+  const hair = (x, y, w) => rect(p(x), p(y), p(w), .75, 'background:var(--fx-rule)');
+  const RAW = (SW.data().listing || {});
+  const addrT = String(RAW.address || L.address);
+  const placeT = `${FXS.hood(L) ? FXS.hood(L) + ' · ' : ''}${RAW.city || L.city}, ${/^texas$/i.test(RAW.state || L.state) ? 'TX' : (RAW.state || L.state)} ${RAW.zip || L.zip || ''}`.trim().toUpperCase();
+  const hsOn = OHL.cardMode(D) === 'headshot' && !!A.headshot;
+  // a tracked caps line that is plain text (small print for the floor checks)
+  const capsLn = (slot, text, x, y, w, px, tr, col, align) => { const pt = Math.max(p(px), F.small), h = pt*1.35;
+    return {h: h/K, html: `<div class="abs" style="left:${p(x)}pt;top:${p(y)}pt;width:${p(w)}pt;height:${h}pt;font:500 ${pt}pt/${h}pt Montserrat;letter-spacing:${tr}pt;text-transform:uppercase;color:${col};white-space:nowrap;overflow:hidden;text-align:${align || 'left'}" data-small="1" data-slot="${slot}" data-lines="1">${esc(text)}</div>`}; };
+
+  // ---------- the hero: one box per shape, the same on every piece of that shape ----------
+  // the whole house inside the centered crop, with a margin (the print check cuts at the box's own edge)
+  const heroFit = (w, h) => { const ph0 = (D.photos || {})[hero] || {}; if(!ph0.box || !ph0.w || !ph0.h) return true; const ia = ph0.w/ph0.h, ta = w/h, [x0, y0, x1, y1] = ph0.box, mg = .02;
+    if(ta >= ia){ const v = ia/ta, lo = (1 - v)/2; return y0 >= lo + mg*0 && y1 <= 1 - lo && v >= (y1 - y0) + .03; }
+    const v = ta/ia, lo = (1 - v)/2; return x0 >= lo && x1 <= 1 - lo && v >= (x1 - x0) + .03; };
+  const heroFit2 = (w, h) => { const ph0 = (D.photos || {})[hero] || {}; if(!heroFit(w, h)) return false; if(!ph0.box || !ph0.w || !ph0.h) return true; const ia = ph0.w/ph0.h, ta = w/h, [x0, y0, x1, y1] = ph0.box; return ta >= ia ? true : ta/ia >= (x1 - x0) + .07; };   // growth keeps a margin around the house
+  let HERO_H;   // full-width pieces: the shortest frame that holds the whole house, never under 54% of the width
+  const W1 = Math.round(WP*.76);
+  { let h0 = Math.round(W1*(shape === 'square' ? .7 : .76)); const lim = Math.round(W1*1.1); let h = h0; while(h < lim && !heroFit(W1, h)) h += 4; HERO_H = h; }
+  const heroBlock = (x, y, w, h) => pic(hero, p(x), p(y), p(w), p(h));
+  let HERO_W = 0;   // side pieces: the narrowest column that holds the whole house
+  if(shape === 'wide' || shape === 'gbp'){ let w0 = Math.round(WP*.5); const lim = Math.round(WP*.7); while(w0 < lim && !heroFit(w0, HP)) w0 += 8; HERO_W = w0; }
+
+  // ---------- the blocks: each returns {h, html} at (x, y, w) in px ----------
+  // the Just Listed / Just Sold lockup: one size on every format (124 px at 1080, scaled with the width), never shrunk; the photo or the facts give way instead
+  const LOCK_PX = 124*Math.min(SC, HP/1350), LOCK_WORD = kind === 'js' ? 'Just Sold' : 'Just Listed', LOCK_W = FXP.width(LOCK_WORD, `font-family:'Pinyon Script';font-size:${p(LOCK_PX)}pt`)/K + 12*SC;
+  let lockPt = 0;
+  const bStatus = (x, y, w, k) => { if(BRK === 'no-lockup') return {h: 10, html: ''}; const pt = p(LOCK_PX)*(BRK === 'shrink-lockup' ? .8 : 1); lockPt = pt; const lcss = `font-family:Oswald;font-weight:600;letter-spacing:${(pt*.04).toFixed(2)}pt;text-transform:uppercase;font-size:${pt}pt`;
+    const one = FXP.width(LOCK_WORD, lcss) <= p(w), words = LOCK_WORD.toUpperCase().split(' '), nl = one ? 1 : 2, lh = pt*1.02;
+    return {h: nl*lh/K + 6*SC, html: `<div class="abs" style="left:${p(x)}pt;top:${p(y)}pt;width:${p(Math.max(w, 0))}pt;height:${nl*lh}pt;font:600 ${pt}pt/${lh}pt Oswald;letter-spacing:${(pt*.04).toFixed(2)}pt;text-transform:uppercase;color:var(--fx-ink);white-space:nowrap;overflow:visible" data-slot="moment" data-lines="${nl}">${one ? LOCK_WORD : words.join('<br>')}</div>`}; };
+  const bAddr = (x, y, w, k, maxPx, noPlace) => { const r = tp({slot: 'address', text: addrT, css: "font-family:Oswald;font-weight:600;letter-spacing:0;color:var(--fx-ink)", x, y, w, max: (maxPx || 100)*SC*k, min: F.ev, lh: 1.1}); const pl = capsLn('place', placeT, x + 2, y + r.h/K + 4, w, 30*SC*Math.max(k, .9), 1.6, GOLD); if(noPlace) return {h: r.h/K, html: r.html};
+    return {h: r.h/K + 4 + pl.h, html: r.html + pl.html}; };
+  const bStats = (x, y, w, k) => { const h = Math.round(110*SC*k), items = FXS.statItems(L).slice(0, 3);
+    return {h, html: FXS.statsRow(items, p(x), p(y), p(w), p(h), 'fact', {np: Math.max(16, p(60*SC*k)), lp: Math.max(F.body, p(26*SC*k)), track: 1})}; };
+  const bAgent = (x, y, w, k, o) => { o = o || {};
+    const ps = (o.phone || 40)*SC*k, ns0 = Math.min((o.name || 58)*SC*k, Math.max(ps, 52*SC)*1.1), hsz = hsOn ? Math.round(Math.min(ns0*2.4, 180*SC)) : 0, logoW = Math.min(w*.34, 330*SC), lx = x + w - logoW;
+    const tx = x + (hsz ? hsz + 16 : 0), tw = lx - 28 - tx;
+    const phCss = "font-family:Montserrat;font-weight:700;letter-spacing:.3pt;color:var(--fx-ink)", phOpt = {slot: 'agent.phone', text: A.phone || '', css: phCss, x: tx, w: tw, max: Math.max(ps, 52*SC), minPx: 52*SC, lh: 1.15};
+    const ph0 = tp(Object.assign({}, phOpt, {y: 0})), ns = Math.min(ns0, ph0.s/K*.92);   // the name is never bigger than the phone as it actually sets
+    const nm = tp({slot: 'agent.name', text: A.name || '', css: "font-family:Montserrat;font-weight:600;letter-spacing:0;color:var(--fx-ink)", x: tx, y, w: tw, max: ns, min: F.body, lh: 1.08});
+    let yy = y + nm.h/K; const out = [nm.html];
+    if(A.nar || /realtor/i.test(A.designation || '')){ const d = capsLn('agent.desig', 'REALTOR®', tx + 1, yy + 2, tw, 24*SC, 3.2, GOLD); out.push(d.html); yy += d.h + 4; }
+    const ph = tp(Object.assign({}, phOpt, {y: yy + 2})); out.push(ph.html); yy += 2 + ph.h/K;
+    const h = Math.max(yy - y, hsz);
+    if(hsz) out.unshift(`<div class="abs" style="left:${p(x)}pt;top:${p(y)}pt;width:${p(hsz)}pt;height:${p(h)}pt;overflow:hidden"><img src="${esc(A.headshot)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`);
+    out.push(rect(p(lx - 14), p(y + 4), .75, p(h - 8), 'background:var(--fx-rule)'));
+    out.push(OHL.logo(D, 'light', `left:${p(lx)}pt;top:${p(y + (h - Math.min(h, 110*SC))/2)}pt;width:${p(logoW)}pt;height:${p(Math.min(h, 110*SC))}pt;justify-content:center`));
+    return {h, html: out.join('')}; };
+  // the event: the gold label on one line, the day over the date's left edge, the date large, the time at 60% of it (beside it when both fit, else under)
+  const bEvent = (x, y, w, k, o) => { o = o || {}; const out = []; let yy = y;
+    if(!o.perksOnly){
+    const lab = tp({slot: 'oh.label', text: E.label.toUpperCase(), css: caps(600, 1.6*Math.max(k, .8), TK.accent) + ';font-family:Oswald' + '', x, y: yy, w, max: 50*SC*k, min: F.ev, lh: 1.15});
+    out.push(lab.html); yy += lab.h/K + 12*SC;
+    const wk = capsLn('oh.weekday', E.weekday, x + 1, yy, w, 36*SC*k, 4.2, GOLD); out.push(wk.html); yy += wk.h + 2;
+    const md = String(E.monthDay || E.long), dmax = (o.dmax || 128)*SC*k;
+    let dt = tp({slot: 'oh.date', text: md, css: `font-family:Oswald;font-weight:700;letter-spacing:0;color:var(--fx-ink);${LN}`, x: x - 2, y: yy, w: w + 2, max: dmax, min: p(60*SC), lh: 1.02});
+    const tcss = s => `font-family:Oswald;font-weight:700;color:var(--fx-ink);${LN}`;
+    let tm = null, inline = false;
+    if(E.time){ const ts = dt.s*.6; const tw0 = FXP.width(E.time, `${tcss()};font-size:${ts}pt`);
+      if(dt.w + tw0 + p(34*SC) <= p(w)){ inline = true; dt = tp({slot: 'oh.date', text: md, css: `font-family:Oswald;font-weight:700;letter-spacing:0;color:var(--fx-ink);${LN}`, x: x - 2, y: yy, w: (dt.w + 6)/K, max: dmax, min: p(60*SC), lh: 1.02}); dt.s = Math.min(dt.s, dmax*K);
+        tm = T({slot: 'oh.time', text: E.time, css: tcss() + ';letter-spacing:0;text-align:right', x: p(x + w) - tw0 - 6, y: p(yy) + (dt.h - ts*1.05)*.62, w: tw0 + 6, max: ts, min: ts, lh: 1.05}); }
+      else tm = null; }
+    out.push(dt.html); yy += dt.h/K;
+    if(E.time){ if(inline) out.push(tm.html); else { const t2 = tp({slot: 'oh.time', text: E.time, css: tcss() + ';letter-spacing:0', x, y: yy + 4, w, max: dt.s/K*.6, minPx: dt.s/K*.6, lh: 1.05}); out.push(t2.html); yy += 4 + t2.h/K; } }
+    }
+    const items = (o.noPerks || BRK === 'drop-perk') ? [] : [[E.refreshments, 'oh.refreshments', 700], [E.note, 'oh.note', 600]].filter(i => i[0]);
+    if(items.length){ yy += o.perksOnly ? 0 : 20*SC;
+      const bf = Math.max(F.body*1.1, 34*SC*k*K), py = 14*SC, rows = []; let by = yy + py;
+      items.forEach(([tx, slot, wt]) => { const r = tp({slot, text: tx, css: `font-family:Oswald;font-weight:${wt};color:var(--fx-ink)`, x: x + 24*SC, y: by, w: w - 48*SC, max: bf/K, min: F.body, lines: 2, lh: 1.12}); rows.push(r.html); by += r.h/K + 6*SC; });
+      by -= 6*SC; out.push(`<div class="card" data-box="oh.box" style="left:${p(x)}pt;top:${p(yy)}pt;width:${p(w)}pt;height:${p(by - yy + py)}pt"></div>`, ...rows); yy = by + py; }
+    return {h: yy - y, html: out.join('')}; };
+  const bJsLine = (x, y, w, k, headOnly) => { const sl = FXP.soldLine(D); if(headOnly) sl.line = '';
+    const l1 = tp({slot: 'sold.head', text: sl.head, css: "font-family:Oswald;font-weight:700;color:var(--fx-ink);text-wrap:balance", x, y, w, max: 54*SC*k, min: F.body, lines: 2, lh: 1.1});
+    let yy = y + l1.h/K, o = l1.html; if(sl.line){ const l2 = tp({slot: 'sold.line', text: sl.line, css: `font-family:Oswald;font-weight:600;color:${SOFT}`, x, y: yy + 4, w, max: 40*SC*k, min: F.body, lines: 2, lh: 1.15}); o += l2.html; yy += 4 + l2.h/K; }
+    return {h: yy - y, html: o}; };
+  // three different rooms side by side (story bottom strip, square)
+  const roomsAll = () => OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id)).sort((a, b) => FXS.archScore(D, b) - FXS.archScore(D, a)).filter((id, i, arr) => arr.findIndex(o => FXP.fam(o) === FXP.fam(id) || o.replace(/\d+[a-z]?$/, '') === id.replace(/\d+[a-z]?$/, '')) === i);
+  const bStrip = (x, y, w, h) => { const rs = roomsAll().slice(0, 3), g = 10*SC, pw = (w - g*(rs.length - 1))/rs.length; return {h, html: rs.map((id, i) => pic(id, p(x + i*(pw + g)), p(y), p(pw), p(h))).join('')}; };
+
+  // ---------- the stack: blocks in order, spaced evenly in what the hero leaves; the content shrinks (k) until it fits ----------
+  const stack = (x, y0, w, avail, make, ks, strict) => {
+    for(const k of ks){ const bl = make(k); const sum = bl.reduce((t, b) => t + b.h, 0), n = bl.length - 1, gap = n ? (avail - sum)/n : 0;
+      if(gap >= 14*SC*Math.min(k, 1) || (!strict && k === ks[ks.length - 1])){ const g = Math.min(gap, 36*SC); let y = y0 + Math.max(0, (avail - sum - g*n)/2); const out = [];
+        bl.forEach(b => { out.push(b.mk ? b.mk(y).html : b.html.replace(/%Y%/g, y)); y += b.h + g; }); return out.join(''); } } return null; };
+  const KS = [1.32, 1.24, 1.16, 1.1, 1.05, 1, .94, .88, .82, .76, .7];
+
+  // the badge as a block (side pieces): the same dark circle as the post's
+  const bBadge = (x, y, w, k) => { if(BRK === 'no-header') return {h: 10, html: ''}; const AP = FXS.addrParts(D), wN = Math.max(...[AP.num, AP.name.toUpperCase()].filter(Boolean).map(t => FXS.width(t, `font-family:Oswald;font-weight:500;letter-spacing:.7pt;font-size:${F.ev}pt`))), need = Math.ceil(wN/.8/K), d = Math.min(w, Math.max(need, 200*SC, Math.min(w, 280*SC*k)));
+    const r = FXS.badge(D, p(x + w/2), p(y + d/2), p(d), {dark: true, minSmall: F.small}); let html = r.html, h = d;
+    if(r.noHood && !(kind === 'oh' && shape === 'wide')){ const hood = String(FXS.hood(L) || RAW.city || L.city).toUpperCase(), ln = capsLn('hood.line', hood, x, y + d + 6*SC, w, 30*SC, 3.4, 'var(--fx-ink)', 'center'); html += ln.html; h += 6*SC + ln.h; }
+    return {h, html}; };
+  // the top block of every full-width piece: the whole house at 81% width, the pale blue column with the icon facts, the dark badge over the photo's lower edge
+  const topBlock = (id, o) => { o = o || {};
+    // owner 11/7: a Just Sold piece never lists the house's features: the house takes the whole width instead of the fact column
+    const jsWide = kind === 'js' && !o.noFacts; if(jsWide) o.noFacts = true;
+    front.push(pic(id, 0, 0, p(jsWide ? WP : W1), p(HERO_H)));
+    if(!jsWide) front.push(rect(p(W1), 0, p(WP - W1), p(HERO_H), 'background:var(--fx-blue)'));
+    const d = Math.round((o.d || 400)*SC), hb = FXS.houseBottom(D, id, 0, 0, W1, HERO_H), bt = Math.max(HERO_H - 110*SC, hb + 10*SC), cx = WP - d/2 - 34*SC;
+    const items = FXS.statItems(L).slice(0, 3), colH = (o.noBadge ? HERO_H : bt) - 26*SC, pitch = colH/items.length, ipx = pitch*.3, np = Math.max(16, p(pitch*.27)), lp = Math.min(Math.max(F.small, p(pitch*.13)), Math.max(F.small, p(24*SC)));
+    if(!o.noFacts) mid.push(FXS.iconCol(items, p(W1 + 10*SC), p(18*SC), p(WP - W1 - 20*SC), p(pitch), 'fact', {icon: p(ipx), np, lp}));
+    if(!o.noBadge && BRK !== 'no-header') mid.push(FXS.badge(D, p(cx), p(bt + d/2), p(d), {dark: true, minSmall: F.small}).html);
+    return {bottom: o.noBadge ? HERO_H : bt + d, left: cx - d/2}; };
+  const bandH = () => Math.round(84*SC);
+  const footBand = () => { const h = bandH(); front.push(rect(0, p(HP - h), p(WP), p(h), 'background:var(--fx-blue)'));
+    const t = capsLn('place', FXS.placeText(L), MG, HP - h + (h - p(34*SC)*1.35/K)/2*1, WP - 2*MG, 34*SC, 6, 'var(--fx-ink)', 'center'); mid.push(t.html.replace('font:500 ', 'font:500 ').replace('Montserrat', 'Oswald')); };
+  const vertical = () => {
+    const w = WP - 2*MG;
+    // post and pin: the house takes whatever height the text below leaves, so there is no empty field (the largest frame that still holds the whole house)
+    if(shape === 'post'){
+      const dd = Math.round((kind === 'oh' ? 340 : 400)*SC), lw0 = WP - dd - 34*SC - MG - 28*SC, bh0 = bandH();
+      const lowH = (() => { const f = []; if(kind === 'oh' && (E.refreshments || E.note)) f.push(bEvent(MG, 0, w, 1, {perksOnly: true}).h); if(kind === 'js') f.push(bJsLine(MG, 0, w, 1, true).h); f.push(bAgent(MG, 0, w, 1, kind === 'js' ? {name: 70, phone: 58} : {name: 62, phone: 56}).h); return f.reduce((t, v) => t + v, 0) + 22*SC*(f.length - 1); })();
+      const evH0 = kind === 'oh' ? bEvent(MG, 0, lw0, KS[KS.length - 1], {noPerks: true, dmax: 110}).h : 0;
+      const hA = HP - bh0 - 18*SC - lowH - 26*SC - dd + 110*SC, hB = kind === 'oh' ? HP - bh0 - 18*SC - lowH - 26*SC - 22*SC - evH0 : 1e9, hLim = Math.min(hA, hB);
+      let g = HERO_H; while(g + 4 <= hLim && g + 4 <= W1*(shape === 'pin' ? 1.4 : 1.12) && heroFit2(W1, g + 4)) g += 4; HERO_H = g;
+    }
+    const tb = topBlock(hero, kind === 'oh' ? {d: 340} : {});
+    // left of the badge: the status lockup (Just Listed, Just Sold) or the event
+    const lw = tb.left - MG - 28*SC, ly = HERO_H + 22*SC, lavail = tb.bottom - ly;
+    let evH = 0;
+    if(kind === 'oh'){ let kk = KS[KS.length - 1]; for(const k of KS){ if(bEvent(MG, 0, lw, k, {noPerks: true, dmax: 110}).h <= lavail + 60*SC){ kk = k; break; } }
+      const ev = bEvent(MG, ly, lw, kk, {noPerks: true, dmax: 110}); mid.push(ev.html); evH = ev.h; }
+    else mid.push(stack(MG, ly, lw, lavail, k => [{h: bStatus(MG, 0, lw, k).h, mk: y => bStatus(MG, y, lw, k)}], KS) || '');
+    // below the badge: the perks (REALTOR(R)), the sold line, the agent
+    const y1 = Math.max(tb.bottom, ly + evH) + 10*SC, bh = bandH(), avail = HP - bh - y1 - 18*SC;
+    const strip = shape === 'story' || shape === 'pin';
+    const low = k => { const f = [], wrap = fn => ({h: fn(0).h, mk: y => fn(y)});
+      if(kind === 'oh' && (E.refreshments || E.note)) f.push(wrap(y => bEvent(MG, y, w, k, {perksOnly: true})));
+      if(kind === 'js') f.push(wrap(y => bJsLine(MG, y, w, k, true)));
+      f.push(wrap(y => bAgent(MG, y, w, k, kind === 'js' ? {name: 70, phone: 58} : {name: 62, phone: 56})));
+      return f; };
+    if(strip){
+      // the story: perks / sold line / agent, then the strip of three rooms 40 px under them, then a two-line description of the house, then the band (no empty field)
+      let y = y1; const bl = low(1);
+      bl.forEach(b => { mid.push(b.mk(y).html); y += b.h + 26*SC; }); y -= 26*SC;
+      // two real lines from the write-up that set full: one sentence or two, the last line at least 3/4 full
+      const pool = [].concat(...((((D.sw || {}).front || {}).summary) || []).map(x => [].concat(x)[0])).filter(t => !FXP.CONDITION.test(t) && !/minutes|miles|drive/i.test(t));
+      const dcss = "font-family:Montserrat;font-weight:400;color:var(--fx-text)", dsz = Math.max(F.body*1.3, p(34*SC)), cands = pool.concat(pool.flatMap((a, i) => pool.slice(i + 1).map(b2 => a + ' ' + b2)));
+      let desc = null; for(const t of cands){ if(FXP.lines(t, `${dcss};font-size:${dsz}pt;line-height:${dsz*1.4}pt`, p(w)) === 2 && lastFill(t, `${dcss};font-size:${dsz}pt;line-height:${dsz*1.4}pt`, p(w)) >= .75){ desc = t; break; } }
+      let descH = desc ? (2*dsz*1.4)/K + 6*SC : 0; const stripTop = y + 40*SC; let sh = Math.round(HP - bh - 26*SC - descH - 24*SC - stripTop); if(sh < 150*SC && desc){ desc = null; descH = 0; sh = Math.round(HP - bh - 26*SC - stripTop); }
+      front.push(bStrip(MG, stripTop, w, Math.max(120*SC, Math.min(sh, 600*SC))).html);
+      if(desc) mid.push(`<div class="abs" style="left:${p(MG)}pt;top:${p(stripTop + Math.max(120*SC, Math.min(sh, 600*SC)) + 24*SC)}pt;width:${p(w)}pt;height:${2*dsz*1.4 + 2}pt;${dcss};font-size:${dsz}pt;line-height:${dsz*1.4}pt" data-slot="story.desc" data-lines="2">${esc(desc)}</div>`);
+    } else mid.push(stack(MG, y1, w, avail, low, low(1).length === 1 ? [1.5, 1.42].concat(KS) : KS));
+    footBand();
+  };
+
+  // =========================== side pieces (wide, gbp): house and text on top, the perks and the agent in a band across the foot ===========================
+  const sideways = () => {
+    const gp = 14*SC, m = Math.round(34*SC), w = WP - 2*m, sq = shape === 'square';
+    // the foot: the perks (both lines, REALTOR(R) pieces) in a double frame across the page
+    const items = kind === 'oh' ? [[E.refreshments, 'oh.refreshments', 700], [E.note, 'oh.note', 600]].filter(i => i[0]) : [];
+    const perkF = Math.max(F.body, (sq ? 46 : 40)*SC*K), perkRows = items.map(([tx, slot, wt]) => tp({slot, text: tx, css: `font-family:Oswald;font-weight:${wt};color:var(--fx-ink)`, x: m + 22*SC, y: 0, w: w - 44*SC, max: perkF/K, min: F.body, lines: 2, lh: 1.1}));
+    const perkH = items.length ? perkRows.reduce((s, r) => s + r.h/K + 4*SC, 0) + 24*SC : 0;
+    const footH = perkH ? perkH + gp : 0;
+    const zm = HP - footH - m*.7;                         // the main zone's height
+    // the left column: the whole house (frame between 1.2 : 1 and 1.5 : 1), the agent under it
+    const lim = Math.round(WP*(shape === 'gbp' ? (kind === 'oh' ? .42 : .57) : sq ? (kind === 'oh' ? .46 : .56) : (kind === 'oh' ? .44 : .5)));
+    const agMin = Math.round((sq ? 200 : 190)*SC); const needPh = FXP.width(A.phone || '', `font:700 ${Math.max(F.body, sq ? p(50*SC) : 0)}pt Montserrat;letter-spacing:.3pt`)/K + 12*SC; let hw = Math.min(lim, Math.round((zm - agMin - 4*SC - gp)*1.3)); hw = Math.max(hw, Math.min(Math.round(needPh + 1.5*m + 8*SC), Math.round(WP*.6))); if(kind !== 'oh') hw = Math.min(hw, Math.round(WP - 2*m - LOCK_W));
+    let hh = Math.round(hw/1.3); for(const r of [1.3, 1.2, 1.4, 1.5, 1.6, 1.8]){ hh = Math.round(hw/r); if(heroFit(hw, hh)) break; }
+    if(!sq){ let g = hh; while(g + 8 <= zm - agMin - 4*SC - gp && heroFit2(hw, g + 8)) g += 8; hh = g; }   // the house takes the column's height: no empty field under the agent
+    let agTop = hh + 4*SC + gp, agH = zm - agTop;
+    if(sq || (shape === 'gbp' && kind === 'oh')){ const sh = Math.min(470*SC, agH - 150*SC - gp), rs = roomsAll().slice(0, 2); if(sh >= 130*SC && rs.length === 2){ const g2 = 10*SC, rw2 = (hw - g2)/2; rs.forEach((id, i) => front.push(pic(id, p(i*(rw2 + g2)), p(agTop), p(rw2), p(sh)))); agTop += sh + gp; agH = zm - agTop; } }
+    back.push(rect(p(hw), 0, p(WP - hw), p(HP), 'background:var(--fx-blue)')); front.push(heroBlock(0, 0, hw, hh));
+    // the agent: name, REALTOR(R), phone and the logo, in the left column under the house
+    const drawAgent = agTop => { const outp = []; const lw = hw - 2*m + m*.5, lx = m*.8, need = FXP.width(A.phone || '', `font:700 ${Math.max(F.body, sq ? p(50*SC) : 0)}pt Montserrat;letter-spacing:.3pt`)/K + 12*SC;
+      const stackLogo = lw*.7 < need, logoW = stackLogo ? Math.min(lw*.6, 300*SC) : lw*.3, nW = stackLogo ? lw : lw - logoW - 16*SC;
+      let s = 1, nm, ph, hgt, lgH = 0, dsgLast = null, fitOK = false;
+      for(const useD of [true, false]){ if(fitOK) break; s = 1;   // REALTOR(R) under the name where it fits; dropped only when the block can't fit with it (Open House pieces)
+      for(; s >= .45; s -= .05){ const psz = Math.min(sq ? 58 : 70, agH*(stackLogo ? .22 : .27))*SC*s, nsz = Math.min(Math.min(sq ? 62 : 96, agH*(stackLogo ? .28 : .38))*SC*s, Math.max(psz, sq ? 50*SC : 0)*1.22);
+        nm = tp({slot: 'agent.name', text: A.name || '', css: "font-family:Montserrat;font-weight:600;letter-spacing:0;color:var(--fx-ink)", x: lx, y: agTop, w: nW, max: nsz*.78, min: F.body, lines: 1, lh: 1.05});
+        const dsg = (useD && (A.nar || /realtor/i.test(A.designation || ''))) ? capsLn('agent.desig', 'REALTOR®', lx + 1, agTop + nm.h/K + 3*SC, nW, 24*SC, 3.2, GOLD) : null, dH = dsg ? dsg.h/K + 6*SC : 0;   // owner 11/7: the plain name sets on one short line; REALTOR(R) under it, as on every other piece
+        ph = tp({slot: 'agent.phone', text: A.phone || '', css: "font-family:Montserrat;font-weight:700;letter-spacing:.3pt;color:var(--fx-ink)", x: lx, y: agTop + nm.h/K + 2*SC + dH, w: nW, max: Math.max(psz, sq ? 50*SC : 0), min: F.body, ...(sq ? {minPx: 50*SC} : {}), lh: 1.05});
+        dsgLast = dsg; hgt = nm.h/K + 2*SC + dH + ph.h/K; lgH = stackLogo ? Math.min(80*SC, agH - hgt - 14*SC) : 0; if(hgt + (stackLogo ? lgH + 8*SC : 0) <= agH - 6*SC && (!stackLogo || lgH >= 40*SC)){ fitOK = true; break; } } }
+      outp.push(nm.html, ph.html); if(dsgLast) outp.push(dsgLast.html);
+      if(stackLogo) outp.push(OHL.logo(D, 'light', `left:${p(lx)}pt;top:${p(agTop + hgt + 8*SC)}pt;width:${p(logoW)}pt;height:${p(Math.max(lgH, 30*SC))}pt;justify-content:flex-start`));
+      else { outp.push(rect(p(lx + nW + 8*SC), p(agTop + 4), .75, p(Math.max(10, hgt - 8*SC)), 'background:var(--fx-rule)'));
+        outp.push(OHL.logo(D, 'light', `left:${p(lx + lw - logoW)}pt;top:${p(agTop)}pt;width:${p(logoW)}pt;height:${p(Math.min(Math.max(hgt, 70*SC), agH - 6*SC))}pt;justify-content:flex-end`)); }
+      return {outp, hgt, blockH: stackLogo ? hgt + 8*SC + Math.max(lgH, 30*SC) : Math.max(hgt, 70*SC)}; };
+    { const first = drawAgent(agTop), shift = Math.max(0, ((footH ? zm : HP) - agTop - first.blockH)/2 - 2*SC); const r = drawAgent(agTop + shift); mid.push(...r.outp); }   // the agent block sits centered in the room under the house: no empty field
+    const x = hw + m, cw = WP - x - m;
+    const short = s => s;   // the same words as every other piece (baths through _shared/baths.js: "2 Full Baths")
+    const facs = k => { const f = [], wrap = fn => ({h: fn(0).h, mk: y => fn(y)});
+      const addr = (y, mx) => { const r = tp({slot: 'address', text: addrT, css: "font-family:Oswald;font-weight:600;letter-spacing:0;color:var(--fx-ink)", x, y, w: cw, max: mx*SC*k, min: F.ev, lh: 1.08});
+        const parts = placeT.split(' · '), pl = [], ph0 = Math.max(F.small, 0);
+        let yy = y + r.h/K + 2, h = r.h/K + 2, html = r.html;
+        if(true) return {h, html};
+        const one = capsLn('place', placeT, x + 2, yy, cw, 28*SC, 1.2, GOLD);
+        const fits = FXP.width(placeT, `font:500 ${Math.max(p(28*SC), F.small)}pt Montserrat;letter-spacing:1.2pt;text-transform:uppercase`) <= p(cw);
+        if(fits){ html += one.html; h += one.h; }
+        else { parts.forEach((pt2, i) => { const l = capsLn(i ? 'place' + i : 'place', pt2, x + 2, yy, cw, 28*SC, 1.2, GOLD); html += l.html; yy += l.h; h += l.h; }); }
+        return {h, html}; };
+      if(kind === 'oh'){ f.push(wrap(y => bBadge(x, y, cw, k)));
+        f.push(wrap(y => { const out2 = []; let yy = y; const lines2 = OHL.labelLines(E.label.toUpperCase(), 2);
+          const single = true;
+          const lab = tp({slot: 'oh.label', text: E.label.toUpperCase(), parts: single ? null : lines2, css: caps(600, .3, TK.accent) + ';font-family:Oswald', x, y: yy, w: cw, max: 46*SC*k, min: F.ev, lines: single ? 1 : 2, lh: 1.12}); out2.push(lab.html); yy += lab.h/K + 6*SC;
+          const wk = capsLn('oh.weekday', E.weekday, x + 1, yy, cw, 30*SC, 3.6, GOLD); out2.push(wk.html); yy += wk.h + 2;
+          const dt = tp({slot: 'oh.date', text: String(E.monthDay || E.long), css: `font-family:Oswald;font-weight:700;letter-spacing:0;color:var(--fx-ink);${LN}`, x: x - 2, y: yy, w: cw + 2, max: 100*SC*k, min: F.ev, lh: 1.0}); out2.push(dt.html); yy += dt.h/K;
+          if(E.time){ const ts = Math.max(dt.s*.6, F.ev); const tm = T({slot: 'oh.time', text: E.time, css: `font-family:Oswald;font-weight:700;color:var(--fx-ink);${LN}`, x: p(x), y: p(yy), w: p(cw), max: ts, min: ts, lh: 1.05}); out2.push(tm.html); yy += tm.h/K; }
+          return {h: yy - y, html: out2.join('')}; })); }
+      else { f.push(wrap(y => bStatus(x, y, cw, k)));
+        f.push(wrap(y => bBadge(x, y, cw, k)));
+        if(kind === 'jl' && (shape === 'wide' || shape === 'gbp')) f.push(wrap(y => { const it = FXS.statItems(L).slice(0, 3), np = Math.max(16, p(44*SC)); return {h: 3*np*1.35/K + 10*SC, html: it.map((t, i) => `<div class="abs" style="left:${p(x)}pt;top:${p(y) + i*np*1.35}pt;width:${p(cw)}pt;height:${np*1.3}pt;display:flex;align-items:baseline;white-space:nowrap" data-slot="fact.${i}" data-lines="1">${FXS.statHtml(t, np, Math.max(F.body, np*.45), 1)}</div>`).join('')}; }));
+        else if(kind === 'jl') f.push(wrap(y => { const it = FXS.statItems(L).slice(0, 3).map(short), rh = Math.max(52*SC*Math.min(k, 1), Math.max(16, p(46*SC*Math.min(k, 1)), F.body)*1.5/K); let h = '';
+          it.forEach((s, i) => { h += hair(x, y + i*rh, cw) + `<div class="abs" style="left:${p(x)}pt;top:${p(y + i*rh + rh*.14)}pt;width:${p(cw)}pt;height:${p(rh*.7)}pt;display:flex;align-items:baseline;white-space:nowrap" data-slot="fact.${i}" data-lines="1">${FXS.statHtml(s, Math.max(16, p(46*SC*Math.min(k, 1))), F.body, 1.2)}</div>`; });
+          h += hair(x, y + it.length*rh, cw); return {h: it.length*rh, html: h}; }));
+        else f.push(wrap(y => { const r = tp({slot: 'sold.head', text: FXP.soldLine(D).head, css: "font-family:Oswald;font-weight:700;color:var(--fx-ink);text-wrap:balance", x, y, w: cw, max: 50*SC*k, min: F.body, lines: 2, lh: 1.1}); return {h: r.h/K, html: r.html}; }));
+        // the wide Just Sold fills its column as the Just Listed does: the call to action, then the place in gold caps (the hood, then the city and ZIP)
+        if(kind === 'js' && shape === 'wide'){
+          f.push(wrap(y => { const sl = FXP.soldLine(D).line || 'Call or text me anytime.', r = tp({slot: 'sold.line', text: sl, css: `font-family:Oswald;font-weight:600;color:${SOFT}`, x, y, w: cw, max: 44*SC*k, min: F.body, lines: 2, lh: 1.12}); return {h: r.h/K, html: r.html}; }));
+          /* the badge carries the place */ } }
+      return f; };
+    mid.push(stack(x, (kind === 'oh' ? 6*SC : m*.6), cw, zm - (kind === 'oh' ? 6*SC : m*.6), facs, [1.3, 1.2, 1.1, 1, .88, .76, .66, .56, .46, .38]));
+    // the foot: the perks
+    if(perkH){ const y = zm + gp*.4; front.push(goldRule(0, y - gp*.6, WP, 3*SC)); mid.push(`<div class="card" data-box="oh.box" style="left:${p(m)}pt;top:${p(y)}pt;width:${p(w)}pt;height:${p(perkH)}pt"></div>`);
+      let yy = y + 12*SC; items.forEach(([tx, slot, wt], i) => { const r = tp({slot, text: tx, css: `font-family:Oswald;font-weight:${wt};color:var(--fx-ink)`, x: m + 22*SC, y: yy, w: w - 44*SC, max: perkF/K, min: F.body, lines: 2, lh: 1.1}); mid.push(r.html); yy += r.h/K + 4*SC; }); }
+  };
+
+  // =========================== carousel slides ===========================
+  const lastFill = (t, css, w) => { const q = document.createElement('div'); q.style.cssText = `position:absolute;left:-9999pt;visibility:hidden;width:${w}pt;${css}`; q.textContent = t; document.body.appendChild(q);
+    const r = document.createRange(); r.selectNodeContents(q); const rs = [...r.getClientRects()].filter(z => z.width > .5), tp0 = Math.max(...rs.map(z => z.top));
+    const last = rs.filter(z => Math.abs(z.top - tp0) < 2), wd = (Math.max(...last.map(z => z.right)) - Math.min(...last.map(z => z.left)))*.75; q.remove(); return wd/w; };
+  const CAPCSS = "font-family:Oswald;font-weight:600;color:var(--fx-ink);text-wrap:balance";
+  const captionSlide = () => {
+    const id = D.piece.photo, w = WP - 2*MG, full = Ivory.fullHouse(D, id);
+    const ag = bAgent(MG, 0, w, 1, {name: 60, phone: 52});
+    // the caption: two full lines, the last at least 3/4 full; the room name opens it
+    const cands = FXP.carouselCaps(D, id).concat(FXP.carouselCaps(D, id).map(t => t.split('. ').slice(0, 2).join('. ').replace(/\.?$/, '.'))).filter((t, i, arr) => t && arr.indexOf(t) === i);
+    // one caption size on every slide (never shrunk to fit): the first caption that sets in two full lines at that size, else the build fails
+    const CSP = p(62*SC)*(BRK === 'caption-size' ? .85 : 1); let pick = null;
+    outer: for(const txt of cands){ if(SW.sameFactIn(txt)) continue;
+      for(let w2 = w; w2 >= w*.4; w2 -= 4){ const c = T({slot: 'caption', text: txt, css: CAPCSS, x: 0, y: 0, w: p(w2), max: CSP, min: CSP, lines: 2, lh: 1.22});
+        if(c.ok && c.n === 2 && lastFill(txt, `${MONT};${CAPCSS};font-size:${CSP}pt;line-height:${(CSP*1.22).toFixed(2)}pt`, p(w2)) >= .78){ pick = {c, cs: CSP, txt, w2}; break outer; } } }
+    if(!pick){ const txt = cands[0] || '', c = T({slot: 'caption', text: txt, css: CAPCSS, x: 0, y: 0, w: p(w), max: CSP, min: CSP, lines: 3, lh: 1.22}); pick = {c, cs: CSP, txt, w2: w};
+      tiny.push({slot: 'caption', kind: 'caption-not-two-full-lines', detail: `"${txt}" does not set in two full lines at the shared size`}); }
+    if(Math.abs(pick.cs - p(62*SC)) > .05) tiny.push({slot: 'caption', kind: 'caption-size', detail: `${pick.cs.toFixed(1)} pt is not the carousel's one caption size (${p(62*SC).toFixed(1)} pt)`});
+    if(/^[A-Za-z]+\d?\.?$/.test(String(pick.txt).trim())) tiny.push({slot: 'caption', kind: 'raw-tag', detail: `a photo tag printed as copy: "${pick.txt}"`});
+    const capH = pick.c.h/K, roomName = String(pick.txt).split(/[.,]\s?/)[0];
+    // the info band for Open House: the label, the date and the time in the set's thin box, the address under it
+    let band = null;
+    if(kind === 'oh'){ const bw = w, bx = MG + 30*SC, iw = bw - 60*SC;
+      const l = tp({slot: 'oh.label', text: E.label.toUpperCase(), css: caps(600, 3, TK.accent), x: bx, y: 0, w: iw, max: 34*SC, min: F.ev, lh: 1.15}); const dline = [E.weekday, E.monthDay || E.long].filter(Boolean).join(', ');
+      const d = tp({slot: 'oh.date', text: dline, css: `font-family:Oswald;font-weight:600;color:var(--fx-ink);${LN}`, x: bx, y: 0, w: iw, max: 76*SC, min: F.ev*1.1, lh: 1.05});
+      const tm2 = E.time ? tp({slot: 'oh.time', text: E.time, css: `font-family:Oswald;font-weight:700;color:var(--fx-ink);${LN}`, x: bx, y: 0, w: iw, max: d.s*.6, min: d.s*.6, lh: 1.05}) : null;
+      const hh = 20*SC + (l.h + d.h + (tm2 ? tm2.h : 0))/K + 20*SC;
+      band = {h: hh, mk: y => { const o = []; let yy = y + 20*SC; const sh = (t, yv) => t.html.replace(/top:[\d.]+pt/, `top:${p(yv)}pt`);
+        o.push(`<div class="card" data-box="oh.band" style="left:${p(MG)}pt;top:${p(y)}pt;width:${p(bw)}pt;height:${p(hh)}pt"></div>`);
+        o.push(sh(l, yy)); yy += l.h/K; o.push(sh(d, yy)); yy += d.h/K; if(tm2){ o.push(sh(tm2, yy)); yy += tm2.h/K; } return o.join(''); }};
+    }
+    const P = FXS.addrParts(D), addrLn = [P.num, P.name, P.suffix].filter(Boolean).join(' ').toUpperCase(), bd = Math.round(300*SC), under = Math.round(bd*.5);
+    const gaps = 22*SC, fixed = gaps + under + capH + gaps + (band ? band.h + gaps : 0) + ag.h + MG*.9;
+    const avail = HP - fixed, maxPh = W1*((D.photos[id] || {}).h || 2)/((D.photos[id] || {}).w || 3), ph = Math.min(avail, Math.max(maxPh, W1*.9), W1*.95);
+    const fr = full ? OHL.fitHero(D, id, p(W1), Math.floor(p(ph)), true) : {w: p(W1), h: p(ph)}, phPx = fr.h/K, spare = Math.max(0, avail - phPx), g2 = gaps + spare/4;
+    front.push(pic(id, 0, 0, fr.w, fr.h)); front.push(rect(p(W1), 0, p(WP - W1), fr.h, 'background:var(--fx-blue)'));
+    // the dark circle with the room's name over the photo's lower edge; the address line sits at its left
+    mid.push(FXS.titleBadge(FXS.roomLabel(roomName), p(WP - bd/2 - 34*SC), fr.h + p(bd*.0), p(bd), 'room.badge', true));
+    { const al = tp({slot: 'addr.line', text: addrLn, css: "font-family:Oswald;font-weight:500;letter-spacing:1.2pt;color:var(--fx-ink)", x: MG, y: phPx + 28*SC, w: WP - bd - 34*SC - MG*2, max: 56*SC, min: F.ev, lh: 1.1}); mid.push(al.html);
+      mid.push(capsLn('place', FXS.hood(L) || RAW.city || L.city, MG + 2, phPx + 28*SC + al.h/K + 4*SC, WP - bd - MG*2, 28*SC, 3.4, 'var(--fx-ink)').html); }
+    let y = phPx + under + g2;
+    front.push(T({slot: 'caption', text: pick.txt, css: CAPCSS, x: p(MG), y: p(y), w: p(pick.w2), max: pick.cs, min: pick.cs, lines: 3, lh: 1.22}).html); y += capH + g2;
+    if(band){ mid.push(band.mk(y)); y += band.h + g2; }
+    mid.push(bAgent(MG, HP - MG*.9 - ag.h, w, 1, {name: 60, phone: 52}).html);
+  };
+  // the closing slide: the same hero box as the post (house, icon facts, badge), a call to action, the agent big (name 60 px and up, phone 54 px bold at 1080, left aligned), the logo
+  let closeBad = false;
+  const closeSlide = () => {
+    const w = WP - 2*MG, first = String(A.name || 'me').split(' ')[0], tb = topBlock(hero);
+    const ctaText = kind === 'oh' ? `See you ${E.weekday}${E.time ? ', ' + E.time : ''}.` : `Call or text ${first} for a private showing.`;
+    const ctaCss = "font-family:Oswald;font-weight:600;color:var(--fx-ink)";
+    const lw = tb.left - MG - 28*SC;
+    const cta = (() => { for(let sz = 84*SC; sz >= 54*SC; sz -= 2){ for(let w2 = lw; w2 >= lw*.6; w2 -= 6){ const c = T({slot: 'cta', text: ctaText, css: ctaCss, x: 0, y: 0, w: p(w2), max: p(sz), min: p(sz), lines: 4, lh: 1.18}); if(c.ok && (c.n === 1 || lastFill(ctaText, `${MONT};${ctaCss};font-size:${p(sz)}pt;line-height:${(p(sz)*1.1).toFixed(2)}pt`, p(w2)) >= .78)) return {sz, w2}; } } return {sz: 54*SC, w2: lw}; })();
+    let ctaBottom = 0; { const r = tp({slot: 'cta', text: ctaText, css: ctaCss, x: MG, y: HERO_H + 22*SC, w: cta.w2, max: cta.sz, minPx: cta.sz, lines: 4, lh: 1.18}); mid.push(r.html); ctaBottom = HERO_H + 22*SC + r.h/K; }
+    const y1 = Math.max(tb.bottom + 8*SC, ctaBottom + 36*SC), bh = bandH(), avail = HP - bh - y1 - 18*SC;
+    const facs = k => { const f = [], wrap = fn => ({h: fn(0).h, mk: y => fn(y)});
+      f.push(wrap(y => { const nm = tp({slot: 'agent.name', text: A.name || '', css: "font-family:Montserrat;font-weight:600;color:var(--fx-ink)", x: MG, y, w: w*.62, max: (BRK === 'small-agent' ? 40 : 60)*SC, minPx: (BRK === 'small-agent' ? 40 : 60)*SC, lh: 1.14}); closeBad = nm.s < p(60*SC) - .2; let yy = y + nm.h/K, o = nm.html;
+        const d = capsLn('agent.desig', 'REALTOR®', MG + 1, yy + 2, w, 26*SC, 3.4, 'var(--fx-mute)'); o += d.html; yy += d.h + 22*SC;
+        const ph = tp({slot: 'agent.phone', text: A.phone || '', css: "font-family:Montserrat;font-weight:700;color:var(--fx-ink)", x: MG, y: yy, w: w*.6, max: 54*SC, minPx: 54*SC, lh: 1.1}); o += ph.html; yy += ph.h/K;
+        o += OHL.logo(D, 'light', `left:${p(WP - MG - 330*SC)}pt;top:${p(y + 10)}pt;width:${p(330*SC)}pt;height:${p(110*SC)}pt;justify-content:flex-end`);
+        return {h: yy - y, html: o}; }));
+      return f; };
+    mid.push(stack(MG, y1, w, avail, facs, [1, .92, .84, .76, .68, .6]));
+    if(closeBad) tiny.push({slot: 'agent.name', kind: 'closing-agent-small', detail: 'the agent name on the closing slide is under 60 px at 1080'});
+    footBand();
+  };
+  // Just Sold slides: slide 1 is the post's house; slide 2: the exterior or the deck, "I just helped sell this ..." and the horizontal address under it
+  const jsSlide = () => {
+    const id = D.piece.photo, w = WP - 2*MG;
+    const note = ((((D.sw || {}).pc || {}).js || {}).front || {}).note, sents = [].concat(...(((note || {}).s) || []).map(x => [].concat(x))), m = sents.map(s => /I just helped sell this ([^,.]+)/i.exec(s)).filter(Boolean)[0];
+    const sold = m ? `I just helped sell this ${m[1]}.` : 'I just helped sell this home.';
+    const line = `${sold} Your home could be next. Call or text me.`;
+    const tb = topBlock(id, {noBadge: true, noFacts: false});
+    const y1 = HERO_H + 24*SC, bh = bandH(), avail = HP - bh - y1 - 18*SC;
+    const facs = k => { const f = [], wrap = fn => ({h: fn(0).h, mk: y => fn(y)});
+      f.push(wrap(y => bStatus(MG, y, w, k)));
+      f.push(wrap(y => { const lcss = "font-family:Oswald;font-weight:600;color:var(--fx-ink);text-wrap:balance"; let best = null;
+        for(let sz = 66*SC*k; sz >= 40*SC && !best; sz -= 2) for(let w2 = w; w2 >= w*.6; w2 -= 6){ const c = T({slot: 'sold.line', text: line, css: lcss, x: 0, y: 0, w: p(w2), max: p(sz), min: p(sz), lines: 3, lh: 1.14}); if(c.ok && lastFill(line, `${MONT};${lcss};font-size:${p(sz)}pt;line-height:${(p(sz)*1.14).toFixed(2)}pt`, p(w2)) >= .8){ best = {sz, w2}; break; } }
+        best = best || {sz: 40*SC, w2: w}; const r = tp({slot: 'sold.line', text: line, css: lcss, x: MG, y, w: best.w2, max: best.sz, minPx: best.sz, lines: 3, lh: 1.14}); return {h: r.h/K, html: r.html}; }));
+      f.push(wrap(y => bAddr(MG, y, w, k, 64, true)));
+      f.push(wrap(y => bAgent(MG, y, w, k, {name: 62, phone: 54})));
+      return f; };
+    mid.push(stack(MG, y1, w, avail, facs, KS));
+    footBand();
+  };
+
+  // ---------- which layout ----------
+  if(shape === 'slide' && D.piece.photo === '@close') closeSlide();
+  else if(shape === 'slide' && kind === 'js') (FXP.slides(D, 'js').indexOf(D.piece.photo) > 0 ? jsSlide() : vertical());
+  else if(shape === 'slide') captionSlide();
+  else if(shape === 'wide' || shape === 'gbp' || shape === 'square') sideways();
+  else vertical();
+  { const all0 = back.concat(front, mid).join('');
+    if(shape !== 'slide' && !all0.includes('data-badge="1"')) tiny.push({slot: 'header', kind: 'header-missing', detail: `the set's header (the badge with the address, the icon facts) is missing on the ${kind} ${shape}`});
+    if(['post', 'story', 'pin'].includes(shape) && kind !== 'js' && !all0.includes('data-slot="fact.'))   // a Just Sold piece lists no features (owner 11/7)
+      tiny.push({slot: 'header', kind: 'header-missing', detail: `the icon facts are missing on the ${kind} ${shape}`}); }
+  { const needs = (kind === 'jl' || kind === 'js') && (shape !== 'slide' || kind === 'js');
+    if(needs){ const all = back.concat(front, mid).join('');
+      if(!all.includes('data-slot="moment"')) tiny.push({slot: 'moment', kind: 'lockup-missing', detail: `the ${LOCK_WORD} label is missing on the ${shape} format`});
+      else if(lockPt < p(LOCK_PX) - .5) tiny.push({slot: 'moment', kind: 'lockup-shrunk', detail: `the ${LOCK_WORD} label is ${lockPt.toFixed(1)} pt, under its full size`}); } }
+  return {W, H, issues: tiny, html: `<div class="page" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${H}pt;background:var(--fx-paper)">${back.join('')}${front.join('')}${mid.join('')}</div>`};
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · FX extras · FX02 Open House</title>
+<link rel="stylesheet" href="fx.css">
+<link rel="stylesheet" href="fxs02-tokens.css">
+<script src="fxs02-tk.js"></script>
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<!--
+  FX02 "Arch" as a one-sided Open House flyer (batch 2 brief docs/briefs/fx-oh-batch2-11-02.md). Trim 612 x 792 pt.
+  FX02 stays: the warm gray band down the left edge, the tall room photo with its round left end (the arch) crossing the band's
+  edge, light number over a heavy caps street (Montserrat 300 / 700), outline icons, hairline rules, the one logo floating
+  across the band's edge at the foot. Rebalanced: the event is a black box with the same round left end (the arch again) right
+  under the arch photo, white type, what's served and the notes on a white panel inside it; the whole house sits in its own
+  plain frame under it with the write-up, the agent at the foot.
+-->
+<style>
+  .sheet{background:var(--fx-paper)}
+  .lab{font:700 21pt/24pt 'Montserrat';letter-spacing:3pt;text-transform:uppercase;color:var(--fx-on-ink);white-space:nowrap}
+  .wk{font:600 12pt/15pt 'Montserrat';letter-spacing:4.5pt;text-transform:uppercase;color:var(--fx-on-ink-soft);white-space:nowrap}
+  .dt{font:300 50pt/54pt 'Montserrat';letter-spacing:-.5pt;color:var(--fx-on-ink);white-space:nowrap;overflow:hidden}
+  .dt b{font-weight:700}
+  .tm{font:700 20pt/24pt 'Montserrat';color:var(--fx-on-ink);white-space:nowrap;overflow:hidden}
+  .evb{font:500 12.5pt/16pt 'Montserrat';text-align:center;color:var(--fx-ink)}
+  .evb.b{font-weight:700}
+  .num{font:300 40pt/44pt 'Montserrat';color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+  .str{font:700 50pt/54pt 'Montserrat';color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+  .place{font:500 13pt/16pt 'Montserrat';color:var(--fx-ink2);white-space:nowrap}
+  .fl{font:700 9pt/11pt 'Montserrat';letter-spacing:2pt;text-transform:uppercase;color:var(--fx-ink2);white-space:nowrap}
+  .fv{font:400 15pt/18pt 'Montserrat';color:var(--fx-text-dark);white-space:nowrap}
+  .wu{font:400 12pt/18pt 'Montserrat';color:var(--fx-text)}
+  .oh-agent-name{font-family:'Montserrat';font-weight:600}
+  .oh-agent{font-family:'Montserrat'}
+  .fine{font:400 6.6pt/8pt 'Montserrat';color:var(--fx-mute);white-space:nowrap}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['700 10pt "Montserrat"', '600 10pt "Montserrat"', '500 10pt "Montserrat"', '400 10pt "Montserrat"', '300 10pt "Montserrat"'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  // the write-up pool: no drive-time lines; for agents (broker and REALTOR® opens) it leads with what they tell buyers (gated, roof, garage, deck)
+  if((C.postcard || {}).master){ const drive = /minutes|miles|short drive|drive away|drive from|are close|is close/i, draw = /gated|roof|garage|deck|pergola|stone|island|corner/i;
+    let M = C.postcard.master.filter(t => !drive.test(t)); if(E.kind !== 'public') M = M.filter(t => draw.test(t)).concat(M.filter(t => !draw.test(t))); C.postcard.master = M; }
+  const archScore = id => { const p = D.photos[id] || {}; const k = /^(family|living|great|open)/.test(id) ? 3 : /^(dining|primary)(?!.*bath)/.test(id) ? 2 : /kitchen|bar|bath|stair|foyer|entry/.test(id) ? 0 : 1; return k*10 + (p.w && p.h ? Math.min(p.w/p.h, 1.6) : 1); };   // the widest living room, never a wall corner
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id)).sort((a, b) => archScore(b) - archScore(a));
+  const wid = (t, css) => { const m = document.createElement('span'); m.style.cssText = `position:absolute;left:-9999pt;visibility:hidden;white-space:nowrap;${css}`; m.textContent = t; document.body.appendChild(m); const w = m.getBoundingClientRect().width*.75; m.remove(); return w; };
+  const fitS = (t, css, w, max, min) => { let s = max; while(s > min && wid(t, `${css};font-size:${s}pt`) > w) s -= .5; return s; };
+  // the street: number in light type over the name in heavy caps; the suffix drops first, then a long street runs two lines
+  const SUF = /\s+(Street|St|Drive|Dr|Lane|Ln|Road|Rd|Avenue|Ave|Boulevard|Blvd|Court|Ct|Circle|Cir|Place|Pl|Way|Trail|Trl|Parkway|Pkwy|Terrace|Ter|Highway|Hwy)\.?$/i;
+  const parts = (String(L.address).match(/^\s*(\d+[A-Za-z-]*)\s+(.+)$/) || [null, '', L.address]);
+  const NUM = parts[1], NAME = parts[2].toUpperCase();
+  const streetFit = (w, max) => {
+    const css = "font-family:'Montserrat';font-weight:700";
+    const cands = [NAME]; const ns = NAME.replace(SUF, ''); if(ns && ns !== NAME) cands.push(ns);
+    for(const c of cands){ const s = fitS(c, css, w, max, max*.62); if(wid(c, `${css};font-size:${s}pt`) <= w) return {lines: [c], s}; }
+    const c = cands[cands.length - 1], ws = c.split(/\s+/);
+    let best = null;
+    for(let i = 1; i < ws.length; i++){ const a = ws.slice(0, i).join(' '), b = ws.slice(i).join(' '), d = Math.max(wid(a, `${css};font-size:20pt`), wid(b, `${css};font-size:20pt`)); if(!best || d < best.d) best = {d, l: [a, b]}; }
+    const l = best ? best.l : [c], s = Math.min(max, Math.min(...l.map(t => fitS(t, css, w, max, 14))));
+    return {lines: l, s};
+  };
+  const FXS_ICON_STORIES = (z, c) => `<svg width="${z}pt" height="${z}pt" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M4 11l8-6 8 6M6 9.5V20h12V9.5M6 14.5h12"/></svg>`;
+  const BAND = 140, AX = 48, AW = 312, RX = 384, RR = 584, RW = RR - RX;   // the arch is a little over half the page
+  let h = '';
+  h += `<div class="abs" style="left:0;top:0;width:${BAND}pt;height:792pt;background:var(--fx-band)"></div>`;
+
+  // ---- the event box (same round left end as the arch), then what is left goes to the rows around it
+  const BX = AX, BW = RR - BX, TOP = 30;
+  const IX = BX + 48, IW = BX + BW - IX - 26;
+  const two = wid(E.label.toUpperCase(), "font:700 21pt 'Montserrat';letter-spacing:3pt") > IW;
+  const LH = two ? 48 : 24;
+  const lines = [[E.refreshments, 'oh.refreshments', 'evb b'], [E.note, 'oh.note', 'evb']];
+  const probe = Ivory.eventBox(lines, IX, 0, IW, 16, 3, {padY: 8, padX: 12});
+  const hasBox = !!probe.h;
+  const DS = hasBox ? 46 : 56, DH = hasBox ? 52 : 62;
+  const boxIn = LH + 6 + 15 + 2 + DH + (E.time ? 4 + DS*.62 : 0) + (hasBox ? 12 + probe.h : 0);
+  const BH = boxIn + 2*20;
+  // the bottom rows
+  const FOOT = 698, HWB = 236, WX = AX + HWB + 20, WW = RR - WX;
+  const mkWu = (w, maxLines) => OHL.writeup(D, 'wu', w, 18, maxLines, null, {narrow: true});
+  let AH = 270, CH = 160;
+  const rest = FOOT - 16 - TOP - BH - 2*20;
+  CH = 128; AH = rest - CH;
+  const BY = TOP + AH + 20, CY = BY + BH + 20;
+
+  // ---- A: the arch (a room photo, round left end) and the street, place and facts
+  const archId = rooms[0];
+  const r = AW/2;
+  if(archId) h += OHL.photo(D, archId, `left:${AX}pt;top:${TOP}pt;width:${AW}pt;height:${AH}pt;border-radius:${r}pt 0 0 ${r}pt / ${r}pt 0 0 ${r}pt`);
+  let y = TOP;
+  const st = streetFit(RW, 32);
+  const numS = Math.min(st.s*.78, 28);
+  if(NUM){ h += `<div class="abs num" style="left:${RX}pt;top:${y}pt;width:${RW}pt;height:${numS*1.1}pt;font-size:${numS}pt;line-height:${numS*1.1}pt" data-slot="address.number" data-lines="1">${esc(NUM)}</div>`; y += numS*1.1; }
+  st.lines.forEach(t => { h += `<div class="abs str" style="left:${RX}pt;top:${y}pt;width:${RW}pt;height:${st.s*1.08}pt;font-size:${st.s}pt;line-height:${st.s*1.08}pt" data-slot="address" data-lines="1">${esc(t)}</div>`; y += st.s*1.08; });
+  y += 10;
+  h += `<div class="abs" style="left:${RX}pt;top:${y}pt">${OHL.icon('pin', 17, TK.ink2)}</div>`;
+  h += `<div class="abs place" style="left:${RX + 24}pt;top:${y + 1}pt;width:${RW - 24}pt;height:16pt" data-slot="place" data-lines="1">${esc(OHL.place(L))}</div>`; y += 26;
+  h += `<div class="abs" style="left:${RX}pt;top:${y}pt;width:${RW}pt;height:.75pt;background:var(--fx-rule)"></div>`; y += 12;
+  const facts = [];
+  if(L.beds) facts.push(['bed', 'Beds', L.beds]);
+  if(L.baths) facts.push(['bath', 'Baths', L.baths + (L.halfBaths ? ' / ' + L.halfBaths : '')]);
+  if(L.sqft) facts.push(['area', 'Sq ft', Number(L.sqft).toLocaleString('en-US')]);
+  const yr = L.yearBuilt || L.year; if(yr) facts.push(['cal', 'Built', yr]);
+  if(L.stories) facts.push(['stories', 'Stories', L.stories]);
+  while(facts.length > 4 && (TOP + AH - y)/facts.length < 38) facts.pop();   // the stories row goes first when the arch is short
+  const fh = Math.min(46, (TOP + AH - y)/Math.max(1, facts.length));   // the facts run down to the arch's bottom
+  facts.forEach(([ic, lab, v], i) => {
+    const cy = y + i*fh;
+    h += `<div class="abs" style="left:${RX}pt;top:${cy + 2}pt">${ic === 'stories' ? FXS_ICON_STORIES(24, TK.ink2) : OHL.icon(ic, 24, TK.ink2)}</div>`;
+    h += `<div class="abs fl" style="left:${RX + 36}pt;top:${cy}pt;width:${RW - 36}pt;height:11pt" data-slot="fact.${ic}.label" data-lines="1">${lab}</div>`;
+    h += `<div class="abs fv" style="left:${RX + 36}pt;top:${cy + 11}pt;width:${RW - 36}pt;height:19pt" data-slot="fact.${ic}" data-lines="1">${esc(v)}</div>`;
+    if(i < facts.length - 1) h += `<div class="abs" style="left:${RX}pt;top:${cy + fh - 5}pt;width:${RW}pt;height:.75pt;background:var(--fx-rule)"></div>`;
+  });
+
+  // ---- B: the event box
+  const rad = Math.min(BH/2, 92);
+  h += `<div class="abs" style="left:${BX}pt;top:${BY}pt;width:${BW}pt;height:${BH}pt;background:var(--fx-ink);border-radius:${rad}pt 0 0 ${rad}pt"></div>`;
+  let ey = BY + (BH - boxIn)/2;
+  h += `<div class="abs lab" style="left:${IX}pt;top:${ey}pt;width:${IW}pt;height:${LH}pt" data-slot="oh.label" data-lines="${two ? 2 : 1}">${two ? OHL.labelLines(E.label, 2).map(esc).join('<br>') : esc(E.label)}</div>`; ey += LH + 6;
+  h += `<div class="abs wk" style="left:${IX}pt;top:${ey}pt;width:${IW}pt;height:15pt" data-slot="oh.weekday" data-lines="1">${esc(E.weekday)}</div>`; ey += 17;
+  const md = String(E.monthDay || E.long), sp = md.lastIndexOf(' ');
+  h += `<div class="abs dt" style="left:${IX - 2}pt;top:${ey}pt;width:${IW + 2}pt;height:${DH + 4}pt;font-size:${DS}pt;line-height:${DH}pt" data-fit="${DS},30" data-slot="oh.date" data-lines="1">${sp > 0 ? esc(md.slice(0, sp)) + ' <b>' + esc(md.slice(sp + 1)) + '</b>' : esc(md)}</div>`; ey += DH;
+  if(E.time){ ey += 4; h += `<div class="abs tm" style="left:${IX}pt;top:${ey}pt;width:${IW}pt;height:${DS*.62}pt;font-size:${DS*.6}pt;line-height:${DS*.62}pt" data-fit="${DS*.6},18" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`; ey += DS*.62; }
+  if(hasBox){ ey += 12; h += Ivory.eventBox(lines, IX, ey, IW, 16, 3, {bg: TK.paper, padY: 8, padX: 12, scale: ((D.openHouse || {}).box || {}).w}).html; }
+  else h += `<div class="abs" aria-hidden="true" style="left:${BX + BW - 150}pt;top:${BY + BH - 70}pt;width:1pt;height:1pt"></div>`;
+
+  // ---- C: the whole house in its own frame, the write-up beside it
+  const fr = OHL.fitHero(D, hero, HWB + 6, CH);
+  h += OHL.photo(D, hero, `left:${AX}pt;top:${CY}pt;width:${fr.w}pt;height:${fr.h}pt`);
+  let wu = mkWu(WW, Math.max(3, Math.floor(CH/18)));
+  for(let n = Math.max(3, Math.floor(CH/18)) - 1; wu.fill < .75 && n >= 3; n--){ const t2 = mkWu(WW, n); if(t2.fill > wu.fill) wu = t2; }   // fewer lines when the last line cannot reach 3/4 at this count
+  if(wu.text){ const ww = wu.w || WW; h += `<div class="abs wu" style="left:${WX}pt;top:${CY}pt;width:${ww}pt;height:${wu.n*18 + 2}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`; }
+
+  // ---- D: the one logo across the band's edge, the agent at the right
+  h += OHL.logo(D, 'light', `left:${AX}pt;top:${FOOT + 8}pt;width:222pt;height:50pt;justify-content:flex-start`);
+  h += `<div class="abs" style="left:${WX}pt;top:${FOOT - 2}pt;width:${WW}pt;height:.75pt;background:var(--fx-rule)"></div>`;
+  h += OHL.contact(D, {x: WX, y: FOOT + 6, w: WW, h: 64, tone: 'light', logo: false, nameSize: 20, phoneSize: 14, lineSize: 10, color: TK.ink, accent: TK.ink});
+  h += `<div class="abs fine" style="left:${WX}pt;top:776pt;width:${WW}pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  return OHL.frame(D, h);
+});
+</script>
+</body>
+</html>

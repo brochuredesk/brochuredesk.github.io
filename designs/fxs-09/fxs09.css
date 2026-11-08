@@ -1,0 +1,119 @@
+/* fxs-09: design set built from the FX09 two-sided flyer (deep navy, white serif address, big-numerals stat row).
+   THIS FILE AND fxs09-tokens.css ARE THE TOKENS SOURCE: every piece (fold-over, flyer, Open House flyer and email, postcards, socials, carousels)
+   reads its palette, type, rules and marks from the variables there, so nothing drifts. Lengths are pt (1/72 in).
+   Source look: docs/design/two-sided-flyers/canvas/FX09-front.dc.html and FX09-back.dc.html. */
+
+@import url(fxs09-tokens.css);
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#6f7480}
+body{font-family:var(--fx-font);color:var(--fx-ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+/* pages */
+.page{position:relative;background:var(--fx-paper);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+.panel{position:absolute;left:9pt;top:9pt;width:612pt;height:792pt;background:var(--fx-paper);color:var(--fx-ink)}
+.half{position:absolute;top:0;height:810pt;width:621pt;overflow:hidden}
+.half.l{left:0}.half.r{left:621pt}
+.half.r .panel{left:0}
+.bg-paper{position:absolute;left:-9pt;top:-9pt;right:-9pt;bottom:-9pt;background:var(--fx-paper)}
+
+/* type */
+.lbl{font:var(--fx-label-w) 9pt/12pt var(--fx-font);letter-spacing:var(--fx-label-track);text-transform:uppercase;color:var(--fx-ink2);white-space:nowrap;overflow:hidden}
+.ttl{font-family:var(--fx-serif);font-weight:400;color:var(--fx-ink);white-space:nowrap;overflow:hidden;letter-spacing:-.3pt}
+.ttl b{font-weight:400}
+.ttl i,.ital{font-style:italic;color:var(--fx-ink2)}
+.body{font:var(--fx-w-reg) 10.5pt/16pt var(--fx-font);color:var(--fx-text);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.hr2{position:absolute;height:1.5pt;background:var(--fx-ink)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.bar{position:absolute;width:var(--fx-bar-w);background:var(--fx-bar)}
+.fine{font:400 6.6pt/8pt var(--fx-font);color:var(--fx-mute);white-space:nowrap;overflow:hidden}
+
+/* photos (square corners) and their captions: serif lead, then the text */
+.ph{position:relative;overflow:hidden;background:#2b3c58;min-height:30pt}
+.cream .ph{background:#2b3c58}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:14pt;min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;left:var(--fx-m);right:var(--fx-m);display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font:400 9.5pt/12.5pt var(--fx-font);color:var(--fx-text);overflow:hidden}
+.cap .a b{font-family:var(--fx-serif);font-weight:400;font-size:1.18em;color:var(--fx-ink);letter-spacing:0}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+/* the stat row: big serif numerals over tracked caps labels, hairline between */
+.stat{position:absolute;text-align:center}
+.stat .sv{font:400 33pt/36pt var(--fx-serif);color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.stat .sl{font:var(--fx-label-w) 8.25pt/12pt var(--fx-font);letter-spacing:2.25pt;text-transform:uppercase;color:var(--fx-text);white-space:nowrap;margin-top:3pt}
+
+/* the kicker line: copper tracked caps left, slate right, a hairline under */
+.kick{position:absolute;font:700 9pt/12pt var(--fx-font);letter-spacing:3.75pt;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+
+/* the navy box (cream page) / cream box (navy page): the location band, the "what's new" box */
+.inkbox{background:transparent;border:1pt solid var(--fx-copper);color:var(--fx-ink)}   /* round 2: an outlined copper box, not a filled panel */
+.ib-k{font:500 8.25pt/12pt var(--fx-font);letter-spacing:3pt;text-transform:uppercase;color:var(--fx-copper);white-space:nowrap}
+.ib-h{font:400 20pt/24pt var(--fx-serif);color:var(--fx-ink)}
+.ib-l{font:500 8.5pt/11pt var(--fx-font);letter-spacing:1.8pt;text-transform:uppercase;color:var(--fx-copper);white-space:nowrap}
+.ib-t{font:400 10pt/13pt var(--fx-font);color:var(--fx-text);overflow:hidden}
+
+/* nearby row: big serif numerals again, tracked labels */
+.near{flex:none;display:flex;gap:0;border-top:var(--fx-rule-w) solid var(--fx-rule);padding-top:9pt}
+.near .c{flex:1;min-width:0;padding-left:14pt;border-left:var(--fx-rule-w) solid var(--fx-rule)}
+.near .c:first-child{padding-left:0;border-left:0}
+.near .d{font:400 22pt/26pt var(--fx-serif);color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.near .p{font:500 8.25pt/11pt var(--fx-font);letter-spacing:2pt;text-transform:uppercase;color:var(--fx-ink2);overflow:hidden;margin-top:1pt;min-height:22pt}
+.near.compact{padding-top:6pt}
+.near.compact .d{font-size:17pt;line-height:20pt}
+.near.compact .p{font-size:8pt;line-height:10pt}
+
+/* floor plan (IvoryPlan reads these) */
+.plan-legend{position:absolute;display:flex;gap:18pt;font:600 8.5pt/11pt var(--fx-font);color:var(--fx-navy);white-space:nowrap}
+.plan-legend i{display:inline-block;width:11pt;height:11pt;margin-right:5pt;vertical-align:-2pt;border:.6pt solid rgba(0,0,0,.4)}
+.plan-disclosure{position:absolute;font-size:8pt;line-height:10pt;color:var(--fx-navy);white-space:nowrap;overflow:hidden;text-align:right}
+.plan-room{position:absolute;text-align:center;font:400 8pt/9.5pt var(--fx-font);color:#16223a;white-space:nowrap}
+.plan-room b{display:block;font-weight:600;font-size:8pt;line-height:9.5pt}
+.plan-room span{display:block;color:#5a6680;font-size:8pt;line-height:9.5pt}
+.plan-level{text-align:center;font:700 10pt/12pt var(--fx-font);letter-spacing:1.5pt;text-transform:uppercase;color:#16223a;white-space:nowrap;overflow:hidden}
+.plan-svg{position:absolute;overflow:visible}
+
+/* logos float: never boxed */
+.logo{display:flex;align-items:center;justify-content:flex-start;overflow:hidden}
+.logo img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+.logo .word{font:700 12pt/14pt var(--fx-font);color:var(--fx-ink);letter-spacing:.4pt;text-transform:uppercase;white-space:nowrap}
+
+/* the agent line (name serif, REALTOR(R) copper, phone bold) */
+.agentline .n{font:400 21pt/25pt var(--fx-serif);color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.agentline .d{font:500 8.25pt/11pt var(--fx-font);letter-spacing:3pt;color:var(--fx-ink2);white-space:nowrap}
+.agentline .p{font:700 15pt/19pt var(--fx-font);color:var(--fx-text-dark);white-space:nowrap}
+.agentline .e{font:400 10.5pt/15pt var(--fx-font);color:var(--fx-text);white-space:nowrap;overflow:hidden}
+
+/* mail-vendor zones on postcard proofs */
+.mg{position:absolute;box-sizing:border-box;color:rgba(0,0,0,.45);font:600 6pt/1.4 var(--fx-font);letter-spacing:.45pt;text-transform:uppercase}
+.mg-stamp{border:.75pt dashed rgba(0,0,0,.35);text-align:center;padding-top:36pt}
+.mg-addr{border:.75pt solid rgba(0,0,0,.2)}
+.mg-bar{border:.75pt dashed rgba(0,0,0,.3)}
+.mg .gl{position:absolute}
+.mg .aline{position:absolute;height:.75pt;background:rgba(0,0,0,.2)}
+
+/* the shared agent card in this set's hand */
+body .cc .cc-name{font-weight:400}
+body .cc .cc-phone{font-weight:700}
+.hsbox{overflow:hidden;background:var(--fx-band)}
+.hsbox img{width:100%;height:100%;object-fit:cover;object-position:center 22%}
+
+.cap .a b{line-height:0}
+
+/* round 2 (11/7): a 1 pt copper keyline inset 4 pt on every photo */
+.ph::after{content:'';position:absolute;inset:4pt;border:1pt solid var(--fx-copper);pointer-events:none}
+.ph.nokey::after{display:none}
+.ib-k{color:var(--fx-copper)} .ib-l{color:var(--fx-copper)}
+
+.photo::after{content:'';position:absolute;inset:4pt;border:1pt solid var(--fx-copper);pointer-events:none}
+
+/* round 3 (owner 11/7): no copper keyline on the inside pages' photos */
+.panel.inside .ph::after,.panel.inside .photo::after{display:none}

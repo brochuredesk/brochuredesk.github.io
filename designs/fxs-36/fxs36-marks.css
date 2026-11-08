@@ -1,0 +1,52 @@
+/* fxs-36 marks shared by every page: gold script, tracked gold labels with a hairline underline, full gold rules under photos,
+   double-frame boxes, the stats row. Read the tokens in fxs36-tokens.css. */
+@import url(fxs36-tokens.css);
+.script{font-family:var(--fx-script);font-weight:500;letter-spacing:.7pt;text-transform:uppercase;color:var(--fx-accent);white-space:nowrap;overflow:hidden}
+.vrule{position:absolute;width:var(--fx-rule-w);background:var(--fx-accent)}
+.gold{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule-hard)}
+
+.lbl{display:inline-block;font:var(--fx-label-w) 9pt/12pt var(--fx-font);letter-spacing:var(--fx-label-track);text-transform:uppercase;color:var(--fx-ink);white-space:nowrap;overflow:hidden;text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:4pt}
+.ttl{font-family:var(--fx-display);font-weight:500;color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.ttl b{font-weight:600}
+.body{font:400 10.5pt/16pt var(--fx-font);color:var(--fx-text);overflow:hidden}
+.wu{font:400 11.5pt/18pt var(--fx-font);color:var(--fx-text);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font:400 6.6pt/8pt var(--fx-font);color:var(--fx-mute);white-space:nowrap;overflow:hidden}
+
+.ph{position:relative;overflow:hidden;background:#1b1b1b;min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font:400 9.5pt/12.5pt var(--fx-font);color:var(--fx-mute);overflow:hidden}
+.cap .a b{font-weight:600;color:var(--fx-ink)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+/* stat tiles: solid red blocks, white condensed numerals over tracked caps (a column beside the photo, or a row) */
+.stats{position:absolute;display:flex;gap:6pt}
+.stats .s{flex:1;background:var(--fx-accent);color:var(--fx-ink);text-align:center;white-space:nowrap;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.tile{position:absolute;background:var(--fx-accent);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;text-align:center}
+.tile .tn{font-family:var(--fx-display);font-weight:500;color:var(--fx-ink);white-space:nowrap;line-height:1}
+.tile .tl{font:600 8pt/10pt var(--fx-font);letter-spacing:2pt;text-transform:uppercase;color:var(--fx-ink);white-space:nowrap;margin-top:4.5pt;line-height:1.1}   /* owner 11/8: 3 pt clear under a headline numeral */
+
+/* the framed box: one red line, square corners */
+.card{position:absolute;background:transparent;border:var(--fx-rule-w) solid var(--fx-rule-hard)}
+.card.plain{background:var(--fx-seal);border-color:var(--fx-rule-hard)}
+.bul{position:absolute;display:flex;align-items:center;gap:8pt;font:400 10.5pt/14pt var(--fx-font);color:var(--fx-text);white-space:nowrap;overflow:hidden}
+.bul:before{content:"";width:4pt;height:4pt;background:var(--fx-accent);flex:none}
+
+.agentline .n{font:600 27pt/32pt var(--fx-font);color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.agentline .d{font:500 8.5pt/11pt var(--fx-font);letter-spacing:3pt;color:var(--fx-mute);white-space:nowrap}
+.agentline .p{font:700 21pt/27pt var(--fx-font);color:var(--fx-ink);white-space:nowrap}
+.agentline .p:before{content:"CALL / TEXT";font:600 9pt/1 var(--fx-font);letter-spacing:2.25pt;color:#fff;   /* owner 11/7: small type white, never small red */ margin-right:8pt;vertical-align:2pt}
+.agentline .e{font:400 10.5pt/14pt var(--fx-font);color:var(--fx-text);white-space:nowrap;overflow:hidden}
+
+.near{flex:none;display:flex;gap:0;border-top:var(--fx-rule-w) solid var(--fx-rule);padding-top:9pt}
+.near .c{flex:1;min-width:0;padding-left:14pt;border-left:var(--fx-rule-w) solid var(--fx-rule)}
+.near .c:first-child{padding-left:0;border-left:0}
+.near .d{font:500 19pt/23pt var(--fx-serif);color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.near .p{font:500 8pt/10pt var(--fx-font);letter-spacing:1pt;text-transform:uppercase;color:#fff;overflow:hidden;margin-top:1pt;min-height:20pt}

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · fxs-13 fold-over</title>
+<link rel="stylesheet" href="fxs13.css">
+<script src="fxs13.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/agentcard.js"></script>
+<!--
+  BrochureDesk · fxs-13 (FX13 look) · 11 x 17 fold-over: one sheet folded once down the middle into four upright 8.5 x 11 panels,
+  0.125 in (9 pt) bleed, 0.25 in safe zone. Outside spread: back (left) + cover (right). Inside spread: left + right.
+  Every panel keeps the FX13 hand (tokens: fxs13-tokens.css): the address set vertically up the left edge with the gold rule and the vertical
+  place line, square photos with gold hairline-underlined labels, Cormorant italic write-ups, the round seal, white notes cards.
+    COVER   the FX13 front: whole house, two rooms with the neighborhood seal, write-up, four-stat row, agent and the one logo.
+    BACK    the FX13 back: four outdoor / community photos (or the plan and two), About the house, the two notes cards, the standard agent card.
+    LEFT    kicker, title, intro; three captioned rooms; the feature card (heading and six labeled notes in two columns).
+    RIGHT   kicker, title, intro; three rows of captioned photos on one two-column split; the one logo at the foot.
+  Copy comes as a lead plus whole sentences (data.sw.*); fxs13.js picks the sentences that fill each box (last line at least 3/4 full).
+  Modes: proof = four panel pages 8.75 x 11.25 in; print = two spreads 17.25 x 11.25 in, each half clipped at the fold.
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const mode = D.mode || 'proof';
+  const esc = SW.esc, L = D.listing, K = D.sw || {};
+  const issues = [];
+  await SW.setup(D);
+  const X0 = 90, CW = 498, gap = 9;
+  const usedCover = [(K.front || {}).hero || 'front'].concat(FXS.coverRooms(D));
+
+  // ================= COVER =================
+  const photoIds = html => [...String(html).matchAll(/data-photo="([^"]+)"/g)].map(m => m[1]);
+  const cover = () => { window.__coverIssues = []; return FXS.cover2(D, {intro: (K.front || {}).summary}); };
+  // ================= BACK (outside) =================
+  const back = (avoid) => { const r = FXS.back(D, {outdoor: true, avoid, coverText: [window.__coverText || (K.front || {}).summary]}); issues.push(...r.issues); return r.html; };
+  // ================= INSIDE LEFT =================
+  // both inside pages start their rows on one line and end on one bottom line (BOT): the right page's last caption and the left page's photo strip
+  const BOT = 716, RGAP = 12, RLINES = 4, HLINES = 4, SH = 100;
+  const RG = id => { const b = String(id).toLowerCase().replace(/\d+$/, ''); if(/^wine/.test(b)) return 'living'; if(/^(foyer|stair)/.test(b)) return 'stair'; const g = {rooftop: ['rooftop','terrace','roofdeck'], outdoor: ['deck','patio','evening','yard','pergola','porch','balcony','front','exterior','park'], living: ['family','living','openplan','great'], kitchen: ['kitchen','bar','nook','pantry'], primarybath: ['pbath','shower'], bed: ['bed']}; for(const k in g) if(g[k].some(x => b.startsWith(x))) return k; return b; };
+  const flatA = l => [].concat(...[].concat(l || []).map(x => [].concat(x)));
+  const boxAlts = flatA((((K.left || {}).box || {}).items || []).map(it => it.s));
+  const introL = FXS.dropSame((K.left || {}).intro, boxAlts, 3);
+
+  // ---- one allocation for the whole inside spread: no photo twice, no room twice (room group, label, near-identical view).
+  // A house with fewer room types than slots loses slots (fewer, bigger photos) instead of repeating a room; only the 1-story may repeat a
+  // room group, and then only on another page (cover or right, never the left page) in a clearly different view.
+  const isIn = id => !FXS.OUTSIDE.test(id) || /^entry/.test(id);
+  const oneStory = Number((D.listing || {}).stories) === 1;
+  const usedIds = new Set(usedCover), usedG = new Set(usedCover.map(RG).filter(g => g !== 'outdoor')), usedLb = new Set(usedCover.map(id => FXS.labelFor(id).toLowerCase()));
+  const claim = c => { usedIds.add(c.photo); const g = RG(c.photo); if(g !== 'outdoor') usedG.add(g); usedLb.add(FXS.leadLabel(c.lead).name.toLowerCase().replace(/\.$/, '')); usedLb.add(FXS.labelFor(c.photo).toLowerCase()); };
+  const free = (id, strict) => !usedIds.has(id) && !/^pv\d|^plan/.test(id) && !FXS.isHouse(D, id) && (!strict || RG(id) === 'outdoor' || !usedG.has(RG(id))) && (!strict || !usedLb.has(FXS.labelFor(id).toLowerCase()));
+  const spare = FXS.cards(D, []);
+  const outdoorN = Object.keys(D.photos || {}).filter(id => !isIn(id) && !FXS.isHouse(D, id) && !/^(skyline|alley)/.test(id)).length;
+  const plan = {rows: [], left: [], strip: []}, PLN = K.plan || null;
+  if(PLN){   // the photo plan (out/fxsets/fxs-13/photo-plan.md): one slot per photo, read from the data
+    const cf = id => FXS.cardFor(D, id);
+    const right = (PLN.right || []).map(cf).filter(Boolean); for(let k = 0; k < right.length - (right.length % 2); k += 2) plan.rows.push([right[k], right[k + 1]]);
+    plan.left = (PLN.leftTop || []).map(cf).filter(Boolean); plan.strip = (PLN.strip || []).slice();
+    [].concat(...plan.rows, plan.left).forEach(c => usedIds.add(c.photo)); plan.strip.forEach(id => usedIds.add(id));
+  } else {
+  { const src = ((K.right || {}).rows || []).map(r => r.slice()), flat0 = [].concat(...src), keep = [];
+    const rightG = new Set();
+    flat0.forEach(c => { if(free(c.photo, true) && !rightG.has(RG(c.photo))){ claim(c); rightG.add(RG(c.photo)); keep.push(c); } });
+    // a dropped card is replaced only by a room nobody shows; a 1-story may take a second view of a room the cover shows
+    const need = flat0.length - keep.length;
+    for(let n = 0; n < need; n++){ const okc = x => isIn(x.photo) && !/^(skyline|alley)/.test(x.photo) && !rightG.has(RG(x.photo));
+      const alt = spare.find(x => free(x.photo, true) && okc(x)) || (oneStory ? spare.find(x => free(x.photo, false) && okc(x) && !keep.some(k => RG(k.photo) === RG(x.photo))) : null);
+      if(!alt) break; claim(alt); rightG.add(RG(alt.photo)); keep.push(alt); }
+    const evenN = keep.length - (keep.length % 2); keep.length = evenN;
+    plan.rows = []; for(let i = 0; i < keep.length; i += 2) plan.rows.push(keep.slice(i, i + 2)); }
+  { const I = K.left || {}, pw0 = (CW - 2*gap)/3, order = FXS.cards(D, I.photos || []).filter(c => !(I.skip || []).includes(c.photo));
+    const ids = Object.keys(D.photos || {}), fit = id => SW.fits(D, id, pw0, SH), hero = usedCover[0];
+    const ext = id => !isIn(id) || FXS.isHouse(D, id);
+    const baseOK = id => id !== hero && !/^powder|toilet/.test(id) && !/^pv\d|^plan/.test(id) && !usedIds.has(id) && RG(id) !== 'kitchen' && !/^(skyline|alley)/.test(id);
+    // the owner wants three photos along the bottom on every version, so the strip is filled first from rooms nobody shows,
+    // then exterior and detail views (one view per page); the captioned row gets what is left, and is cut when fewer than two remain
+    const cardOf = {}; order.forEach(c => { cardOf[c.photo] = c; });
+    const pool = [], gsel = new Set(), fams = new Set();
+    const consider = id => { const g = RG(id); if(!baseOK(id) || (g !== 'outdoor' && (usedG.has(g) || gsel.has(g))) || usedLb.has(FXS.labelFor(id).toLowerCase()) || fams.has(SW.famOf(id))) return; if(g !== 'outdoor') gsel.add(g); fams.add(SW.famOf(id)); pool.push({id, card: cardOf[id] || null}); };
+    const interior = ids.filter(id => isIn(id) && !FXS.isHouse(D, id) && (!cardOf[id] || true));
+    interior.filter(id => !!cardOf[id]).forEach(consider); interior.filter(id => !cardOf[id] && fit(id)).forEach(consider);
+    const outdoorLeft = ids.filter(id => !isIn(id) && !FXS.isHouse(D, id) && baseOK(id) && !/^front/.test(id)).length;
+    const exts = ids.filter(id => ext(id) && baseOK(id)).sort((a, b) => (FXS.isHouse(D, a) ? 1 : 0) - (FXS.isHouse(D, b) ? 1 : 0));
+    exts.forEach(id => { if(pool.length < 8 && (FXS.isHouse(D, id) || outdoorLeft > 2) && !(FXS.isHouse(D, id) && !fit(id))) consider(id); });
+    if(oneStory) ids.filter(id => baseOK(id) && isIn(id) && !pool.some(x => x.id === id) && !pool.some(x => RG(x.id) === RG(id)) && fit(id)).forEach(id => { if(pool.length < 6) pool.push({id, card: cardOf[id] || null}); });
+    const withCard = pool.filter(x => x.card), without = pool.filter(x => !x.card);
+    const stripPick = without.slice(0, 3); for(let k = withCard.length - 1; stripPick.length < 3 && k >= 0; k--) stripPick.push(withCard[k]);
+    const cardPick = withCard.filter(x => !stripPick.includes(x)).slice(0, 3);
+    const stripIds = stripPick.map(x => x.id);
+    ids.filter(id => baseOK(id) && !stripIds.includes(id) && !cardPick.some(x => x.id === id) && !stripIds.some(s => SW.famOf(s) === SW.famOf(id))).forEach(id => { if(stripIds.length < 3) stripIds.push(id); });
+    plan.strip = stripIds; plan.left = cardPick.length >= 2 ? cardPick.map(x => x.card) : [];
+    plan.strip.forEach(id => claim({photo: id, lead: FXS.labelFor(id)})); plan.left.forEach(c => claim(c));
+  }
+  }
+  const rightIds = [].concat(...plan.rows).map(c => c.photo);
+  const headL = () => { const I = K.left || {}; return FXS.pageHead(I.kicker || '', I.title || '', introL, 'left', HLINES); };
+  const headR = () => { const R = K.right || {}; return FXS.pageHead(R.kicker || '', R.title || '', R.intro, 'right', HLINES); };
+  const rowsTop = Math.max(headL().bottom, headR().bottom) + 16;
+  const RPH = Math.floor((BOT - rowsTop - 2*RGAP)/3) - 25 - RLINES*13.5;
+  const leftOld = (avoid) => {
+    const I = K.left || {}, box = I.box || {};
+    const hd = headL();
+    let h = FXS.gutter(D, 28) + hd.html;
+    const hs = FXS.fitSize(box.heading || '', "font-family:'Cormorant Garamond';font-weight:500", CW - 44, 27, 20), pitch = 3*13 + 7.2;
+    const cardH = 16 + 12 + 6 + hs*1.2 + 12 + 3*pitch + 8, nS = plan.strip.length, noCards = plan.left.length === 0, spw0 = (CW - (Math.max(1, nS) - 1)*gap)/Math.max(1, nS), houseAsp = Math.min(99, ...plan.strip.filter(id => FXS.isHouse(D, id)).map(id => (D.photos[id].w || 1536)/(D.photos[id].h || 1024))), SHfull = Math.floor(BOT - rowsTop - cardH - 12 - 20 - 14), SHh = noCards ? Math.min(SHfull, 150) : Math.max(SH, houseAsp < 99 ? Math.ceil(spw0/(houseAsp*0.97)) : 0), stripH = nS ? SHh + 20 : 0, py = rowsTop;
+    const lh = 13, ph = Math.floor(BOT - stripH - (nS ? 12 : 0) - cardH - 12 - (25 + 3*lh) - py);
+    const placedL = flatA(introL).concat(boxAlts);
+    const cards = plan.left.map(c => Object.assign({}, c));
+    const pw = (CW - (Math.max(1, cards.length) - 1)*gap)/Math.max(1, cards.length);
+    cards.forEach(c => { c.s = FXS.refill(D, c, placedL, 5); placedL.push(...flatA(c.s)); });
+    h += '<div class="row">'; cards.forEach((c, i) => { h += FXS.captioned(D, c, X0 + i*(pw + gap), py, pw, ph, 3, 'left.photo' + i, {narrow: 14, fs: 9.5, lh}); }); h += '</div>';
+    const cy = noCards ? BOT - cardH : BOT - stripH - (nS ? 12 : 0) - cardH;
+    h += `<div class="card" style="left:${X0}pt;top:${cy}pt;width:${CW}pt;height:${cardH}pt"></div>`;
+    h += `<div class="abs" style="left:${X0 + 22}pt;top:${cy + 16}pt">${FXS.label(box.kicker || '', 'left.box.kicker')}</div>`;
+    h += `<div class="abs" style="left:${X0 + 22}pt;top:${cy + 34}pt;width:${CW - 44}pt;height:${hs*1.2}pt;font:500 ${hs}pt/${hs*1.2}pt var(--fx-serif);color:var(--fx-ink);white-space:nowrap;overflow:hidden" data-slot="left.box.heading" data-lines="1">${esc(box.heading || '')}</div>`;
+    const items = (box.items || []).slice(0, 6).map(it => Object.assign({}, it, {s: it.s})), gy = cy + 34 + hs*1.2 + 12, colw = (CW - 44 - 26)/2;
+    h += `<div class="hr" style="left:${X0 + 22}pt;top:${gy - 4}pt;width:${CW - 44}pt"></div>`;
+    items.forEach((it, i) => { const r = Math.floor(i/2), c = i%2, x = X0 + 22 + c*(colw + 26), y = gy + 4 + r*pitch;
+      h += `<div class="abs" style="left:${x}pt;top:${y + 5}pt;width:4pt;height:4pt;border-radius:50%;background:var(--fx-accent)"></div>`;
+      h += `<div class="abs" style="left:${x + 14}pt;top:${y}pt;width:${colw - 14}pt;height:${3*13}pt;font:400 10pt/13pt var(--fx-font);color:var(--fx-ink);overflow:hidden" data-slot="left.box.t${i}" data-lines="3" data-try="3,2" data-narrow="8" data-lh="13" ${FXS.sd(it.s)}></div>`; });
+    // the photo strip along the bottom: three more rooms of the house, each with only its room name; no room twice on the spread
+    const strip = plan.strip.slice();
+    const sy = noCards ? py + Math.floor((SHfull - SHh)/2) : BOT - SHh - 20;
+    // a whole-house photo gets the width its shape needs (so the house is never cropped); the others share the rest
+    const wOf = strip.map(id => FXS.isHouse(D, id) ? Math.min(CW - 2*60 - 2*gap, Math.ceil(SHh*((D.photos[id].w || 1536)/(D.photos[id].h || 1024))*1.03)) : 0), nH = wOf.filter(Boolean).length, restW = (CW - (strip.length - 1)*gap - wOf.reduce((a, b) => a + b, 0))/Math.max(1, strip.length - nH);
+    let sx = X0;
+    strip.forEach((id, i) => { const w = wOf[i] || restW, x = sx; sx += w + gap;
+      h += FXS.box(D, id, x, sy, w, SHh, 'left.strip' + i);
+      h += `<div class="abs" style="left:${x}pt;top:${sy + SHh + 7}pt;width:${w}pt;white-space:nowrap">${FXS.label(FXS.labelFor(id).replace(/\.$/, ''), 'left.strip' + i + '.label')}</div>`; });
+    return h;
+  };
+  // ================= INSIDE RIGHT =================
+  const rightOld = () => {
+    const R = K.right || {}, rows = plan.rows;
+    const hd = headR();
+    let h = FXS.gutter(D, 28) + hd.html;
+    const nr = Math.max(1, rows.length), rw = (CW - gap)/2, lines = RLINES, ph = Math.floor((BOT - rowsTop - (nr - 1)*RGAP)/nr) - 25 - RLINES*13.5, rowGap = RGAP, y0 = rowsTop;
+    const placedR = [].concat(...[].concat(R.intro || []).map(x => [].concat(x)));
+    rows.forEach(r => r.forEach((c, i) => { r[i] = Object.assign({}, c, {s: FXS.refill(D, c, placedR, 5)}); placedR.push(...[].concat(...(r[i].s || []).map(x => [].concat(x)))); }));
+    let k = 0;
+    const nk = x => String(x).toLowerCase().replace(/[^a-z0-9 ]/g, '').slice(0, 40), seenS = new Set();
+    rows.forEach(r => r.forEach((c, i) => { const kept = (c.s || []).filter(x => ![].concat(x).some(a => seenS.has(nk(a)))); if(kept.length >= 2) r[i] = Object.assign({}, c, {s: kept}); (r[i].s || []).forEach(x => [].concat(x).forEach(a => seenS.add(nk(a)))); }));
+    rows.forEach((r, ri) => { h += '<div class="row">'; r.forEach((c, i) => { h += FXS.captioned(D, c, X0 + i*(rw + gap), y0 + ri*(ph + 25 + lines*13.5 + rowGap), rw, ph, lines, 'right.photo' + (k++), {narrow: 12}); }); h += '</div>'; });
+    h += FXS.logo(D, X0 + CW - 190, 726, 190, 30, 'flex-end');
+    return h;
+  };
+
+
+  // ================= INSIDE LEFT and RIGHT, redesigned (owner 11/7, docs/briefs/fxs-13-redesign-11-07.md) =================
+  const has = id => !!(D.photos || {})[id], usedNew = new Set(photoIds(cover()));
+  const take = (...c) => { const id = [].concat(...c).find(i => has(i) && !usedNew.has(i)); if(id) usedNew.add(id); return id; };
+  const takeAny = (...c) => take(...c) || (() => { const id = Object.keys(D.photos || {}).find(i => !usedNew.has(i) && !FXS.isHouse(D, i) && !/^pv\d|^plan|^hall|toilet|powder|^skyline|^alley/.test(i)); if(id) usedNew.add(id); return id; })();
+  const cardOf = id => FXS.cardFor(D, id) || FXS.spareCap(D, id) || {photo: id, lead: FXS.labelFor(id), s: []};
+  const chip = (id, x, y, w, slot) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;white-space:nowrap">${FXS.label(FXS.labelFor(id).replace(/\.$/, ''), slot)}</div>`;
+  const ochip = (id, x, y, h, slot) => `<div class="abs" style="left:${x + 6}pt;top:${y + h - 20}pt;background:var(--fx-paper);padding:2pt 6pt 1pt;white-space:nowrap">${FXS.label(FXS.labelFor(id).replace(/\.$/, ''), slot)}</div>`;
+  const V2 = K.v2 || {}, vl = V2.left || {}, vr = V2.right || {};
+  const capLbl = (t, x, y, w, slot) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;white-space:nowrap"><div class="lbl" data-slot="${slot}" data-lines="1" style="max-width:${w}pt">${esc(String(t).toUpperCase())}</div></div>`;
+  const capTxt = (s, x, y, w, lines, slot) => `<div class="abs cap"><div class="a" style="position:absolute;left:${x}pt;top:${y}pt;width:${w}pt;height:${lines*13.5}pt;font-size:10pt;line-height:13.5pt" data-slot="${slot}" data-lh="13.5" data-lines="${lines}" data-narrow="12" ${FXS.sd(s)}></div></div>`;
+  const BOTTOM = 765;   // owner FXS-13 r3: the inside left box and the inside right captions end on one line at the bottom margin
+  const left2 = () => {
+    const I = K.left || {}, box = I.box || {}, hd = FXS.pageHead(I.kicker || '', I.title || '', introL, 'left', 3);
+    let h = FXS.gutter(D, 28) + hd.html;
+    const y0 = hd.bottom + 16, HA = 286, wH = Math.round(CW*.6) - 4, wS = CW - wH - gap, sH = (HA - gap)/2, LN = 4;
+    // each space once across the four panels (sw.v2, the house's own photo plan): the kitchen leads this page, two more living-level spaces stack beside it
+    const heroId = take(vl.hero || []) || takeAny(['kitchen2', 'kitchen', 'nook']), st = (vl.stack || []).map(id => take(id)).filter(Boolean);
+    while(st.length < 2){ const id = takeAny(['bar', 'wine', 'foyer', 'stair', 'entry']); if(!id) break; st.push(id); }
+    const hc = Object.assign({}, cardOf(heroId), {photo: heroId}); if(vl.heroCap) hc.s = vl.heroCap;
+    // the kitchen caption runs exactly under the kitchen photo; the stacked pair gets its own caption under it, on the same lines
+    const sx = X0 + wH + gap, stackLead = vl.stackLead || st.map(id => FXS.labelFor(id).replace(/\.$/, '')).join(' and ');
+    h += `<div class="row" data-grow="${LN}">` + FXS.captioned(D, hc, X0, y0, wH, HA, LN, 'left.photo0', {narrow: 2, fs: 10, lh: 13.5}) +
+      capLbl(stackLead, sx, y0 + HA + 7, wS, 'left.stackcap.label') + capTxt(vl.stackCap || [], sx, y0 + HA + 25, wS, LN, 'left.stackcap');
+    st.forEach((id, i) => { const yy = y0 + i*(sH + gap); h += FXS.box(D, id, sx, yy, wS, sH, 'left.photo' + (i + 1)) + `<div class="abs" style="left:${sx + 6}pt;top:${yy + sH - 20}pt;background:var(--fx-paper);padding:2pt 6pt 1pt;white-space:nowrap">${FXS.label(FXS.labelFor(id).replace(/\.$/, ''), 'left.photo' + (i + 1) + '.label', 'text-decoration:none')}</div>`; });
+    h += '</div>';
+    // the kitchen box, moved down to the bottom margin; every label in it underlined the same way (the underline is never clipped)
+    const cy = y0 + HA + 25 + LN*13.5 + 14, cardH = BOTTOM - cy, hs = FXS.fitSize(box.heading || '', "font-family:'Cormorant Garamond';font-weight:500", CW - 44, 26, 19), U = 'overflow:visible';
+    h += `<div class="card" data-box="left" style="left:${X0}pt;top:${cy}pt;width:${CW}pt;height:${cardH}pt"></div>`;
+    h += `<div class="abs" style="left:${X0 + 20}pt;top:${cy + 14}pt">${FXS.label(box.kicker || '', 'left.box.kicker', U)}</div>`;
+    h += `<div class="abs" style="left:${X0 + 20}pt;top:${cy + 32}pt;width:${CW - 40}pt;height:${hs*1.2}pt;font:500 ${hs}pt/${hs*1.2}pt var(--fx-serif);color:var(--fx-ink);white-space:nowrap;overflow:hidden" data-slot="left.box.heading" data-lines="1">${esc(box.heading || '')}</div>`;
+    // owner FXS-13 r4: every item in the white box gets three lines (v2.left.boxPick: which four items show)
+    const bi = box.items || [], items = (vl.boxPick || [0, 1, 3, 5]).map(i => bi[i]).filter(Boolean), gy = cy + 32 + hs*1.2 + 12, colw = (CW - 40 - 30)/2, rowH = (cy + cardH - gy - 12)/2, nl = 3;
+    h += `<div class="hr" style="left:${X0 + 20}pt;top:${gy - 4}pt;width:${CW - 40}pt"></div>`;
+    items.forEach((it, i) => { const x = X0 + 20 + (i % 2)*(colw + 30), y = gy + 4 + Math.floor(i/2)*rowH;
+      h += `<div class="abs" style="left:${x}pt;top:${y}pt">${FXS.label(it.l || '', 'left.box.l' + i, U)}</div>`;
+      h += `<div class="abs" style="left:${x}pt;top:${y + 18}pt;width:${colw}pt;height:${nl*13}pt;font:400 10pt/13pt var(--fx-font);color:var(--fx-ink);overflow:hidden" data-slot="left.box.t${i}" data-lines="${nl}" data-try="${nl}" data-narrow="6" data-nstep="3" data-lh="13" ${FXS.sd(it.s)}></div>`; });
+    return h;
+  };
+  // owner FXS-13 r4: the write-up under the heading runs three or four lines; every caption runs almost to its photo's right edge (narrow: 2)
+  const right2 = () => {
+    // no address gutter here (the left page has it): the content moves to the fold side and the info strip runs down the right edge
+    const R = K.right || {}, RX = 24, hd = FXS.pageHead(R.kicker || '', R.title || '', R.intro, 'right', 4, RX, 3);
+    let h = FXS.vStrip(D) + hd.html;
+    const LN = 4, capH = 25 + LN*13.5, rg = 14, y0 = hd.bottom + 16, H2 = Math.floor((BOTTOM - y0 - rg - 2*capH)/2);
+    const ids = (vr.ids || []).map(id => take(id)).filter(Boolean);
+    while(ids.length < 4){ const id = takeAny(['primary', 'primary2', 'pbath2', 'pbath', 'bed2', 'bed2b', 'bath2', 'closet']); if(!id) break; ids.push(id); }
+    const placed = flatA(R.intro || []), caps = vr.caps || {};
+    const cdm = {}; ids.forEach(id => { const c = Object.assign({}, cardOf(id)); c.s = caps[id] || FXS.refill(D, c, placed, 5); placed.push(...flatA(c.s)); cdm[id] = c; });
+    const split = vr.split || [.5, .5];
+    [0, 1].forEach(r => { const row = ids.slice(2*r, 2*r + 2); if(!row.length) return; const w1 = row.length === 1 ? CW : Math.round((CW - gap)*split[r]), y = y0 + r*(H2 + capH + rg);
+      h += `<div class="row" data-grow="${LN}">` + row.map((id, i) => { const x = RX + (i ? w1 + gap : 0), w = i ? CW - gap - w1 : w1; return FXS.captioned(D, cdm[id], x, y, w, H2, LN, 'right.photo' + (2*r + i), {narrow: 2, fs: 10, lh: 13.5}); }).join('') + '</div>'; });
+    h += FXS.logo(D, 527, BOTTOM - 20, 80, 20, 'center');
+    return h;
+  };
+  // the inside right's last caption line and the inside left's box end on one line (owner FXS-13 r3)
+  const alignCheck = () => { const pg = [...document.querySelectorAll('.panel')], out = [], ptv = v => v*72/96;
+    const box = document.querySelector('[data-box="left"]'), caps = [...document.querySelectorAll('.a[data-slot="right.photo2"], .a[data-slot="right.photo3"]')];
+    if(!box || !caps.length) return out;
+    const pb = box.closest('.panel').getBoundingClientRect(), bb = ptv(box.getBoundingClientRect().bottom - pb.top);
+    caps.forEach(el => { const pr = el.closest('.panel').getBoundingClientRect(), r = document.createRange(); r.selectNodeContents(el); const rs = [...r.getClientRects()].filter(q => q.height > .5); if(!rs.length) return;
+      const lh = parseFloat(getComputedStyle(el).lineHeight)*72/96, last = ptv(Math.max(...rs.map(q => q.bottom)) - pr.top), lineBottom = ptv(el.getBoundingClientRect().top - pr.top) + Math.round((last - ptv(el.getBoundingClientRect().top - pr.top))/lh)*lh;
+      if(Math.abs(lineBottom - bb) > 2) out.push({slot: el.dataset.slot, kind: 'bottom-not-aligned', detail: `last caption line ends at ${lineBottom.toFixed(1)} pt, the left box at ${bb.toFixed(1)} pt`}); });
+    return out; };
+
+  // ---------- assemble ----------
+  const pF = cover(), pR = right2(), pL = left2(photoIds(pF).concat(photoIds(pR))), pB = back(photoIds(pF).concat(photoIds(pR), photoIds(pL)));
+  const panels = {front: pF, back: pB, left: pL, right: pR};
+  const panel = h => `<div class="panel"><div class="bg-paper"></div>${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.back)}</div><div class="half r">${panel(panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.left)}</div><div class="half r">${panel(panels.right)}</div></div>`;
+  } else {
+    for(const id of ['front','back','left','right']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  SW.fill();
+  // a caption row that set fewer lines than it was given: its photos take the room, so the text still ends on the same line (inside pages)
+  document.querySelectorAll('.row[data-grow]').forEach(row => { const caps = [...row.querySelectorAll('.cap .a')]; if(!caps.length) return;
+    const T = Math.max(...caps.map(e => +e.dataset.lines)), d = (+row.dataset.grow - T)*13.5; if(d <= 0) return;
+    const capTop = Math.min(...caps.map(e => parseFloat(e.style.top))) - 25, kids = [...row.children], phs = kids.filter(ch => ch.querySelector('.ph'));
+    const cols = {}; phs.forEach(ch => { (cols[ch.style.left] = cols[ch.style.left] || []).push(ch); });
+    Object.values(cols).forEach(col => { col.sort((a, b) => parseFloat(a.style.top) - parseFloat(b.style.top)); const dd = d/col.length;
+      col.forEach((ch, k) => { const t0 = parseFloat(ch.style.top), h0 = parseFloat(ch.style.height); ch.style.top = (t0 + k*dd) + 'pt'; ch.style.height = (h0 + dd) + 'pt';
+        kids.filter(c => !c.querySelector('.ph') && !c.classList.contains('cap') && parseFloat(c.style.top) > t0 && parseFloat(c.style.top) < t0 + h0 && parseFloat(c.style.left) >= parseFloat(ch.style.left) && parseFloat(c.style.left) < parseFloat(ch.style.left) + parseFloat(ch.style.width)).forEach(c => { c.style.top = (parseFloat(c.style.top) + k*dd + dd) + 'pt'; }); }); });
+    kids.forEach(ch => { if(ch.querySelector('.ph')) return; const t = ch.classList.contains('cap') ? ch.querySelector('.a') : ch; if(t && t.style.top && parseFloat(t.style.top) >= capTop - .5) t.style.top = (parseFloat(t.style.top) + d) + 'pt'; }); });
+  SW.fitLogos();
+  if(window.ContactCard) ContactCard.fit(document);
+  issues.push(...SW.focus(D));
+  document.querySelectorAll('.ph[data-slot-photo^="back.photo"]').forEach(el => { if(!FXS.OUTSIDE.test(el.dataset.photo || '')) issues.push({slot: el.dataset.slotPhoto, kind: 'interior-photo-on-outside-page', detail: `${el.dataset.photo} is not an exterior, outdoor or community photo`}); });
+  { const ids = [...document.querySelectorAll('[data-photo]')].map(e => e.dataset.photo).filter(id => (D.photos || {})[id] && !/^pv\d|^plan/.test(id));
+    const dupId = ids.filter((id, i) => ids.indexOf(id) !== i); dupId.forEach(id => issues.push({slot: 'spread', kind: 'photo-twice-on-fold-over', detail: id}));
+    const pageOf = {}; document.querySelectorAll('.page').forEach(pg => pg.querySelectorAll('[data-photo]').forEach(e => { (pageOf[e.dataset.photo] = pageOf[e.dataset.photo] || new Set()).add(pg.dataset.page + (pg.querySelector('.half') ? ':' + (e.closest('.half').classList.contains('l') ? 'l' : 'r') : '')); }));
+    // one physical space once across the four panels (scripts/fxsets/spaces.py, carried in sw.plan.spaces); only the 1-story may show a listed second view
+    const SP = (K.plan || {}).spaces || {}, spOf = id => SP[id] || id, bySp = {}; [...new Set(ids)].forEach(id => { (bySp[spOf(id)] = bySp[spOf(id)] || []).push(id); });
+    const AL = ((K.plan || {}).allow || []), okPair = (a, b) => AL.some(p => (p[0] === a && p[1] === b) || (p[0] === b && p[1] === a));
+    window.spreadNotes = Object.keys(bySp).filter(g => bySp[g].length > 1).map(g => `${g}: ${bySp[g].join(', ')}`);
+    Object.keys(bySp).forEach(g => { const ids2 = bySp[g]; if(ids2.length < 2) return; let bad = false;
+      for(let x = 0; x < ids2.length; x++) for(let y = x + 1; y < ids2.length; y++) if(false) bad = true;   // owner 11/7: the redesign's photo counts (5 + 6 + 6 + the back) outnumber the house's 12 spaces; a second view of a space is allowed, never the same photo twice (spreadNotes lists them)
+      if(bad) issues.push({slot: 'spread', kind: 'space-twice-on-fold-over', detail: `${g}: ${ids2.join(', ')}`}); });
+  }
+  issues.push(...(window.__coverIssues || []));
+  window.brochureCheck = () => SW.check(D, (window.planIssues || []).concat(issues, FXS.tableCheck(), FXS.faceFactCheck(), FXS.planFillCheck(), alignCheck(), FXS.writeupCheck()));
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>

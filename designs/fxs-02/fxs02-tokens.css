@@ -1,0 +1,42 @@
+/* fxs-02 tokens: THE one source for the set's palette, type, rules and marks (FX02 look). Every piece reads these variables:
+   fold-over, flyer, Open House flyer and email, postcards, socials and carousels (the pages with their own base style link this file alone;
+   the print pages link fxs02.css, which imports it). Lengths are pt. */
+:root{
+  /* palette */
+  --fx-paper:#ffffff;
+  --fx-band:#ecebe9;            /* the warm gray band down the left edge of every page */
+  --fx-ink:#111111;             /* big type, the black box, the agent bar */
+  --fx-ink2:#222222;            /* icons, labels, place line */
+  --fx-text:#555555;            /* body copy */
+  --fx-text-dark:#333333;       /* fact values, phone */
+  --fx-mute:#666666;            /* REALTOR(R), email line, fine print */
+  --fx-rule:#d6d4d0;            /* every hairline */
+  --fx-on-ink:#ffffff;
+  --fx-on-ink-soft:#d6d4d0;     /* weekday on the black box */
+  /* type: one family */
+  --fx-font:'Montserrat',Helvetica,Arial,sans-serif;
+  --fx-w-light:300; --fx-w-reg:400; --fx-w-med:500; --fx-w-semi:600; --fx-w-bold:700; --fx-w-heavy:800;
+  /* label style: bold caps, tracked */
+  --fx-label-w:700; --fx-label-track:1.5pt;
+  /* rules and marks */
+  --fx-rule-w:.75pt;            /* hairline */
+  --fx-icon-stroke:1.5;         /* outline icons, 24 box, round caps */
+  --fx-bar-w:3pt;               /* the agent's vertical black bar */
+  /* photo shapes: square corners everywhere except the arch (round left end) */
+  --fx-arch-side:left;          /* which end is round */
+  /* page geometry */
+  --fx-band-w:142.5pt;          /* the band, on an 8.5 in page */
+  --fx-m:36pt;                  /* outer margin (safe zone 18 pt + 18) */
+  /* the shared agent card reads these */
+  --cc-paper:#ffffff; --cc-ink:#111111; --cc-muted:#666666; --cc-accent:#111111; --cc-line:#d6d4d0;
+  --cc-display:'Montserrat',Helvetica,Arial,sans-serif; --cc-body:'Montserrat',Helvetica,Arial,sans-serif;
+  --font-display:'Montserrat',Helvetica,Arial,sans-serif; --font-body:'Montserrat',Helvetica,Arial,sans-serif;
+  --ink:#111111; --muted:#666666; --accent:#111111; --paper:#ffffff; --navy:#ffffff; --gold:#111111; --gold-ink:#111111;
+}
+@font-face{font-family:'Montserrat';font-weight:300;src:url(../../fonts/pool/montserrat-latin-300-normal.woff2) format('woff2')}
+@font-face{font-family:'Montserrat';font-weight:400;src:url(../../fonts/pool/montserrat-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Montserrat';font-weight:500;src:url(../../fonts/pool/montserrat-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Montserrat';font-weight:600;src:url(../../fonts/pool/montserrat-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Montserrat';font-weight:700;src:url(../../fonts/pool/montserrat-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Montserrat';font-weight:800;src:url(../../fonts/pool/montserrat-latin-800-normal.woff2) format('woff2')}
+

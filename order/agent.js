@@ -579,7 +579,16 @@
   }
   // room types: captions first (free); one low-cost photo read for the photos with no usable caption, plus the
   // exteriors (their whole-house box keeps every crop from cutting the house)
+  // the sample listing's photos come with their room types (no photo read): front.jpg is the front of the house, and so on
+  const SAMPLE_ROLES = {front: ['front', true, {left: .14, top: .05, right: .88, bottom: .74}], family: ['side', true, {left: .2, top: .19, right: .83, bottom: .67}],
+    lawn: ['yard', true], living: ['living'], kitchen: ['kitchen'], kitchen2: ['kitchen'], dining: ['dining'], nook: ['nook'], hall: ['entry'],
+    primary: ['primary'], bedroom2: ['bedroom'], study: ['bedroom'], office: ['bath']};
   async function tagRooms(){
+    if(lookup.link === 'sample'){
+      for(const p of lookup.photos){ const r = SAMPLE_ROLES[p.url.split('/').pop().replace(/\.jpg$/, '')]; if(!r) continue;
+        lookup.tags[p.url] = {role: r[0], house: r[2] || null, exterior: !!r[1]}; if(!p.room) p.room = PT.ROLE_ROOM[r[0]] || ''; }
+      return;
+    }
     const ext = /exterior|aerial/;
     const need = lookup.photos.filter(p => !p.room || ext.test(p.room));
     if(!need.length) return;

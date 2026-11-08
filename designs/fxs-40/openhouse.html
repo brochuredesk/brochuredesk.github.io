@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · fxs-40 Open House</title>
+<link rel="stylesheet" href="fx.css">
+<link rel="stylesheet" href="fxs40-tokens.css">
+<link rel="stylesheet" href="fxs40-marks.css">
+<script src="fxs40-tk.js"></script>
+<script src="../engine/ivory.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/ohlib.js"></script>
+<!--
+  fxs-40 Open House flyer (public and REALTOR(R): one layout, only the wording changes). Trim 612 x 792 pt.
+  The FX40 hand: the address set vertically up the left edge (gold rule, vertical place line); the whole house about 55% of the page wide with
+  the round neighborhood seal and the four facts in the column beside it; the event between two hairlines (gold label, weekday, the date in
+  Cormorant, the time at about 60% of the date size in bold numerals); the REALTOR(R) perks box full width, two lines at most; two rooms and
+  the italic write-up; the agent and the one logo at the foot.
+-->
+<style>
+  .sheet{background:var(--fx-paper)}
+  .wk{font:600 10pt/12pt 'Montserrat';letter-spacing:3.6pt;text-transform:uppercase;color:var(--fx-accent);white-space:nowrap}
+  .dt{font:600 56pt/1 'Oswald';color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+  .tm{font:700 34pt/1 'Oswald';color:var(--fx-ink);white-space:nowrap;overflow:hidden;text-align:right}
+  .evb{font:500 13pt/17pt 'Oswald';letter-spacing:.4pt;color:var(--fx-ink)}
+  .evb.b{font-weight:700}
+  .wu{font:300 11.5pt/18pt 'Montserrat';color:var(--fx-text)}
+  .evl{font:600 22pt/26pt 'Oswald';letter-spacing:5pt;color:var(--fx-accent);white-space:nowrap;overflow:hidden;text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:5pt}
+  .fine{font:300 6.6pt/8pt 'Montserrat';color:var(--fx-mute);white-space:nowrap}
+  .oh-agent-name{font-family:'Montserrat';font-weight:600;overflow:visible!important}   /* owner 11/7: normal font */
+  .oh-agent,.oh-agent>div{overflow:visible!important}
+  .oh-agent{font-family:'Montserrat'}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script src="fxs40.js"></script>
+<script>
+FXS.hookCheck();
+OHL.start(['400 20pt "Great Vibes"', '500 20pt Oswald', '600 20pt Oswald', '700 20pt Oswald', '300 10pt "Montserrat"', '700 20pt "Cormorant Garamond"', '400 20pt "Cormorant Garamond"', '500 20pt "Cormorant Garamond"', '600 20pt "Cormorant Garamond"', '700 20pt "Cormorant Garamond"', 'italic 400 20pt "Cormorant Garamond"', '700 10pt "Montserrat"', '600 10pt "Montserrat"', '500 10pt "Montserrat"', '400 10pt "Montserrat"', '500 10pt "Bodoni Moda"', '500 10pt "Cormorant Garamond"', '400 10pt "Cormorant Garamond"', 'italic 400 10pt "Cormorant Garamond"'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  if((C.postcard || {}).master){ const drive = /minutes|miles|short drive|drive away|drive from|are close|is close/i, draw = /gated|roof|garage|deck|pergola|stone|island|corner/i;
+    let M = C.postcard.master.filter(t => !drive.test(t)).filter((t, i, a) => FXS.dedupe5(a).includes(t)); if(E.kind !== 'public') M = M.filter(t => draw.test(t)).concat(M.filter(t => !draw.test(t))); C.postcard.master = M; }
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id)).sort((a, b) => FXS.archScore(D, b) - FXS.archScore(D, a)).filter((id, i, arr) => arr.findIndex(o => SW.famOf(o) === SW.famOf(id) || o.replace(/\d+[a-z]?$/, '') === id.replace(/\d+[a-z]?$/, '')) === i);
+  const wid = FXS.width, fitS = FXS.fitSize;
+  const X0 = 36, X1 = 576, CW = X1 - X0;
+  let h = '';
+  // ---- the hero runs off the top and left edge (about 55% of the page wide); the script address, the place and the facts stand in the column beside it
+  const HW = 340, fr = OHL.fitHero(D, hero, HW + 9, 270);
+  const HH = Math.max(215, Math.min(262, fr.h));
+  h += OHL.photo(D, hero, `left:-9pt;top:-9pt;width:${HW + 9}pt;height:${HH + 9}pt`);
+  h += `<div class="bluebar" style="left:${HW}pt;top:-9pt;width:${621 - HW}pt;height:${HH + 9}pt"></div>`;
+  const bdd = Math.min(160, HH - 78), bcx = (HW + 612)/2;
+  h += FXS.badge(D, bcx, 14 + bdd/2, bdd, {minSmall: 8.5, dark: true, size: 30}).html;
+  { const st3 = FXS.statItems(L).slice(0, 3), fx0 = HW + 14, fw = (590 - fx0)/3;
+    h += FXS.iconCol(st3, fx0, HH - 64, fw, 0, 'fact', {icon: 20, np: 16, lp: 8.4, h: 1}); }
+  // ---- the event: the label, the day kicker over the date's left edge, the date, the time at 60% of its size
+  const EY = HH + 16;
+  const dText = String(E.monthDay || E.long), tText = E.time || '';
+  let S = 60; while(S > 34 && (wid(dText, `font-family:Oswald;font-weight:600;font-size:${S}pt`) > 300 || (tText && wid(tText, `font-family:Oswald;font-weight:700;font-size:${S*.6}pt`) > CW - 300 - 18))) S -= .5;
+  h += `<div class="abs evl" style="left:${X0}pt;top:${EY}pt;width:${CW}pt;height:26pt" data-slot="oh.label" data-lines="1">${esc(E.label.toUpperCase())}</div>`;
+  h += `<div class="abs wk" style="left:${X0}pt;top:${EY + 36}pt;width:300pt;height:13pt" data-slot="oh.weekday" data-lines="1">${esc(E.weekday)}</div>`;
+  const dY = EY + 52;
+  h += `<div class="abs dt" style="left:${X0}pt;top:${dY}pt;width:${CW - 150}pt;height:${S*1.1}pt;font-size:${S}pt;line-height:${S*1.1}pt" data-slot="oh.date" data-lines="1">${esc(dText)}</div>`;
+  if(tText) h += `<div class="abs tm" style="left:${X1 - 260}pt;top:${dY + (S*1.1 - S*.6)/2 + 4}pt;width:260pt;height:${S*.66}pt;font-size:${S*.6}pt;line-height:${S*.66}pt" data-slot="oh.time" data-lines="1">${esc(tText)}</div>`;
+  let ey = dY + S*1.1 + 12;
+  h += `<div class="abs hr" style="left:${X0}pt;top:${ey}pt;width:${CW}pt"></div>`;
+  ey += 12;
+  // ---- the perks box (REALTOR(R)): full width, both lines
+  const perks = [[E.refreshments, 'oh.refreshments', 'evb b'], [E.note, 'oh.note', 'evb']].filter(p => p[0]);
+  if(perks.length){
+    const ph = 14 + perks.length*20 + 8;
+    h += `<div class="card" data-box="oh.box" style="left:${X0}pt;top:${ey}pt;width:${CW}pt;height:${ph}pt"></div>`;
+    perks.forEach(([tx, slot, cls], i) => { h += `<div class="abs ${cls}" style="left:${X0 + 18}pt;top:${ey + 11 + i*20}pt;width:${CW - 36}pt;height:19pt;white-space:nowrap;overflow:hidden" data-slot="${slot}" data-lines="1">${esc(tx)}</div>`; });
+    ey += ph + 14;
+  }
+  // ---- two rooms, then the write-up, then the agent and the one logo at the foot
+  const AY = 696;
+  const rh = perks.length ? 118 : 172, rw = (CW - 9)/2, ry = ey;
+  rooms.slice(0, 2).forEach((id, i) => { h += OHL.photo(D, id, `left:${X0 + i*(rw + 9)}pt;top:${ry}pt;width:${rw}pt;height:${rh}pt`); });
+  const wy = ry + rh + 12, avail = AY - 14 - wy, maxL = Math.max(3, Math.min(5, Math.floor(avail/18)));
+  const mkWu = (n, dw) => OHL.writeup(D, 'wu', CW - (dw || 0), 18, n, null, {narrow: true});
+  let wu = mkWu(maxL);
+  search: for(let n = maxL; n >= 2; n--) for(let dw = 0; dw <= 90; dw += 6){ const t2 = mkWu(n, dw); if(t2.text && t2.fill >= .75 && t2.n >= 2){ wu = t2; break search; } if(t2.fill > wu.fill) wu = t2; }
+  if(wu.text) h += `<div class="abs wu" style="left:${X0}pt;top:${wy}pt;width:${wu.w || CW}pt;height:${wu.n*18 + 2}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`;
+  h += `<div class="abs hr" style="left:${X0}pt;top:${AY - 6}pt;width:${CW}pt"></div>`;
+  h += OHL.contact(D, {x: X0, y: AY, w: 320, h: 72, tone: 'light', logo: false, nameSize: 40, phoneSize: 17, lineSize: 10, color: TK.ink, accent: TK.accent});
+  h += `<div class="abs vr" style="left:384pt;top:${AY + 2}pt;height:70pt"></div>`;
+  h += OHL.logo(D, 'light', `left:404pt;top:${AY + 12}pt;width:172pt;height:46pt;justify-content:center`);
+  h += `<div class="abs fine" style="left:${X0}pt;top:775pt;width:${CW}pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  return OHL.frame(D, h);
+});
+</script>
+</body>
+</html>

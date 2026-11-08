@@ -1,0 +1,57 @@
+/* fxs-28 marks shared by every page: the green spine, Oswald caps labels with a hairline underline, green stat tiles, the ROOM SIZES box,
+   hairline rules. Read the tokens in fxs28-tokens.css. */
+@import url(fxs28-tokens.css);
+.script{font-family:var(--fx-script);font-weight:600;letter-spacing:1.5pt;text-transform:uppercase;color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.vt{position:absolute;writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;white-space:nowrap}
+.vaddr{font-family:var(--fx-display);font-weight:700;letter-spacing:.08em;color:var(--fx-on-spine);line-height:1}
+.vhood{font-family:var(--fx-font);font-weight:500;letter-spacing:.4em;color:rgba(236,228,214,.75);line-height:1}
+.gold{position:absolute;height:1.5pt;background:var(--fx-rule-hard)}
+.vrule{position:absolute;width:var(--fx-rule-w);background:var(--fx-accent)}
+
+.lbl{display:inline-block;font:var(--fx-label-w) 10pt/13pt var(--fx-display);letter-spacing:var(--fx-label-track);text-transform:uppercase;color:var(--fx-accent);white-space:nowrap;overflow:hidden;text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:4pt}
+.lbl.onspine{color:var(--fx-on-spine)}
+.ttl{font-family:var(--fx-display);font-weight:600;color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.ttl2{font-family:var(--fx-display);font-weight:600;letter-spacing:1.2pt;color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.body{font:400 10.5pt/16pt var(--fx-font);color:var(--fx-text);overflow:hidden}
+.wu{font:400 11.25pt/18pt var(--fx-font);color:var(--fx-text);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font:400 6.6pt/8pt var(--fx-font);color:var(--fx-mute);white-space:nowrap;overflow:hidden}
+
+.ph{position:relative;overflow:hidden;background:#d8d0c0;min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font:400 9.5pt/12.5pt var(--fx-font);color:var(--fx-text);overflow:hidden}
+.cap .a b{font-weight:700;color:var(--fx-ink)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+/* the stat tiles: forest green, white Oswald numerals over cream tracked caps */
+.stats{position:absolute;display:flex}
+.tile{flex:1;min-width:0;background:var(--fx-spine);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3pt;white-space:nowrap;text-align:center;overflow:hidden}
+.tile .tn{font-family:var(--fx-display);font-weight:600;line-height:1;color:var(--fx-on-ink)}
+.tile .tl{font-family:var(--fx-font);font-weight:500;line-height:1.2;text-transform:uppercase;color:var(--fx-on-spine)}
+
+.card{position:absolute;background:var(--fx-spine);color:var(--fx-on-spine)}
+.card.plain{background:var(--fx-seal);border:var(--fx-rule-w) solid var(--fx-rule)}
+.bul{position:absolute;display:flex;align-items:center;gap:7pt;font:400 10.5pt/14pt var(--fx-font);color:var(--fx-text);white-space:nowrap;overflow:hidden}
+.bul:before{content:"";width:4pt;height:4pt;background:var(--fx-spine);flex:none}
+.rs{display:flex;justify-content:space-between;align-items:center;font:500 10pt/12pt var(--fx-font);color:var(--fx-on-spine);white-space:nowrap}
+.rs b{font-weight:700;color:#fff}
+
+.agentline .n{font:600 22.5pt/28pt var(--fx-font);color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.agentline .d{font:600 8.5pt/11pt var(--fx-font);letter-spacing:2pt;color:var(--fx-text);white-space:nowrap}
+.agentline .p{font:600 16.5pt/21pt var(--fx-font);color:var(--fx-text);white-space:nowrap}
+.agentline .e{font:400 12pt/17pt var(--fx-font);color:var(--fx-text);white-space:nowrap;overflow:hidden}
+
+.near{flex:none;display:flex;gap:0;border-top:var(--fx-rule-w) solid var(--fx-rule);padding-top:9pt}
+.near .c{flex:1;min-width:0;padding-left:14pt;border-left:var(--fx-rule-w) solid var(--fx-rule)}
+.near .c:first-child{padding-left:0;border-left:0}
+.near .d{font:600 19pt/23pt var(--fx-display);color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.near .p{font:500 8pt/10pt var(--fx-font);letter-spacing:1pt;text-transform:uppercase;color:var(--fx-text);overflow:hidden;margin-top:1pt;min-height:20pt}
+.tile.row{flex-direction:row;align-items:baseline;justify-content:center;gap:.5em}
+.tile.row .tn{margin-right:8pt}

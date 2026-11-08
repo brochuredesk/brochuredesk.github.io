@@ -1,0 +1,34 @@
+/* fxs-23 "Black Label" (11/7/2026 redesign): solid #111 field, 0.75 pt gold frame with a fine inner rule, cream cards (#F3EEE4)
+   for long copy, white serif caps address, gold only for rules, frames and spaced-caps labels (10 pt or more).
+   Loaded by foldover.html only, after fxs23.css, so the approved carousels and the other pieces keep the old tokens. */
+:root{
+  --fx-paper:#111111; --fx-card:#111111; --fx-seal:#F3EEE4; --fx-ink:#ffffff; --fx-text:#ffffff; --fx-mute:#F3EEE4;
+  --fx-accent:#d6b56e; --fx-rule:rgba(214,181,110,.55); --fx-rule-hard:#d6b56e; --fx-label-track:2.4pt;
+  --cc-paper:#111111; --cc-ink:#ffffff; --cc-muted:#F3EEE4; --cc-accent:#d6b56e;
+  --bk-cream:#F3EEE4; --bk-gold-on-cream:#6b4f17; --bk-ink:#161616;
+}
+body{background:#444}
+.lbl{font:600 10pt/13pt var(--fx-font);letter-spacing:2.4pt;text-decoration:none;color:var(--fx-accent)}
+.wu{font:400 11pt/17pt var(--fx-font);color:#fff}
+.cap .a{font:400 9.5pt/13pt var(--fx-font);color:var(--bk-cream)}
+.bul{font:400 10pt/15pt var(--fx-font);color:#fff}
+.card{border:.75pt solid var(--fx-rule-hard)}
+.card:after{inset:3pt;border:.5pt solid var(--fx-rule)}
+.bk-frame{position:absolute;border:.75pt solid var(--fx-accent);pointer-events:none}
+.bk-frame2{position:absolute;border:.5pt solid var(--fx-rule);pointer-events:none}
+.bk-cream{position:absolute;background:var(--bk-cream)}
+.bk-cream .lbl{color:var(--bk-gold-on-cream)}
+.bk-cream .wu,.bk-cream .bd{color:var(--bk-ink)}
+.bk-ttl{font:600 28pt/1.15 var(--fx-serif);color:var(--bk-ink);white-space:nowrap;overflow:hidden}
+.bk-rule{position:absolute;height:.75pt;background:var(--fx-accent)}
+.bk-addr{font:600 54pt/1 var(--fx-serif);color:#fff;white-space:nowrap;overflow:visible;letter-spacing:1.2pt;text-transform:uppercase}
+.bk-fact{position:absolute;top:0;display:flex;flex-direction:column;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;border-left:.75pt solid var(--fx-rule)}
+.bk-fact:first-child{border-left:0}
+.bk-fact .n{font:600 26pt/28pt var(--fx-serif);color:#fff}
+.bk-fact .l{font:600 10pt/13pt var(--fx-font);letter-spacing:1.4pt;text-transform:uppercase;color:var(--fx-accent)}
+.bk-near{position:absolute;display:flex;flex-direction:column;justify-content:center;white-space:nowrap;overflow:hidden}
+.bk-near .n{font:600 20pt/22pt var(--fx-serif);color:#fff}
+.bk-near .n i{font:600 10pt/22pt var(--fx-font);font-style:normal;letter-spacing:1.8pt;color:var(--fx-accent);margin-left:5pt;text-transform:uppercase}
+.bk-near .p{font:400 10pt/14pt var(--fx-font);color:#fff;overflow:hidden;text-overflow:clip}
+.plan-legend.tight{gap:7pt;font-size:8pt}
+.plan-legend.tight i{margin-right:3pt}
