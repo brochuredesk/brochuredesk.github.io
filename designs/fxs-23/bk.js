@@ -62,7 +62,7 @@
     const items = (box.items || []).slice(0, 6), gy = y + 12 + 28 + 8, gap = 28, colw = (iw - gap)/2, pitch = (y + hgt - 12 - gy)/3;
     items.forEach((it, i) => { const r = Math.floor(i/2), c = i%2, x = px + c*(colw + gap), yy = gy + r*pitch;
       h += `<div class="abs" style="left:${x}pt;top:${yy + 3}pt;font-size:7pt;line-height:10pt;color:var(--fx-accent)">◆</div>`;
-      h += `<div class="abs" style="left:${x + 14}pt;top:${yy}pt;width:${colw - 14}pt;height:${2*13}pt;font:400 10pt/13pt var(--fx-font);color:#fff;overflow:hidden" data-slot="left.box.t${i}" data-lines="2" data-try="2,1" data-narrow="6" data-lh="13" ${FXS.sd(it.s)}></div>`; });
+      h += `<div class="abs" style="left:${x + 14}pt;top:${yy}pt;width:${colw - 14}pt;height:${2*13}pt;font:400 10pt/13pt var(--fx-font);color:#fff;overflow:hidden" data-slot="left.box.t${i}" data-lines="2" data-try="2" data-narrow="6" data-lh="13" ${FXS.sd(it.s)}></div>`; });
     return h; };
   // the Nearby row: a gold label, then three places with their verified distances (serif numeral, place beneath)
   B.nearby = (list, y, h) => { const w0 = 96, cw = (CW - w0)/Math.max(1, list.length);

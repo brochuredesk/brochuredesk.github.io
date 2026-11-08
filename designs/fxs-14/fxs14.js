@@ -175,6 +175,14 @@
         if(el.dataset.justify) el.style.textAlign = 'justify';
       } else settle(el, +el.dataset.lines || 1);
     });
+    // a labeled-items table (*.box.t<N>): every row runs as many full lines as the rest of its table (owner 11/8/2026, FXS-09 r4; check: _shared/tablerows.js).
+    // Only a short row is touched: it re-picks its true sentences at the table's count, narrowing in finer 2 pt steps; rows that already match stay as they are.
+    { const T = new Map(); rest.forEach(el => { const m = /^(.*\.box)\.t\d+$/.exec(el.dataset.slot || ''); if(m && el.dataset.try) (T.get(m[1]) || T.set(m[1], []).get(m[1])).push(el); });
+      T.forEach(rows => { if(rows.length < 2) return; const most = Math.max(...rows.map(e => SW.lines(e).n));
+        rows.filter(e => SW.lines(e).n < most).forEach(e => { const n0 = e.dataset.narrow, s0 = e.dataset.nstep;
+          e.dataset.nstep = 2; e.dataset.narrow = Math.round((+e.dataset.w0 || 0) * 0.45 / 2);   // the row may narrow to 55% of its column (ragged right, so a narrower row still reads as part of the grid)
+          if(pfN(e, most)){ settle(e, most); if(e.dataset.lh) e.style.height = (most * +e.dataset.lh) + 'pt'; }
+          else { e.dataset.narrow = n0; if(s0 == null) delete e.dataset.nstep; else e.dataset.nstep = s0; settle(e, +e.dataset.lines); } }); }); }
     // photo captions shrink to what their sentences honestly fill (never padded): the photo takes the room. The captions in one row share a line count when they can.
     const groups = new Map();
     const faces = [...document.querySelectorAll('.panel, .sheet')];

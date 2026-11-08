@@ -114,7 +114,8 @@
     const fs0 = +el.dataset.fs0, r = +el.dataset.r0, keep = el.innerHTML; el.style.textAlign = 'left'; el.style.height = 'auto'; let best = null;
     for(let fs = fs0; fs <= fs0*1.25 + 0.01 && !best; fs += 0.25){ el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs*r) + 'pt';
       const T = Math.floor((H + 0.5)/(fs*r)); if(T < 2) continue;
-      for(const t of [T, T - 1]){ if(t*fs*1.7 < H) continue; const b = pfN(el, t); if(b){ best = {fs, n: t, pick: b.pick}; break; } } }
+      const row = /\.box\.t\d+$/.test(el.dataset.slot || ''), ts = row ? [+(String(el.dataset.try || '').split(',')[0]) || T] : [T, T - 1];   // a table row keeps its table's line count (owner 11/8, FXS-09 r4: never one short row); its type grows only while the lines keep 1.18x leading
+      for(const t of ts){ if(t*fs*1.7 < H || (row && fs*1.18*t > H + 0.5)) continue; const b = pfN(el, t); if(b){ best = {fs, n: t, pick: b.pick}; break; } } }
     const lead = el.dataset.lead || '';
     if(!best){ el.style.fontSize = fs0 + 'pt'; el.innerHTML = keep; el.style.lineHeight = (fs0*r) + 'pt'; best = {fs: fs0, n: SW.lines(el).n}; }
     else { el.style.fontSize = best.fs + 'pt'; el.innerHTML = html(lead, best.pick); }
