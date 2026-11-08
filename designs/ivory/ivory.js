@@ -4,7 +4,11 @@
   const Ivory = {};
   // the standard contact card (Right panel, 10/25/2026): templates/_shared/agentcard.js here, /designs/shared/agentcard.js on the site
   const ME = document.currentScript && document.currentScript.src;
-  Ivory.cardReady = window.ContactCard ? Promise.resolve() : new Promise(res => {
+  // while the page is still being read, load the card script in line, so it's there before any piece draws (most pieces
+  // don't wait for cardReady; the async load below lost that race now and then: "ContactCard is not defined", audit 11/2)
+  if(!window.ContactCard && document.readyState === 'loading')
+    document.write(`<script src="${new URL('../shared/agentcard.js', ME || location.href).href}"><\/script>`);
+  Ivory.cardReady = window.ContactCard || document.readyState === 'loading' ? Promise.resolve() : new Promise(res => {
     const add = (rel, next) => { const el = document.createElement('script'); el.src = new URL(rel, ME || location.href).href; el.onload = res; el.onerror = next || res; document.head.appendChild(el); };
     add('../_shared/agentcard.js', () => add('../shared/agentcard.js'));
   });
