@@ -66,7 +66,7 @@ window.brochureReady = (async function(){
     h += `<div class="abs place" data-slot="place" data-lines="${place.length}" style="left:${X + 33}pt;top:${y - 1}pt;width:${RW - 33}pt;height:${place.length*18.9 + 1}pt;line-height:18.9pt;font-size:13.5pt">${place.map(esc).join('<br>')}</div>`;
     y += place.length*18.9 + 10;
     const wuAvail = archBot - y, lh = 19.2, maxL = Math.floor(wuAvail/lh), tries = []; for(let t = maxL; t >= Math.max(3, maxL - 3); t--) tries.push(t);
-    h += `<div class="abs body" data-slot="front.summary" data-bottom="${archBot}" data-lines="${maxL}" data-try="${tries.join(',')}" data-lh="${lh}" ${sentData(F.intro || [])} style="left:${X}pt;top:${y}pt;width:${RW}pt;height:${maxL*lh}pt;font-size:12pt;line-height:${lh}pt"></div>`;
+    h += `<div class="abs body" data-narrow="0" data-fill="0.9" data-lfill="0.8" data-justify="1" data-slot="front.summary" data-bottom="${archBot}" data-lines="${maxL}" data-try="${tries.join(',')}" data-lh="${lh}" ${sentData(F.intro || [])} style="left:${X}pt;top:${y}pt;width:${RW}pt;height:${maxL*lh}pt;font-size:12pt;line-height:${lh}pt"></div>`;
   } else {
     const B = FL.back || {}, hasPlan = !!D.plan;
     const T = (hasPlan ? B.plan : B.noplan) || {};
@@ -137,7 +137,7 @@ window.brochureReady = (async function(){
     let sh_ = '';
     use.forEach((s, i) => {
       const tr = []; for(let t = base + 1; t >= 2; t--) tr.push(t);
-      sh_ += `${i ? '<div class="hr" style="position:static;flex:none;margin:8.6pt 0 10.8pt"></div>' : ''}<div style="flex:none"><div class="lbl" data-slot="back.sec${i}.label" data-lines="1">${esc(s.label)}</div><div class="body" style="margin-top:5pt;font-size:12pt;line-height:${lh}pt" data-slot="back.sec${i}" data-narrow="12" data-lines="${base}" data-try="${tr.join(',')}" data-lh="${lh}" ${sentData(s.s)}></div></div>`;
+      sh_ += `${i ? '<div class="hr" style="position:static;flex:none;margin:8.6pt 0 10.8pt"></div>' : ''}<div style="flex:none"><div class="lbl" data-slot="back.sec${i}.label" data-lines="1">${esc(s.label)}</div><div class="body" style="margin-top:5pt;font-size:12pt;line-height:${lh}pt" data-slot="back.sec${i}" data-narrow="0" data-fill="0.9" data-lfill="0.8" data-justify="1" data-lines="${base}" data-try="${tr.join(',')}" data-lh="${lh}" ${sentData(s.s)}></div></div>`;
     });
     h += `<div class="abs" style="left:${COLX}pt;top:${rTop}pt;width:${COLW}pt;height:${rH}pt;display:flex;flex-direction:column;justify-content:flex-start">${sh_}${near.length ? `<div style="flex:none;height:11pt"></div><div class="near compact" style="margin-top:auto;padding-top:9pt">${near.map((x, i) => `<div class="c"><div class="d" data-slot="back.near${i}.dist" data-lines="1">${esc(x.dist)}</div><div class="p" data-slot="back.near${i}.place" data-lines="2">${esc(x.place)}</div></div>`).join('')}</div>` : ''}</div>`;
     if(BX){
@@ -204,6 +204,7 @@ window.brochureReady = (async function(){
       const n = +cs[0].dataset.lines, capH = 5 + n*fsz*1.28, stripTop = +document.querySelector('[data-spstrip]').dataset.spstrip, phh = 690 - stripTop - capH;
       document.querySelectorAll('[data-spph]').forEach(el => { el.style.height = phh + 'pt'; });
       cs.forEach(e => { e.parentElement.style.top = (stripTop + phh) + 'pt'; e.parentElement.style.height = capH + 'pt'; e.style.height = (n*fsz*1.28) + 'pt'; }); } }
+  SW.grow();
   document.querySelectorAll('[data-bottom]').forEach(el => { el.style.top = (+el.dataset.bottom - (+el.dataset.lines)*(+el.dataset.lh)) + 'pt'; });
   SW.fitLogos();
   if(window.ContactCard) ContactCard.fit(document);

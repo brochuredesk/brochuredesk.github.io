@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · fxs-23 two-sided flyer</title>
+<link rel="stylesheet" href="fxs23.css">
+<link rel="stylesheet" href="bk.css">
+<script src="fxs23.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/agentcard.js"></script>
+<script src="bk.js"></script>
+<!--
+  BrochureDesk · fxs-23 "Black Label" · 11 x 17 fold-over (redesign 11/7/2026; brief docs/briefs/fxs-23-redesign-11-07.md).
+  One sheet folded once down the middle into four upright 8.5 x 11 panels, 0.125 in (9 pt) bleed, 0.25 in safe zone, frame 0.375 in from trim.
+  Outside spread: back (left) + cover (right). Inside spread: left + right. Solid #111 field, gold frame with a fine inner rule, cream cards for long copy.
+    COVER   the whole house full bleed to ~60% height, white serif caps address, gold rule, gold spaced-caps place line, five serif facts, write-up. No agent, no brokerage.
+    LEFT    cream intro card, one wide hero, captioned rooms, the kitchen box as a gold double-ruled panel.
+    RIGHT   cream intro card, one wide hero, a strip of three, captions flush left (cream on black).
+    BACK    with plan: the plan on a cream card, the deck, two gold boxes, Nearby row, the agent card. Without: a big deck photo, About on a cream card, then the same.
+  The photo plan is sw.plan (one physical space once across the four panels; scripts/fxsets/spaces.py). Copy comes as a lead plus whole sentences.
+  Modes: proof = four panel pages 8.75 x 11.25 in; print = two spreads 17.25 x 11.25 in, each half clipped at the fold.
+-->
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const mode = D.mode || 'email'; document.body.dataset.mode = mode;
+  const esc = SW.esc, L = D.listing, K = D.sw || {}, A = D.agent || {}, b = D.brand || {};
+  const issues = [];
+  await SW.setup(D);
+  const X0 = BK.X0, CW = BK.CW, Y0 = BK.Y0, YB = BK.YB, hasPlan = !!D.plan;
+  const PL = K.plan || {};
+  const all = FXS.cards(D, []), byId = {}; all.forEach(c => { if(!byId[c.photo]) byId[c.photo] = c; });
+  const card = id => { const c = (PL.cards && PL.cards[id] ? Object.assign({photo: id}, PL.cards[id]) : byId[id]); if(!c) issues.push({slot: 'plan.' + id, kind: 'no-caption-card', detail: `${id} has no caption card in the data`}); return c; };
+  const hsSrc = A.headshot && ((D.photos || {})[A.headshot] ? D.photos[A.headshot].src : A.headshot) || '';
+
+  // ================= COVER =================
+  const cover = () => BK.cover(D);
+
+  // ================= INSIDE LEFT: intro card, one wide hero, the other rooms, the kitchen box =================
+  const left = () => {
+    const I = K.left || {}, ids = PL.left || [], cards = ids.map(card).filter(Boolean);
+    const hd = BK.head(I.kicker || '', I.title || '', I.intro, 'left', PL.leftNoIntro ? 0 : 3);
+    const boxH = 144, boxY = YB - boxH, rest = cards.slice(1), n = Math.max(1, rest.length), gap = 12, pw = (CW - (n - 1)*gap)/n;
+    const side = !!PL.leftSide && n === 1, rowPh = n >= 3 ? 104 : n === 1 ? (PL.leftRowPh || 168) : 108, capL = PL.leftCapL || 2, rowH = side ? 108 + BK.capH(3) : rowPh + BK.capH(capL), rowY = boxY - 12 - rowH;   // leftSide: the row is as tall as the plan version's two captioned photos
+    const heroY = hd.bottom + 12, heroH = rowY - 12 - heroY;
+    let h = BK.frame() + hd.html + BK.cap(D, cards[0], X0, heroY, CW, heroH - BK.capH(2), 2, 'left.hero', {narrow: 16});
+    h += '<div class="row" style="display:block">';
+    if(side){   // one photo with its caption beside it (a full-width crop of the row would be thinner than 3.1 to 1)
+      const c = rest[0], pw1 = Math.floor(rowH*1.75), tx = X0 + pw1 + 18, tw = CW - pw1 - 18, L0 = FXS.leadLabel(c.lead), nl = Math.floor((rowH - 24)/14.5);
+      h += FXS.box(D, c.photo, X0, rowY, pw1, rowH, 'left.photo0');
+      h += `<div class="abs" style="left:${tx}pt;top:${rowY + 2}pt;width:${tw}pt;white-space:nowrap"><div class="lbl" data-slot="left.photo0.label" data-lines="1">${esc(L0.name.toUpperCase())}</div></div>`;
+      h += `<div class="abs"><div style="position:absolute;left:${tx}pt;top:${rowY + 24}pt;width:${tw}pt;height:${nl*14.5}pt;font:400 10.5pt/14.5pt var(--fx-font);color:var(--bk-cream)" data-slot="left.photo0" data-lh="14.5" data-lines="${nl}" data-try="${nl},${nl - 1}" ${FXS.sd(c.s)}></div></div>`;
+    } else rest.forEach((c, i) => { h += BK.cap(D, c, X0 + i*(pw + gap), rowY, pw, rowPh, capL, 'left.photo' + i, {narrow: 10}); });
+    h += '</div>';
+    h += BK.kitchen(D, I.box || {}, boxY, boxH);
+    return h; };
+
+  // ================= INSIDE RIGHT: intro card, one wide hero, a strip of three =================
+  const right = () => {
+    const R = K.right || {}, ids = PL.right || [], cards = ids.map(card).filter(Boolean);
+    const hd = BK.head(R.kicker || '', R.title || '', R.intro, 'right', 3);
+    const rest = cards.slice(1), n = Math.max(1, rest.length), gap = 12, pw = (CW - (n - 1)*gap)/n, rowPh = n === 1 ? 214 : 190, capL = n === 1 ? (PL.rightCapL || 1) : 3, heroL = PL.rightHeroL || 2, lh = 14, fs = PL.rightFs || 11, rowH = rowPh + BK.capH(capL, lh), rowY = YB - rowH;
+    const heroY = hd.bottom + 12, heroH = rowY - 12 - heroY - BK.capH(heroL, lh);
+    let h = BK.frame() + hd.html + BK.cap(D, cards[0], X0, heroY, CW, heroH, heroL, 'right.hero', {narrow: 0, lh, fs});
+    h += '<div class="row" style="display:block">';
+    rest.forEach((c, i) => { h += BK.cap(D, c, X0 + i*(pw + gap), rowY, pw, rowPh, capL, 'right.photo' + i, {narrow: 0, lh, fs}); });
+    h += '</div>';
+    return h; };
+
+  // ================= BACK =================
+  const back = () => {
+    const F = (D.companion || {}).flyer || {}, FB = F.back || {}, KB = K.back || {};
+    const c0 = (PL.back || []).length ? card(PL.back[0]) : null;
+    const SF = FXS.sellingFacts(D), near = (FB.nearby || KB.nearby || []).slice(0, 3);
+    const covTxt = JSON.stringify([(K.front || {}).summary]);
+    const gate = SF.inside.filter(t => /gated/i.test(t)), BX = PL.boxes || {}, c1 = BX.inside || SF.inside.filter(t => !/gated/i.test(t) && !(/garage/i.test(t) && /garage/i.test(covTxt))).slice(0, 4), c2 = BX.outside || SF.outside.concat(gate).slice(0, 4);
+    const rowsN = 4, rowH = 16, boxH = 34 + rowsN*rowH + 10;
+    const cardY = 662, cardH = 76, nearH = 44, nearY = cardY - 22 - nearH, boxY = nearY - 12 - boxH;
+    let h = BK.frame() + BK.addrRow(D, Y0 - 2);
+    const shownSet = new Set(), nk = x => String(x).toLowerCase().replace(/[^a-z0-9 ]/g, '').slice(0, 40), top = Y0 + 38;
+    if(c0) [].concat(...(c0.s || []).map(x => [].concat(x))).forEach(a => shownSet.add(nk(a)));
+    if(hasPlan){
+      // the plan card takes about 55% of the width; the Entry photo stands to its right at the card's full height
+      const cw = Math.round(CW*(PL.planW || 0.55)), dw = PL.planDrawW ? Math.round(CW*PL.planDrawW) : cw, totalH = boxY - 12 - top, pc = FXS.planCard(D, X0 + 7.2 + (cw - dw)/2, top, dw - 14.4, PL.planBand ? Math.round(totalH*0.6) : totalH - 36);   // drawn 7.2 pt narrower each side, so the plans keep 0.3 in from the card's edges
+      const extra = PL.planBand ? 0 : Math.max(0, top + totalH - pc.bottom);   // the card grows to the boxes; the plan sits in the middle of it
+      h += pc.html.replace(/class="card" style="left:[\d.]+pt;top:([\d.]+)pt;width:[\d.]+pt;height:[\d.]+pt/, `class="card" style="left:${X0}pt;top:$1pt;width:${cw}pt;height:${pc.bottom - top + extra}pt`).replace('top:0;width:612pt', `top:${(extra*0.5).toFixed(1)}pt;width:612pt`); issues.push(...pc.issues); window.planIssues = pc.issues;
+      if(PL.legendTight) h = h.replace('class="plan-legend"', 'class="plan-legend tight"');
+      const x2 = X0 + cw + 14, w2 = CW - cw - 14, capL = PL.backCapL || 4;
+      if(c0 && PL.planBand){   // the card shrinks to the plan; the band under it holds a photo with its caption beside it
+        const by = pc.bottom + 14, bh = boxY - 12 - by, pw = Math.min(Math.round(CW*0.6), Math.floor(bh*3.0)), tx = X0 + pw + 18, tw = CW - pw - 18, L0 = FXS.leadLabel(c0.lead), nl = Math.max(2, Math.floor((bh - 24)/14.5));   // owner 11/8: bigger type, real detail fills the band
+        h += FXS.box(D, c0.photo, X0, by, pw, bh, 'back.photo0');
+        h += `<div class="abs" style="left:${tx}pt;top:${by + 2}pt;width:${tw}pt;white-space:nowrap"><div class="lbl" data-slot="back.photo0.label" data-lines="1">${esc(L0.name.toUpperCase())}</div>${L0.size ? `<span style="font:500 9pt/13pt var(--fx-font);color:var(--bk-cream);margin-left:8pt;white-space:nowrap">${esc(L0.size)}</span>` : ''}</div>`;
+        h += `<div class="abs cap"><div class="a" style="position:absolute;left:${tx}pt;top:${by + 24}pt;width:${tw}pt;height:${nl*14.5}pt;font-size:10.5pt;line-height:14.5pt" data-slot="back.photo0" data-lh="14.5" data-lines="${nl}" data-narrow="12" ${FXS.sd(c0.s)}></div></div>`;
+      }
+      if(c0 && !PL.planOnly && !PL.planBand) h += BK.cap(D, c0, x2, top, w2, pc.bottom - top + extra - BK.capH(capL), capL, 'back.photo0', {narrow: 12});
+    } else if((PL.backPhotos || []).length){
+      // a back with no plan: several captioned photos (exterior and outdoor first), then About the house in the room that is left, in bigger type
+      const cs = PL.backPhotos.map(card).filter(Boolean), nP = cs.length, gp = 12, pw = (CW - (nP - 1)*gp)/nP, capL = nP >= 3 ? 4 : 3; let ph = Math.round(pw/(nP >= 3 ? 1.3 : 1.5));
+      cs.forEach(c => [].concat(...(c.s || []).map(x => [].concat(x))).forEach(a => shownSet.add(nk(a))));
+      const aboutS = [].concat(...(FB.floors || []).map(f => f.s)), aboutKept = aboutS.filter(x => ![].concat(x).some(a => shownSet.has(nk(a)))), pool = aboutKept.length >= 3 ? aboutKept : aboutS;
+      // the card is filled to its bottom with real facts: the type grows (11 to 13 pt) while the pool still fills it; a short pool gives its spare height to the photos
+      const flat = pool.map(x => [].concat(x)[0]).join(' '), aw = CW - 36, need = f => Math.ceil(FXS.width(flat, `font-family:Montserrat;font-weight:400;font-size:${f}pt`)/aw*1.05);
+      let fs = 11, lh = 17, aboutH = boxY - 12 - (top + ph + BK.capH(capL) + 12), nAvail = Math.floor((aboutH - 51)/lh), aboutL;
+      for(const f of [13, 12.5, 12, 11.5, 11]){ const l = f*1.55, na = Math.floor((aboutH - 51)/l); fs = f; lh = l; nAvail = na; if(need(f) >= na) break; }
+      if(need(fs) < nAvail && fs === 11){ ph = Math.min(Math.round(ph + (nAvail - need(fs))*lh), Math.round(pw*(nP >= 3 ? 1.0 : 1.2))); }
+      const ay = top + ph + BK.capH(capL) + 12; aboutH = boxY - 12 - ay; aboutL = Math.max(3, Math.min(Math.floor((aboutH - 51)/lh), need(fs)));
+      const tr = []; for(let t = aboutL; t >= 3; t--) tr.push(t);
+      cs.forEach((c, i) => { h += BK.cap(D, c, X0 + i*(pw + gp), top, pw, ph, capL, 'back.photo' + i, {narrow: 10}); });
+      h += `<div class="bk-cream" style="left:${X0}pt;top:${ay}pt;width:${CW}pt;height:${aboutH}pt"></div><div class="abs" style="left:${X0 + 18}pt;top:${ay + 16}pt">${FXS.label('About the house', 'back.about.label')}</div>`;
+      h += `<div class="abs wu" data-slot="back.about" data-lines="${aboutL}" data-try="${tr.join(',')}" data-lh="${lh}" ${FXS.sd(pool)} style="left:${X0 + 18}pt;top:${ay + 16 + 13 + 6}pt;width:${CW - 36}pt;height:${aboutL*lh}pt;font-size:${fs}pt;line-height:${lh}pt;color:var(--bk-ink)"></div>`;
+    } else {
+      const aboutL = 4, aboutH = 16 + 13 + 6 + aboutL*16 + 16, capL = 2;
+      const phH = boxY - 12 - top - BK.capH(capL) - 12 - aboutH;
+      h += BK.cap(D, c0, X0, top, CW, phH, capL, 'back.photo0', {narrow: 16});
+      const ay = top + phH + BK.capH(capL) + 12;
+      const aboutS = [].concat(...(FB.floors || []).map(f => f.s)), aboutKept = aboutS.filter(x => ![].concat(x).some(a => shownSet.has(nk(a))));
+      h += `<div class="bk-cream" style="left:${X0}pt;top:${ay}pt;width:${CW}pt;height:${aboutH}pt"></div><div class="abs" style="left:${X0 + 18}pt;top:${ay + 16}pt">${FXS.label('About the house', 'back.about.label')}</div>`;
+      h += `<div class="abs wu" data-slot="back.about" data-lines="${aboutL}" data-try="${aboutL},3" data-lh="16" ${FXS.sd(aboutKept.length >= 3 ? aboutKept : aboutS)} style="left:${X0 + 18}pt;top:${ay + 16 + 13 + 6}pt;width:${CW - 36}pt;height:${aboutL*16}pt;font-size:10.5pt;line-height:16pt;color:var(--bk-ink)"></div>`;
+    }
+    // the two gold-framed boxes
+    const rw = (CW - 14)/2, bx = [X0, X0 + rw + 14];
+    [[BX.t1 || 'New and updated', c1, 'back.updates'], [BX.t2 || 'Outside', c2, 'back.outside']].forEach(([title, list, slot], i) => {
+      h += `<div class="card" style="left:${bx[i]}pt;top:${boxY}pt;width:${rw}pt;height:${boxH}pt"></div>`;
+      h += `<div class="abs" style="left:${bx[i] + 18}pt;top:${boxY + 13}pt">${FXS.label(title, slot + '.title')}</div>`;
+      h += FXS.bullets(list, bx[i] + 18, boxY + 34, rw - 32, rowH, slot, rowsN, 10).html;
+    });
+    h += BK.nearby(near, nearY, nearH);
+    // the agent card: the only place for the agent and the brokerage
+    h += ContactCard.html([X0, cardY, CW, cardH], Object.assign({}, A, {headshot: hsSrc}), Object.assign({}, b, {logo: b.logo}), {layout: 'panel', size: 'mid', fine: '', bottomGap: 0.5, fieldAccent: true});
+    h += `<div class="abs fine" style="left:${X0}pt;top:${cardY + cardH + 5}pt;width:${CW}pt;height:9pt;text-align:center;font-size:7pt;line-height:9pt;color:var(--bk-cream)" data-slot="fineprint" data-lines="1" data-fine="1">Information deemed reliable but not guaranteed.</div>`;
+    return h; };
+
+  // ---------- assemble: the flyer is one panel of the fold-over (front = the cover, back = the back) on the 8.5 x 11 sheet ----------
+  const P = D.piece || {}, inner = P.side === 'back' ? back() : cover();
+  const f = SW.frame(D, 612, 792, inner);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  SW.fill();
+  SW.fitLogos();
+  if(window.ContactCard) ContactCard.fit(document);
+  issues.push(...SW.focus(D));
+  if(document.querySelectorAll('.bk-frame').length !== 1) issues.push({slot: 'flyer', kind: 'gold-frame-missing', detail: 'the gold double frame is not on this side'});
+  if(P.side !== 'back' && /jordan|brokerage|realtor/i.test(document.getElementById('pages').textContent)) issues.push({slot: 'flyer.front', kind: 'agent-on-front', detail: 'the front carries no agent and no brokerage'});
+  window.brochureCheck = () => SW.check(D, (window.planIssues || []).concat(issues));
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>

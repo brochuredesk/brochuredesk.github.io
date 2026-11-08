@@ -67,9 +67,9 @@
     return !frozenEl(el) && !/center|right/.test(getComputedStyle(el).textAlign); });
   FXS.justify = () => { blocks90().forEach(el => { const L = SW.lines(el);   // no stretching: a block whose last line is under 90% gets a type step (never under 8 pt, never more lines) or its words are reworked
     if(L.n < 2 || L.fill >= 0.9 || el.dataset.sized) return;
-    if(el.dataset.slot === 'listing.body' || el.closest('.row[style*="pointer-events"]')) return;   // the OH write-up and the postcard caption rows keep one size: worded, not stepped
+    if(el.closest('.row[style*="pointer-events"]')) return;   // the postcard caption rows keep one size: worded, not stepped (owner 11/8: the OH write-up steps like every write-up)
     const f0 = parseFloat(getComputedStyle(el).fontSize), inline0 = el.style.fontSize; el.dataset.sized = '1'; let done = false;
-    for(const f of [...Array(60).keys()].flatMap(i => [1 - (i + 1)*.003, 1 + (i + 1)*.003]).filter(f => f >= .86 && f <= 1.16)){ if(f0*f*.75 < 8) continue; el.style.fontSize = (f0*f) + 'px'; const L2 = SW.lines(el);
+    for(const f of [...Array(60).keys()].flatMap(i => [1 - (i + 1)*.003, 1 + (i + 1)*.003]).filter(f => f >= (el.dataset.slot === 'listing.body' ? 1 : .86) && f <= 1.16)){ if(f0*f*.75 < 8) continue; el.style.fontSize = (f0*f) + 'px'; const L2 = SW.lines(el);   // the OH write-up only steps up (phone size)
       if(L2.n <= L.n && L2.fill >= 0.9){ done = true; if(el.dataset.lines) el.dataset.lines = L2.n; break; } }
     if(!done) el.style.fontSize = inline0; }); };
   FXS.rowStep = () => { document.querySelectorAll('.row[style*="pointer-events"]').forEach(row => { const els = [...row.querySelectorAll('[data-s][data-slot]')].filter(e => e.offsetWidth); if(els.length < 2 || row.dataset.sized) return;
@@ -106,7 +106,7 @@
   const FILL = {min: 0.76};   // pick sets that fill their lines (kept as drawn); the last line is then brought to 90% by a type step or by wording
   const pickFor = (el, T) => {
     // each sentence is a string, or a list of ways to say the same fact at different lengths (only one is ever used)
-    const S = JSON.parse(el.dataset.s).map(x => [].concat(x)), lead = el.dataset.lead || '', n = Math.min(S.length, 12);
+    const nz = t => String(t).toLowerCase().replace(/[^a-z0-9 ]/g, '').trim(), S = JSON.parse(el.dataset.s).map(x => [].concat(x)).filter((a, i, all) => !all.slice(0, i).some(b => a.every(x => b.some(y => nz(x) === nz(y))))), lead = el.dataset.lead || '', n = Math.min(S.length, 14);   // owner 11/8: an exact repeat of an earlier entry never takes a slot   // owner 11/8: room for the added true sentences
     let best = null, near = null, hi = null, lo = null;
     const full = S.map(a => a[0]);
     el.innerHTML = html(lead, full); const A = SW.lines(el), allLen = (lead ? lead.length + 1 : 0) + full.join(' ').length, cpl = allLen / Math.max(.5, A.n - 1 + A.fill);
@@ -173,6 +173,7 @@
     groups.forEach(els => {
       const max = Math.max(...els.map(e => +e.dataset.lines));
       let chosen = null;
+      if(els[0].closest('[data-grow]')){ const f0 = FILL.min; FILL.min = 0.9; for(let T = max; T >= 2 && !chosen; T--) if(els.every(e => pfN(e, T))) chosen = T; FILL.min = f0; }   // owner 11/8: a row whose photos grow takes a line fewer before a short last line
       for(let T = max; T >= 2 && !chosen; T--) if(els.every(e => pfN(e, T))) chosen = T;
       els.forEach(e => {
         const lead = e.dataset.lead || '';

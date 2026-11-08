@@ -58,7 +58,7 @@
     lines.sort((a,b)=>a.top-b.top);
     const box = el.getBoundingClientRect().width;
     const last = lines[lines.length-1];
-    return {n: lines.length, fill: last ? (last.r-last.l)/box : 0};
+    return {n: lines.length, fill: last ? (last.r-last.l)/box : 0, min: lines.length > 1 ? Math.min(...lines.slice(0, -1).map(l => (l.r - l.l)/box)) : 1};
   };
   SW.textWidth = el => { const r = document.createRange(); r.selectNodeContents(el); return pt(r.getBoundingClientRect().width); };
   const cap1 = t => String(t).replace(/^(\s*)([a-z])/, (m, w, c) => w + c.toUpperCase());   // every caption sentence starts with a capital (owner review r7)
@@ -81,8 +81,9 @@
       if(L.n === T - 1 && (!lo || L.fill > lo.fill)) lo = {fill: L.fill};
       if(L.n !== T) return;
       if(!near || L.fill > near.fill) near = {pick, fill: L.fill};
-      if(L.fill < 0.76) return;
-      const score = (L.fill >= 0.8 ? 1000 : 500) - pick.length * 10 + L.fill;   // the fewest, fullest sentences that fill the box; the last line well filled
+      if(L.fill < Math.max(0.76, +el.dataset.fill || 0)) return;   // data-fill: a write-up's own floor (0.9, owner 11/7-11/8)
+      if(el.dataset.lfill && L.min < +el.dataset.lfill) return;   // a justified write-up: every line already 80%+ full set ragged, so justifying never opens wide gaps
+      const score = (L.fill >= 0.8 ? 1000 : 500) - pick.length * 10 + L.fill + (el.dataset.lfill ? 20*L.min : 0);   // the fewest, fullest sentences that fill the box; the last line well filled
       if(!best || score > best.score) best = {score, pick, fill: L.fill};
     };
     const walk = (m, i, acc) => {
@@ -106,8 +107,22 @@
   };
   const LH = 12.5, CAPPAD = 5;
   SW.pfN = pfN; SW.capHtml = html;   // for a piece's own refit after layout (fold-over strip, owner review r4)
+  // after the fill: a full-width write-up (data-justify) whose sentences end short of its full box (data-h0, pt) takes the smallest bigger type (0.25 pt steps, up to 1.25x)
+  // at which a set of its sentences fills the box, every line 80%+ and the last 90%+ set ragged; then it is justified (owner 11/8: full column width, no blank space). Same as FXS-14's FO.grow.
+  SW.grow = () => document.querySelectorAll('[data-justify]').forEach(el => { if(!el.textContent.trim() || !el.dataset.h0) return;
+    const H = +el.dataset.h0, cs = getComputedStyle(el); if(!el.dataset.fs0) el.dataset.fs0 = parseFloat(cs.fontSize)*0.75; if(!el.dataset.r0) el.dataset.r0 = (parseFloat(cs.lineHeight)*0.75)/el.dataset.fs0 || 1.5;
+    const fs0 = +el.dataset.fs0, r = +el.dataset.r0, keep = el.innerHTML; el.style.textAlign = 'left'; el.style.height = 'auto'; let best = null;
+    for(let fs = fs0; fs <= fs0*1.25 + 0.01 && !best; fs += 0.25){ el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs*r) + 'pt';
+      const T = Math.floor((H + 0.5)/(fs*r)); if(T < 2) continue;
+      for(const t of [T, T - 1]){ if(t*fs*1.7 < H) continue; const b = pfN(el, t); if(b){ best = {fs, n: t, pick: b.pick}; break; } } }
+    const lead = el.dataset.lead || '';
+    if(!best){ el.style.fontSize = fs0 + 'pt'; el.innerHTML = keep; el.style.lineHeight = (fs0*r) + 'pt'; best = {fs: fs0, n: SW.lines(el).n}; }
+    else { el.style.fontSize = best.fs + 'pt'; el.innerHTML = html(lead, best.pick); }
+    const lh = Math.min(H/best.n, best.fs*1.7);
+    el.style.lineHeight = lh + 'pt'; el.style.height = (best.n*lh) + 'pt'; el.dataset.lines = best.n; if(el.dataset.lh) el.dataset.lh = lh; el.style.textAlign = 'justify'; });
   SW.fill = () => {
     const issues = [];
+    document.querySelectorAll('[data-justify]').forEach(e => { e.style.textAlign = 'left'; });   // set ragged while the sentences are picked
     const caps = [...document.querySelectorAll('.cap .a[data-s]')], rest = [...document.querySelectorAll('[data-s]')].filter(e => !caps.includes(e));
     const settle = (el, T) => {   // T lines: the best set, else the nearest and a report
       const lead = el.dataset.lead || '', b = pfN(el, T);
@@ -123,6 +138,7 @@
         if(!T){ let bestT = tries[0], bf = -1; tries.forEach(t => { pfN(el, t); if(el.__near && el.__near.fill > bf){ bf = el.__near.fill; bestT = t; } }); T = bestT; }
         settle(el, T);
         if(el.dataset.lh) el.style.height = (T * +el.dataset.lh) + 'pt';
+        if(el.dataset.justify){ if(!el.dataset.h0) el.dataset.h0 = tries[0] * (+el.dataset.lh || 0) || ''; el.style.textAlign = 'justify'; }
       } else settle(el, +el.dataset.lines || 1);
     });
     // photo captions shrink to what their sentences honestly fill (never padded): the photo takes the room. The captions in one row share a line count when they can.
@@ -199,7 +215,7 @@
       if(+el.dataset.lines < 2 || !el.textContent.trim()) return;
       const L = SW.lines(el);
       if(L.n < +el.dataset.lines) issues.push({slot:el.dataset.slot, kind:'caption-short', lines:L.n, want:+el.dataset.lines, diag: el.dataset.diag || ''});
-      else if(L.fill < 0.75) issues.push({slot:el.dataset.slot, kind:'last-line-short', pct:Math.round(L.fill*100), diag: el.dataset.diag || ''});
+      else if(L.fill < Math.max(0.75, (+el.dataset.fill || 0) - 0.005)) issues.push({slot:el.dataset.slot, kind:'last-line-short', pct:Math.round(L.fill*100), diag: el.dataset.diag || ''});
     });
     document.querySelectorAll('.ph').forEach(el=>{
       const img = el.querySelector('img'), slot = el.dataset.slotPhoto || el.dataset.photo || 'photo';

@@ -137,7 +137,8 @@
     const photo = hs ? `<img class="cc-hs" data-slot="agent.headshot" src="${esc(a.headshot)}" alt="" style="width:${S.hsW}pt">` : '';
 
     // brokerage: wide wordmark alone; square or stacked mark plus the name in type; no logo, the name in type
-    const ad = addrLines(b), olh = S.officeLH || 1.33, ol = (t, slot, cls = '') => `<div class="cc-office ${cls}" data-slot="${slot}" style="font-size:${S.office}pt;line-height:${S.office * olh}pt">${t}</div>`;
+    // owner 11/7: a postcard never prints the brokerage address under the logo (the return address is already on the card); the logo grows into the room (every set)
+    const ad = opts.postcard ? [] : addrLines(b), olh = S.officeLH || 1.33, ol = (t, slot, cls = '') => `<div class="cc-office ${cls}" data-slot="${slot}" style="font-size:${S.office}pt;line-height:${S.office * olh}pt">${t}</div>`;
     const offLines = ad.map(t => ol(esc(t), 'broker.address')).join('') +
       (b.phone ? ol(`${esc(b.officeLabel || 'Office')} <b>${esc(b.phone)}</b>`, 'broker.phone') : '') + (b.web ? ol(esc(b.web), 'broker.web', 'cc-brkweb') : '');
     const below = S.lockDir !== 'right';
@@ -323,6 +324,15 @@
     const img = panel.querySelector('.cc-logo img, .cc-brkname'), ofl = [...panel.querySelectorAll('.cc-office')].filter(vis);
     if(img && ofl.length){ const it = img.getBoundingClientRect().top, ob = letters(ofl[ofl.length - 1], k)[1];
       pt += (t - it) / k / PT; pb += (ob - b) / k / PT; set(pt, pb); }
+    // owner 11/7: with no brokerage address under it, the logo grows into the freed room (up to the panel's width), and the
+    // office lines close up under it, so the logo sits centered in the space the address left
+    const li = panel.querySelector('.cc-logo img');
+    if(li && ofl.length && !panel.querySelector('[data-slot="broker.address"]')){
+      const r0 = li.getBoundingClientRect(), gap = (ofl[0].getBoundingClientRect().top - r0.bottom) / k, pw = panel.clientWidth - 8;
+      if(gap > 8 && r0.width > 0){ const h0 = r0.height / k, w0 = r0.width / k, h1 = Math.min(h0 + (gap - 8)*.75, h0 * (pw - 12) / w0);
+        const size = h => { li.style.height = h + 'px'; li.style.maxHeight = h + 'px'; li.parentElement.style.height = h + 'px'; li.style.width = 'auto'; li.style.maxWidth = pw + 'px'; };
+        // never past the panel: step back toward the old size while the panel overflows (bigger logo slots, e.g. Atlas)
+        let h = h1; size(h); for(let i = 0; i < 20 && h > h0 && (panel.scrollHeight > panel.clientHeight + 1 || panel.scrollWidth > panel.clientWidth + 1); i++){ h = Math.max(h0, h - (h1 - h0)/10); size(h); } } }
   };
   // a tinted brokerage band (opts.bandTint, Ivory's 6 x 9 backs): the agent's lines sit centered top to bottom between the
   // card's top and the band's top (owner 10/27, Part 1c), measured on the letters, not the line boxes. The column's

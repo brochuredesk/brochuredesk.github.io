@@ -116,6 +116,23 @@ FXP.start(['400 20pt "Pinyon Script"', '400 20pt "Cormorant Garamond"', '500 20p
   // the event: the gold label on one line, the day over the date's left edge, the date large, the time at 60% of it (beside it when both fit, else under)
   const bEvent = (x, y, w, k, o) => { o = o || {}; const out = []; let yy = y;
     const labT = d => tp({slot: 'oh.label', text: d ? `${E.label.toUpperCase()}  \u00b7  ${String(E.weekday).toUpperCase()}` : E.label.toUpperCase(), css: caps(500, 3.2*Math.max(k, .8), TK.accent) + ';text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:6pt', x, y: yy, w, max: 50*SC*k, min: F.ev, lh: 1.15});
+    // owner 11/8 (Broker Open post, p22): the perks box no longer stacks under the date: the day, date and time on the left, the perks box beside them on the
+    // right, so the two share one band and nothing runs into the agent
+    let perksDone = false;
+    if(shape === 'post' && (E.refreshments || E.note)){ const lab = labT(false); out.push(lab.html); yy += lab.h/K + 14*SC;
+      const lw = Math.round(w*.5), x2 = x + lw + 26*SC, w2 = w - lw - 26*SC, top = yy, dcss = `font-family:'Cormorant Garamond';font-weight:700;letter-spacing:0;color:var(--fx-ink);${LN}`;
+      // left: the day and the date on two lines, the time under them
+      const dt2 = tp({slot: 'oh.date', text: `${E.weekday}, ${String(E.monthDay || E.long)}`, parts: [`${E.weekday},`, String(E.monthDay || E.long)], css: dcss, x: x - 2, y: yy, w: lw + 2, max: 104*SC*Math.max(k, .7), min: p(50*SC), lines: 2, lh: 1.04});
+      out.push(dt2.html); let ly = yy + dt2.h/K;
+      if(E.time){ const t2 = tp({slot: 'oh.time', text: E.time, css: dcss, x, y: ly + 6*SC, w: lw, max: 60*SC*Math.max(k, .85), min: p(48*SC), lh: 1.05}); out.push(t2.html); ly += 6*SC + t2.h/K; }
+      // right: the perks in the gold box, as tall as the date column
+      const items = [[E.refreshments, 'oh.refreshments', 700], [E.note, 'oh.note', 600]].filter(i => i[0]), py = 18*SC, rows = []; let by = top + py;
+      items.forEach(([tx, slot, wt]) => { const r = tp({slot, text: tx, css: `font-family:'Cormorant Garamond';font-weight:${wt};color:var(--fx-ink)`, x: x2 + 22*SC, y: by, w: w2 - 44*SC, max: Math.max(F.body*1.1, 46*SC*k*K)/K, min: F.body, lines: 3, lh: 1.12}); rows.push({r, slot}); by += r.h/K + 10*SC; });
+      by -= 10*SC; const boxH = Math.max(by - top + py, ly - top), off = (boxH - (by - top + py))/2;   // the perks centered up and down in a box as tall as the date column
+      out.push(`<div class="card" data-box="oh.box" style="left:${p(x2)}pt;top:${p(top)}pt;width:${p(w2)}pt;height:${p(boxH)}pt"></div>`);
+      rows.forEach(({r}) => out.push(r.html.replace(/top:([\d.]+)pt/, (m0, v) => `top:${(+v + p(off)).toFixed(2)}pt`)));
+      yy = top + Math.max(boxH, ly - top); perksDone = true;
+    } else {
     let withDay = shape === 'post' || shape === 'pin', lab = labT(withDay);
     if(withDay && lab.n > 1){ withDay = false; lab = labT(false); }   // the day joins the label only when both fit on one line
     out.push(lab.html); yy += lab.h/K + 12*SC;
@@ -125,7 +142,7 @@ FXP.start(['400 20pt "Pinyon Script"', '400 20pt "Cormorant Garamond"', '500 20p
       if(timeUp){ const tsz = ((E.refreshments || E.note) ? 55 : 64)*SC*Math.max(k, .85), tpt = p(tsz), tw1 = FXP.width(E.time, `font-family:'Cormorant Garamond';font-weight:700;font-size:${tpt}pt`);   // the time stands on the day's row, at the right, so neither half of the row is empty
         const t1 = T({slot: 'oh.time', text: E.time, css: `font-family:'Cormorant Garamond';font-weight:700;color:var(--fx-ink);${LN};letter-spacing:0;text-align:right`, x: p(x + w) - tw1 - 40, y: p(yy), w: tw1 + 40, max: tpt, min: tpt, lh: 1.05}); out.push(t1.html); yy += Math.max(wk.h, t1.h/K) + 2; }
       else yy += wk.h + 2; }
-    const md = String(E.monthDay || E.long), dmax = (timeUp ? 168 : 128)*SC*((shape === 'post' && (E.refreshments || E.note)) ? Math.max(k, .9) : k);   // owner 11/8: on the Broker Open post the date keeps its size (no empty half row); the rest steps down
+    const md = String(E.monthDay || E.long), dmax = (timeUp ? 168 : 128)*SC*k;
     let dt = tp({slot: 'oh.date', text: md, css: `font-family:'Cormorant Garamond';font-weight:700;letter-spacing:0;color:var(--fx-ink);${LN}`, x: x - 2, y: yy, w: w + 2, max: dmax, min: p(60*SC), lh: 1.02});
     const tcss = s => `font-family:'Cormorant Garamond';font-weight:700;color:var(--fx-ink);${LN}`;
     let tm = null, inline = false;
@@ -135,7 +152,8 @@ FXP.start(['400 20pt "Pinyon Script"', '400 20pt "Cormorant Garamond"', '500 20p
       else tm = null; }
     out.push(dt.html); yy += dt.h/K;
     if(E.time && !timeUp){ if(inline) out.push(tm.html); else { const t2 = tp({slot: 'oh.time', text: E.time, css: tcss() + ';letter-spacing:0', x, y: yy + 4, w, max: dt.s/K*.6, min: dt.s/K*.6, lh: 1.05}); out.push(t2.html); yy += 4 + t2.h/K; } }
-    const items = [[E.refreshments, 'oh.refreshments', 700], [E.note, 'oh.note', 600]].filter(i => i[0]);
+    }
+    const items = perksDone ? [] : [[E.refreshments, 'oh.refreshments', 700], [E.note, 'oh.note', 600]].filter(i => i[0]);
     if(items.length){ yy += 20*SC;
       const bf = Math.max(F.body*1.1, 44*SC*k*K), py = 16*SC, rows = []; let by = yy + py;
       items.forEach(([tx, slot, wt]) => { const r = tp({slot, text: tx, css: `font-family:'Cormorant Garamond';font-weight:${wt};color:var(--fx-ink)`, x: x + 24*SC, y: by, w: w - 48*SC, max: bf/K, min: F.body, lines: 2, lh: 1.12}); rows.push(r.html); by += r.h/K + 6*SC; });
@@ -172,6 +190,9 @@ FXP.start(['400 20pt "Pinyon Script"', '400 20pt "Cormorant Garamond"', '500 20p
       let want = Math.round(HP - 4 - MG*.9 - MG*.55 - need); const lim = Math.round(HP*.62);
       while(want > heroH && (want > lim || !heroFit(WP, want))) want -= 4;
       if(want > heroH) heroH = want; }
+    // owner 11/8 (Broker Open post): when even the smallest type step cannot fit every block with a clear gap, the photo gives up height, never past the whole house
+    if(shape === 'post' && kind === 'oh' && (E.refreshments || E.note)){ const w0 = WP - 2*MG, fits = hh => stack(MG, hh + 4 + MG*.55, w0, HP - hh - 4 - MG*.9 - botZ, facs, KS.concat([.66, .62, .58, .54, .5]), true);
+      while(!fits(heroH) && heroH > HP*.3 && heroFit(WP, heroH - 8)) heroH -= 8; }
     const top = heroH + 4;
     front.push(heroBlock(0, 0, WP, heroH)); front.push(goldRule(0, heroH, WP, 4*SC));
     const base = HP - top - MG*.9 - botZ, y00 = top + MG*.55;
@@ -179,7 +200,7 @@ FXP.start(['400 20pt "Pinyon Script"', '400 20pt "Cormorant Garamond"', '500 20p
     const strip3 = shape === 'story' || shape === 'pin' || (shape === 'post' && (kind === 'oh' || kind === 'js'));   // the pin and the Open House post take the three-room strip too, so no band opens between the blocks
     if(strip3){ for(const sh0 of (shape === 'story' ? [300, 250, 210, 170, 140] : [420, 380, 340, 300, 260, 220, 180, 140, 125, 112])){ const sh = Math.round(sh0*SC), avail = base - sh - 24*SC; const res = stack(MG, y00 + sh + 24*SC, w, avail, facs, KS, true);
         if(res){ placed = res; front.push(bStrip(MG, y00, w, sh).html); break; } }
-      if(!placed && shape !== 'story'){ const sh = Math.round(112*SC), perks = !!(E.refreshments || E.note); placed = perks ? null : stack(MG, y00 + sh + 24*SC, w, base - sh - 24*SC, facs, KS, true); if(placed) front.push(bStrip(MG, y00, w, sh).html); else placed = (perks && shape === 'post' && stack(MG, y00, w, base, facs, KS.concat([.66, .62, .58]), true)) || stack(MG, y00, w, base, facs, KS); }   // owner 11/8: the Broker Open post steps its type down before anything touches   // tightest strip, text a little smaller; else the plain stack
+      if(!placed && shape !== 'story'){ const sh = Math.round(112*SC), perks = !!(E.refreshments || E.note); placed = perks ? null : stack(MG, y00 + sh + 24*SC, w, base - sh - 24*SC, facs, KS, true); if(placed) front.push(bStrip(MG, y00, w, sh).html); else placed = (perks && shape === 'post' && stack(MG, y00, w, base, facs, KS.concat([.66, .62, .58, .54, .5]), true)) || stack(MG, y00, w, base, facs, KS); }   // owner 11/8: the Broker Open post steps its type down before anything touches   // tightest strip, text a little smaller; else the plain stack
       else if(!placed){ const sh = Math.round(140*SC); placed = stack(MG, y00 + sh + 24*SC, w, base - sh - 24*SC, facs, KS); front.push(bStrip(MG, y00, w, sh).html); }
       // the bottom safe zone stays free of text; the design runs into it: two more rooms to the bottom edge under a gold rule
       if(shape === 'story'){ const used = new Set(roomsAll().slice(0, 3)), rs = roomsAll().filter(id => !used.has(id)).slice(0, 2), ry = HP - botZ + Math.round(MG*.3), by = ry + 6*SC + 12*SC, bh = HP - by, g2 = 8*SC;   // gold rule, a 12 px dark gap, then the pair to the bottom edge

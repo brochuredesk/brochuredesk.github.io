@@ -94,10 +94,10 @@ window.brochureReady = (async function(){
       if(PL.legendTight) h = h.replace('class="plan-legend"', 'class="plan-legend tight"');
       const x2 = X0 + cw + 14, w2 = CW - cw - 14, capL = PL.backCapL || 4;
       if(c0 && PL.planBand){   // the card shrinks to the plan; the band under it holds a photo with its caption beside it
-        const by = pc.bottom + 14, bh = boxY - 12 - by, pw = Math.min(Math.round(CW*0.6), Math.floor(bh*3.0)), tx = X0 + pw + 18, tw = CW - pw - 18, L0 = FXS.leadLabel(c0.lead), nl = Math.max(2, Math.floor((bh - 24)/13));
+        const by = pc.bottom + 14, bh = boxY - 12 - by, pw = Math.min(Math.round(CW*0.6), Math.floor(bh*3.0)), tx = X0 + pw + 18, tw = CW - pw - 18, L0 = FXS.leadLabel(c0.lead), nl = Math.max(2, Math.floor((bh - 24)/14.5));   // owner 11/8: bigger type, real detail fills the band
         h += FXS.box(D, c0.photo, X0, by, pw, bh, 'back.photo0');
         h += `<div class="abs" style="left:${tx}pt;top:${by + 2}pt;width:${tw}pt;white-space:nowrap"><div class="lbl" data-slot="back.photo0.label" data-lines="1">${esc(L0.name.toUpperCase())}</div>${L0.size ? `<span style="font:500 9pt/13pt var(--fx-font);color:var(--bk-cream);margin-left:8pt;white-space:nowrap">${esc(L0.size)}</span>` : ''}</div>`;
-        h += `<div class="abs cap"><div class="a" style="position:absolute;left:${tx}pt;top:${by + 24}pt;width:${tw}pt;height:${nl*13}pt;font-size:9.5pt;line-height:13pt" data-slot="back.photo0" data-lh="13" data-lines="${nl}" data-narrow="12" ${FXS.sd(c0.s)}></div></div>`;
+        h += `<div class="abs cap"><div class="a" style="position:absolute;left:${tx}pt;top:${by + 24}pt;width:${tw}pt;height:${nl*14.5}pt;font-size:10.5pt;line-height:14.5pt" data-slot="back.photo0" data-lh="14.5" data-lines="${nl}" data-narrow="12" ${FXS.sd(c0.s)}></div></div>`;
       }
       if(c0 && !PL.planOnly && !PL.planBand) h += BK.cap(D, c0, x2, top, w2, pc.bottom - top + extra - BK.capH(capL), capL, 'back.photo0', {narrow: 12});
     } else if((PL.backPhotos || []).length){
