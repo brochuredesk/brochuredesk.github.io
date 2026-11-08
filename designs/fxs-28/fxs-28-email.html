@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · FX extras · fxs-28 Open House email</title>
+<link rel="stylesheet" href="fx.css">
+<link rel="stylesheet" href="fxs28-tokens.css">
+<link rel="stylesheet" href="fxs28-marks.css">
+<script src="fxs28-tk.js"></script>
+<script src="../engine/ivory.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script src="fxs28.js"></script>
+<script src="fxpage.js"></script>
+<script src="fxs28-patch.js"></script>
+<!--
+  fxs-28 Open House email (600 px, drawn at 450 pt). The flyer's pieces carry through: the address set vertically up the left edge with the gold
+  rule, the event between two hairlines (the label loud, the date in Cormorant, the time at 60% of its size in bold), the REALTOR(R) perks card, the whole
+  house in its own plain frame, two rooms with the round neighborhood seal over their join, the italic write-up, the four-stat row, the agent and the
+  one logo. No new copy: the listing data and the package's own lines. No photo appears twice.
+-->
+<style>
+  .abs{position:absolute}
+  .evl{font-family:'Oswald';font-weight:600;letter-spacing:3pt;color:var(--fx-accent);text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:6pt;white-space:nowrap;overflow:hidden}
+  .wk{font:500 15pt/18pt 'Montserrat';letter-spacing:3.4pt;text-transform:uppercase;color:var(--fx-accent);white-space:nowrap}
+  .dt{font:700 54pt/1 'Oswald';color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+  .tm{font:700 32pt/1 'Oswald';color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+  .evb{font:600 15pt/22pt 'Montserrat';color:var(--fx-on-spine)}
+  .evb.b{font-weight:700}
+  .wu{font:400 15pt/22pt 'Montserrat';color:var(--fx-text)}
+  .fine{font:400 10pt/14pt 'Montserrat';color:var(--fx-mute);white-space:normal}
+  .oh-agent-name{font-family:'Montserrat';font-weight:600}
+  .oh-agent{font-family:'Montserrat'}
+  .stats .s{font-size:13pt;letter-spacing:.6pt}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+FXS.hookCheck();
+FXS.extra.push(FXS.ohChecks);
+FXP.start(['300 20pt "Montserrat"', '400 20pt "Montserrat"', '500 20pt "Montserrat"', '600 20pt "Montserrat"', '700 20pt "Montserrat"', '500 20pt "Oswald"', '600 20pt "Oswald"', '700 20pt "Oswald"'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  if(E.time) E.time = E.time.replace(/(\d)\s+(am|pm)\b/gi, '$1 $2');
+  const W = 450, X0 = 84, X1 = 432, CW = X1 - X0, SPW = 62;
+  const pic = (id, x, y, w, h) => OHL.photo(D, id, `left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt`);
+  const D2 = Object.assign({}, D, {companion: Object.assign({}, C, {postcard: Object.assign({}, C.postcard || {}, {master: ((C.postcard || {}).master || []).filter(t => !FXP.CONDITION.test(t)).filter((t, i, a) => FXS.dedupe5(a).includes(t))})})});
+  const h = [];
+  // ---- the horizontal address and the place on top, the event right under them (above the first 600 px), then the whole house
+  let y = 22;
+  const ad = FXS.scriptLine(FXS.rawAddr(L), X0, y, CW, 34, 24, 'address', {lh: 1.15}); h.push(ad.html); y += ad.lh + 1;
+  h.push(FXS.placeRow(L, X0, y, CW, 12.5, 'place')); y += 12.5*1.4 + 12;
+  h.push(`<div class="abs" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:1.5pt;background:var(--fx-rule-hard)"></div>`); y += 14;
+  const lfs = FXP.fitSize(E.label.toUpperCase(), "font-family:Oswald;font-weight:600;letter-spacing:3pt", CW, 22, 16), lab1 = FXP.width(E.label.toUpperCase(), `font:600 ${lfs}pt Oswald;letter-spacing:3pt`) <= CW;
+  h.push(`<div class="abs evl" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${lfs*1.3}pt;font-size:${lfs}pt;line-height:${lfs*1.3}pt" data-slot="oh.label" data-lines="1">${esc(E.label.toUpperCase())}</div>`); y += lfs*1.3 + 12;
+  h.push(`<div class="abs wk" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:19pt" data-slot="oh.weekday" data-lines="1">${esc(E.weekday)}</div>`); y += 23;
+  const dText = String(E.monthDay || E.long); let S = 54; while(S > 30 && FXP.width(dText, `font-family:Oswald;font-weight:700;font-size:${S}pt`) > CW) S -= .5;
+  h.push(`<div class="abs dt" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${S*1.1}pt;font-size:${S}pt;line-height:${S*1.1}pt" data-slot="oh.date" data-lines="1">${esc(dText)}</div>`); y += S*1.1 + 6;
+  if(E.time){ const TS = S*.6; h.push(`<div class="abs tm" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${TS*1.15}pt;font-size:${TS}pt;line-height:${TS*1.15}pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`); y += TS*1.15 + 12; }
+  const perks = [[E.refreshments, 'oh.refreshments', 'evb b'], [E.note, 'oh.note', 'evb']].filter(p => p[0]);
+  if(perks.length){ const ph = 14 + perks.length*26 + 6; h.push(`<div class="card" data-box="oh.box" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${ph}pt"></div>`);
+    perks.forEach(([tx, slot, cls], i) => h.push(`<div class="abs ${cls}" style="left:${X0 + 14}pt;top:${y + 12 + i*26}pt;width:${CW - 28}pt;height:24pt;white-space:nowrap;overflow:hidden" data-slot="${slot}" data-lines="1">${esc(tx)}</div>`)); y += ph + 14; }
+  h.push(`<div class="abs" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:1.5pt;background:var(--fx-rule-hard)"></div>`); y += 16;
+  const fr = OHL.fitHero(D, hero, CW, 260);
+  h.push(pic(hero, X0, y, CW, fr.h)); y += fr.h + 16;
+  // ---- two rooms, the write-up, the three tiles
+  const rooms = OHEmail.support(D, hero, 8).filter(id => !Ivory.fullHouse(D, id)).sort((a, b) => FXS.archScore(D, b) - FXS.archScore(D, a)).filter((id, i, arr) => arr.findIndex(o => SW.famOf(o) === SW.famOf(id) || o.replace(/\d+[a-z]?$/, '') === id.replace(/\d+[a-z]?$/, '')) === i);
+  const g = 8, rw = (CW - g)/2, rh = 120;
+  rooms.slice(0, 2).forEach((id, i) => h.push(pic(id, X0 + i*(rw + g), y, rw, rh))); y += rh + 16;
+  const wu = OHL.writeup(D2, 'wu', CW, 22, 9, [], {narrow: true});
+  if(wu.text){ const ww = wu.w || CW; h.push(`<div class="abs wu" style="left:${X0}pt;top:${y}pt;width:${ww}pt;height:${wu.n*22 + 2}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`); y += wu.n*22 + 2 + 16; }
+  const st = FXS.statItems(L).slice(0, 3);
+  h.push(`<div class="stats" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:70pt;gap:8pt">${st.map((t, i) => FXS.tile(t, 'fact.' + i, 26, 12.5, .8).replace('class="tile"', 'class="tile" data-small="1"')).join('')}</div>`); y += 70 + 18;
+  // ---- the agent and the one logo
+  h.push(OHL.contact(D, {x: X0 - 4, y, w: CW + 8, h: 190, field: 'light', tone: 'light', color: TK.ink, accent: TK.accent, size: 'email', nameFont: "'Montserrat'", nameWeight: 600, bodyFont: "'Montserrat'"}));
+  y += 190 + 4;
+  const fine = C.fineprint || 'Information deemed reliable but not guaranteed.';
+  const fn = FXP.lines(fine, "font:400 10pt/14pt 'Montserrat'", CW);
+  h.push(`<div class="abs fine" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${fn*14}pt" data-slot="fineprint" data-lines="${fn}" data-fine="1">${esc(fine)}</div>`);
+  y += fn*14 + 26;
+  h.unshift(FXS.spine(D, SPW, {text: FXS.rawAddr(L), max: 40, min: 22, top: 60, bottom: y - 40, H: y, hood: false}).html);
+  return {W, H: y, html: `<div class="page em" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${y}pt;background:var(--fx-paper)">${h.join('')}</div>`};
+});
+</script>
+</body>
+</html>
