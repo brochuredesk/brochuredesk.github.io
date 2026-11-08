@@ -78,7 +78,7 @@
     lines.sort((a,b)=>a.top-b.top);
     const box = el.getBoundingClientRect().width;
     const last = lines[lines.length-1], right = el.getBoundingClientRect().right;
-    return {n: lines.length, fill: last ? (last.r-last.l)/box : 0, gap: lines.length > 1 ? (right - Math.max(...lines.slice(0, -1).map(l => l.r)))*0.75 : 0};   // gap: how far (pt) the longest full line stops short of the box edge
+    return {n: lines.length, fill: last ? (last.r-last.l)/box : 0, min: lines.length > 1 ? Math.min(...lines.slice(0, -1).map(l => (l.r - l.l)/box)) : 1, gap: lines.length > 1 ? (right - Math.max(...lines.slice(0, -1).map(l => l.r)))*0.75 : 0};   // gap: how far (pt) the longest full line stops short of the box edge
   };
   SW.textWidth = el => { const r = document.createRange(); r.selectNodeContents(el); return pt(r.getBoundingClientRect().width); };
   const html = (lead, sents) => (lead ? `<b>${esc(lead)}</b> ` : '') + esc(sents.join(' '));
@@ -124,9 +124,10 @@
       if(L.n === T - 1 && (!lo || L.fill > lo.fill)) lo = {fill: L.fill};
       if(L.n !== T) return;
       if(!near || L.fill > near.fill) near = {pick, fill: L.fill};
-      if(L.fill < 0.76) return;
-      if(isCap(el) && L.gap > 5.5) return;   // a photo's description runs out to the photo's right edge (ragged right, never justified)
-      const score = (L.fill >= 0.8 ? 1000 : 500) - pick.length * 10 + L.fill;   // the fewest, fullest sentences that fill the box; the last line well filled
+      if(L.fill < Math.max(0.76, +el.dataset.fill || 0)) return;   // data-fill: a write-up's own floor (0.9, owner 11/7-11/8)
+      if(isCap(el) && L.gap > 5.5) return;
+      if(el.dataset.lfill && L.min < +el.dataset.lfill) return;   // a justified write-up: every line already 80%+ full set ragged, so justifying never opens wide gaps   // a photo's description runs out to the photo's right edge (ragged right, never justified)
+      const score = (L.fill >= 0.8 ? 1000 : 500) - pick.length * 10 + L.fill + (el.dataset.lfill ? 20*L.min : 0);   // the fewest, fullest sentences that fill the box; the last line well filled
       if(!best || score > best.score) best = {score, pick, fill: L.fill};
     };
     const walk = (m, i, acc) => {
@@ -149,6 +150,7 @@
     for(let k = 0; k <= maxK; k++){ el.style.width = (base - k*(+el.dataset.nstep || 6)) + 'pt'; const b = pickFor(el, T); if(b) return b; }
     el.style.width = base + 'pt'; return pickFor(el, T);
   };
+  SW.pfN = pfN;   // FO.grow re-picks a write-up's sentences at a bigger size (fxs14-fo.js)
   const LH = 12.5, CAPPAD = 5;
   SW.resetFill = () => { PLACED.clear(); FACTS.clear(); };
   SW.fill = () => {
@@ -170,6 +172,7 @@
         if(!T){ let bestT = tries[0], bf = -1; tries.forEach(t => { pfN(el, t); if(el.__near && el.__near.fill > bf){ bf = el.__near.fill; bestT = t; } }); T = bestT; }
         settle(el, T);
         if(el.dataset.lh) el.style.height = (T * +el.dataset.lh) + 'pt';
+        if(el.dataset.justify) el.style.textAlign = 'justify';
       } else settle(el, +el.dataset.lines || 1);
     });
     // photo captions shrink to what their sentences honestly fill (never padded): the photo takes the room. The captions in one row share a line count when they can.
@@ -251,7 +254,7 @@
       if(+el.dataset.lines < 2 || !el.textContent.trim()) return;
       const L = SW.lines(el);
       if(L.n < +el.dataset.lines) issues.push({slot:el.dataset.slot, kind:'caption-short', lines:L.n, want:+el.dataset.lines, diag: el.dataset.diag || ''});
-      else if(L.fill < 0.75) issues.push({slot:el.dataset.slot, kind:'last-line-short', pct:Math.round(L.fill*100), diag: el.dataset.diag || ''});
+      else if(L.fill < Math.max(0.75, (+el.dataset.fill || 0) - 0.005)) issues.push({slot:el.dataset.slot, kind:'last-line-short', pct:Math.round(L.fill*100), diag: el.dataset.diag || ''});
     });
     document.querySelectorAll('.ph').forEach(el=>{
       const img = el.querySelector('img'), slot = el.dataset.slotPhoto || el.dataset.photo || 'photo';
