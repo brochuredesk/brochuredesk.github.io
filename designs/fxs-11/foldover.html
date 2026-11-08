@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · fxs-11 fold-over</title>
+<link rel="stylesheet" href="fxs11.css">
+<script src="fxs11.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/agentcard.js"></script>
+<!--
+  BrochureDesk · fxs-11 (FX11 look) · 11 x 17 fold-over: one sheet folded once down the middle into four upright 8.5 x 11 panels,
+  0.125 in (9 pt) bleed, 0.25 in safe zone. Outside spread: back (left) + cover (right). Inside spread: left + right.
+  Every panel keeps the FX11 hand (tokens: fxs11.css): the warm gray band down the left edge, Montserrat light over heavy, the round-left-end arch photo
+  crossing the band, outline icons, hairlines, square photos, the black box with the round left end.
+    COVER   the FX11 front grown: the kitchen arch with two more rooms under it, the number light over the heavy caps street, the icon fact grid,
+            pin and place, the write-up, the whole house in its own frame, the agent and the one logo.
+    BACK    the FX11 back: kicker and light/bold title, the plan (when there is one) or the photos, labeled floor sections, the nearby row, the standard agent card.
+    LEFT    the front rooms: arch photo and two rooms with captions, then the black "what's new" box.
+    RIGHT   bedrooms and baths: three rows of captioned photos, the one logo at the top.
+  Copy comes as a lead plus whole sentences (data.sw.*); fxs11.js picks the sentences that fill each box (last line at least 3/4 full).
+  Modes: proof = four panel pages 8.75 x 11.25 in; print = two spreads 17.25 x 11.25 in, each half clipped at the fold.
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const mode = D.mode || 'proof';
+  const esc = SW.esc, L = D.listing, A = D.agent || {}, b = D.brand || {}, K = D.sw || {};
+  const issues = [];
+  await SW.setup(D);
+  const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot) || '';
+  const isHouse = id => !!((D.photos || {})[id] || {}).fullHouse;
+  const sd = s => `data-s='${esc(JSON.stringify([].concat(s || []))).replace(/'/g,'&#39;')}'`;
+  const LH = 12.5, CAPPAD = 5, X0 = 36, X1 = 576, CW = 540, C0 = 36, CWI = X1 - C0;
+  // which photos the spread already uses, so a spare room can fill a gap without repeating
+  const usedIds = new Set([].concat(((K.front||{}).row||[]).map(c => c.photo), (K.front||{}).hero, ((K.back||{}).photos||[]).map(c => c.photo), ((K.back||{}).photosNoplan||[]).map(c => c.photo), ((K.left||{}).photos||[]).map(c => c.photo), [].concat(...(((K.right||{}).rows)||[])).map(c => c.photo)));
+  const LABELS = [[/^front/, 'Front.'], [/^entry/, 'Entry.'], [/^pergola/, 'Pergola.'], [/^deck/, 'Deck.'], [/^patio/, 'Patio.'], [/^evening/, 'Deck at dusk.'], [/^(fence|yard)/, 'Yard.'], [/^terrace/, 'Terrace.'], [/^balcony/, 'Balcony.'], [/^stair/, 'Stair.'], [/^foyer/, 'Foyer.'], [/^hall/, 'Hall.'], [/^bar/, 'Bar.'], [/^wine/, 'Living room.'], [/^kitchen/, 'Kitchen.'], [/^dining/, 'Dining area.'], [/^(family|living|openplan)/, 'Living room.'], [/^primary/, 'Primary suite.'], [/^pbath/, 'Primary bath.'], [/^bath/, 'Bath.'], [/^bed/, 'Bedroom.'], [/^closet/, 'Closet.'], [/^laundry/, 'Laundry.'], [/^game/, 'Game room.'], [/^park/, 'Community park.'], [/^gazebo/, 'Community park.']];
+  const labelFor = id => { const m = LABELS.find(([re]) => re.test(id)); return m ? m[1] : (String(id).replace(/\d+[a-z]?$/, '').replace(/^./, c => c.toUpperCase()) + '.'); };
+  const spareCap = id => { const J = ((D.companion||{}).justListed||{}).captions||{}, R = ((D.companion||{}).roomLines||{})[id]||{}; const s = (R.all && R.all.length > 2) ? R.all : [J[id], R.long || R.short].filter(Boolean); return s.length ? {photo: id, lead: labelFor(id), s} : null; };
+  const OUTSIDE = /^(front|entry|gazebo|park|alley|skyline|walk|yard|terrace|balcony|deck|patio|pergola|fence|evening|garage|street)/;   // the outside page takes only exterior, outdoor or community photos
+  const spares = (avoid) => Object.keys(D.photos||{}).filter(id => OUTSIDE.test(id)).sort((a, b) => ((spareCap(b)||{s:[]}).s.join(' ').length) - ((spareCap(a)||{s:[]}).s.join(' ').length)).filter(id => !usedIds.has(id) && !isHouse(id) && !/^pv\d|^plan/.test(id) && spareCap(id) && !/^(skyline|alley|park)/.test(id) && !(avoid || []).some(a => SW.famOf(a) === SW.famOf(id)));
+  // a list of photo cards with no room or view twice (the same deck under two numbers); spare rooms fill what is left
+  const dedupe = (list, n) => { const out = []; list.filter(c => OUTSIDE.test(c.photo)).forEach(c => { if(!out.some(o => SW.famOf(o.photo) === SW.famOf(c.photo))) out.push(c); });
+    if(out.length < n) spares(out.map(c => c.photo)).forEach(id => { if(out.length < n && !out.some(o => SW.famOf(o.photo) === SW.famOf(id))) out.push(spareCap(id)); });
+    return out.slice(0, n); };
+  // the cover's arch: the widest living room, never a corner of a kitchen
+  const archScore = id => { const p = (D.photos||{})[id] || {}; if(p.fullHouse) return -9; const k = /^(family|living|great|open)/.test(id) ? 3 : /^(dining|primary)(?!.*bath)/.test(id) ? 2 : /kitchen|bar|bath/.test(id) ? 0 : 1; return k*10 + (p.w && p.h ? Math.min(p.w/p.h, 1.6) : 1); };
+  
+  // caption: bold lead + whole sentences (the fill pass picks which)
+  const cap = (c, slot, lines, cls) => {
+    c = c || {}; const lh = /\bbig\b/.test(cls||'') ? 13.5 : LH;
+    return `<div class="cap ${cls||''}" style="height:${CAPPAD + lines*lh}pt"><div class="a" data-slot="${slot}" data-lh="${lh}" data-lines="${lines}" ${sd(c.s || c.a)} data-lead="${esc(c.lead||'')}" style="height:${lines*lh}pt"></div></div>`;
+  };
+  const item = (c, slot, lines, grow, o) => { o = o || {}; if(isHouse(c.photo)) o = Object.assign({}, o, {arch: false});
+    /* a whole-house photo is never cut by the arch */ return `<div class="item" style="flex:${grow||1} 1 0">${SW.photo(D, c.photo, '', slot).replace('class="ph"', `class="ph${o.arch ? ' arch' : ''}"`)}${cap(c, slot, lines, o.cls)}</div>`; };
+  const hd = (kicker, title, slotp, o) => { o = o || {}; const HX = o.x != null ? o.x : X0, HW = o.w || (X1 - HX);
+    return `<div class="abs lbl" style="left:${HX}pt;top:34pt;width:${o.kw || 330}pt;height:12pt" data-slot="${slotp}.kicker" data-lines="1">${esc(String(kicker).toUpperCase())}</div>
+      <div class="abs ttl fit" style="left:${HX}pt;top:50pt;width:${HW}pt;height:38pt;font-size:24pt;line-height:38pt" data-slot="${slotp}.title" data-lines="1">${FXS.lightBold(title)}</div>`; };
+  const intro = (c, slot, y, lines) => { const tr = []; for(let t = lines; t >= Math.max(2, lines - 2); t--) tr.push(t);
+    return `<div class="abs body" data-slot="${slot}" data-lines="${lines}" data-try="${tr.join(',')}" data-lh="16" ${sd(c)} style="left:${C0}pt;top:${y}pt;width:${CWI}pt;height:${lines*16}pt;font-size:10.5pt;line-height:16pt"></div>`; };
+
+  const placed = new Set(); const _ph = SW.photo; SW.photo = (D_, id, st, sl) => { if(id) placed.add(id); return _ph(D_, id, st, sl); };
+  // ================= COVER =================
+  function cover(){ const av = [...placed].concat([].concat(((K.left||{}).photos||[]).map(c => c.photo), [].concat(...(((K.right||{}).rows)||[])).map(c => c.photo), ((K.back||{}).photos||[]).map(c => c.photo), ((K.back||{}).photosNoplan||[]).map(c => c.photo))); return FXS.front(D, {F: K.front || {}, intro: (K.front || {}).summary, avoid: av}); }
+
+  // a captioned photo column down an outer edge (square photos 6 pt apart, running to the page edge; captions under each, inside the margin)
+  const colItem = (c, slot, lines, grow, left) => `<div class="item" style="flex:${grow || 1} 1 0">${SW.photo(D, c.photo, '', slot)}<div style="padding:0 ${left ? '12pt 0 36pt' : '36pt 0 12pt'}">${cap(c, slot, lines, 'big')}</div></div>`;
+  const colWrap = (x, w, top, bot, inner) => `<div class="abs row" style="left:${x}pt;top:${top}pt;width:${w}pt;height:${bot - top}pt;flex-direction:column;gap:6pt">${inner}</div>`;
+  const titleBlock = (kicker, title, slotp, x, w, y) => { const tcss = 'font-family:Montserrat;font-weight:700', tsz = FXS.fitSize(String(title), tcss, w, 21, 15), one = FXS.width(String(title), `${tcss};font-size:${tsz}pt`) <= w;   // one line when the title fits at 15 pt or more, else two balanced lines
+    return `<div class="abs lbl" style="left:${x}pt;top:${y}pt;width:${w}pt;height:12pt" data-slot="${slotp}.kicker" data-lines="1">${esc(String(kicker).toUpperCase())}</div>
+      <div class="abs ttl" style="left:${x}pt;top:${y + 24}pt;width:${w}pt;height:60pt;white-space:${one ? 'nowrap' : 'normal'};font-size:${one ? tsz : 21}pt;line-height:${one ? 32 : 28}pt;text-wrap:balance" data-slot="${slotp}.title" data-lines="${one ? 1 : 2}">${esc(title)}</div>`; };
+
+  // ================= BACK (outside, left in print) =================
+  function back(){
+    const B = K.back || {}, hasPlan = !!D.plan, T = (hasPlan ? B.plan : B.noplan) || {};
+    let h = '';
+    const near = (B.nearby || []).slice(0, 3);
+    const TX = 240, TW = 345, FOOT = 672, lhS = hasPlan ? 17 : 19.5, fsS = hasPlan ? 11 : 12.5;
+    const P = ((hasPlan ? B.photos : (B.photosNoplan || B.photos)) || []);
+    const addrCss = 'font-family:Montserrat;font-weight:800;letter-spacing:1.5pt';
+    const addr = String(L.address).toUpperCase(), aSize = FXS.fitSize(addr, addrCss, hasPlan ? 540 : TW, 19.5, 13);
+    const tx = /^texas$/i.test(L.state) ? 'TX' : L.state;
+    const headX = hasPlan ? 27 : TX, headW = hasPlan ? 558 : TW;
+    h += `<div class="abs" style="left:${headX}pt;top:19.5pt;width:${headW}pt;height:24pt;font:800 ${aSize}pt/24pt var(--fx-font);letter-spacing:1.5pt;color:var(--fx-ink);white-space:nowrap;overflow:hidden" data-slot="back.address" data-lines="1">${esc(addr)}</div>`;
+    h += `<div class="abs" style="left:${headX}pt;top:45pt;width:${headW}pt;height:14pt;font:500 9.75pt/14pt var(--fx-font);letter-spacing:2.25pt;color:var(--fx-text);white-space:nowrap;overflow:hidden" data-slot="back.place" data-lines="1">${esc([L.neighborhood, `${L.city}, ${tx} ${L.zip || ''}`.trim()].filter(Boolean).join(' · ').toUpperCase())}</div>`;
+    let topY = 76;
+    if(hasPlan){
+      const planRot = (() => { const r0 = IvoryPlan.draw(D.plan, {x: 66.6, y: 0, w: 496.8, h: 250}, {allowRotate: false}); return (r0.issues || []).some(i => /label-wont-fit/.test(i.kind)); })();
+      const fitPlan = maxH => { for(let hh = maxH; hh >= 150; hh -= 6){ const big = IvoryPlan.draw(D.plan, {x: 66.6, y: 0, w: 496.8, h: hh}, {allowRotate: planRot}); if(!(big.issues || []).some(i => i.kind === 'plan-under-300ppi')) return Math.min(hh, Math.ceil(big.usedH || hh) + 6); } return 236; };
+      const planH = fitPlan(236), py = 70;
+      const r = IvoryPlan.draw(D.plan, {x: 66.6, y: py + 6, w: 496.8, h: planH - 4}, {allowRotate: planRot});
+      window.planIssues = r.issues;
+      h += `<div class="abs" style="left:27pt;top:${py}pt;width:558pt;height:${planH + 34}pt;background:var(--fx-plan)"></div><div class="abs" style="left:33pt;top:${py + 6}pt;width:546pt;height:${planH + 22}pt;border:.75pt solid #cfc4b6"></div><div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt">${r.html}</div>`;
+      const zs = IvoryPlan.zonesOf(D.plan);
+      const leg = Object.entries(IvoryPlan.ZONES).filter(([k]) => zs.includes(k)).map(([k, z]) => `<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, #EFE9E1)"></i>${z.label}</span>`);
+      if(zs.includes('outdoor')) leg.push(`<span><i style="background:repeating-linear-gradient(45deg, color-mix(in srgb, #2c211b 35%, #EFE9E1) 0 .6pt, #EFE9E1 .6pt 2.8pt)"></i>Outdoor</span>`);
+      const note = (D.plan.source || 'The listing floor plan, placed as given.') + ' Sizes are approximate.' + ((r.angle === 90 || r.angle === 270) ? ' Turned on its side.' : '');
+      const ly = py + planH + 4;
+      h += `<div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt"><div class="plan-legend" style="left:40pt;top:${ly}pt;color:#2c211b">${leg.join('')}</div><div class="plan-disclosure" style="left:40pt;width:530pt;top:${ly + 14}pt;text-align:left;color:#6b5a4e" data-slot="back.plannote" data-lines="1" data-fine="1">${esc(note)}</div></div>`;
+      topY = py + planH + 34 + 12;
+    }
+    if(hasPlan){
+      // under the plan: two outside photos side by side with a bold label opening each caption, then the nearby box across the page
+      const nearH = 124, rowBot = FOOT - 12 - nearH - 14;
+      const PP = dedupe(P, 2);
+      h += `<div class="flow" style="left:27pt;right:27pt;top:${topY}pt;bottom:${792 - rowBot}pt"><div class="row" style="flex:1 1 0;gap:15pt">${PP.map((c, i) => item(c, 'back.photo' + i, 3, 1, {cls: 'big'})).join('')}</div></div>`;
+      h += FXS.twoBoxes(D, 27, FOOT - 12 - nearH, 558, nearH, 'back.box', {size: 9.75});
+    } else {
+    // the outside photo column down the left edge, a bold label opening each caption
+    const PP = dedupe(P, 3);
+    h += colWrap(-9, 225, -9, FOOT - 3, PP.map((c, i) => colItem(c, 'back.photo' + i, 5, 1, false)).join(''));
+    // the text column: kicker and title, the floor sections, nearby
+    const rBot = FOOT - 12, boxH = 140;
+    h += titleBlock(T.kicker || 'The house', T.title || '', 'back', TX, TW, topY);
+    const ty = topY + 24 + 60 + 4;
+    const secs = ((B.floors && B.floors.length) ? B.floors : (((D.companion || {}).flyer || {}).back || {}).floors || []).slice(0, 4), nSec = secs.length;
+    const per = Math.floor(((rBot - boxH - 18 - ty) - nSec*(14 + 6 + 24))/lhS/Math.max(1, nSec)), base = Math.max(2, Math.min(6, per));
+    let sh_ = '';
+    secs.forEach((f, i) => { const tr = []; for(let t = base; t >= 1; t--) tr.push(t);
+      sh_ += `<div style="flex:none"><div class="lbl" data-slot="back.sec${i}.label" data-lines="1">${esc(String(f.n).toUpperCase())}</div><div class="body" style="margin-top:9pt;font-size:${fsS}pt;line-height:${lhS}pt;color:var(--fx-text)" data-slot="back.sec${i}" data-narrow="14" data-nstep="9" data-lines="${base}" data-try="${tr.join(',')}" data-lh="${lhS}" ${sd(f.s)}></div></div>`; });
+    h += `<div class="abs" style="left:${TX}pt;top:${ty}pt;width:${TW}pt;height:${rBot - boxH - 18 - ty}pt;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between">${sh_}</div>`;
+    h += FXS.twoBoxes(D, TX, rBot - boxH, TW, boxH, 'back.box', {size: 8.75});
+    }
+    h += `<div class="hr" style="left:27pt;top:${FOOT + 4}pt;width:558pt"></div>`;
+    h += ContactCard.html([27, FOOT + 12, 558, 76], Object.assign({}, A, {headshot: hsSrc}), Object.assign({}, b, {logo: b.logoOnDark || b.logo}), {layout: 'panel', size: 'mid', fine: '', bottomGap: 0.5, fieldAccent: true});
+    h += `<div class="abs fine" style="left:27pt;top:766pt;width:558pt;height:8pt;text-align:center" data-slot="fineprint" data-lines="1" data-fine="1">Information deemed reliable but not guaranteed; buyer to verify.</div>`;
+    return h;
+  }
+
+  // ================= INSIDE LEFT =================
+  // The captioned photo column runs down the outer (left) edge; the title, the intro and the raised "what is new" box sit to its right.
+  const CG = 15, colW = (CWI - CG)/2, colBx = C0 + colW + CG, INTRO_TOP = 98, TOP_IN = INTRO_TOP + 4*16 + 25;
+  function left(){
+    const I = K.left || {}, box = I.box || {}, ph = (I.photos || []).slice(0, 3);
+    const TX = 264, TW = 321;
+    // the captioned photo column starts at the page margin (not off the trim): square photos, a 6 pt espresso rule between them, a caption under each
+    let h = colWrap(36, 205, 36, 744, ph.map((c, i) => `<div class="item" style="flex:1 1 0">${SW.photo(D, c.photo, '', 'left.photo' + i)}${cap(c, 'left.photo' + i, 5, 'big')}</div>`).join(''));
+    h += `<div class="abs lbl" style="left:${TX}pt;top:36pt;width:${TW}pt;height:12pt" data-slot="left.kicker" data-lines="1">${esc(String(I.kicker || '').toUpperCase())}</div>
+      <div class="abs ttl" data-two="1" style="left:${TX}pt;top:60pt;width:${TW}pt;height:58pt;white-space:normal;font-size:21pt;line-height:28pt;text-wrap:balance" data-slot="left.title" data-lines="2">${esc(I.title || '')}</div>`;
+    // the kitchen box ends at the foot of the photo column: entries two full lines, about 0.1 in (7 pt) apart; the intro takes the lines above it
+    const items = (box.items || []).slice(0, 6), EH = 52, GAPE = 7, boxH = 16 + 12 + 12 + 8 + items.length*EH + (items.length - 1)*GAPE + 16, boxTop = 744 - boxH;
+    const iLh = 22, iMax = Math.max(4, Math.floor((boxTop - 18 - 130)/iLh)), tr = []; for(let t = iMax; t >= 4; t--) tr.push(t);
+    h += `<div class="abs body" data-slot="left.intro" data-lines="${iMax}" data-try="${tr.join(',')}" data-lh="${iLh}" ${sd(I.intro)} style="left:${TX}pt;top:130pt;width:${TW}pt;height:${iMax*iLh}pt;font-size:13.5pt;line-height:${iLh}pt;color:var(--fx-text)"></div>`;
+    h += `<div class="abs inkbox" style="left:${TX}pt;top:${boxTop}pt;width:${TW}pt;height:${boxH}pt;padding:16pt 14pt"><div class="lbl" data-slot="left.box.kicker" data-lines="1">${esc(String(box.kicker || '').toUpperCase())}</div>
+      <div style="margin-top:12pt;border-top:var(--fx-rule-w) solid var(--fx-outline);padding-top:8pt;display:flex;flex-direction:column;gap:${GAPE}pt">${items.map((it, i) => `<div style="height:${EH}pt;overflow:hidden"><div class="sq" style="gap:7pt"><i>▪</i><div style="font:700 9.5pt/12pt var(--fx-font);letter-spacing:1.4pt;text-transform:uppercase;color:var(--fx-ink)" data-slot="left.box.l${i}" data-lines="1">${esc(it.l)}</div></div><div style="margin-left:14pt;margin-top:4pt;width:${TW - 28 - 14}pt;font:400 11pt/17pt var(--fx-font);color:var(--fx-text);overflow:hidden;height:34pt" data-slot="left.box.t${i}" data-lines="2" data-try="2" data-narrow="14" data-nstep="9" data-lh="17" ${sd(it.s)}></div></div>`).join('')}</div></div>`;
+    h += FXS.logo(D, TX, 752, TW, 24, 'flex-end');
+    return h;
+  }
+
+  // ================= INSIDE RIGHT =================
+  function right(){
+    const R = K.right || {}; let rows = R.rows || [];
+    const leftLeads = new Set(((K.left || {}).photos || []).map(c => String(c.lead || '').toLowerCase().replace(/[,.].*$/, '')));
+    const usedR = new Set(); rows.forEach(r => r.forEach(c => usedR.add(c.photo)));
+    const fam = new Set([...usedIds, ...placed].map(u => SW.famOf(u))); const rank = id => /^(pbath|primary)/.test(id) ? 0 : /^(bath|bed)/.test(id) ? 1 : /^(game|kitchen|bar|wine)/.test(id) ? 2 : 3;
+    const cards = new Map(), walkC = o => { if(Array.isArray(o)) o.forEach(walkC); else if(o && typeof o === 'object'){ if(o.photo && Array.isArray(o.s) && o.s.length >= 4 && o.lead && !cards.has(o.photo)) cards.set(o.photo, o); Object.values(o).forEach(walkC); } }; walkC(K); walkC((D.companion || {}).flyer);
+    const pool = [...cards.keys()].filter(id => !usedR.has(id) && !placed.has(id) && !isHouse(id) && !/^pv\d|^plan|^(skyline|alley|park|gazebo|stair|foyer|entry|hall)/.test(id)).sort((a, b2) => (fam.has(SW.famOf(a)) - fam.has(SW.famOf(b2))) || rank(a) - rank(b2));
+    rows = rows.map(r => r.map(c => { if(!leftLeads.has(String(c.lead || '').toLowerCase().replace(/[,.].*$/, ''))) return c; const id = pool.find(p => !usedR.has(p) && !leftLeads.has(String(cards.get(p).lead).toLowerCase().replace(/[,.].*$/, ''))); if(!id) return c; usedR.add(id); const cd = cards.get(id); return {photo: id, lead: cd.lead, s: cd.s}; }));
+    let h = hd(R.kicker, R.title, 'right', {x: C0, kw: 300}) + intro(R.intro, 'right.intro', INTRO_TOP, 4);
+    let k = 0;
+    const body = rows.map((r, ri) => {
+      const ln = ri === 0 ? 5 : 4;
+      return `<div class="row" style="flex:${(ri === 0 ? 170 : 150) + CAPPAD + ln*LH} 1 0">${r.map((c, i) => `<div class="item" style="flex:${colW} 1 0">${SW.photo(D, c.photo, '', 'right.photo' + k)}${cap(c, 'right.photo' + (k++), ln)}</div>`).join('')}</div>`;
+    }).join('');
+    h += `<div class="flow" style="left:${C0}pt;right:${612 - X1}pt;top:${TOP_IN}pt;bottom:68pt;gap:15pt">${body}</div>`;
+    h += FXS.logo(D, X1 - 200, 735, 200, 30, 'flex-end');
+    return h;
+  }
+
+  // ---------- assemble ----------
+  const panels = {back: back(), left: left(), right: right()}; panels.front = cover();   // the cover last: it avoids every photo the inside pages placed (a space shown once)
+  const panel = h => `<div class="panel">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.back)}</div><div class="half r">${panel(panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.left)}</div><div class="half r">${panel(panels.right)}</div></div>`;
+  } else {
+    for(const id of ['front','back','left','right']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+
+  // titles fit their line (down from 28 pt)
+  document.querySelectorAll('.ttl.fit').forEach(el => { let fs = 24; while(el.scrollWidth > el.clientWidth + 1 && fs > 16){ fs -= .5; el.style.fontSize = fs + 'pt'; } });
+  SW.fill();
+  document.querySelectorAll('.ttl[data-two]').forEach(el => { const w0 = el.clientWidth*.75; let w = w0; for(let k = 0; k < 14; k++){ el.style.width = w + 'pt'; const L2 = SW.lines(el); if(L2.n === 1 || (L2.n === 2 && L2.fill >= .75)) break; w -= 8; } });
+  // the arch: the round left end, half the shorter side
+  SW.fitLogos();
+  if(window.ContactCard) ContactCard.fit(document);
+  issues.push(...SW.focus(D));
+  {
+
+  }
+  document.querySelectorAll('.ph[data-slot-photo^="back."]').forEach(el => { if(!OUTSIDE.test(el.dataset.photo || '')) issues.push({slot: el.dataset.slotPhoto, kind: 'interior-photo-on-outside-page', detail: `${el.dataset.photo} is not an exterior, outdoor or community photo`}); });
+  // run lazily (the renderer calls brochureCheck after its ShrinkFit pass, which resizes text)
+  const nearbyCheck = () => { const issues = [];
+    // every Nearby name must stay inside its row and clear its distance (checked after the renderer's ShrinkFit pass; the rows are data-fixed so that pass leaves their size alone)
+    document.querySelectorAll('[data-slot^="back.box.near."]').forEach(el => { if(!/\.\d+$/.test(el.dataset.slot)) return;
+      const sp = el.querySelectorAll('span'), nm = sp[1], ds = sp[2], rg = document.createRange(); rg.selectNodeContents(nm);
+      const ink = rg.getBoundingClientRect().width, gap = ds.getBoundingClientRect().left - nm.getBoundingClientRect().left - ink;
+      if(el.scrollWidth > el.clientWidth + .5 || nm.getBoundingClientRect().left + ink > el.getBoundingClientRect().right + .5) issues.push({slot: el.dataset.slot, kind: 'nearby-clipped', detail: `"${nm.textContent}" runs past its row`});
+      else if(gap < 6) issues.push({slot: el.dataset.slot, kind: 'nearby-touches-distance', detail: `"${nm.textContent}" ends ${gap.toFixed(1)} px from its distance`}); });
+    return issues; };
+  window.brochureCheck = () => (SW.check(D, (window.planIssues || []).concat(issues))).concat(nearbyCheck());
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>

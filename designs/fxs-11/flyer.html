@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · fxs-11 two-sided flyer</title>
+<link rel="stylesheet" href="fxs11.css">
+<script src="fxs11.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/agentcard.js"></script>
+<!--
+  fxs-11 · two-sided 8.5 x 11 flyer (trim 612 x 792 pt), the FX11 front and back as a real template.
+  FRONT (D.piece.side = "front"): the warm gray band down the left edge; the room photo with the round left end (the arch) crossing the
+  band's edge; the light number over the heavy caps street; the outline-icon fact grid, hairline, pin and place; the write-up; the whole house
+  in its own plain frame; hairline and the agent (name, REALTOR(R), cell, email); the one logo floating across the band's edge at the foot.
+  BACK ("back"): the arch photo and the room photos on the left, "THE HOUSE" light over heavy, labeled write-ups divided by hairlines, then the
+  nearby row; the standard agent card (templates/_shared/agentcard.js, Right panel) with its black bar. With a floor plan the plan fills the
+  top of the page and the write-ups cut to the room that is left. Copy: data.companion.flyer (whole sentences; the fill pass picks the ones
+  that set in a box with the last line at least 3/4 full). Tokens: fxs11.css. Print: white 0.25 in margin (the sheet is clipped to it).
+-->
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const esc = SW.esc, b = D.brand || {}, A = D.agent || {}, L = D.listing, P = D.piece || {}, FL = (D.companion || {}).flyer || {};
+  document.body.dataset.mode = D.mode || 'email';
+  await SW.setup(D);
+  const issues = [];
+  const side = P.side === 'back' ? 'back' : 'front';
+  const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot) || '';
+  const place = [L.neighborhood, `${L.city}, ${/^texas$/i.test(L.state) ? 'TX' : L.state} ${L.zip || ''}`.trim()].filter(Boolean);
+  const sentData = c => `data-s='${esc(JSON.stringify([].concat(c))).replace(/'/g,'&#39;')}'`;
+  let h = '';
+
+  if(side === 'front'){
+    h = FXS.front(D, {F: FL.front || {}, intro: (FL.front || {}).intro});
+  } else {
+    const B = FL.back || {}, hasPlan = !!D.plan;
+    const T = (hasPlan ? B.plan : B.noplan) || {};
+    const isHouse = id => !!((D.photos || {})[id] || {}).fullHouse;
+    const frontIds = FXS.frontIds(D, {F: FL.front || {}, avoid: []});   // the very photos the front shows
+    const frontG = new Set(frontIds.map(FXS.group));
+    // the back shows what the front did not: never a front photo, no room group twice in neighboring slots, and (while the house has the photos) no room the front already shows
+    const want = [].concat(((hasPlan ? B.photos : (B.photosNoplan || B.photos)) || []).map(c => c.photo), Object.keys(D.photos || {}));
+    const ids0 = [...new Set(want)].filter(id => (D.photos || {})[id] && !isHouse(id) && !frontIds.includes(id) && !/^pv\d|^plan/.test(id));
+    const ids = ids0.filter(id => !/^powder|^halfbath/.test(id)).concat(ids0.filter(id => /^powder|^halfbath/.test(id)));   // powder rooms and half baths last
+    const pbFirst = ids.filter(id => FXS.group(id) === 'bath' && /^pbath|^shower/.test(id)); ids.splice(0, ids.length, ...pbFirst.slice(0, 1), ...ids.filter(id => !pbFirst.slice(0, 1).includes(id)));
+    const picked = [];
+    const nWant = hasPlan ? 2 : 5;
+    [[true, true], [false, true], [false, false]].forEach(([noFront, noRepeat]) => ids.forEach(id => {
+      if(picked.length >= nWant || picked.includes(id)) return;
+      const g = FXS.group(id);
+      if(frontG.has(g)) return;   // never a room the front shows: a small house gives the back fewer photos before it repeats one
+      if(noRepeat && picked.some(p => FXS.group(p) === g)) return;
+      if(picked.length && FXS.group(picked[picked.length - 1]) === g) return;
+      if(picked.some(p => FXS.famOf(p) === FXS.famOf(id))) return;
+      picked.push(id);
+    }));
+    picked.forEach((id, i) => {   // the cross-side check compares room groups (carousel_copy room_group, open-plan rooms merged), never just files
+      if(frontG.has(FXS.group(id))) issues.push({slot: 'back.photo' + i, kind: 'room-on-both-sides', detail: `${id} (${FXS.group(id)}) is also on the front`});
+      if(i && FXS.group(picked[i - 1]) === FXS.group(id)) issues.push({slot: 'back.photo' + i, kind: 'room-in-neighboring-slots', detail: `${picked[i - 1]} / ${id} (${FXS.group(id)})`});
+    });
+    const secs = [];
+    if((B.sections || []).length) B.sections.forEach(f => secs.push({label: String(f.n || '').toUpperCase(), s: f.s, planLines: f.planLines, min: f.min}));
+    else {
+      (B.floors || []).filter(f => [].concat(f.s || []).length >= 2).forEach(f => secs.push({label: String(f.n || '').toUpperCase(), s: f.s}));
+      if(B.outside && (B.outside.s || []).length) secs.push({label: String(B.outside.n || 'Outside').toUpperCase(), s: B.outside.s});
+      ((B.box || {}).items || []).forEach(i => secs.push({label: String(i.l).toUpperCase(), s: i.s}));
+    }
+    const near = (B.nearby || []).slice(0, 3);
+    const PW = hasPlan ? 190 : 225, TX = PW + 15, TW = 585 - TX, FOOT = 672;   // plan versions: a narrower photo column gives the write-ups a wider text column
+    let lhS = hasPlan ? 17 : 21, fsS = hasPlan ? 11 : 13.5;   // owner r1: bigger text where space remains
+    // the address, heavy caps on one line, and the place under it
+    const addrCss = 'font-family:Montserrat;font-weight:800;letter-spacing:1.5pt';
+    const addr = String(L.address).toUpperCase(), aSize = FXS.fitSize(addr, addrCss, hasPlan ? 540 : TW, 19.5, 13);
+    const tx = /^texas$/i.test(L.state) ? 'TX' : L.state;
+    const headX = hasPlan ? 27 : TX, headW = hasPlan ? 558 : TW;
+    h += `<div class="abs" style="left:${headX}pt;top:19.5pt;width:${headW}pt;height:24pt;font:800 ${aSize}pt/24pt var(--fx-font);letter-spacing:1.5pt;color:var(--fx-ink);white-space:nowrap;overflow:hidden" data-slot="back.address" data-lines="1">${esc(addr)}</div>`;
+    h += `<div class="abs" style="left:${headX}pt;top:45pt;width:${headW}pt;height:14pt;font:500 9.75pt/14pt var(--fx-font);letter-spacing:2.25pt;color:var(--fx-text);white-space:nowrap;overflow:hidden" data-slot="back.place" data-lines="1">${esc([L.neighborhood, `${L.city}, ${tx} ${L.zip || ''}`.trim()].filter(Boolean).join(' · ').toUpperCase())}</div>`;
+    let topY = 76;
+    if(hasPlan){
+      const planRot = (() => { const r0 = IvoryPlan.draw(D.plan, {x: 66.6, y: 0, w: 496.8, h: 250}, {allowRotate: false}); return (r0.issues || []).some(i => /label-wont-fit/.test(i.kind)); })();
+      const fitPlan = maxH => { for(let hh = maxH; hh >= 150; hh -= 6){ const big = IvoryPlan.draw(D.plan, {x: 66.6, y: 0, w: 496.8, h: hh}, {allowRotate: planRot}); if(!(big.issues || []).some(i => i.kind === 'plan-under-300ppi')) return Math.min(hh, Math.ceil(big.usedH || hh) + 6); } return 236; };
+      const planH = fitPlan(236), py = 70;
+      const r = IvoryPlan.draw(D.plan, {x: 66.6, y: py + 6, w: 496.8, h: planH - 4}, {allowRotate: planRot});
+      window.planIssues = r.issues;
+      h += `<div class="abs" style="left:27pt;top:${py}pt;width:558pt;height:${planH + 34}pt;background:var(--fx-plan)"></div><div class="abs" style="left:33pt;top:${py + 6}pt;width:546pt;height:${planH + 22}pt;border:.75pt solid #cfc4b6"></div><div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt">${r.html}</div>`;
+      const zs = IvoryPlan.zonesOf(D.plan);
+      const leg = Object.entries(IvoryPlan.ZONES).filter(([k]) => zs.includes(k)).map(([k, z]) => `<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, #EFE9E1)"></i>${z.label}</span>`);
+      if(zs.includes('outdoor')) leg.push(`<span><i style="background:repeating-linear-gradient(45deg, color-mix(in srgb, #2c211b 35%, #EFE9E1) 0 .6pt, #EFE9E1 .6pt 2.8pt)"></i>Outdoor</span>`);
+      const note = (D.plan.source || 'The listing floor plan, placed as given.') + ' Sizes are approximate.' + ((r.angle === 90 || r.angle === 270) ? ' Turned on its side.' : '');
+      const ly = py + planH + 4;
+      h += `<div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt"><div class="plan-legend" style="left:40pt;top:${ly}pt;color:#2c211b">${leg.join('')}</div><div class="plan-disclosure" style="left:40pt;width:530pt;top:${ly + 14}pt;text-align:left;color:#6b5a4e" data-slot="back.plannote" data-lines="1" data-fine="1">${esc(note)}</div></div>`;
+      topY = py + planH + 34 + 12;
+    }
+    // ---- the photo column down the left edge (the FX11 back): square photos, 6 pt apart, running to the edge
+    const colTop = hasPlan ? topY : -9, colBot = FOOT - 3, n = hasPlan ? 2 : 5, gap = 6;
+    const ph_ = (colBot - colTop - (n - 1)*gap)/n;
+    picked.slice(0, n).forEach((id, i) => { h += `<div class="abs" style="left:-9pt;top:${colTop + i*(ph_ + gap)}pt;width:${PW}pt;height:${ph_}pt">${SW.photo(D, id, 'position:absolute;inset:0', 'back.photo' + i)}</div>`; });
+    // ---- the text column: labeled sections (underlined caps), then the boxes
+    const rTop = topY, rBot = FOOT - 12;
+    const boxH = hasPlan ? 114 : 140;
+    const availT = rBot - boxH - 14 - rTop, LBL = 14 + 8;
+    let nSec = hasPlan ? 3 : 4, linesPer;
+    if(hasPlan){
+      // three sections of two lines when the plan leaves the room, otherwise two (a section may ask for more lines: planLines); the line height gives the space it has
+      for(; nSec >= 2; nSec--){ const sum = secs.slice(0, nSec).reduce((a, x) => a + (x.planLines || 2), 0), lh = (availT - nSec*LBL - (nSec - 1)*8)/sum; if(lh >= 14.5){ lhS = Math.min(19, lh); break; } }
+      if(nSec < 2) nSec = 2;
+      fsS = Math.round(lhS*0.655*4)/4; linesPer = 2;
+    } else {   // no plan: four lines a section when that still sets 12 pt or more, else three; the line height takes up the room
+      for(const L_ of [4, 3, 2]){ const lh = (availT - nSec*LBL - (nSec - 1)*10)/(nSec*L_); if(lh >= 18.5 || L_ === 2){ lhS = Math.min(21.5, lh); linesPer = L_; break; } }
+      fsS = Math.round(lhS*0.64*4)/4;
+    }
+    const useSecs = secs.slice(0, nSec);
+    const base = linesPer;
+    let sh_ = '';
+    useSecs.forEach((s, i) => {
+      const myLines = hasPlan ? (s.planLines || base) : base, tr = [myLines];
+      sh_ += `<div style="flex:none"><div class="lbl" data-slot="back.sec${i}.label" data-lines="1">${esc(s.label)}</div><div class="body" style="margin-top:8pt;font-size:${fsS}pt;line-height:${lhS}pt;color:var(--fx-text)" data-slot="back.sec${i}" data-min="${s.min || 2}" data-narrow="5" data-nstep="8" data-lines="${myLines}" data-try="${tr.join(',')}" data-lh="${lhS}" ${sentData(s.s)}></div></div>`;
+    });
+    h += `<div class="abs" style="left:${TX}pt;top:${rTop}pt;width:${TW}pt;height:${availT}pt;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between">${sh_}</div>`;
+    // the two outlined boxes side by side, as the FX11 back sets them
+    h += FXS.twoBoxes(D, TX, rBot - boxH, TW, boxH, 'back.box', {size: 8.75, rows: hasPlan ? 5 : 6});
+    // ---- the standard agent card and the fine print
+    h += `<div class="hr" style="left:27pt;top:${FOOT + 4}pt;width:558pt"></div>`;
+    h += ContactCard.html([27, FOOT + 12, 558, 76], Object.assign({}, A, {headshot: hsSrc}), Object.assign({}, b, {logo: b.logoOnDark || b.logo}), {layout: 'panel', size: 'mid', fine: '', bottomGap: 0.5, fieldAccent: true});
+    h += `<div class="abs fine" style="left:27pt;top:766pt;width:558pt;height:8pt;text-align:center" data-slot="fineprint" data-lines="1" data-fine="1">Information deemed reliable but not guaranteed.</div>`;
+  }
+
+  const f = SW.frame(D, 612, 792, h);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  SW.fill();
+  SW.fitLogos();
+  if(window.ContactCard) ContactCard.fit(document);
+  issues.push(...SW.focus(D));
+  if(side === 'back'){   // a section sentence and a box bullet (or two section sentences) on this face never share a fact (mirrors scripts/fxsets/carousel_copy.py same_fact)
+    const STOP = new Set('a an the and of to from with in on at its it is are by for this that one two room'.split(' ')), cwords = t => new Set((String(t).toLowerCase().match(/[a-z0-9'-]+/g) || []).filter(w => !STOP.has(w)));
+    const same = (a, b) => { const A_ = cwords(a), B_ = cwords(b), small = Math.min(A_.size, B_.size); if(!small) return false; let c = 0; A_.forEach(w => { if(B_.has(w)) c++; }); return c/small >= (small <= 3 ? .5 : .6); };
+    const facts = [];
+    document.querySelectorAll('[data-slot^="back.sec"]:not([data-slot$=".label"])').forEach(el => String(el.textContent).split(/(?<=[.!?])\s+/).filter(Boolean).forEach(t => facts.push({t, slot: el.dataset.slot})));
+    document.querySelectorAll('[data-slot^="back.box.new."]').forEach(el => { if(/\.\d+$/.test(el.dataset.slot)) facts.push({t: el.textContent.replace('▪', '').trim(), slot: el.dataset.slot, box: 1}); });
+    for(let i = 0; i < facts.length; i++) for(let j = i + 1; j < facts.length; j++) if(!(facts[i].box && facts[j].box)) if(same(facts[i].t, facts[j].t)) issues.push({slot: facts[j].slot, kind: 'same-fact-on-face', detail: `"${facts[i].t}" / "${facts[j].t}"`});
+
+  }
+  // run lazily (the renderer calls brochureCheck after its ShrinkFit pass, which resizes text)
+  const nearbyCheck = () => { const issues = [];
+    // every Nearby name must stay inside its row and clear its distance (checked after the renderer's ShrinkFit pass; the rows are data-fixed so that pass leaves their size alone)
+    document.querySelectorAll('[data-slot^="back.box.near."]').forEach(el => { if(!/\.\d+$/.test(el.dataset.slot)) return;
+      const sp = el.querySelectorAll('span'), nm = sp[1], ds = sp[2], rg = document.createRange(); rg.selectNodeContents(nm);
+      const ink = rg.getBoundingClientRect().width, gap = ds.getBoundingClientRect().left - nm.getBoundingClientRect().left - ink;
+      if(el.scrollWidth > el.clientWidth + .5 || nm.getBoundingClientRect().left + ink > el.getBoundingClientRect().right + .5) issues.push({slot: el.dataset.slot, kind: 'nearby-clipped', detail: `"${nm.textContent}" runs past its row`});
+      else if(gap < 6) issues.push({slot: el.dataset.slot, kind: 'nearby-touches-distance', detail: `"${nm.textContent}" ends ${gap.toFixed(1)} px from its distance`}); });
+    return issues; };
+  window.brochureCheck = () => (SW.check(D, (window.planIssues || []).concat(issues))).concat(nearbyCheck());
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>

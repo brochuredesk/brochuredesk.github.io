@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Four Windows Open House email</title>
+<link rel="stylesheet" href="../engine/ohlib.css">
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/setpage.js"></script>
+<!--
+  The Four Windows' own Open House email (owner 11/2/2026, Full Lineup review Q2; reworked the same day to be plainly its own). 600 px wide
+  at 2x: the Corner Date flyer's full-width MINT block (dark ink: the label, the big Archivo date, the time, and in the REALTOR(R) cases
+  what's served and the notes in one outlined box), then the four-window wall (four photos as panes, a mint mullion where the gutters
+  cross), then two columns: the address, city, write-up and agent card on the left; the facts as window cells with a mint edge and the one
+  logo on the right. Four Panes (open-house-a) runs the wall edge to edge; Corner Date sets it inside the margins. The event ends well inside
+  the first 600 px. Every word is the listing's or the package's existing copy.
+-->
+<style>
+  @font-face{font-family:'Archivo';font-weight:600;src:url(../../fonts/pool/archivo-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Archivo';font-weight:700;src:url(../../fonts/pool/archivo-latin-700-normal.woff2) format('woff2')}
+  @font-face{font-family:'Archivo';font-weight:800;src:url(../../fonts/pool/archivo-latin-800-normal.woff2) format('woff2')}
+  @font-face{font-family:'Albert Sans';font-weight:400;src:url(../../fonts/pool/albert-sans-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Albert Sans';font-weight:500;src:url(../../fonts/pool/albert-sans-latin-500-normal.woff2) format('woff2')}
+  @font-face{font-family:'Albert Sans';font-weight:600;src:url(../../fonts/pool/albert-sans-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Albert Sans';font-weight:700;src:url(../../fonts/pool/albert-sans-latin-700-normal.woff2) format('woff2')}
+  :root{--field:#182d2d;--mint:#8fd3b8;--txt:#dfece6;--mut:#a9c9bc;--dk:#10241f;--line:rgba(143,211,184,.5)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .page{font-family:'Albert Sans';color:#fff}
+  .t{position:absolute;white-space:nowrap;overflow:hidden}
+  .w{white-space:normal}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+SP.start(['800 10pt "Archivo"', '700 10pt "Archivo"', '600 10pt "Archivo"', '400 10pt "Albert Sans"', '500 10pt "Albert Sans"', '600 10pt "Albert Sans"', '700 10pt "Albert Sans"'], D => {
+  const esc = Ivory.esc, L = D.listing, A = D.agent || {}, W = 450, MG = 22, CW = W - 2*MG, G = 4;
+  const FL = SP.floor('email'), FB = FL.body, FS = FL.small, FE = FL.event;
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id));
+  const T = SP.T, rect = SP.rect, wd = SP.width, fit = SP.fitSize, r1 = SP.r1;
+  const AR = "font-family:'Archivo'", AS = "font-family:'Albert Sans'", MINT = 'var(--mint)', DK = 'var(--dk)';
+  const edge = D.piece.of !== 'open-house-b';   // Four Panes: the wall runs edge to edge; Corner Date: inside the margins
+  const hs = OHL.cardMode(D) === 'headshot' && !!A.headshot;
+  let h = '', y = 0;
+
+  // ---- 1. the mint block: label, date, time, and what's served and the notes in one outlined box (dark ink on mint)
+  const lab = E.label.toUpperCase(), lcss = `font-weight:800;${AR};letter-spacing:.14em`;
+  let ls = fit(lab, lcss, CW, 22, FE); const two = wd(lab, `${lcss};font-size:${ls}pt`) > CW;
+  const lines = two ? OHL.labelLines(E.label, 2).map(t => t.toUpperCase()) : [lab]; if(two) ls = Math.min(22, ...lines.map(t => fit(t, lcss, CW, 22, FE)));
+  const lh = r1(ls*1.45);
+  const dcss = `font-weight:800;${AR};letter-spacing:-.5pt`, ds = fit(E.long, dcss, CW, 42, 32), dOne = wd(E.long, `${dcss};font-size:${ds}pt`) <= CW, dParts = [];
+  if(dOne) dParts.push({t: E.long, s: ds, slot: 'oh.date'});
+  else { const s2 = fit(E.monthDay || E.long, dcss, CW, 42, 32); if(E.weekday) dParts.push({t: E.weekday.toUpperCase(), s: FE, slot: 'oh.day', cap: true}); dParts.push({t: E.monthDay || E.long, s: s2, slot: 'oh.date'}); }
+  const tS = E.time ? fit(E.time, `font-weight:700;${AR}`, CW, 28, FE) : 0;
+  const items = [[E.refreshments, true, 'oh.refreshments'], [E.note, false, 'oh.note']].filter(i => i[0]);
+  const bs = FB, blh = r1(bs*1.35), bpad = 10, bw = CW - 2*bpad - 2;
+  const bl = items.map(([t, b, slot]) => ({t, b, slot, n: SP.linesNW(t, `font:${b ? 700 : 500} ${bs}pt/${blh}pt 'Albert Sans'`, bw)}));
+  const boxH = bl.length ? bl.reduce((a, q) => a + q.n*blh, 0) + 2*bpad + (bl.length - 1)*2*bpad : 0;
+  const dH = dParts.reduce((a, p) => a + r1(p.s*1.18), 0), blockH = 28 + lines.length*lh + 4 + dH + (E.time ? 6 + r1(tS*1.3) : 0) + (boxH ? 16 + boxH : 0) + 26;
+  h += rect(0, 0, W, blockH, 'background:var(--mint)'); y = 28;
+  lines.forEach((t, i) => { h += T(`${lcss};font-size:${ls}pt;color:${DK};text-align:left`, esc(t), MG, y + i*lh, CW, lh, 'data-slot="oh.label" data-lines="1" data-bg="#8fd3b8"'); });
+  y += lines.length*lh + 4;
+  dParts.forEach(p => { const ph = r1(p.s*1.18);
+    h += T(p.cap ? `font-weight:700;${AR};font-size:${p.s}pt;letter-spacing:.14em;color:#17503f;text-align:left` : `${dcss};font-size:${p.s}pt;color:${DK};text-align:left`, esc(p.t), MG, y, CW, ph, `data-slot="${p.slot}" data-lines="1" data-bg="#8fd3b8"`); y += ph; });
+  if(E.time){ y += 6; const th = r1(tS*1.3); h += T(`font-weight:700;${AR};font-size:${tS}pt;color:#17503f;text-align:left`, esc(E.time.replace(/(\d)\s+(am|pm)\b/gi, '$1 $2')), MG, y, CW, th, 'data-slot="oh.time" data-lines="1" data-bg="#8fd3b8"'); y += th; }
+  if(boxH){ y += 16; let yy = y + bpad; const bc = 'rgba(16,36,31,.55)';
+    h += rect(MG, y, CW, boxH, `border:1pt solid ${bc}`).replace('<div class="abs"', '<div class="abs" data-box="oh.box"');
+    bl.forEach((q, i) => { if(i){ h += rect(MG, yy + bpad - .4, CW, .75, `background:${bc}`); yy += 2*bpad; }
+      h += `<div class="abs w" style="left:${MG + bpad + 1}pt;top:${yy}pt;width:${bw}pt;height:${q.n*blh + 3}pt;font:${q.b ? 700 : 500} ${bs}pt/${blh}pt 'Albert Sans';color:${DK}" data-slot="${q.slot}" data-lines="${q.n}">${esc(q.t)}</div>`; yy += q.n*blh; }); }
+  y = blockH + 16;
+
+  // ---- 2. the four-window wall: the house top left, three rooms; a mint mullion where the gutters cross
+  const wx = edge ? 0 : MG, ww = edge ? W : CW, n = Math.min(3, rooms.length), ids = [hero, ...rooms.slice(0, n)];
+  const c0 = r1((ww - G)*.58), fr = SP.heroFrame(D, hero, c0, 190, true), cw = [fr.w, ww - G - fr.w], rh = [fr.h, r1(Math.max(96, fr.h*.62))];
+  const at = (id, x, yy, pw, ph) => OHL.photo(D, id, `left:${wx + x}pt;top:${yy}pt;width:${pw}pt;height:${ph}pt`);
+  if(ids.length >= 4){
+    h += at(ids[0], 0, y, cw[0], rh[0]) + at(ids[1], cw[0] + G, y, cw[1], rh[0]) + at(ids[2], 0, y + rh[0] + G, cw[1], rh[1]) + at(ids[3], cw[1] + G, y + rh[0] + G, cw[0], rh[1]);
+    y += rh[0] + G + rh[1] + 24;
+  } else { h += OHL.photo(D, hero, `left:${wx}pt;top:${y}pt;width:${ww}pt;height:${r1(ww*.55)}pt`); y += r1(ww*.55) + 24; }
+
+  // ---- 3. two columns: the address, the city and the write-up on the left; the facts as window cells and the logo on the right
+  const LW = r1(CW*.57), RX = MG + LW + 16, RW = CW - LW - 16, y0 = y;
+  const acss = `font-weight:800;${AR};letter-spacing:-.5pt`, as = fit(L.address, acss, LW, Math.min(36, (dParts.find(q => q.slot === 'oh.date') || {s: 36}).s - 2), 22);
+  const adOne = wd(L.address, `${acss};font-size:${as}pt`) <= LW, num = (L.address.match(/^\s*(\d+[A-Za-z-]*)\s+(.*)$/) || [null, '', L.address]);
+  h += T(`font-weight:700;${AR};font-size:${FS}pt;letter-spacing:.2em;color:${MINT};text-align:left`, esc(OHL.place(L).toUpperCase()), MG, y, LW, 20, 'data-slot="place" data-small="1" data-lines="1"'); y += 22;
+  if(adOne){ h += T(`${acss};font-size:${as}pt;color:#fff;text-align:left`, esc(L.address), MG, y, LW, r1(as*1.2), 'data-slot="address" data-lines="1"'); y += r1(as*1.2) + 10; }
+  else { const s2 = fit(num[2], acss, LW, 34, 22); h += T(`${acss};font-size:${s2}pt;color:#fff;text-align:left`, esc(num[1]), MG, y, LW, r1(s2*1.2), 'data-slot="address" data-lines="1"') + T(`${acss};font-size:${s2}pt;color:#fff;text-align:left`, esc(num[2]), MG, y + r1(s2*1.2), LW, r1(s2*1.2), 'data-slot="address" data-lines="1"'); y += 2*r1(s2*1.2) + 10; }
+  const wlh = 21, nFacts = SP.facts(D).length, rightH = nFacts*60 + 44, maxL = Math.max(3, Math.floor((rightH + 20 - (y - y0))/wlh));
+  // the left column is filled down to the facts column's foot: the lead first, then the writer's other sentences, last line 3/4 full
+  const wu = SP.fillText(SP.pool(D), `font:500 ${FB}pt/${wlh}pt 'Albert Sans';text-align:left`, LW, maxL, true);
+  if(wu){ h += `<div class="abs w" style="left:${MG}pt;top:${y}pt;width:${wu.w}pt;height:${wu.n*wlh}pt;font:500 ${FB}pt/${wlh}pt 'Albert Sans';color:var(--txt)" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`; y += wu.n*wlh + 10; }
+  // facts: window cells
+  const f = SP.facts(D), lcss2 = `font-weight:700;${AR};letter-spacing:.1em;text-transform:uppercase`; let fy = y0 + 2;
+  f.forEach(([lb, v, key]) => { h += rect(RX, fy, 3, 48, 'background:var(--mint)') + T(`${lcss2};font-size:${FS}pt;color:${MINT};text-align:left`, esc(lb), RX + 10, fy, RW - 10, 20, 'data-small="1"') + T(`font-weight:800;${AR};font-size:23pt;color:#fff;text-align:left`, v, RX + 10, fy + 20, RW - 10, 28, `data-slot="fact.${key}" data-lines="1"`); fy += 60; });
+  const lgH = 40, lgW = RW, colB = Math.max(y, fy);
+  h += OHL.logo(D, 'dark', `left:${RX}pt;top:${fy + 4}pt;width:${lgW}pt;height:${lgH}pt;justify-content:flex-start`);
+  y = Math.max(y, fy + 4 + lgH) + 20;
+
+  // ---- 4. the agent card across the foot
+  const lab2 = A.phoneLabel || 'Call / Text', nar = A.nar || /realtor/i.test(A.designation || ''), hsd = hs ? 62 : 0, tx = MG + 14 + (hsd ? hsd + 10 : 0), tw = CW - 14 - (hsd ? hsd + 10 : 0);
+  const nS = fit(A.name || '', `font-weight:700;${AR}`, tw, 28, 22), lcssA = `font-weight:700;${AR};letter-spacing:.12em;text-transform:uppercase;font-size:${FS}pt`;
+  const stack = wd(lab2.toUpperCase(), lcssA) + 14 + wd(A.phone || '', `font-weight:700;${AS};font-size:${FB}pt`) > tw;
+  const pS = stack ? 19 : Math.min(19, fit(A.phone || '', `font-weight:700;${AS}`, tw - wd(lab2.toUpperCase(), lcssA) - 14, 19, FB)), cardH = Math.max(hsd, r1(nS*1.2) + (nar ? 18 : 0) + (stack ? 18 : 0) + 32) + 8;
+  h += rect(MG, y, 4, cardH, 'background:var(--mint)');
+  if(hs) h += `<div class="abs" style="left:${MG + 14}pt;top:${y + (cardH - hsd)/2}pt;width:${hsd}pt;height:${hsd}pt;border-radius:50%;overflow:hidden;border:1.5pt solid var(--mint)"><img src="${esc(A.headshot)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;
+  let cy = y + 4;
+  h += T(`font-weight:700;${AR};font-size:${nS}pt;color:#fff;text-align:left`, esc(A.name || ''), tx, cy, tw, r1(nS*1.2), 'data-slot="agent.name" data-lines="1"'); cy += r1(nS*1.2);
+  if(nar){ h += T(`font-weight:700;${AR};font-size:${FS}pt;letter-spacing:.2em;color:${MINT};text-align:left`, 'REALTOR®', tx, cy, tw, 18, 'data-slot="agent.desig" data-small="1" data-lines="1"'); cy += 18; }
+  if(stack){ h += T(`${lcssA};color:${MINT};text-align:left`, esc(lab2), tx, cy, tw, 18, 'data-small="1"'); cy += 18; }
+  h += T(`font-weight:700;${AS};font-size:${pS}pt;color:#fff;text-align:left`, `${stack ? '' : `<span data-small="1" style="font-weight:700;${AR};font-size:${FS}pt;letter-spacing:.12em;text-transform:uppercase;color:${MINT};margin-right:8pt">${esc(lab2)}</span>`}${esc(A.phone || '')}`, tx, cy + 2, tw, 28, 'data-slot="agent.phone" data-lines="1"');
+  y += cardH + 18;
+  h += `<div class="abs" data-fine="1" data-slot="fineprint" data-lines="1" style="left:${MG}pt;top:${y}pt;width:${CW}pt;height:14pt;font:400 10pt/14pt 'Albert Sans';color:${MINT}">${esc((D.companion || {}).fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  y += 14 + 20;
+  const after = () => document.querySelectorAll('[data-slot="oh.note"],[data-slot="oh.refreshments"]').forEach(el => { el.innerHTML = el.innerHTML.replace(/[^\s<>]*‑[^\s<>]*/g, m => `<span style="white-space:nowrap">${m.replace(/‑/g, '-')}</span>`); });
+  return {W, H: y, after, html: `<div class="page em" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${y}pt;background:var(--field)">${h}</div>`};
+});
+</script>
+</body>
+</html>

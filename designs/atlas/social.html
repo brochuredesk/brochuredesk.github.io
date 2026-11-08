@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · atlas · social set</title>
+<link rel="stylesheet" href="atlas.css">
+<script src="atlas.js"></script>
+<script src="atlas-map.js"></script>
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/carousel.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script src="../engine/socialset.js"></script>
+<script src="atlas-social.js"></script>
+<!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json. -->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>SocialSet.start(D => { const b = D.brand || {}, r = document.documentElement.style; if(b.accent){ r.setProperty('--accent', b.accent); r.setProperty('--ink', b.accent); } if(b.paper) r.setProperty('--paper', b.paper); });
+atlasSocialMap();</script>
+</body>
+</html>

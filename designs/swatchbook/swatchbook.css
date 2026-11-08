@@ -1,0 +1,151 @@
+/* Swatchbook (former Swatchbook concept, template id "swatchbook"): shared style file.
+   The agent's brand color (brand.accent) is the main color: a solid top and a border on the cover, the whole field of
+   the inside spread. Boxes inside are white. Lengths are pt (1/72 in). Type on dark runs 9.5 pt and up. */
+
+:root{
+  --navy:#1e2c4a;            /* the agent's brand color (brand.accent); set from the data at load */
+  --navy-deep:#16213a;
+  --paper:#f7f4ec;           /* warm paper field (cover inside the border, outside left) */
+  --ink:#1e2c4a;             /* text on paper */
+  --text:#34405a;
+  --muted:#5b6578;
+  --gold:#d4ae5a;            /* small labels on navy */
+  --gold-ink:#8a6a22;        /* small labels on paper (4.5:1 on paper) */
+  --on-navy:#ffffff;
+  --on-navy-soft:#e7ebf3;
+  --line:rgba(30,44,74,.22);
+  --line-on-navy:rgba(255,255,255,.32);
+  --accent:#1e2c4a;          /* names the plan drawing and the contact card read */
+  --cc-paper:#ffffff; --cc-ink:#1e2c4a; --cc-muted:#5b6578; --cc-accent:#1e2c4a; --cc-line:rgba(30,44,74,.28);
+  --font-display:'Manrope',Helvetica,Arial,sans-serif;
+  --font-body:'Source Sans 3',Helvetica,Arial,sans-serif;
+  --m:29pt;
+  --g:18pt;                   /* cover border width = the gap between photos */
+}
+@font-face{font-family:'Manrope';font-weight:400;src:url(../../fonts/pool/manrope-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Manrope';font-weight:500;src:url(../../fonts/pool/manrope-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Manrope';font-weight:600;src:url(../../fonts/pool/manrope-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Manrope';font-weight:700;src:url(../../fonts/pool/manrope-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:400;src:url(../../fonts/pool/source-sans-3-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:600;src:url(../../fonts/pool/source-sans-3-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:700;src:url(../../fonts/pool/source-sans-3-latin-700-normal.woff2) format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+/* pages: proof = one 8.75 x 11.25 in page per panel; print = two spreads */
+.page{position:relative;background:var(--navy);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+.panel{position:absolute;left:9pt;top:9pt;width:612pt;height:792pt}
+.half{position:absolute;top:0;height:810pt;width:621pt;overflow:hidden}
+.half.l{left:0}.half.r{left:621pt}
+.half.r .panel{left:0}
+.bg-paper{position:absolute;left:-9pt;top:-9pt;right:-9pt;bottom:-9pt;background:var(--paper)}
+.bg-navy{position:absolute;left:-9pt;top:-9pt;right:-9pt;bottom:-9pt;background:var(--navy)}
+
+/* type */
+.kicker{font:600 9.5pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--gold);white-space:nowrap;overflow:hidden}
+.kicker.ink{color:var(--gold-ink)}
+.title{font-family:var(--font-display);font-weight:500;font-size:27pt;line-height:32pt;letter-spacing:-.3pt;color:var(--on-navy);white-space:nowrap;overflow:hidden}
+.title.ink{color:var(--ink)}
+.intro{font-size:10.5pt;line-height:14.5pt;color:var(--on-navy-soft);overflow:hidden}
+
+/* captions: bold lead, then the text. On navy and on paper. */
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-size:9.5pt;line-height:12.5pt;color:var(--on-navy-soft);overflow:hidden}
+.cap .a b{font-weight:700;color:#fff}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+.cap.ink .a{color:var(--text)}
+.cap.ink .a b{color:var(--ink)}
+
+/* photos */
+.ph{position:relative;overflow:hidden;background:#3a4663;min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:14pt;min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;left:var(--m);right:var(--m);display:flex;flex-direction:column}
+
+/* logos */
+.logo{display:flex;align-items:center;justify-content:flex-end;overflow:hidden}
+.logo img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+.logo .word{font-family:var(--font-display);font-weight:600;color:#fff;letter-spacing:.4pt;text-transform:uppercase;white-space:nowrap}
+
+/* cover */
+.cover-top{position:absolute;left:-9pt;top:-9pt;right:-9pt;height:185pt;background:var(--navy)}
+.cover-inner{position:absolute;left:var(--g);right:var(--g);bottom:var(--g);background:var(--paper)}
+.cover-frame{position:absolute;left:-9pt;top:-9pt;right:-9pt;bottom:-9pt;background:var(--navy)}
+.cover .loc{position:absolute;left:var(--m);top:38pt;width:554pt}
+.cover .street{position:absolute;left:var(--m);top:54pt;width:554pt;font-family:var(--font-display);font-weight:500;font-size:40pt;line-height:46pt;letter-spacing:-.6pt;color:#fff;white-space:nowrap;overflow:hidden}
+.cover .sum{position:absolute;left:var(--m);top:106pt;width:554pt;font-size:12pt;line-height:16pt;color:var(--on-navy-soft);overflow:hidden}
+.cover .stats{position:absolute;left:var(--m);width:554pt;top:146pt;display:flex;justify-content:space-between;gap:8pt;border-top:.6pt solid var(--line-on-navy);padding-top:9pt;white-space:nowrap}
+.cover .stats div{font:600 9.5pt/12pt var(--font-body);letter-spacing:1pt;text-transform:uppercase;color:#fff;white-space:nowrap}
+
+/* inside */
+.hd-kick{position:absolute;left:var(--m);top:38pt;width:420pt}
+.hd-title{position:absolute;left:var(--m);top:56pt;width:554pt}
+.hd-logo{position:absolute;right:var(--m);top:18pt;width:170pt;height:34pt;justify-content:flex-end}
+.hd-logo .word{font-size:11pt}
+.wbox{background:#fff;color:var(--ink);display:flex;gap:20pt;padding:15pt 20pt 14pt 20pt;overflow:hidden}
+.wbox .wh{width:158pt;flex:none;display:flex;flex-direction:column;justify-content:center}
+.wbox .wh .k{font:600 9.5pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--gold-ink);white-space:nowrap}
+.wbox .wh .h{font-family:var(--font-display);font-weight:500;font-size:21pt;line-height:25pt;letter-spacing:-.3pt;color:var(--ink);margin-top:6pt}
+.wbox .wi{flex:1;min-width:0;display:grid;grid-template-columns:1fr 1fr;column-gap:20pt;row-gap:9pt;align-content:center}
+.wbox .wi .l{font:700 9pt/11pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--gold-ink);white-space:nowrap}
+.wbox .wi .t{font-size:10.5pt;line-height:13.2pt;color:var(--ink);margin-top:1pt;overflow:hidden}
+
+/* outside left (paper) */
+.near{flex:none;display:flex;gap:0;border-top:.6pt solid var(--line);padding-top:9pt}
+.near .c{flex:1;min-width:0;padding-left:14pt;border-left:.6pt solid var(--line)}
+.near .c:first-child{padding-left:0;border-left:0}
+.near .d{font:500 20pt/24pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.2pt}
+.near .p{font:600 9pt/11pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--gold-ink);white-space:nowrap;overflow:hidden;margin-top:1pt}
+.near.compact{padding-top:6pt}
+.near.compact .d{font-size:14pt;line-height:17pt}
+.near.compact .p{font-size:8.5pt;line-height:10pt}
+.floors{background:#fff;border:.6pt solid var(--line);display:flex;flex-direction:column;padding:12pt 18pt 8pt}
+.floors .fk{font:600 9.5pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--gold-ink)}
+.floors .fr{display:flex;gap:16pt;align-items:center;flex:1;border-top:.6pt solid var(--line);margin-top:7pt;padding-top:5pt}
+.floors .fr:first-of-type{margin-top:8pt}
+.floors .fn{width:92pt;flex:none;font:700 9.5pt/12pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:var(--ink);white-space:nowrap}
+.floors .ft{flex:1;min-width:0;font-size:10.5pt;line-height:13.5pt;color:var(--text);overflow:hidden}
+.plan-legend{position:absolute;display:flex;gap:18pt;font:600 8.5pt/11pt var(--font-body);color:var(--ink);white-space:nowrap}
+.plan-legend i{display:inline-block;width:11pt;height:11pt;margin-right:5pt;vertical-align:-2pt;border:.6pt solid rgba(0,0,0,.4)}
+.plan-disclosure{position:absolute;font-size:7pt;line-height:9pt;color:var(--muted);white-space:nowrap;overflow:hidden;text-align:right}
+.plan-room{position:absolute;text-align:center;font:400 8pt/9.5pt var(--font-body);color:var(--ink);white-space:nowrap}
+.plan-room b{display:block;font-weight:600;font-size:8pt;line-height:9.5pt}
+.plan-room span{display:block;color:var(--muted);font-size:8pt;line-height:9.5pt}
+.plan-level{text-align:center;font:600 10pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--gold-ink);white-space:nowrap;overflow:hidden}
+.plan-svg{position:absolute;overflow:visible}
+.fine{font-size:6.5pt;line-height:8pt;color:var(--muted);overflow:hidden}
+
+/* outside back on navy: the near-by row in light type */
+.onnavy .near{border-top-color:var(--line-on-navy)}
+.onnavy .near .c{border-left-color:var(--line-on-navy)}
+.onnavy .near .d{color:#fff}
+.onnavy .near .p{color:var(--gold)}
+
+/* Open House flyers */
+.oh-label{font:700 22pt/26pt var(--font-body);letter-spacing:3pt;text-transform:uppercase;color:var(--gold);white-space:nowrap;overflow:hidden}
+.oh-date{font-family:var(--font-display);font-weight:500;letter-spacing:-.6pt;color:#fff;white-space:nowrap;overflow:hidden}
+.oh-time{font-family:var(--font-body);font-weight:700;color:#fff;white-space:nowrap;overflow:hidden}
+.oh-opts{display:flex;flex-direction:column;gap:3pt;align-items:flex-end}
+.oh-opt{display:flex;gap:8pt;align-items:baseline;white-space:nowrap;max-width:100%}
+.oh-opt .t{font:700 8pt/12pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--gold);flex:none}
+.oh-opt span[data-slot]{font:600 11pt/14pt var(--font-body);color:var(--on-navy-soft);overflow:hidden;white-space:nowrap}
+.oh-addr{font-family:var(--font-display);font-weight:500;letter-spacing:-.5pt;color:#fff;white-space:nowrap;overflow:hidden}
+.oh-place{font:600 9.5pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--gold);white-space:nowrap;overflow:hidden}
+.oh-facts{font:600 9.5pt/12pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:#fff;white-space:nowrap;overflow:hidden;text-align:right}
+.oh-facts i{font-style:normal;font-size:5pt;color:var(--gold);padding:0 .9em;vertical-align:.25em}
+.item > .cap{padding-top:5pt}
+
+/* back: the contact card sits straight on the navy (owner, 10/29/2026): light type, gold labels, thin light rule */
+.panel.backside .cc{--cc-paper:var(--navy);--cc-ink:#fff;--cc-muted:#e7ebf3;--cc-accent:var(--gold);--cc-line:rgba(255,255,255,.42)}
+.spage .cc{--cc-paper:var(--navy);--cc-ink:#fff;--cc-muted:#e7ebf3;--cc-accent:var(--gold);--cc-line:rgba(255,255,255,.42)}
+.spage .cc .cc-fine{font-size:6.5pt;line-height:8pt;color:#e7ebf3}
+.panel.backside .cc .cc-fine{font-size:6.5pt;line-height:8pt;color:#e7ebf3}

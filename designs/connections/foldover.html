@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rooms and Their Connections fold-over</title>
+<link rel="stylesheet" href="connections.css">
+<script src="connections.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/agentcard.js"></script>
+<!--
+  Rooms and Their Connections · 11 x 17 book-fold brochure
+  11 x 17 sheet laid 17 wide and folded once down the middle: four upright 8.5 x 11 pages that open like a book
+  (0.125 in bleed, 0.25 in safe zone). Outside: back (left) + cover (right). Inside: left page + right page.
+  Nothing crosses the crease. A dark slate-teal field on every page; serif titles over a thin rule, small caps kickers.
+    cover   whole-house photo across the top, address, facts, paragraph, a second exterior at the lower right
+    left    unequal columns: a small stack of three on the left, two tall photos on the right
+    right   a 2 x 3 grid of photos with captions
+    back    two bedroom-side photos, the bath and the nearby places, then the standard contact card
+            (with a floor plan: the agent's plan, placed as given, takes the bath's place on the back)
+  The sets' copy comes as whole sentences (data.ct.*); connections.js picks the sentences that fill each box.
+  Modes (data.mode): proof = four panel pages; print = two spreads, each half clipped at the fold.
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = CN.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML='<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const mode = D.mode || 'proof';
+  const esc = CN.esc, L = D.listing, A = D.agent || {}, b = D.brand || {}, K = D.ct || {};
+  const issues = [];
+  if(b.accent) document.documentElement.style.setProperty('--field', b.accent);
+  await Promise.all(['500 10pt "Cormorant Garamond"','600 10pt "Cormorant Garamond"','700 10pt "Cormorant Garamond"','400 10pt Karla','500 10pt Karla','600 10pt Karla','700 10pt Karla'].map(f => document.fonts.load(f)));
+  const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot) || '';
+  const LH = 12.5;
+  const sattr = s => esc(JSON.stringify([].concat(s))).replace(/'/g, '&#39;');
+  const cap = (c, slot, lines) => `<div class="cap"><div class="h" data-slot="${slot}.h" data-lines="1">${esc(c.title)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div>
+      <div class="a" data-slot="${slot}" data-lh="${LH}" data-lines="${lines}" data-lead="" data-s='${sattr(c.s)}' style="height:${lines*LH}pt"></div></div>`;
+  const item = (c, slot, lines, grow) => `<div class="item" style="flex:${grow||1} 1 0">${CN.photo(D, c.photo, '', slot)}${cap(c, slot, lines)}</div>`;
+  const para = (s, slot, lines, cls, style, lh) => `<div class="${cls}" data-slot="${slot}" data-lh="${lh}" data-lines="${lines}" data-lead="" data-s='${sattr(s)}' style="height:${lines*lh}pt;line-height:${lh}pt;${style||''}"></div>`;
+  const widePair = (c, slot) => `<div class="pair${c.photo2 ? ' two' : ''}" data-wmin="190" data-wmax="300" style="flex:1 1 0"><div class="pw" style="flex:1 1 0">${CN.photo(D, c.photo, '', slot)}</div>
+      <div class="btxt" style="flex:0 0 240pt"><div class="h" data-slot="${slot}.h" data-lines="1">${esc(c.title)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div>
+      <div class="a" data-slot="${slot}" data-lh="12.5" data-lines="4" data-lead="" data-s='${sattr(c.s)}'></div>
+      ${c.photo2 ? `<div class="thin">${CN.photo(D, c.photo2, 'position:absolute;inset:0', slot + '.thin')}</div>` : ''}</div></div>`;
+  const head = (k, t, slot) => `<div class="kicker hd-kick" data-slot="${slot}.kicker" data-lines="1">${esc(k)}</div><div class="title hd-title" data-slot="${slot}.title" data-lines="1">${esc(t)}</div><div class="rule" style="top:86pt"></div>`;
+  const places = (P, kick, slot) => `<div class="places"><div class="pk" data-slot="${slot}.k" data-lines="1">${esc(kick)}</div>${P.map((p, i) => `<div class="pr"><span class="pn" data-slot="${slot}${i}.n" data-lines="1">${esc(p.n)}</span><span class="pd" data-slot="${slot}${i}.d" data-lines="1">${esc(p.d)}${p.k ? ' · ' + esc(p.k) : ''}</span></div>`).join('')}</div>`;
+
+  const placesH = (P, kick, slot) => `<div class="places hz"><div class="pk" data-slot="${slot}.k" data-lines="1">${esc(kick)}</div><div class="cells">${P.map((p, i) => `<div class="pc"><div class="pn" data-slot="${slot}${i}.n" data-lines="1">${esc(p.n)}</div><div class="pd" data-slot="${slot}${i}.d" data-lines="1">${esc(p.d)}${p.k ? ' · ' + esc(p.k) : ''}</div></div>`).join('')}</div></div>`;
+  // ================= COVER =================
+  function cover(){
+    const F = K.front || {}, st = CN.stats(L), S = F.second;
+    return `<div class="abs" style="left:-9pt;top:-9pt;width:630pt;height:810pt;display:flex;flex-direction:column;background:var(--field)">
+        <div style="flex:1 1 0;min-height:0;position:relative">${CN.photo(D, F.hero, 'position:absolute;inset:0', 'front.hero')}</div>
+        <div style="flex:none;display:flex;gap:12pt;padding:22pt 47pt 39pt 38pt">
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+            <div class="kicker" data-slot="front.location" data-lines="1" style="margin-bottom:5pt">${esc(F.location)}</div>
+            <div class="street" id="street" data-slot="front.address" data-lines="1">${esc(L.address)}</div>
+            <div class="rule2"></div>
+            <div class="stats" data-slot="front.stats" data-lines="3">${st.map(s => `<div>${esc(s)}</div>`).join('')}</div>
+            <div class="para lead" data-fillto="8-4" data-slot="front.house" data-lh="16" data-lead="" data-s='${sattr(F.house)}' style="font-size:11.5pt;line-height:16pt;color:#fff"></div>
+          </div>
+          <div style="flex:0 0 214pt;display:flex;flex-direction:column"><div class="item" style="flex:1 1 0">${CN.photo(D, S.photo, '', 'front.second')}${cap(S, 'front.second', 5)}</div></div>
+        </div></div>`;
+  }
+
+  // ================= BACK =================
+  function back(){
+    const B = K.back || {}, hasPlan = !!D.plan;
+    let h = `<div class="bg-field"></div>${head(B.kicker, B.title, 'back')}`;
+    const bed = (B.bedrooms || []).slice(0, 2), P = B.places || [];
+    const wrapOf = (html) => `<div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt">${html}</div>`;
+    const legend = (x, y, w) => { const zs = IvoryPlan.zonesOf(D.plan);
+      const spans = Object.entries(IvoryPlan.ZONES).filter(([k]) => zs.includes(k)).map(([k, z]) => `<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, var(--paper))"></i>${z.label}</span>`);
+      return spans.length ? `<div class="plan-legend" style="left:${x}pt;top:${y}pt;width:${w}pt;justify-content:center">${spans.join('')}</div>` : ''; };
+    const disc = B.planDisc || 'Approximate; not to scale. Buyer to verify.';
+    const fine = 'Information deemed reliable but not guaranteed; buyer to verify.';
+    if(!hasPlan){
+      const bath = B.bath;
+      h += `<div class="flow" style="top:100pt;bottom:170pt;gap:12pt">
+          <div class="row" style="flex:1 1 0">${bed.map((c, i) => item(c, 'back.photo' + i, 4)).join('')}</div>
+          <div class="row" style="flex:none;gap:14pt">
+            <div style="flex:0 0 212pt;display:flex;min-height:150pt">${CN.photo(D, bath.photo, 'flex:1', 'back.bath')}</div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:7pt">
+              <div class="bathhead" data-slot="back.bath.h" data-lines="1">${esc(bath.title)}${bath.dims ? `<i>${esc(bath.dims)}</i>` : ''}</div>
+              <div class="para" data-fillto="7-3" data-slot="back.bath" data-lh="12.5" data-lead="" data-s='${sattr(bath.s)}' style="font-size:9.5pt;line-height:12.5pt"></div>
+              ${places(P, B.placesKicker, 'back.place')}
+            </div></div></div>`;
+    } else {
+      // the plan's board fits the plan; its top is level with the photo beside it and its bottom with the last row of the page
+      const n = D.plan.levels.length, one = n === 1, img = D.plan.levels.every(l => l.kind === 'image');
+      const cap300 = img ? Math.min(...D.plan.levels.map(l => l.h)) * 72 / 300 * 0.985 : 1e9;
+      const r0 = IvoryPlan.draw(D.plan, {x: 0, y: 0, w: one ? 300 : 538, h: Math.min(one ? 440 : 250, cap300)}, {allowRotate: !img});
+      const uW = Math.ceil(r0.usedW), uH = Math.ceil(r0.usedH), BW = Math.max(uW + 28, 230), bx = 29, by = 100, REG = 522;
+      const natBH = uH + 28 + 46, BH = one ? REG : natBH;
+      const py = by + 14 + (BH - 28 - 46 - uH) / 2;       // the plan sits in the middle of the board above its legend
+      const r = IvoryPlan.draw(D.plan, {x: bx + (BW - uW) / 2, y: py, w: uW, h: uH}, {allowRotate: !img});
+      window.planIssues = r.issues;
+      const board = `<div class="board" style="left:${bx}pt;top:${by}pt;width:${BW}pt;height:${BH}pt"></div>${wrapOf(r.html + legend(bx + 6, by + BH - 40, BW - 12))}
+        <div class="plan-disclosure abs" style="left:${bx + 6}pt;top:${by + BH - 20}pt;width:${BW - 12}pt;text-align:center" data-slot="back.planDisc" data-fine="1" data-lines="1">${esc(disc)}</div>`;
+      const side = 554 - BW - 12, X = B.extra;
+      if(one){
+        h += board + `<div class="flow" style="left:${bx + BW + 12}pt;right:29pt;top:${by}pt;bottom:170pt;gap:10pt">${bed.map((c, i) => item(c, 'back.photo' + i, 5)).join('')}${places(P, B.placesKicker, 'back.place')}</div>`;
+      } else if(side >= 190){
+        // board beside a photo, then a row of photos, then the places across the foot
+        h += board + `<div class="abs" style="left:${bx + BW + 12}pt;top:${by}pt;width:${side}pt;height:${BH}pt;display:flex">${item(bed[0], 'back.photo0', 4)}</div>
+          <div class="flow" style="top:${by + BH + 12}pt;bottom:170pt;gap:10pt"><div class="row" style="flex:1 1 0;gap:10pt">${item(bed[1], 'back.photo1', 4)}${X ? item(X, 'back.photo2', 4) : ''}</div>${placesH(P, B.placesKicker, 'back.place')}</div>`;
+      } else if(side >= 140){
+        // the places and one more photo stand beside the board and end on its bottom line; two bedroom photos fill the row below
+        h += board + `<div class="abs" style="left:${bx + BW + 14}pt;top:${by}pt;width:${side - 2}pt;height:${BH}pt;display:flex;flex-direction:column;gap:9pt">${places(P, B.placesKicker, 'back.place').replace('class="places"', 'class="places narrow"')}${X ? item(X, 'back.photo2', 3) : ''}</div>
+          <div class="flow" style="top:${by + BH + 12}pt;bottom:170pt;gap:10pt"><div class="row" style="flex:1 1 0">${bed.map((c, i) => item(c, 'back.photo' + i, 3)).join('')}</div></div>`;
+      } else {
+        h += board.replace(/left:29pt;top:100pt/, `left:${bx + (554 - BW) / 2}pt;top:100pt`) + `<div class="flow" style="top:${by + BH + 12}pt;bottom:170pt;gap:10pt">
+          <div class="row" style="flex:1 1 0">${bed.map((c, i) => item(c, 'back.photo' + i, 3)).join('')}</div>${placesH(P, B.placesKicker, 'back.place')}</div>`;
+      }
+    }
+    h += ContactCard.html([29, 632, 554, 132], Object.assign({}, A, {headshot: hsSrc}), Object.assign({}, b, {logo: b.logoOnDark || b.logo}), {layout: 'panel', fine, bottomGap: 0.5, fieldAccent: true});
+    return h;
+  }
+
+  // ================= INSIDE LEFT =================
+  function left(){
+    const I = K.left || {};
+    return `<div class="bg-field"></div>${head(I.kicker, I.title, 'left')}
+      ${para(I.intro, 'left.intro', 2, 'intro abs', 'left:var(--m);top:96pt;width:554pt', 14)}
+      <div class="flow" style="top:136pt;bottom:26pt;gap:8pt;flex-direction:row">
+        <div class="col" style="flex:0 0 212pt">${I.small.map((c, i) => item(c, 'left.photo' + i, 4)).join('')}</div>
+        <div class="col" style="flex:1">${I.tall.map((c, i) => item(c, 'left.photo' + (3 + i), 5)).join('')}</div>
+      </div>`;
+  }
+  // ================= INSIDE RIGHT =================
+  function right(){
+    const R = K.right || {};
+    let k = 0;
+    return `<div class="bg-field"></div>${head(R.kicker, R.title, 'right')}
+      ${para(R.intro, 'right.intro', 2, 'intro abs', 'left:var(--m);top:96pt;width:554pt', 14)}
+      ${R.cols ? `<div class="flow" style="top:136pt;bottom:26pt;gap:8pt;flex-direction:row">
+        <div class="col" style="flex:1">${R.cols[0].map((c, i) => item(c, 'right.photo' + k++, 5)).join('')}</div>
+        <div class="col" style="flex:0 0 212pt">${R.cols[1].map((c, i) => item(c, 'right.photo' + k++, 4)).join('')}</div></div>` :
+      `<div class="flow" style="top:136pt;bottom:26pt;gap:10pt">${R.rows.map(r => `${r.length === 1 ? widePair(r[0], 'right.photo' + (k++)) : `<div class="row" style="flex:1 1 0">${r.map(c => item(c, 'right.photo' + (k++), 4)).join('')}</div>`}`).join('')}</div>`}`;
+  }
+
+  const panels = {front: cover(), back: back(), left: left(), right: right()};
+  const panel = h => `<div class="panel">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.back)}</div><div class="half r">${panel(panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.left)}</div><div class="half r">${panel(panels.right)}</div></div>`;
+  } else {
+    for(const id of ['front','left','right','back']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  document.querySelectorAll('#street').forEach(st => { let fs = 44; while(st.scrollWidth > st.clientWidth + 1 && fs > 30){ fs -= 1; st.style.fontSize = fs + 'pt'; } });
+  CN.fitTexts();
+  CN.fitPairs();
+  CN.fill();
+  ContactCard.fit(document);
+  issues.push(...CN.focus(D));
+  window.brochureCheck = () => CN.check(D, (window.planIssues||[]).concat(issues));
+  window.photoPlacements = CN.placements;
+})();
+</script>
+</body>
+</html>

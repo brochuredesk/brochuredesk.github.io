@@ -1,0 +1,4 @@
+/* fxs-09: the set's tokens as JS values for the pages that draw with their own scripts (Open House flyer, email, socials, carousels).
+   Read lazily from fxs09-tokens.css, the one source: TK.ink, TK.band, TK.rule, TK.onInk ... */
+window.TK = new Proxy({}, {get: (_, k) => { const g = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  return ({paper: '--fx-paper', band: '--fx-band', ink: '--fx-ink', ink2: '--fx-ink2', text: '--fx-text', textDark: '--fx-text-dark', mute: '--fx-mute', rule: '--fx-rule', onInk: '--fx-on-ink', onInkSoft: '--fx-on-ink-soft'}[k]) ? g(({paper: '--fx-paper', band: '--fx-band', ink: '--fx-ink', ink2: '--fx-ink2', text: '--fx-text', textDark: '--fx-text-dark', mute: '--fx-mute', rule: '--fx-rule', onInk: '--fx-on-ink', onInkSoft: '--fx-on-ink-soft'})[k]) : undefined; }});

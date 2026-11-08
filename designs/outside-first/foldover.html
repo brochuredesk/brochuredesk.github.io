@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Outside First fold-over</title>
+<link rel="stylesheet" href="outside-first.css">
+<script src="outside-first.js"></script>
+<!--
+  BrochureDesk · Outside First · 11 x 17 fold-over
+  11 x 17 sheet folded once across the middle: four landscape 11 x 8.5 panels (792 x 612 pt), 0.125 in (9 pt) bleed.
+    outside spread: back (turned 180, on top) over cover      inside spread: inside top over inside bottom
+  The outdoor spaces open the story (cover, then the back with the floor plan), then the rooms in walking order.
+
+  Modes (data.mode):  proof  four panel pages, 810 x 630 pt each (trim + bleed)
+                      print  two spreads, 810 x 1242 pt, each half clipped at the fold
+
+  The floor plan is the agent's own drawing, placed as given (no redraw): data.plan.levels = [{name, src, w, h}].
+  With no plan the back shows a floor-by-floor room list instead (copy.back.floors).
+  Cover has three arrangements, chosen from the cover photo: "wide" (a wide shot across the panel), "split" (a whole-house
+  shot at its own shape, top left) and "tall" (a tall whole-house shot down the left side). copy.front.mode overrides.
+-->
+<style>
+  .addrblk{position:absolute;left:24pt;width:372pt}
+  .rowflex{display:flex;align-items:center;gap:16pt}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = OF.data(), esc = OF.esc; OF.fitMode = !!D.fit;
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  await OF.cardReady;
+  const mode = D.mode || 'proof', L = D.listing, A = D.agent || {}, b = D.brand || {}, C = D.copy || {}, issues = [];
+  if(b.accent) document.documentElement.style.setProperty('--accent', b.accent);
+  await Promise.all(['700 10pt','400 10pt','600 10pt'].flatMap(w => [document.fonts.load(`${w} 'Space Grotesk'`), document.fonts.load(`${w} 'Source Sans 3'`)]));
+  document.body.dataset.mode = mode;
+  const hasPlan = !!(D.plan && D.plan.levels && D.plan.levels.length);
+  const hs = (D.photos||{})[A.headshot] ? D.photos[A.headshot].src : (A.headshot || '');
+  const flood = OF.floodStated(L.description);
+  // the one brokerage logo of the outside spread: on the standard contact card (default) or on the cover (copy.front.logoOn = 'cover')
+  const logoCard = (C.front || {}).logoOn !== 'cover';
+
+  // ================= COVER =================
+  function cover(){
+    const K = C.front || {}, ph = (D.photos||{})[K.photo] || {};
+    const asp = (ph.w && ph.h) ? ph.w/ph.h : 1.5;
+    const md = K.mode || (OF.fullHouse(D, K.photo) && asp < 2.2 ? (asp < 1 ? 'tall' : 'split') : 'wide');
+    document.body.dataset.cover = md;
+    const T = [].concat(K.title || []), caps = (K.caps || []).slice(0, 3), sp = K.specs || [];
+    let h = '';
+    const specs = (rows, x, y, w, pitch) => `<div class="specs abs" style="left:${x}pt;top:${y}pt;width:${w}pt">${rows.map((r,i)=>`<div style="height:${pitch}pt"><span class="l" data-slot="front.spec${i}.l" data-lines="1">${esc(r.l)}</span><span class="v" data-slot="front.spec${i}.v" data-lines="1">${esc(r.v)}</span></div>`).join('')}</div>`;
+    const para = (slot, text, x, y, w, lines, fs, lh) => `<div class="abs body" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${lines*lh}pt;font-size:${fs}pt;line-height:${lh}pt" data-slot="${slot}" data-lines="${lines}" data-cap="1">${esc(OF.txt(text))}</div>`;
+    const foot = (head, hslot, slot, text) => `<div class="abs kick" style="left:420pt;top:517pt;width:348pt;height:10pt" data-slot="${hslot}" data-lines="1">${esc(head)}</div>` + para(slot, text, 420, 531, 348, 5, 9, 12);
+    const titles = (x, w, fs, lh) => T.map((t,i) => `<div class="abs title one" style="left:${x}pt;top:${37+i*lh}pt;width:${w}pt;height:${lh}pt;font-size:${fs}pt;line-height:${lh}pt" data-slot="front.title${i}" data-lines="1">${esc(t)}</div>`).join('');
+    if(md === 'wide'){
+      h += OF.kick(K.kicker, 'front.kicker', 24, 26, 430) + titles(24, 440, 27, 32);
+      h += specs(sp.slice(0,2), 480, 46, 288, 21);
+      h += OF.photo(D, K.photo, -9, 106, 810, 216);
+      h += row3(caps, 24, 335, 500) + OF.rule(24, 508, 744);
+      h += foot(K.introHead || 'Start at the back of the house', 'front.introhead', 'front.intro', K.intro);
+    } else if(md === 'split'){
+      const rl = K.introLines || 5, rx0 = 24;
+      // the whole-house shot keeps its own shape; the title, the paragraph and the key sizes fill the space beside it
+      const hh = 37 + T.length*29 + 8 + rl*13 + 10 + 63 + 4, hw = Math.min(452, hh*asp), rx = hw + 24, rw = 768 - rx;
+      h += OF.photo(D, K.photo, -9, -9, hw+9, hh+9);
+      h += OF.kick(K.kicker, 'front.kicker', rx, 26, rw) + titles(rx, rw, 23, 29);
+      const py = 37 + T.length*29 + 8;
+      h += para('front.intro', K.intro, rx, py, rw, rl, 9.5, 13);
+      h += specs(sp.slice(0,3), rx, py + rl*13 + 10, rw, 21);
+      h += row3(caps, 24, hh + 14, 498) + OF.rule(24, 506, 744);
+      h += foot(K.outroHead || 'Around the house', 'front.outrohead', 'front.outro', K.outro);
+    } else {   // tall: a tall whole-house shot down the left side
+      const hh = 500, hw = hh*asp, rx = hw + 26, rw = 768 - rx;
+      h += OF.photo(D, K.photo, -9, -9, hw+9, hh+9);
+      h += OF.kick(K.kicker, 'front.kicker', rx, 26, rw) + titles(rx, rw, 23, 29);
+      const sy = 37 + T.length*29 + 10;
+      h += specs(sp.slice(0,3), rx, sy, rw, 21);
+      const py = sy + 63 + 10;
+      const il = K.introLines || 4;
+      h += para('front.intro', K.intro, rx, py, rw, il, 9.5, 13);
+      const y0 = py + il*13 + 10, gap = 8, rh = Math.floor((hh - y0 - gap*2)/3), pw = Math.round(rh*1.5), cw = rw - pw - 14, lines = Math.floor((rh - 12)/11);
+      caps.forEach((c, i) => { const y = y0 + i*(rh+gap);
+        h += OF.photo(D, c.id, rx, y, pw, rh) + OF.cap(c, `front.cap${i}`, rx+pw+14, y, cw, {lines: Math.max(OF.need(c.text, cw), 1), min: 3, max: lines}); });
+      h += OF.rule(24, 508, 744);
+      h += foot(K.outroHead || 'Around the house', 'front.outrohead', 'front.outro', K.outro);
+    }
+    // address block
+    const stats = OF.stats(L).join('  ·  ');
+    h += `<div class="abs addr" style="left:24pt;top:513pt;width:372pt;height:32pt" data-slot="front.address" data-lines="1">${esc(L.address)}</div>`;
+    h += `<div class="abs facts" style="left:24pt;top:547pt;width:372pt;height:11pt" data-slot="front.facts" data-lines="1">${esc(stats)}</div>`;
+    h += `<div class="abs rowflex" style="left:24pt;top:563pt;width:372pt;height:30pt">${K.tag ? `<span class="tag${flood && K.tagFlood ? '' : ' n'}" data-slot="front.tag" data-lines="1">${esc(K.tag)}</span>` : ''}${logoCard ? '' : `<div style="position:relative;flex:1;height:30pt">${OF.logo(D, 0, 0, 120, 30, 'flex-start')}</div>`}</div>`;
+    return h;
+  }
+  function row3(caps, x, y, bottom){
+    const w = (744 - 28)/3, ln = Math.max(3, ...caps.map(c => OF.need(c.text, w))), ph = bottom - 6 - OF.capH(ln) - y; let h = '';
+    caps.forEach((c, i) => { const cx = x + i*(w+14);
+      h += OF.photo(D, c.id, cx, y, w, ph);
+      h += OF.cap(c, `front.cap${i}`, cx, y + ph + 6, w, {lines: ln, min: 3, max: 4}); });
+    return h;
+  }
+
+  // ================= BACK =================
+  function back(){
+    const B = C.back || {};
+    let h = OF.kick(B.kicker, 'back.kicker', 24, 26, 700) + OF.title(B.title, 'back.title', 24, 36) + OF.rule(24, 71, 744);
+    if(hasPlan){
+      const pl = OF.plan(D, {x:24, y:84, w:566, h:262});
+      issues.push(...pl.issues); h += pl.html;
+      h += `<div class="abs body" style="left:24pt;top:352pt;width:566pt;height:22pt;font-size:8.5pt;line-height:11pt" data-slot="back.plannote" data-lines="2" data-cap="1"><b style="font:700 8pt var(--font-display);letter-spacing:1.2pt;text-transform:uppercase;color:var(--accent)">${esc(B.planHead || 'Reading the plan')}&nbsp; </b>${esc(OF.txt(B.planNote))}</div>`;
+    } else {
+      const fl = B.floors || [], n = fl.length;
+      h += `<div class="floors" style="left:24pt;top:86pt;width:566pt;height:288pt">${fl.map((f,i)=>{ const ln = Math.min(7, Math.max(2, Math.floor((278 - 100 - f.rooms.length*20)/14))); return `<div class="f">
+        <div class="n" data-slot="back.floor${i}.n" data-lines="1">${esc(f.n)}</div>
+        <div class="fl" data-slot="back.floor${i}.label" data-lines="1">${esc(f.label)}</div>
+        <div class="sm" data-slot="back.floor${i}.text" data-lines="${ln}" data-cap="1" style="height:${ln*14}pt">${esc(OF.txt(f.text))}</div>
+        <table>${f.rooms.map(r=>`<tr><td data-slot="back.floor${i}.room">${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</table></div>`; }).join('')}</div>`;
+    }
+    // right column: nearby, one photo
+    const cx = 612, cw = 156;
+    h += OF.kick('Nearby', 'back.nearhead', cx, 84, cw);
+    h += `<div class="abs nearby" style="left:${cx}pt;top:98pt;width:${cw}pt">${(B.nearby||[]).slice(0,3).map((x,i)=>`<div style="height:38pt"><div class="d" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}${x.u === '' ? '' : `<small>${esc(x.u || 'miles')}</small>`}</div><div class="p" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}</div>`;
+    const P = B.photo || {};
+    h += OF.photo(D, P.id, cx, 216, cw, 104);
+    h += OF.cap(P, 'back.photo', cx, 326, cw, {lines: 3, min: 3, max: 3});
+    // band
+    const Bd = B.band || {};
+    h += `<div class="band" style="left:24pt;top:388pt;width:744pt;height:68pt">
+      <div style="width:262pt;flex:none;padding:9pt 14pt 0 16pt"><div class="big" style="height:26pt;white-space:nowrap" data-slot="back.band.big" data-lines="1">${esc(Bd.big)}</div>
+        <div class="sm" style="margin-top:4pt;height:22pt" data-slot="back.band.small" data-lines="2" data-cap="1">${esc(OF.txt(Bd.small))}</div></div>
+      <div style="width:.7pt;background:rgba(31,43,44,.25);margin:10pt 0 10pt 0;flex:none"></div>
+      <div style="flex:1;padding:9pt 16pt 0 20pt;min-width:0"><div class="kick" style="height:10pt;margin-bottom:6pt" data-slot="back.band.head" data-lines="1">${esc(Bd.head)}</div>
+        <div class="grid">${(Bd.items||[]).slice(0,6).map((t,i)=>`<div data-slot="back.band.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div></div></div>`;
+    // standard contact card + footer (the one brokerage logo of the outside spread is the cover's)
+    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', brokerage: logoCard, fine: B.footnote || ''});
+    return h;
+  }
+
+  // ================= INSIDE TOP =================
+  function top(){
+    const T = C.top || {}, ch = (T.chapters || []).slice(0, 3), w = (744-18)/2;
+    let h = OF.kick(T.kicker, 'top.kicker', 24, 26, 560) + OF.title(T.title, 'top.title', 24, 36, 600) + OF.logo(D, 588, 26, 180, 26, 'flex-end') + OF.rule(24, 71, 744);
+    const lns = ch.map(c => Math.max(2, ...c.items.slice(0,2).map(it => OF.need(it.text, w))));
+    const y0 = 82, avail = 604 - y0, G = 14, fx = lns.map(n => 12 + 5 + 6 + OF.capH(n)), ph = Math.floor((avail - G*(ch.length-1) - fx.reduce((a,b)=>a+b,0))/ch.length);
+    let y = y0;
+    ch.forEach((c, i) => {
+      h += `<div class="abs chap" style="left:24pt;top:${y}pt;width:744pt"><div class="h" data-slot="top.ch${i}.head" data-lines="1">${esc(c.head)}</div><div class="l"></div></div>`;
+      c.items.slice(0,2).forEach((it, j) => { const x = 24 + j*(w+18);
+        h += OF.photo(D, it.id, x, y+17, w, ph);
+        h += OF.cap(it, `top.ch${i}.cap${j}`, x, y+17+ph+6, w, {lines: lns[i], min: 2, max: 3}); });
+      h += `<div class="arrow" style="left:${24+w+9-9.5}pt;top:${y+17+ph/2-9.5}pt">&#8594;</div>`;
+      y += fx[i] + ph + G;
+    });
+    return h;
+  }
+
+  // ================= INSIDE BOTTOM =================
+  function bottom(){
+    const T = C.bottom || {}, gs = (T.groups || []).slice(0, 4), pw = (744 - 3*14)/4, rows = Math.ceil(gs.length/2);
+    let h = OF.kick(T.kicker, 'bottom.kicker', 24, 26, 600) + OF.title(T.title, 'bottom.title', 24, 36, 744) + OF.rule(24, 71, 744);
+    const lns = [...Array(rows)].map((_, r) => Math.max(3, ...gs.slice(r*2, r*2+2).flatMap(g => g.items.slice(0,2).map(it => OF.need(it.text, pw)))));
+    const y0 = 82, avail = 604 - y0, G = 14, fx = lns.map(n => 12 + 5 + 6 + OF.capH(n)), ph = Math.floor((avail - G*(rows-1) - fx.reduce((a,b)=>a+b,0))/rows);
+    gs.forEach((g, i) => {
+      const r = Math.floor(i/2), cI = i%2, y = y0 + fx.slice(0, r).reduce((a,b)=>a+b+ph+G, 0), gx = 24 + cI*(2*pw + 2*14);
+      h += `<div class="abs chap" style="left:${gx}pt;top:${y}pt;width:${2*pw+14}pt"><div class="h" data-slot="bottom.g${i}.head" data-lines="1">${esc(g.head)}</div><div class="l"></div></div>`;
+      g.items.slice(0,2).forEach((it, j) => { const x = gx + j*(pw+14);
+        h += OF.photo(D, it.id, x, y+17, pw, ph);
+        h += OF.cap(it, `bottom.g${i}.cap${j}`, x, y+17+ph+6, pw, {lines: lns[r], min: 3, max: 5}); });
+    });
+    return h;
+  }
+
+  const panels = {front: cover(), back: back(), top: top(), bottom: bottom()};
+  const panel = (cls, h) => `<div class="panel ${cls||''}">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside"><div class="half top">${panel('flip', panels.back)}</div><div class="half bottom">${panel('', panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside"><div class="half top">${panel('', panels.top)}</div><div class="half bottom">${panel('', panels.bottom)}</div></div>`;
+  } else {
+    for(const id of ['front','top','bottom','back']) html += `<div class="page" data-page="${id}">${panel('', panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  OF.fitLogos();
+  ContactCard.fit(document);
+  document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  window.brochureCheck = () => OF.check(D, issues);
+})();
+</script>
+</body>
+</html>

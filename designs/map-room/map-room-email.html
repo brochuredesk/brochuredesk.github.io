@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Map Room Open House email</title>
+<link rel="stylesheet" href="../engine/ohlib.css">
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/setpage.js"></script>
+<!--
+  The Map Room's own Open House email (owner 11/2/2026, Full Lineup review Q2). 600 px wide at 2x, white, the map sheet's way: the
+  event first (Cover Page, open-house-a: label, serif date and time in navy on white under a double rule; Legend Band, open-house-b:
+  the same words in white on a full-width navy legend card; in the REALTOR(R) cases what's served and the notes sit in one outlined box),
+  the plate (the house with a column of three rooms beside it), the facts as four large serif numerals between thin vertical rules,
+  the address and write-up, a row of three more rooms, and the title block across the foot (the one logo, the agent, Call / Text and the
+  phone, in three ruled cells). No new wording.
+-->
+<style>
+  @font-face{font-family:'Source Serif 4';font-weight:400;src:url(../../fonts/pool/source-serif-4-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Serif 4';font-weight:500;src:url(../../fonts/pool/source-serif-4-latin-500-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Serif 4';font-weight:600;src:url(../../fonts/pool/source-serif-4-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Public Sans';font-weight:400;src:url(../../fonts/pool/public-sans-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Public Sans';font-weight:600;src:url(../../fonts/pool/public-sans-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Public Sans';font-weight:700;src:url(../../fonts/pool/public-sans-latin-700-normal.woff2) format('woff2')}
+  :root{--paper:#ffffff;--navy:#1d3557;--blue:#1f6391;--txt:#2f3f58;--line:rgba(29,53,87,.28)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .page{font-family:'Public Sans';color:#1d3557}
+  .t{position:absolute;white-space:nowrap;overflow:hidden}
+  .w{white-space:normal}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+
+<script>
+SP.start(['400 10pt "Source Serif 4"', '500 10pt "Source Serif 4"', '600 10pt "Source Serif 4"', '400 10pt "Public Sans"', '600 10pt "Public Sans"', '700 10pt "Public Sans"'], D => {
+  const C = {disp: "'Source Serif 4'", dw: 500, lab: "'Public Sans'", body: "'Public Sans'", labTrack: .14, gutter: 4, cardBar: 3, logoTone: 'light'};
+  const PAPER = {ink: '#1d3557', sub: '#1f6391', body: '#2f3f58', line: 'rgba(29,53,87,.3)', bar: '#1d3557'};
+  const LEG = {ink: '#ffffff', sub: '#bcd6ea', body: '#ffffff', line: 'rgba(255,255,255,.55)', bar: '#bcd6ea', bgAttr: ' data-bg="#1d3557"'};
+
+  // ---- shared parts (the same helpers each own-social page carries; fonts and colors come from C and the palette P) ----------------------
+  const esc = Ivory.esc, K = SP.K, L = D.listing, A = D.agent || {};
+  const kind = SP.kind(D), shape = SP.shape(D), E = OHL.event(D);
+  if(E.time) E.time = E.time.replace(/(\d)\s+(am|pm)\b/gi, '$1 $2');   // a number never splits from am/pm
+  const [W, H] = D.piece.px ? [D.piece.px[0]*K, D.piece.px[1]*K] : [450, 0];
+  const FL = SP.floor(shape), FE = FL.event, FB = FL.body, FS = FL.small;
+  const cl = v => Math.ceil(v*2)/2;   // a floor rounded up to the half point
+  const r1 = SP.r1, T = SP.T, rect = SP.rect, wd = SP.width, fit = SP.fitSize;
+  const hero = OHL.hero(D, 'straight');
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id));
+  const hs = OHL.cardMode(D) === 'headshot' && !!A.headshot;
+  const DF = `font-family:${C.disp}`, LF = `font-family:${C.lab}`, BF = `font-family:${C.body}`, DW = C.dw;
+  const isOH = kind === 'oh' || kind === 'email', isJS = kind === 'js';
+  let TIGHT = false;   // the heavy case on a short shape: leading and padding close up (never the type: that stays at its floor)
+  const G = C.gutter;
+  const place = (html, x, y) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:0;height:0;overflow:visible">${html}</div>`;
+  const at = (id, x, y, pw, ph) => OHL.photo(D, id, `left:${x}pt;top:${y}pt;width:${pw}pt;height:${ph}pt`);
+  const addrNum = (L.address.match(/^\s*(\d+[A-Za-z-]*)\s+(.*)$/) || [null, '', L.address]);
+  // the header: Open House label (tracked caps), big date, time; Just Listed / Just Sold: the moment word, big
+  const head = (w, k, P, o) => {
+    o = o || {}; const parts = [], ta = o.center ? 'center' : 'left'; let bad = false;
+    if(isOH){
+      const lab = E.label.toUpperCase(), lcss = `font-weight:700;${LF};letter-spacing:${C.labTrack}em`, mx = r1(Math.max(FE, (o.labMax || 15)*k));
+      let s = fit(lab, lcss, w, mx, FE), lines = [lab];
+      if(wd(lab, `${lcss};font-size:${s}pt`) > w){ lines = OHL.labelLines(E.label, 2).map(t => t.toUpperCase()); s = Math.min(mx, ...lines.map(t => fit(t, lcss, w, mx, FE))); }
+      const lh = r1(s*(TIGHT ? 1.0 : 1.45)); if(lines.some(t => wd(t, `${lcss};font-size:${s}pt`) > w + .5)) bad = true;
+      parts.push({h: lines.length*lh, f: (x, y) => lines.map((t, i) => T(`${lcss};font-size:${s}pt;color:${P.sub};text-align:${ta}`, esc(t), x, y + i*lh, w, lh, `data-slot="oh.label" data-lines="1"${P.bgAttr || ''}`)).join('')});
+      const dcss = `font-weight:${DW};${DF};letter-spacing:-.3pt`, big = r1(Math.max(FE*1.5, (o.dateMax || 40)*k)), s1 = fit(E.long, dcss, w, big, FE*(TIGHT ? 1.1 : 1.5));
+      if(wd(E.long, `${dcss};font-size:${s1}pt`) <= w){ const h = r1(s1*(TIGHT ? 1.0 : 1.2)); parts.push({h, f: (x, y) => T(`${dcss};font-size:${s1}pt;color:${P.ink};text-align:${ta}`, esc(E.long), x, y, w, h, `data-slot="oh.date" data-lines="1"${P.bgAttr || ''}`)}); }
+      else {
+        const sd = fit(E.monthDay || E.long, dcss, w, big, FE), hd = r1(sd*(TIGHT ? 1.0 : 1.2)); if(wd(E.monthDay || E.long, `${dcss};font-size:${sd}pt`) > w + .5) bad = true;
+        if(E.weekday){ const sw = Math.max(FE, r1(sd*.5)), hw = r1(sw*(TIGHT ? 1.05 : 1.35)); parts.push({h: hw, f: (x, y) => T(`font-weight:600;${LF};font-size:${sw}pt;letter-spacing:.16em;text-transform:uppercase;color:${P.sub};text-align:${ta}`, esc(E.weekday), x, y, w, hw, `data-slot="oh.day" data-lines="1"${P.bgAttr || ''}`)}); }
+        parts.push({h: hd, f: (x, y) => T(`${dcss};font-size:${sd}pt;color:${P.ink};text-align:${ta}`, esc(E.monthDay || E.long), x, y, w, hd, `data-slot="oh.date" data-lines="1"${P.bgAttr || ''}`)});
+      }
+      if(E.time){ const tcss = `font-weight:600;${BF}`, st = fit(E.time, tcss, w, r1(Math.max(FE*1.2, (o.timeMax || 24)*k)), FE), ht = r1(st*(TIGHT ? 1.05 : 1.35)); if(wd(E.time, `${tcss};font-size:${st}pt`) > w + .5) bad = true;
+        parts.push({h: ht, f: (x, y) => T(`${tcss};font-size:${st}pt;color:${P.ink};text-align:${ta}`, esc(E.time), x, y, w, ht, `data-slot="oh.time" data-lines="1"${P.bgAttr || ''}`)}); }
+    } else {
+      const word = kind === 'jl' ? 'Just Listed' : 'Just Sold', css = `font-weight:${DW};${DF};letter-spacing:-.3pt`, s = fit(word, css, w, r1(Math.max(FE*1.6, (o.dateMax || 40)*k)), FE*1.2), h = r1(s*1.2);
+      parts.push({h, f: (x, y) => T(`${css};font-size:${s}pt;color:${P.ink};text-align:${ta}`, esc(word), x, y, w, h, `data-slot="moment" data-lines="1"${P.bgAttr || ''}`)});
+    }
+    const gap = TIGHT ? 0 : 2, h = parts.reduce((a, p) => a + p.h, 0) + gap*(parts.length - 1);
+    return {h, bad, draw: (x, y) => { let yy = y; return parts.map(p => { const o2 = p.f(x, yy); yy += p.h + gap; return o2; }).join(''); }};
+  };
+  // what's served and the notes: one outlined box, a hairline between them (never dropped; the type tightens to its floor)
+  const noteBox = (w, k, P) => {
+    const items = [E.refreshments && [E.refreshments, true, 'oh.refreshments'], E.note && [E.note, false, 'oh.note']].filter(Boolean); if(!items.length) return null;
+    const s = r1(Math.max(FB, FB*1.12*k)), lh = r1(s*(TIGHT ? 1.08 : 1.32)), pad = TIGHT ? 4 : r1(Math.max(7, s*.65)), ps = items.map(([text, bold, slot]) => {
+      const css = `font:${bold ? 700 : 500} ${s}pt/${lh}pt ${C.body}`; return {text, bold, slot, n: SP.linesNW(text, css, w - 2*pad - 6)}; });
+    const h = ps.reduce((a, q) => a + q.n*lh, 0) + 2*pad + (ps.length - 1)*(2*pad);
+    return {h, draw: (x, y) => { let yy = y + pad, o = rect(x, y, w, h, `border:1pt solid ${P.line};${P.boxBg ? 'background:' + P.boxBg : ''}`).replace('<div class="abs"', '<div class="abs" data-box="oh.box"');
+      ps.forEach((q, i) => { if(i){ o += rect(x, yy + pad - .4, w, .75, `background:${P.line}`); yy += 2*pad; }
+        o += `<div class="abs w" style="left:${x + pad + 1}pt;top:${yy}pt;width:${w - 2*pad - 2}pt;height:${q.n*lh + 6}pt;font:${q.bold ? 700 : 500} ${s}pt/${lh}pt ${C.body};color:${P.body};text-wrap:balance" data-slot="${q.slot}" data-lines="${q.n}">${esc(q.text)}</div>`; yy += q.n*lh; });
+      return o; }};
+  };
+  // the address: serif; one line when it fits at its size, else the number over the street
+  const address = (w, k, max, P) => {
+    const css = `font-weight:${DW};${DF};letter-spacing:-.4pt`, s = fit(L.address, css, w, r1(Math.max(FE*1.1, max*k)), FE);
+    if(wd(L.address, `${css};font-size:${s}pt`) <= w){ const h = r1(s*1.2); return {h, draw: (x, y) => T(`${css};font-size:${s}pt;color:${P.ink};text-align:left`, esc(L.address), x, y, w, h, 'data-slot="address" data-lines="1"')}; }
+    const st = addrNum[2], s2 = fit(st, css, w, r1(Math.max(FE*1.1, max*k*.85)), FE), h = r1(s2*1.2);
+    return {h: h*2, bad: wd(st, `${css};font-size:${s2}pt`) > w, draw: (x, y) => T(`${css};font-size:${s2}pt;color:${P.ink};text-align:left`, esc(addrNum[1]), x, y, w, h, 'data-slot="address" data-lines="1"') +
+      T(`${css};font-size:${s2}pt;color:${P.ink};text-align:left`, esc(st), x, y + h, w, h, 'data-slot="address" data-lines="1"')};
+  };
+  const city = (w, k, P, o) => { o = o || {}; const t = OHL.place(L).toUpperCase(), css = `font-weight:700;${LF};letter-spacing:${C.labTrack}em`, s = fit(t, css, w, r1(Math.max(FS*1.1, (o.max || 12)*k)), FS), h = r1(s*1.5);
+    if(wd(t, `${css};font-size:${s}pt`) > w) return null;
+    return {h, draw: (x, y) => T(`${css};font-size:${s}pt;color:${P.sub};text-align:${o.center ? 'center' : 'left'}`, esc(t), x, y, w, h, 'data-slot="place" data-lines="1"')}; };
+  // the agent card: the set's bar, round headshot when the card has one, name, REALTOR(R), Call / Text and the phone
+  const agent = (w, k, P, o) => {
+    o = o || {};
+    const hsd = hs && !o.nohs ? r1(Math.min(w*.26, 54)) : 0, tx = 10 + (hsd ? hsd + 8 : 0), tw = w - tx;
+    const ncss = `font-weight:${DW};${DF}`, nS = fit(A.name || '', ncss, tw, r1(Math.max(FB*1.45, (o.nameMax || 24)*k)), FB);
+    const nH = r1(nS*(TIGHT ? 1.12 : 1.22)), nar = A.nar || /realtor/i.test(A.designation || ''), dS = Math.max(FS, r1(10.5*k)), dH = r1(dS*(TIGHT ? 1.2 : 1.5));
+    const lab = A.phoneLabel || 'Call / Text'; let pS = r1(Math.max(FB*1.1, 17*k));
+    const lcss = `font-weight:700;${LF};letter-spacing:.14em;text-transform:uppercase`, lS = Math.max(FS, r1(10.5*k));
+    const oneLine = () => wd(lab.toUpperCase(), `${lcss};font-size:${lS}pt`) + 8 + wd(A.phone || '', `font-weight:700;${BF};font-size:${pS}pt`) <= tw;
+    while(!oneLine() && pS > FB) pS = r1(pS - .5);
+    const stack = !oneLine(), pH = r1(pS*(TIGHT ? 1.15 : 1.3)), lH = r1(lS*(TIGHT ? 1.2 : 1.5)), ch = nH + (nar ? dH : 0) + (stack ? lH : 0) + pH, h = Math.max(ch, hsd) + 6;
+    return {h, bad: wd(A.name || '', `${ncss};font-size:${nS}pt`) > tw, draw: (x, y) => {
+      let s = rect(x, y, C.cardBar, h, `background:${P.bar}`);
+      if(hsd) s += `<div class="abs" style="left:${x + 10}pt;top:${y + (h - hsd)/2}pt;width:${hsd}pt;height:${hsd}pt;border-radius:50%;overflow:hidden;border:1.5pt solid ${P.bar}"><img src="${esc(A.headshot)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;
+      let yy = y + (h - ch)/2;
+      s += T(`${ncss};font-size:${nS}pt;color:${P.ink};text-align:left`, esc(A.name || ''), x + tx, yy, tw, nH, 'data-slot="agent.name" data-lines="1"'); yy += nH;
+      if(nar){ s += T(`${lcss};font-size:${dS}pt;color:${P.sub};text-align:left;letter-spacing:.2em`, 'REALTOR®', x + tx, yy, tw, dH, 'data-slot="agent.desig" data-small="1" data-lines="1"'); yy += dH; }
+      if(stack){ s += T(`${lcss};font-size:${lS}pt;color:${P.sub};text-align:left`, esc(lab), x + tx, yy, tw, lH, 'data-small="1"'); yy += lH; }
+      s += T(`font-weight:700;${BF};font-size:${pS}pt;color:${P.ink};text-align:left`, `${stack ? '' : `<span data-small="1" style="${lcss};font-size:${lS}pt;color:${P.sub};margin-right:8pt">${esc(lab)}</span>`}${esc(A.phone || '')}`, x + tx, yy, tw, pH, 'data-slot="agent.phone" data-lines="1"');
+      return s; }};
+  };
+  const writeup = (w, k, maxN, P) => { const s = r1(Math.max(FB, FB*1.15*k)), lh = r1(s*1.4), css = `font:400 ${s}pt/${lh}pt ${C.body};text-align:left`;
+    const r = SP.fillText(SP.pool(D), css, w, maxN, true); if(!r || r.fill < .75) return null;
+    return {h: r.n*lh + 2, draw: (x, y) => `<div class="abs w" style="left:${x}pt;top:${y}pt;width:${r.w}pt;height:${r.n*lh}pt;font:400 ${s}pt/${lh}pt ${C.body};color:${P.body};text-align:left" data-slot="listing.body" data-lines="${r.n}">${esc(r.text)}</div>`}; };
+  // Just Sold: the short "thinking about selling" line from the Just Sold copy
+  const soldBlock = (w, k, P) => { const S = SP.soldLine(D), sb0 = r1(Math.max(FB, FB*1.15*k)), hs0 = r1(Math.max(FB*1.3, 22*k));
+    const sized = (text, start, min, mk) => { if(!text) return {n: 0, s: start, l: 0, w}; let best = null;
+      for(let s = start; s >= min && !best; s -= .5) for(const f of [1, .94, .88, .82, .76, .7]){ const m = SP.para(text, mk(s, r1(s*1.28)), w*f); if(m.n === 1 || m.fill >= .78){ best = {n: m.n, s, l: r1(s*1.28), w: w*f}; break; } }
+      if(!best){ const s = Math.max(min, 0), m = SP.para(text, mk(s, r1(s*1.28)), w); best = {n: m.n, s, l: r1(s*1.28), w}; } return best; };
+    const hd = sized(S.head, hs0, FB*1.1, (s, l) => `font:${DW} ${s}pt/${l}pt ${C.disp}`), ln = sized(S.line, sb0, FB, (s, l) => `font:400 ${s}pt/${l}pt ${C.body}`);
+    const h = hd.n*hd.l + ln.n*ln.l + (hd.n && ln.n ? 3 : 0); if(!h) return null;
+    return {h, draw: (x, y) => (hd.n ? `<div class="abs w" style="left:${x}pt;top:${y}pt;width:${hd.w}pt;height:${hd.n*hd.l + 3}pt;font:${DW} ${hd.s}pt/${hd.l}pt ${C.disp};color:${P.sub}" data-slot="sold.head" data-lines="${hd.n}">${esc(S.head)}</div>` : '') +
+      (ln.n ? `<div class="abs w" style="left:${x}pt;top:${y + hd.n*hd.l + (hd.n ? 3 : 0)}pt;width:${ln.w}pt;height:${ln.n*ln.l + 3}pt;font:400 ${ln.s}pt/${ln.l}pt ${C.body};color:${P.body}" data-slot="sold.line" data-lines="${ln.n}">${esc(S.line)}</div>` : '')}; };
+  const logoBlk = (w, maxH, tone) => { const lgH = r1(Math.min(maxH, w*.34)), lgW = r1(Math.min(w, lgH/.36)); return {h: lgH, w: lgW, draw: (x, y, just) => OHL.logo(D, tone || C.logoTone, `left:${x}pt;top:${y}pt;width:${lgW}pt;height:${lgH}pt;justify-content:${just || 'flex-start'}`)}; };
+  // the facts as ruled rows / spec rows / numerals: the set's own (fcts) -- see the page
+  // a carousel caption block: the room's name and about two lines from the package's copy, filled to 80%+ on the last line
+  const roomCaption = (id, CW, nmCss, nmColor, capColor) => {
+    let nm = '', cap = null, capH = 0, nh = 0, cs = 0, lh = 0, ncs = 0;
+    if(!isJS){ nm = SP.roomName(D, id); const pool = SP.caption(D, id).filter(t => t !== nm);
+      if(pool.length){ for(cs = 24; cs >= FB; cs -= .5){ lh = r1(cs*1.32); const r = SP.fillText(pool, `font:400 ${cs}pt/${lh}pt ${C.body};text-align:left`, CW, cs > 17 ? 2 : 4, false); if(r && r.fill >= .8){ cap = r; break; } } if(!cap){ cs = FB; lh = r1(cs*1.32); cap = SP.fillText(pool.slice(0, 1), `font:400 ${cs}pt/${lh}pt ${C.body};text-align:left`, CW, 6, false, .6); }
+        if(cap && cap.fill < .8){ for(let c2 = FB + .5; c2 <= 34; c2 += .5){ const l2 = r1(c2*1.32), r = SP.fillText(pool, `font:400 ${c2}pt/${l2}pt ${C.body};text-align:left`, CW, 3, false, .6); if(r && r.fill >= .8){ cap = r; cs = c2; lh = l2; break; } } } }
+      if(cap) capH = cap.n*lh; ncs = nm ? Math.max(FE, r1(Math.min(28, FE*1.6))) : 0; nh = ncs ? r1(ncs*1.25) : 0; }
+    return {nm, cap, capH, nh, cs, lh, ncs, h: (nh ? nh + 4 : 0) + capH,
+      draw: (x, y, CW2) => { let s = '', yy = y;
+        if(nh){ s += T(`${nmCss};font-size:${ncs}pt;color:${nmColor};text-align:left`, esc(nm), x, yy, CW2, nh, 'data-slot="slide.room" data-lines="1"'); yy += nh + 4; }
+        if(cap) s += `<div class="abs w" style="left:${x}pt;top:${yy}pt;width:${cap.w}pt;height:${capH + 4}pt;font:400 ${cs}pt/${lh}pt ${C.body};color:${capColor};text-align:left" data-slot="slide.caption" data-lines="${cap.n}">${esc(cap.text)}</div>`;
+        return s; }};
+  };
+
+  const MG = 22, CW = W - 2*MG, P = PAPER, alt = D.piece.of === 'open-house-b', g = 12;
+  // ---- the legend row: the facts as large serif numerals with thin vertical rules and blue caps captions (one row of four, or two by two) ----
+  const numerals = (w, k, P, o) => { o = o || {}; const f = SP.facts(D); if(!f.length) return null;
+    const vcss = `font-weight:${DW};${DF}`, n = f.length;
+    for(const per of [n, Math.ceil(n/2)]){ if(per === n && n > 4) continue;
+      const cw = w/per;
+      for(let s = Math.max(cl(FS), r1((o.max || 11.5)*k)); s >= cl(FS); s = r1(s - .5)) for(const tr of [.06, .03, .01]){
+        const lcss = `font-weight:700;${LF};letter-spacing:${tr}em;text-transform:uppercase`, vs = r1(Math.max(FB*1.5, s*(o.vf || 2.6)));
+        // every caption stays on one line, so the row's captions all sit on the same baseline
+        if(!f.every(([lb, v]) => wd(v, `${vcss};font-size:${vs}pt`) <= cw - 12 && wd(lb.toUpperCase(), `${lcss};font-size:${s}pt`) <= cw - 12)) continue;
+        const vh = r1(vs*1.15), lh = r1(s*1.4), ch = vh + lh + 8, rws = Math.ceil(n/per);
+        return {h: rws*ch + (rws - 1)*4, draw: (x, y) => f.map(([lb, v, key], i) => { const cx = x + (i % per)*cw, cy = y + Math.floor(i/per)*(ch + 4), tx = cx + (i % per ? 9 : 0);
+          return (i % per ? rect(cx, cy + 2, .75, ch - 4, `background:${P.line}`) : '') + T(`${vcss};font-size:${vs}pt;color:${P.ink};text-align:left`, v, tx, cy, cw - 10, vh, `data-slot="fact.${key}" data-lines="1"`) +
+            T(`${lcss};font-size:${s}pt;color:${P.sub};text-align:left`, esc(lb), tx, cy + vh + 2, cw - 10, lh, 'data-small="1"'); }).join('')}; } }
+    return null; };
+  // ---- the title block: a ruled strip in three cells (the logo, the agent's name, Call / Text and the phone), as a map sheet has one -------------
+  const titleBlock = (w, k, P, o) => { o = o || {};   // the standard contact block (SP.contact), in the set's colors and faces
+    const c = SP.contact(D, {w, k: Math.min(k, 1.1), ink: P.ink, sub: P.sub, bar: P.bar, disp: C.disp, body: C.body, label: C.lab, dw: DW, fb: FB, fs: FS, tone: C.logoTone, tight: TIGHT, barW: C.cardBar, headshot: hs && !o.nohs, email: true, web: w > 330, logoMaxH: 34});
+    return {h: c.h + (TIGHT ? 4 : 8), bad: c.bad, draw: (x, y) => c.draw(x, y + (TIGHT ? 2 : 4))}; };
+
+  let h = '', y = 0;
+  // ---- 1. the event first
+  const E1 = alt ? LEG : PAPER, hd = head(alt ? W - 2*MG : CW, 1, E1, {dateMax: 44, labMax: 16, timeMax: 26}), bx = noteBox(alt ? W - 2*MG : CW, 1, E1), bp = 22;
+  if(alt){ const bh = bp + hd.h + (bx ? 14 + bx.h : 0) + bp; h += rect(0, 0, W, bh, 'background:#1d3557') + hd.draw(MG, bp) + (bx ? bx.draw(MG, bp + hd.h + 14) : ''); y = bh + 18; }
+  else { h += hd.draw(MG, 26); let yy = 26 + hd.h; if(bx){ h += bx.draw(MG, yy + 14); yy += 14 + bx.h; } yy += 16; h += rect(MG, yy, CW, 2, 'background:#1d3557') + rect(MG, yy + 4, CW, .75, 'background:rgba(29,53,87,.55)'); y = yy + 22; }
+  // ---- 2. the plate: the house with a column of three rooms beside it
+  let best = null; for(const f of [.66, .62, .58, .54, .5]){ const fr0 = SP.heroFrame(D, hero, r1((CW - G)*f), 215, true); if(fr0.h <= 215.5 && (!best || fr0.h > best.h + 2)) best = fr0; }
+  const fr = best || SP.heroFrame(D, hero, r1((CW - G)*.5), 215, true), n3 = Math.min(3, rooms.length), rh3 = (fr.h - G*(n3 - 1))/Math.max(1, n3);
+  h += at(hero, MG, y, n3 ? fr.w : CW, fr.h); for(let i = 0; i < n3; i++) h += at(rooms[i], MG + fr.w + G, y + i*(rh3 + G), CW - fr.w - G, rh3);
+  y += fr.h + 22;
+  // ---- 3. the numerals, the place, the address and the write-up
+  const nm = numerals(CW, 1, P, {max: 12, vf: 1.9}); if(nm){ h += rect(MG, y, CW, .75, 'background:rgba(29,53,87,.3)'); y += 12; h += nm.draw(MG, y); y += nm.h + 12; h += rect(MG, y, CW, .75, 'background:rgba(29,53,87,.3)'); y += 20; }
+  const ct = city(CW, 1, P, {max: 13}), ad = address(CW, 1, 32, P); if(ct){ h += ct.draw(MG, y); y += ct.h + 2; } h += ad.draw(MG, y); y += ad.h + 10;
+  const wlh = 21, wu = SP.fillText(SP.pool(D), `font:400 ${FB}pt/${wlh}pt ${C.body};text-align:left`, CW, 6, true);
+  if(wu){ h += `<div class="abs w" style="left:${MG}pt;top:${y}pt;width:${wu.w}pt;height:${wu.n*wlh}pt;font:400 ${FB}pt/${wlh}pt ${C.body};color:${P.body}" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`; y += wu.n*wlh; }
+  y += 22;
+  // ---- 4. three more rooms
+  const more = rooms.slice(3, 6); if(more.length){ const pw = (CW - G*(more.length - 1))/more.length, ph = r1(pw*.68); more.forEach((id, i) => { h += at(id, MG + i*(pw + G), y, pw, ph); }); y += ph + 24; }
+  // ---- 5. the title block
+  const tb = titleBlock(CW, 1.15, P); h += tb.draw(MG, y); y += tb.h + 16;
+  h += `<div class="abs" data-fine="1" data-slot="fineprint" data-lines="1" style="left:${MG}pt;top:${y}pt;width:${CW}pt;height:14pt;font:400 10pt/14pt ${C.body};color:${P.sub}">${esc((D.companion || {}).fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  y += 14 + 20;
+  const after = () => document.querySelectorAll('[data-slot="oh.note"],[data-slot="oh.refreshments"]').forEach(el => { el.innerHTML = el.innerHTML.replace(/[^\s<>]*\u2011[^\s<>]*/g, m => `<span style="white-space:nowrap">${m.replace(/\u2011/g, '-')}</span>`); });
+  return {W, H: y, after, html: `<div class="page em" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${y}pt;background:#fff">${h}</div>`};
+
+});
+</script>
+</body>
+</html>

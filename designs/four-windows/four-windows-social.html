@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Four Windows socials</title>
+<link rel="stylesheet" href="../engine/ohlib.css">
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/setpage.js"></script>
+<!--
+  The Four Windows' own socials (owner 11/2/2026, Full Lineup review Q2; reworked the same day: "plainly its own design"). Built
+  on the set's signature, the four-window photo grid: four photos as panes in a 2 x 2 wall with thin dark gutters and one mint
+  mullion square where they cross (the fold-over cover and the flyer front), under a full-width MINT block that carries the label,
+  the big Archivo date or moment word and the time (the Corner Date flyer's block; dark ink on mint), then the words in two
+  columns: address, city and the agent card on the left, the facts as a stack of window cells with a mint edge and the one logo on the
+  right. Stories put the grid on the top edge and a row of rooms on the bottom edge; the short and wide shapes split into a dark photo
+  column and a mint text panel. REALTOR(R) cases: what's served and the notes sit in one outlined box in the mint block.
+  No new wording: every word is listing data, the package's copy, or a fixed label.
+-->
+<style>
+  @font-face{font-family:'Archivo';font-weight:600;src:url(../../fonts/pool/archivo-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Archivo';font-weight:700;src:url(../../fonts/pool/archivo-latin-700-normal.woff2) format('woff2')}
+  @font-face{font-family:'Archivo';font-weight:800;src:url(../../fonts/pool/archivo-latin-800-normal.woff2) format('woff2')}
+  @font-face{font-family:'Albert Sans';font-weight:400;src:url(../../fonts/pool/albert-sans-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Albert Sans';font-weight:500;src:url(../../fonts/pool/albert-sans-latin-500-normal.woff2) format('woff2')}
+  @font-face{font-family:'Albert Sans';font-weight:600;src:url(../../fonts/pool/albert-sans-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Albert Sans';font-weight:700;src:url(../../fonts/pool/albert-sans-latin-700-normal.woff2) format('woff2')}
+  :root{--field:#182d2d;--mint:#8fd3b8;--txt:#dfece6;--mut:#a9c9bc;--dk:#10241f;--line:rgba(143,211,184,.5)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .page{font-family:'Albert Sans';color:#fff}
+  .t{position:absolute;white-space:nowrap;overflow:hidden}
+  .w{white-space:normal}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+SP.start(['800 10pt "Archivo"', '700 10pt "Archivo"', '600 10pt "Archivo"', '400 10pt "Albert Sans"', '500 10pt "Albert Sans"', '600 10pt "Albert Sans"', '700 10pt "Albert Sans"'], D => {
+  const esc = Ivory.esc, K = SP.K, L = D.listing, A = D.agent || {};
+  const kind = SP.kind(D), shape = D.piece.shape, E = OHL.event(D);
+  if(E.time) E.time = E.time.replace(/(\d)\s+(am|pm)\b/gi, '$1 $2');   // a number never splits from am/pm
+  const [W, H] = [D.piece.px[0]*K, D.piece.px[1]*K];
+  const FL = SP.floor(shape), FE = FL.event, FB = FL.body, FS = FL.small;
+  const r1 = SP.r1, T = SP.T, rect = SP.rect, wd = SP.width, fit = SP.fitSize;
+  const hero = OHL.hero(D, 'straight');
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id));
+  const hs = OHL.cardMode(D) === 'headshot' && !!A.headshot;
+  const AR = "font-family:'Archivo'", AS = "font-family:'Albert Sans'";
+  const isOH = kind === 'oh', isJS = kind === 'js';
+  // the two fields: the dark green and the mint block (dark ink on mint)
+  const FIELD = {ink: '#fff', sub: 'var(--mint)', body: 'var(--txt)', line: 'var(--line)', bar: 'var(--mint)', bg: '#182d2d'};
+  const MINTF = {ink: 'var(--dk)', sub: '#17503f', body: 'var(--dk)', line: 'rgba(16,36,31,.55)', bar: 'var(--dk)', bg: '#8fd3b8'};
+  let TIGHT = false;   // the heavy case on a short shape: leading and padding close up (never the type: that stays at its floor)
+  const G = 4;         // the gutter between panes: the field showing through, like the mullions of a window
+
+  // ---- parts: each returns {h, draw(x, y)} for a width w and a field P -----------------------------------------------------------
+  // the header: the Open House label in tracked caps, the big date and the time; Just Listed / Just Sold: the moment word, big
+  const head = (w, k, P) => {
+    const parts = [];
+    if(isOH){
+      const lab = E.label.toUpperCase(), lcss = `font-weight:800;${AR};letter-spacing:.14em`;
+      let s = fit(lab, lcss, w, r1(Math.max(FE, 17*k)), FE), lines = [lab];
+      if(wd(lab, `${lcss};font-size:${s}pt`) > w){ lines = OHL.labelLines(E.label, 2).map(t => t.toUpperCase()); s = Math.min(r1(Math.max(FE, 17*k)), ...lines.map(t => fit(t, lcss, w, r1(Math.max(FE, 17*k)), FE))); }
+      const lh = r1(s*(TIGHT ? 1.0 : 1.4));
+      parts.push({h: lines.length*lh, f: (x, y) => lines.map((t, i) => T(`${lcss};font-size:${s}pt;color:${P.ink};text-align:left`, esc(t), x, y + i*lh, w, lh, 'data-slot="oh.label" data-lines="1"')).join('')});
+      const dcss = `font-weight:800;${AR};letter-spacing:-.5pt`, big = r1(Math.max(FE*1.5, 42*k)), s1 = fit(E.long, dcss, w, big, FE*(TIGHT ? 1.1 : 1.5));
+      if(wd(E.long, `${dcss};font-size:${s1}pt`) <= w){ const h = r1(s1*(TIGHT ? 1.03 : 1.15)); parts.push({h, f: (x, y) => T(`${dcss};font-size:${s1}pt;color:${P.ink};text-align:left`, esc(E.long), x, y, w, h, 'data-slot="oh.date" data-lines="1"')}); }
+      else {
+        const sd = fit(E.monthDay || E.long, dcss, w, big, FE), hd = r1(sd*(TIGHT ? 1.03 : 1.15));
+        if(E.weekday){ const sw = Math.max(FE, r1(sd*.55)), hw = r1(sw*(TIGHT ? 1.05 : 1.3)); parts.push({h: hw, f: (x, y) => T(`font-weight:700;${AR};font-size:${sw}pt;letter-spacing:.14em;text-transform:uppercase;color:${P.sub};text-align:left`, esc(E.weekday), x, y, w, hw, 'data-slot="oh.day" data-lines="1"')}); }
+        parts.push({h: hd, f: (x, y) => T(`${dcss};font-size:${sd}pt;color:${P.ink};text-align:left`, esc(E.monthDay || E.long), x, y, w, hd, 'data-slot="oh.date" data-lines="1"')});
+      }
+      if(E.time){ const tcss = `font-weight:700;${AR}`, st = fit(E.time, tcss, w, r1(Math.max(FE*1.2, 26*k)), FE), ht = r1(st*(TIGHT ? 1.05 : 1.3));
+        parts.push({h: ht, f: (x, y) => T(`${tcss};font-size:${st}pt;color:${P.sub};text-align:left`, esc(E.time), x, y, w, ht, 'data-slot="oh.time" data-lines="1"')}); }
+    } else {
+      const word = (kind === 'jl' ? 'Just Listed' : 'Just Sold').toUpperCase(), css = `font-weight:800;${AR};letter-spacing:.04em`, s = fit(word, css, w, r1(Math.max(FE*1.6, 40*k)), FE*1.2), h = r1(s*1.15);
+      parts.push({h, f: (x, y) => T(`${css};font-size:${s}pt;color:${P.ink};text-align:left`, esc(word), x, y, w, h, 'data-slot="moment" data-lines="1"')});
+    }
+    const gap = TIGHT ? 0 : 3, h = parts.reduce((a, p) => a + p.h, 0) + gap*(parts.length - 1);
+    return {h, draw: (x, y) => { let yy = y; return parts.map(p => { const o = p.f(x, yy); yy += p.h + gap; return o; }).join(''); }};
+  };
+  // what's served and the notes: one outlined box, a hairline between them (never dropped; the type tightens to its floor)
+  const noteBox = (w, k, P) => {
+    const items = [E.refreshments && [E.refreshments, true, 'oh.refreshments'], E.note && [E.note, false, 'oh.note']].filter(Boolean); if(!items.length) return null;
+    const s = r1(Math.max(FB, FB*1.15*k)), lh = r1(s*(TIGHT ? 1.15 : 1.3)), pad = TIGHT ? 4 : r1(Math.max(8, s*.7)), ps = items.map(([text, bold, slot]) => {
+      const css = `font:${bold ? 700 : 500} ${s}pt/${lh}pt 'Albert Sans'`; return {text, bold, slot, n: SP.linesNW(text, css, w - 2*pad - 2)}; });
+    const h = ps.reduce((a, q) => a + q.n*lh, 0) + 2*pad + (ps.length - 1)*(2*pad);
+    return {h, draw: (x, y) => { let yy = y + pad, o = rect(x, y, w, h, `border:1pt solid ${P.line}`).replace('<div class="abs"', '<div class="abs" data-box="oh.box"');
+      ps.forEach((q, i) => { if(i){ o += rect(x, yy + pad - .4, w, .75, `background:${P.line}`); yy += 2*pad; }
+        o += `<div class="abs w" style="left:${x + pad + 1}pt;top:${yy}pt;width:${w - 2*pad - 2}pt;height:${q.n*lh + 3}pt;font:${q.bold ? 700 : 500} ${s}pt/${lh}pt 'Albert Sans';color:${P.body}" data-slot="${q.slot}" data-lines="${q.n}">${esc(q.text)}</div>`; yy += q.n*lh; });
+      return o; }};
+  };
+  const addrNum = (L.address.match(/^\s*(\d+[A-Za-z-]*)\s+(.*)$/) || [null, '', L.address]);
+  // the address: big Archivo; one line when it fits at its size, else the number over the street
+  const address = (w, k, max, P) => {
+    const css = `font-weight:800;${AR};letter-spacing:-.5pt`, s = fit(L.address, css, w, r1(Math.max(FE*1.1, max*k)), FE);
+    if(wd(L.address, `${css};font-size:${s}pt`) <= w){ const h = r1(s*1.18); return {h, draw: (x, y) => T(`${css};font-size:${s}pt;color:${P.ink};text-align:left`, esc(L.address), x, y, w, h, 'data-slot="address" data-lines="1"')}; }
+    const st = addrNum[2], s2 = fit(st, css, w, r1(Math.max(FE*1.1, max*k*.85)), FE), h = r1(s2*1.18);
+    return {h: h*2, bad: wd(st, `${css};font-size:${s2}pt`) > w, draw: (x, y) => T(`${css};font-size:${s2}pt;color:${P.ink};text-align:left`, esc(addrNum[1]), x, y, w, h, 'data-slot="address" data-lines="1"') +
+      T(`${css};font-size:${s2}pt;color:${P.ink};text-align:left`, esc(st), x, y + h, w, h, 'data-slot="address" data-lines="1"')};
+  };
+  const city = (w, k, P) => { const t = OHL.place(L).toUpperCase(), css = `font-weight:700;${AR};letter-spacing:.2em`, s = fit(t, css, w, r1(Math.max(FS*1.1, 13*k)), FS), h = r1(s*1.5);
+    if(wd(t, `${css};font-size:${s}pt`) > w) return null;
+    return {h, draw: (x, y) => T(`${css};font-size:${s}pt;color:${P.sub};text-align:left`, esc(t), x, y, w, h, 'data-slot="place" data-lines="1"')}; };
+  // the facts as a stack of window cells: a mint edge, the caps label over the bold number (the flyer's table, set as lights)
+  const cells = (w, k, P, o) => {
+    o = o || {}; const f = SP.facts(D); if(!f.length) return null;
+    const lcss = `font-weight:700;${AR};letter-spacing:.1em;text-transform:uppercase`, l2 = Math.max(FS, r1(11*k)), vs = Math.max(FB*1.2, r1(22*k)), lh = r1(l2*1.4), vh = r1(vs*1.2), ch = lh + vh + 8, n = f.length, per = o.cols || 1;
+    const cw = (w - (per - 1)*10)/per; if(f.some(([lb]) => wd(lb.toUpperCase(), `${lcss};font-size:${l2}pt`) > cw - 12)) return null;
+    const rws = Math.ceil(n/per);
+    return {h: rws*ch - 8, draw: (x, y) => f.map(([lb, v, key], i) => { const cx = x + (i % per)*(cw + 10), cy = y + Math.floor(i/per)*ch;
+      return rect(cx, cy, 3, lh + vh, `background:${P.bar}`) + T(`${lcss};font-size:${l2}pt;color:${P.sub};text-align:left`, esc(lb), cx + 10, cy, cw - 10, lh, 'data-small="1"') +
+        T(`font-weight:800;${AR};font-size:${vs}pt;color:${P.ink};text-align:left`, v, cx + 10, cy + lh, cw - 10, vh, `data-slot="fact.${key}" data-lines="1"`); }).join('')};
+  };
+  // the agent card: a bar, round headshot when the card has one, name, REALTOR(R), Call / Text and the phone
+  const agent = (w, k, P, o) => {
+    o = o || {};
+    const hsd = hs && !o.nohs ? r1(Math.min(w*.26, 54)) : 0, tx = 10 + (hsd ? hsd + 8 : 0), tw = w - tx;
+    const ncss = `font-weight:700;${AR}`, nS = fit(A.name || '', ncss, tw, r1(Math.max(FB*1.45, 24*k)), FB);
+    const nH = r1(nS*(TIGHT ? 1.1 : 1.2)), nar = A.nar || /realtor/i.test(A.designation || ''), dS = Math.max(FS, r1(10.5*k)), dH = r1(dS*(TIGHT ? 1.2 : 1.5));
+    const lab = A.phoneLabel || 'Call / Text'; let pS = r1(Math.max(FB*1.1, 17*k));
+    const lcss = `font-weight:700;${AR};letter-spacing:.12em;text-transform:uppercase`, lS = Math.max(FS, r1(10.5*k));
+    const oneLine = () => wd(lab.toUpperCase(), `${lcss};font-size:${lS}pt`) + 8 + wd(A.phone || '', `font-weight:700;${AS};font-size:${pS}pt`) <= tw;
+    while(!oneLine() && pS > FB) pS = r1(pS - .5);
+    const stack = !oneLine(), pH = r1(pS*(TIGHT ? 1.15 : 1.3)), lH = r1(lS*(TIGHT ? 1.2 : 1.5)), ch = nH + (nar ? dH : 0) + (stack ? lH : 0) + pH, h = Math.max(ch, hsd) + 6;
+    return {h, bad: wd(A.name || '', `${ncss};font-size:${nS}pt`) > tw, draw: (x, y) => {
+      let s = rect(x, y, 3, h, `background:${P.bar}`);
+      if(hsd) s += `<div class="abs" style="left:${x + 10}pt;top:${y + (h - hsd)/2}pt;width:${hsd}pt;height:${hsd}pt;border-radius:50%;overflow:hidden;border:1.5pt solid ${P.bar}"><img src="${esc(A.headshot)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;
+      let yy = y + (h - ch)/2;
+      s += T(`${ncss};font-size:${nS}pt;color:${P.ink};text-align:left`, esc(A.name || ''), x + tx, yy, tw, nH, 'data-slot="agent.name" data-lines="1"'); yy += nH;
+      if(nar){ s += T(`${lcss};font-size:${dS}pt;color:${P.sub};text-align:left;letter-spacing:.2em`, 'REALTOR®', x + tx, yy, tw, dH, 'data-slot="agent.desig" data-small="1" data-lines="1"'); yy += dH; }
+      if(stack){ s += T(`${lcss};font-size:${lS}pt;color:${P.sub};text-align:left`, esc(lab), x + tx, yy, tw, lH, 'data-small="1"'); yy += lH; }
+      s += T(`font-weight:700;${AS};font-size:${pS}pt;color:${P.ink};text-align:left`, `${stack ? '' : `<span data-small="1" style="${lcss};font-size:${lS}pt;color:${P.sub};margin-right:8pt">${esc(lab)}</span>`}${esc(A.phone || '')}`, x + tx, yy, tw, pH, 'data-slot="agent.phone" data-lines="1"');
+      return s; }};
+  };
+  const writeup = (w, k, maxN, P) => { const s = r1(Math.max(FB, FB*1.15*k)), lh = r1(s*1.38), css = `font:500 ${s}pt/${lh}pt 'Albert Sans';text-align:left`;
+    // the deck-and-pergola sentence belongs to its own slide; each shape starts its write-up on its own sentence (owner 11/2 review: no line repeats across post, story and slide)
+    let pl = SP.pool(D).concat(SP.allSentences(D)).filter((t, i, a2) => a2.indexOf(t) === i && !/\b(pergola|deck)\b/i.test(t) && !SP.FRONT.test(t) && !SP.CONDITION.test(t) && t.length >= 40); if(pl.length < 2) pl = SP.pool(D);
+    const rot = {story: 1, pin: 2, wide: 1, gbp: 2}[shape] || 0; pl = pl.slice(rot % pl.length).concat(pl.slice(0, rot % pl.length));
+    const r = SP.fillText(pl, css, w, maxN, true); if(!r) return null;
+    return {h: r.n*lh + 2, draw: (x, y) => `<div class="abs w" style="left:${x}pt;top:${y}pt;width:${r.w}pt;height:${r.n*lh}pt;font:500 ${s}pt/${lh}pt 'Albert Sans';color:${P.body};text-align:left" data-slot="listing.body" data-lines="${r.n}">${esc(r.text)}</div>`}; };
+  // Just Sold: the short "thinking about selling" line from the Just Sold copy; each part's size steps down until it is one line or its last line is 3/4 full
+  const soldBlock = (w, k, P) => { const S = SP.soldLine(D), sb0 = r1(Math.max(FB, FB*1.15*k)), hs0 = r1(Math.max(FB*1.3, 22*k));
+    const sized = (text, start, min, mk) => { if(!text) return {n: 0, s: start, l: 0}; let s = start, m; for(; s >= min; s -= .5){ m = SP.para(text, mk(s, r1(s*1.25)), w); if(m.n === 1 || m.fill >= .75) break; } s = Math.max(s, min); m = SP.para(text, mk(s, r1(s*1.25)), w); return {n: m.n, s, l: r1(s*1.25)}; };
+    const hd = sized(S.head, hs0, FB*1.1, (s, l) => `font:800 ${s}pt/${l}pt Archivo`), ln = sized(S.line, sb0, FB, (s, l) => `font:500 ${s}pt/${l}pt 'Albert Sans'`);
+    const h = hd.n*hd.l + ln.n*ln.l + (hd.n && ln.n ? 3 : 0); if(!h) return null;
+    return {h, draw: (x, y) => (hd.n ? `<div class="abs w" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hd.n*hd.l + 3}pt;font:800 ${hd.s}pt/${hd.l}pt Archivo;color:${P.sub}" data-slot="sold.head" data-lines="${hd.n}">${esc(S.head)}</div>` : '') +
+      (ln.n ? `<div class="abs w" style="left:${x}pt;top:${y + hd.n*hd.l + (hd.n ? 3 : 0)}pt;width:${w}pt;height:${ln.n*ln.l + 3}pt;font:500 ${ln.s}pt/${ln.l}pt 'Albert Sans';color:${P.body}" data-slot="sold.line" data-lines="${ln.n}">${esc(S.line)}</div>` : '')}; };
+  const logoBlk = (w, maxH) => { const lgH = r1(Math.min(maxH, w*.34)), lgW = r1(Math.min(w, lgH/.36)); return {h: lgH, w: lgW, draw: (x, y) => OHL.logo(D, 'dark', `left:${x}pt;top:${y}pt;width:${lgW}pt;height:${lgH}pt;justify-content:flex-start`)}; };
+
+  // ---- the four-window wall: a 2 x 2 of panes, the mint mullion where the gutters cross --------------------------------------------------
+  // w x h: the house top left, three rooms; the first two panes of the top row take the wide side. Fewer rooms: fewer panes.
+  const wall = (w, h, o) => {
+    o = o || {}; const n = Math.min(3, rooms.length), ids = [hero, ...rooms.slice(0, n)];
+    const cw = [r1((w - G)*.58), 0], rhT = r1((h - G)*.56), fr = SP.heroFrame(D, hero, cw[0], Math.min(h - G - 50, rhT), true);
+    cw[0] = fr.w; cw[1] = w - G - cw[0];   // the house pane takes the shape the house needs (never a crop through it); the rest of the row is the next pane
+    const rh = [Math.min(h - G - 50, fr.h), 0]; rh[1] = h - G - rh[0];
+    let s = '';
+    const at = (id, x, y, pw, ph) => OHL.photo(D, id, `left:${x}pt;top:${y}pt;width:${pw}pt;height:${ph}pt`);
+    if(ids.length >= 4){
+      s += at(ids[0], 0, 0, cw[0], rh[0]) + at(ids[1], cw[0] + G, 0, cw[1], rh[0]) + at(ids[2], 0, rh[0] + G, cw[1], rh[1]) + at(ids[3], cw[1] + G, rh[0] + G, cw[0], rh[1]);
+      s += rect(w/2 - 6 + (cw[0] - cw[1])/2*0, rh[0] + G/2 - 6, 12, 12, 'background:var(--mint)');   // the mullion
+    } else if(ids.length === 3){ s += at(ids[0], 0, 0, w, rh[0]) + at(ids[1], 0, rh[0] + G, (w - G)/2, rh[1]) + at(ids[2], (w - G)/2 + G, rh[0] + G, (w - G)/2, rh[1]); }
+    else s += at(hero, 0, 0, w, h);
+    return {used: h, html: s};
+  };
+  const place = (html, x, y) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:0;height:0;overflow:visible">${html}</div>`;
+
+  // ---- carousel slide: the photo as one pane in the mint-cornered frame, the room name in a mint band, the card below ----------------------
+  const slide = () => {
+    const id = D.piece.photo, MG = 14, CW = W - 2*MG, P = FIELD;
+    const hd = head(CW - 2*12, 1, MINTF), adr = isOH && SP.slides(D, 'oh').indexOf(id) < 3 ? address(CW - 2*12, 1, 24, MINTF) : null, band = hd.h + (adr ? adr.h + 6 : 0) + 20;   // Open House slides 1 to 3 carry the address under the event   // the moment (and the event on Open House) in a mint band across the top
+    const ag = agent(CW*.62, .8, P), ft = ag.h + 14, lg = logoBlk(CW*.34, ag.h);
+    let nm = '', cap = null, capH = 0, nh = 0, cs = 0, lh = 0, ncs = 0;
+    if(!isJS){ nm = SP.roomName(D, id); const pool = SP.caption(D, id).filter(t => t !== nm);
+      if(pool.length){ for(cs = 24; cs >= FB; cs -= .5){ lh = r1(cs*1.3); const r = SP.fillText(pool, `font:500 ${cs}pt/${lh}pt 'Albert Sans';text-align:left`, CW, cs > 17 ? 2 : 4, false); if(r && r.fill >= .8){ cap = r; break; } } if(!cap){ cs = FB; lh = r1(cs*1.3); cap = SP.fillText(pool.slice(0, 1), `font:500 ${cs}pt/${lh}pt 'Albert Sans';text-align:left`, CW, 6, false, .6); }
+        if(cap && cap.fill < .8){ for(let c2 = FB + .5; c2 <= 34; c2 += .5){ const l2 = r1(c2*1.3), r = SP.fillText(pool, `font:500 ${c2}pt/${l2}pt 'Albert Sans';text-align:left`, CW, 3, false, .6); if(r && r.fill >= .8){ cap = r; cs = c2; lh = l2; break; } } } }
+      if(cap) capH = cap.n*lh; ncs = nm ? Math.max(FE, r1(Math.min(26, FE*1.5))) : 0; nh = ncs ? r1(ncs*1.25) : 0; }
+    const sold = isJS ? soldBlock(CW, 1.05, P) : null;
+    const fixed = band + 10 + (nh ? nh + 4 : 0) + capH + (sold ? sold.h + 12 : 0) + 12 + ft + 8, ph = H - fixed;
+    let h = rect(0, 0, W, band, 'background:var(--mint)') + hd.draw(MG + 12, 10) + (adr ? adr.draw(MG + 12, 10 + hd.h + 6) : '');
+    const isHouse = Ivory.fullHouse(D, id), fr = isHouse ? SP.heroFrame(D, id, CW, ph, true) : {w: CW, h: ph};
+    h += OHL.photo(D, id, `left:${MG + (CW - fr.w)/2}pt;top:${band + 10}pt;width:${fr.w}pt;height:${fr.h}pt`);
+    h += rect(MG + (CW - fr.w)/2 - 5, band + 10 + fr.h - 12, 12, 12, 'background:var(--mint)');
+    let y = band + 10 + fr.h + 12 + Math.max(0, ph - fr.h)/2;
+    if(nh){ h += T(`font-weight:800;${AR};font-size:${ncs}pt;color:#fff;text-align:left;letter-spacing:-.2pt`, esc(nm), MG, y, CW, nh, 'data-slot="slide.room" data-lines="1"'); y += nh + 4; }
+    if(cap) h += `<div class="abs w" style="left:${MG}pt;top:${y}pt;width:${cap.w}pt;height:${capH}pt;font:500 ${cs}pt/${lh}pt 'Albert Sans';color:var(--txt);text-align:left" data-slot="slide.caption" data-lines="${cap.n}">${esc(cap.text)}</div>`;
+    if(sold) h += sold.draw(MG, y);
+    h += rect(MG, H - ft - 6, CW, .75, 'background:var(--line)') + ag.draw(MG, H - ft + 2) + lg.draw(W - MG - lg.w, H - ft + 2 + (ag.h - lg.h)/2);
+    return h;
+  };
+
+  // ---- the post-like shapes: the mint block, the wall, then two columns of words -----------------------------------------------------------
+  // lvl: what is left out when the tall case will not fit (the write-up, then the facts column, then the wall's rooms, then the city line)
+  const rows = () => {
+    const safe = shape === 'story' ? 93.75 : 0, MG = Math.max(12, W*.04), CW = W - 2*MG, bot = H - (safe || MG);
+    const JLB = kind === 'jl' && (shape === 'story' || shape === 'pin');   // Just Listed story and pin: contact and logo at the foot (SP.contact), the write-up takes the room the agent name left
+    for(let lvl = 0; lvl <= 5; lvl++) for(let k = 1.1; k >= .7; k = Math.round((k - .05)*100)/100) for(const mxN of JLB ? [10, 9, 8, 7, 6, 5, 4, 3] : [0]){
+      TIGHT = lvl >= 3;
+      const g = r1(Math.max(TIGHT ? 3 : 6, FE*.45*k)), pad = r1(Math.max(TIGHT ? 7 : 10, W*.035));
+      const hd = head(CW, k, MINTF), bx = isOH ? noteBox(CW, k, MINTF) : null;
+      const blockH = pad + hd.h + (bx ? g + bx.h : 0) + pad;
+      const twoCol = lvl < 3 && SP.facts(D).length, LW = twoCol ? r1(CW*.57) : CW, RW = CW - LW - 14;
+      const ct = lvl >= 5 ? null : city(LW, k, FIELD), ad = address(LW, k, 34, FIELD), ag = JLB ? null : agent(twoCol ? LW : CW*.66, k, FIELD, {nohs: lvl >= 4}), cb = JLB ? SP.contact(D, {w: CW, k, ink: FIELD.ink, sub: FIELD.sub, bar: FIELD.bar, disp: "'Archivo'", body: "'Albert Sans'", label: "'Albert Sans'", dw: 700, fb: FB, fs: FS, tone: 'dark', tight: TIGHT, barW: 3, headshot: hs && lvl < 4, email: lvl < 3, web: lvl < 2, logoMaxH: 40}) : null;
+      const fc = twoCol ? cells(RW, k, FIELD) : null, lg = logoBlk(twoCol ? RW : CW*.3, 40);
+      if(JLB && cb.bad) continue;
+      if(twoCol && !fc) continue;
+      if(ad.bad || (ag && ag.bad)) continue;
+      const side = JLB && twoCol, wk = k*(safe ? 1.35 : 1);
+      const rightH = twoCol ? fc.h + (JLB ? 0 : g + lg.h) : 0;
+      const sb = side && lvl < 4 ? writeup(LW, wk, mxN, FIELD) : null;   // the write-up fills the left column under the address, as tall as the facts
+      const left = [ct, ad, ag, sb].filter(Boolean), leftH = left.reduce((a, p) => a + p.h, 0) + g*(left.length - 1);
+      if(side && lvl < 4 && (!sb || leftH > rightH + 1)) continue;
+      const lowerH = Math.max(leftH, rightH, twoCol ? 0 : leftH);
+      const body = lvl >= 4 || side ? null : (kind === 'jl' ? writeup(CW, k*(safe ? 1.35 : 1), JLB ? mxN : shape === 'story' ? 5 : shape === 'pin' ? 4 : 3, FIELD) : isJS ? soldBlock(CW, k*(safe ? 1.2 : 1), FIELD) : null);
+      const gridMin = safe ? 150 : Math.max(CW*.46 - lvl*10, 80);
+      const used = blockH + g + lowerH + (body ? g + body.h : 0) + g + (safe ? safe - 0 : 0);
+      const flat = safe ? 0 : MG;
+      const STB = safe && JLB && rooms.length >= 6 ? r1(safe*1.25) : 0;   // story: the room strip moves up under the mint block; the contact sits last, centered in the space under the text
+      let gridH = bot - flat - blockH - lowerH - (body ? body.h + g : 0) - 2*g - (cb ? cb.h + (safe ? 2*g : g) : 0) - (STB ? STB + g : 0);
+      if(gridH < gridMin) continue;
+      gridH = Math.min(gridH, CW*(shape === 'pin' ? 1.05 : .95));
+      let h = '', y = flat;
+      if(safe){
+        // story: the wall bleeds from the top edge, the mint block under it (its words clear of the top 250 px), two more rooms to the bottom edge
+        const wh = bot - blockH - lowerH - (body ? body.h + g : 0) - 2*g - (cb ? cb.h + 2*g : 0) - (STB ? STB + g : 0);
+        h += place(wall(W, wh).html, 0, 0) + rect(0, wh, W, blockH, 'background:var(--mint)') + hd.draw(MG, wh + pad) + (bx ? bx.draw(MG, wh + pad + hd.h + g) : '');
+        y = wh + blockH + g;
+        const rr = rooms.slice(3, 6), pw = (W - G*(rr.length - 1))/Math.max(1, rr.length);
+        if(STB){ rr.forEach((id, i) => { h += OHL.photo(D, id, `left:${i*(pw + G)}pt;top:${y}pt;width:${pw}pt;height:${STB}pt`); }); y += STB + g; }
+        else rr.forEach((id, i) => { h += OHL.photo(D, id, `left:${i*(pw + G)}pt;top:${H - safe}pt;width:${pw}pt;height:${safe}pt`); });
+      } else {
+        h += rect(0, flat, W, blockH, 'background:var(--mint)') + hd.draw(MG, flat + pad) + (bx ? bx.draw(MG, flat + pad + hd.h + g) : '');
+        const wh = Math.min(gridH, CW), gy = flat + blockH + g; h += place(wall(CW, gridH).html, MG, gy); y = gy + gridH + g;
+      }
+      const spare = Math.max(0, bot - y - lowerH - (body ? body.h + g : 0) - (cb ? cb.h + (safe ? 2*g : g) : 0)), gx = spare/3;
+      y += gx;
+      let ly = y, agY = y; const lg2 = g;   // city, address and the card follow one another from the top of the column
+      left.forEach(p => { if(p === ag) agY = ly; h += p.draw(MG, ly); ly += p.h + lg2; });
+      if(twoCol){ h += fc.draw(MG + LW + 14, y); if(!JLB) h += lg.draw(MG + LW + 14, y + lowerH - lg.h); }
+      y += lowerH + g + gx;
+      if(body){ h += body.draw(MG, y); y += body.h + g + gx; }
+      if(!twoCol && !JLB) h += lg.draw(MG + CW - lg.w, agY + (ag.h - lg.h)/2);
+      if(cb){ if(safe){ const te = y - g - gx; h += cb.draw(MG, te + (bot - te - cb.h)/2); } else h += cb.draw(MG, bot - cb.h); }
+      return h;
+    }
+    return T('', 'layout failed', 0, 0, 100, 12, 'data-slot="layout-failed"');
+  };
+
+  // ---- the short and wide shapes (square, gbp, wide): a dark photo column and a mint text panel -----------------------------------------------
+  const cols = () => {
+    for(const side of [false, true]) for(const tight of [false, true]) for(const lwf of side ? [.36, .35, .34, .338, .336, .334, .332, .33, .32, .29, .26] : [.42, .38, .34, .3, .26, .23]) for(let lvl = 0; lvl <= 4; lvl++) for(let k = 1.05; k >= .7; k = Math.round((k - .05)*100)/100){
+      TIGHT = tight;
+      const M = tight ? Math.max(9.5, W*.016) : Math.max(10, W*.032), LW = r1(W*lwf), PX = LW + M*.5, PW = W - PX, IW = PW - 2*M, g = r1(Math.max(tight ? 1 : 5, FE*(tight ? .05 : .35)*k)), availH = H - 2*M;
+      const lg = logoBlk(LW - M, H*.1), hd = head(IW, k, MINTF), bx = isOH ? noteBox(IW, k, MINTF) : null;
+      const lw = side ? LW - M : IW, P = side ? FIELD : MINTF;
+      const ad = address(lw, k, 32, P), ct = lvl >= 3 ? null : city(lw, k, P), fc = (lvl >= 1 || side) ? null : cells(IW, k, MINTF, {cols: 2});
+      const body = (lvl >= 1 || isOH || side) ? null : (isJS ? soldBlock(IW, k, MINTF) : null);
+      const ag = agent(lw, k, P, {nohs: lvl >= 2 || side});
+      const R = side ? [hd, bx] : [hd, bx, ct, ad, fc, body, ag], Ls = side ? [ct, ad, ag].filter(Boolean) : [];
+      const rf = R.filter(Boolean), fixed = rf.reduce((a, p) => a + p.h, 0) + g*(rf.length - 1);
+      if(fixed > availH + .01 || [ad, ag].some(p => p && p.bad)) continue;
+      let pLH = H - lg.h - M - 8, h = '';
+      if(side){ const lf = Ls.reduce((a, p) => a + p.h, 0) + g*Ls.length; pLH = H - M - lg.h - 8 - lf; if(pLH < Math.min(LW*.55, 80)) continue; }
+      // the photo column: the house on top, rooms as panes under it (the four windows, stacked)
+      const fr = SP.heroFrame(D, hero, LW - M, Math.min(pLH*(side ? 1 : .5), (LW - M)*.8), true);
+      let ph = OHL.photo(D, hero, `left:${M + ((LW - M) - fr.w)/2}pt;top:${M}pt;width:${fr.w}pt;height:${fr.h}pt`), used = fr.h;
+      const rem = pLH - M - fr.h - G;
+      if(!side && rem >= 40 && rooms.length){ const n = rem > 150 && rooms.length >= 3 ? 3 : rem > 70 && rooms.length >= 2 ? 2 : 1, rh = (rem - G*(n - 1))/n; for(let i = 0; i < n; i++) ph += OHL.photo(D, rooms[i], `left:${M}pt;top:${M + fr.h + G + i*(rh + G)}pt;width:${LW - M}pt;height:${rh}pt`); used = pLH - M; }
+      h += rect(PX, 0, PW, H, 'background:var(--mint)') + ph + lg.draw(M, H - M - lg.h);
+      if(side){ const free = (pLH - M - used)/(Ls.length + 1); let ly = M + used + g + free; Ls.forEach(p => { h += p.draw(M, ly); ly += p.h + g + free; }); }
+      const gx = Math.min((availH - fixed)/Math.max(1, rf.length - 1), g*2);
+      let y = M + (availH - fixed - gx*(rf.length - 1))/2;
+      rf.forEach(p => { h += p.draw(PX + M, y); y += p.h + g + gx; });
+      return h;
+    }
+    return T('', 'layout failed', 0, 0, 100, 12, 'data-slot="layout-failed"');
+  };
+
+  const inner = shape === 'slide' ? slide() : /^(square|gbp|wide)$/.test(shape) ? cols() : rows();
+  return {W, H, html: `<div class="page" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${H}pt;background:var(--field)">${inner}</div>`};
+});
+</script>
+</body>
+</html>

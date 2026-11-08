@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · FX extras · fxs-13 Open House email</title>
+<link rel="stylesheet" href="fx.css">
+<link rel="stylesheet" href="fxs13-tokens.css">
+<link rel="stylesheet" href="fxs13-marks.css">
+<script src="fxs13-tk.js"></script>
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script src="fxs13.js"></script>
+<script src="fxpage.js"></script>
+<script src="fxs13-patch.js"></script>
+<!--
+  fxs-13 Open House email (600 px, drawn at 450 pt). The flyer's pieces carry through: the address set vertically up the left edge with the gold
+  rule, the event between two hairlines (the label loud, the date in Cormorant, the time at 60% of its size in bold), the REALTOR(R) perks card, the whole
+  house in its own plain frame, two rooms with the round neighborhood seal over their join, the italic write-up, the four-stat row, the agent and the
+  one logo. No new copy: the listing data and the package's own lines. No photo appears twice.
+-->
+<style>
+  .abs{position:absolute}
+  .evl{font:600 20pt/25pt 'Montserrat';letter-spacing:3pt;color:var(--fx-accent);text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:6pt;white-space:nowrap;overflow:hidden}
+  .wk{font:600 15pt/18pt 'Montserrat';letter-spacing:4pt;text-transform:uppercase;color:var(--fx-text);white-space:nowrap}
+  .dt{font:700 46pt/1 'Cormorant Garamond';color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+  .tm{font:600 27pt/1 'Bodoni Moda';color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+  .evb{font:600 18pt/20pt 'Cormorant Garamond';color:var(--fx-ink)}
+  .evb.b{font-weight:700}
+  .wu{font:italic 400 18pt/25pt 'Cormorant Garamond';color:var(--fx-ink)}
+  .fine{font:400 10pt/14pt 'Montserrat';color:var(--fx-mute);white-space:normal}
+  .oh-agent-name{font-family:'Cormorant Garamond';font-weight:600}
+  .oh-agent{font-family:'Montserrat'}
+  .stats .s{font-size:13pt;letter-spacing:.6pt}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+FXS.hookCheck();
+FXP.start(['500 20pt "Bodoni Moda"', '600 20pt "Bodoni Moda"', '400 20pt "Cormorant Garamond"', '500 20pt "Cormorant Garamond"', '600 20pt "Cormorant Garamond"', '700 20pt "Cormorant Garamond"', 'italic 400 20pt "Cormorant Garamond"', '700 20pt "Montserrat"', '600 20pt "Montserrat"', '500 20pt "Montserrat"', '400 20pt "Montserrat"', '500 20pt "Bodoni Moda"', '500 20pt "Cormorant Garamond"', '400 20pt "Cormorant Garamond"', 'italic 400 20pt "Cormorant Garamond"'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  if(E.time) E.time = E.time.replace(/(\d)\s+(am|pm)\b/gi, '$1 $2');
+  const W = 450, X0 = 66, X1 = 426, CW = X1 - X0;
+  const pic = (id, x, y, w, h) => OHL.photo(D, id, `left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt`);
+  const D2 = Object.assign({}, D, {companion: Object.assign({}, C, {postcard: Object.assign({}, C.postcard || {}, {master: ((C.postcard || {}).master || []).filter(t => !FXP.CONDITION.test(t)).filter((t, i, a) => FXS.dedupe5(a).includes(t))})})});
+  const h = [];
+  // ---- the event between two hairlines
+  let y = 26;
+  const lab1 = FXP.width(E.label.toUpperCase(), "font:600 20pt 'Montserrat';letter-spacing:3pt") <= CW;
+  h.push(`<div class="abs hr" style="left:${X0}pt;top:${y}pt;width:${CW}pt"></div>`); y += 16;
+  h.push(`<div class="abs evl" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${lab1 ? 25 : 50}pt;white-space:${lab1 ? 'nowrap' : 'normal'}" data-slot="oh.label" data-lines="${lab1 ? 1 : 2}">${lab1 ? esc(E.label.toUpperCase()) : OHL.labelLines(E.label.toUpperCase(), 2).map(esc).join('<br>')}</div>`); y += (lab1 ? 25 : 50) + 6;
+  h.push(`<div class="abs wk" data-bg="${TK.paper}" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:18pt" data-slot="oh.weekday" data-lines="1">${esc(E.weekday)}</div>`); y += 23;
+  const dText = String(E.monthDay || E.long); let S = 50; while(S > 30 && FXP.width(dText, `font-family:'Cormorant Garamond';font-weight:700;font-size:${S}pt`) > CW) S -= .5;
+  h.push(`<div class="abs dt" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${S*1.1}pt;font-size:${S}pt;line-height:${S*1.1}pt" data-slot="oh.date" data-lines="1">${esc(dText)}</div>`); y += S*1.1 + 6;
+  if(E.time){ const TS = S*.6; h.push(`<div class="abs tm" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${TS*1.15}pt;font-size:${TS}pt;line-height:${TS*1.15}pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`); y += TS*1.15 + 10; }
+  const perks = [[E.refreshments, 'oh.refreshments', 'evb b'], [E.note, 'oh.note', 'evb']].filter(p => p[0]);
+  if(perks.length){ const ph = 10 + perks.length*22 + 8; h.push(`<div class="card" data-box="oh.box" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${ph}pt"></div>`);
+    perks.forEach(([t, slot, cls], i) => h.push(`<div class="abs ${cls}" style="left:${X0 + 14}pt;top:${y + 10 + i*22}pt;width:${CW - 28}pt;height:20pt;white-space:nowrap;overflow:hidden" data-slot="${slot}" data-lines="1">${esc(t)}</div>`)); y += ph + 10; }
+  h.push(`<div class="abs hr" style="left:${X0}pt;top:${y}pt;width:${CW}pt"></div>`); y += 22;
+  const top0 = 26;
+  // ---- the whole house, plain frame
+  const fr = OHL.fitHero(D, hero, CW, 240);
+  h.push(pic(hero, X0, y, fr.w, fr.h)); y += fr.h + 10;
+  // ---- two rooms with the seal over their join
+  const rooms = OHEmail.support(D, hero, 8).filter(id => !Ivory.fullHouse(D, id)).sort((a, b) => FXS.archScore(D, b) - FXS.archScore(D, a)).filter((id, i, arr) => arr.findIndex(o => SW.famOf(o) === SW.famOf(id) || o.replace(/\d+[a-z]?$/, '') === id.replace(/\d+[a-z]?$/, '')) === i);
+  const g = 8, rw = (CW - g)/2, rh = 150;
+  rooms.slice(0, 2).forEach((id, i) => h.push(pic(id, X0 + i*(rw + g), y, rw, rh)));
+  h.push(FXS.seal(D, X0 + CW/2, y + rh/2, 132, 'oh.seal', {sub: 'Houston', subSize: 10.5, fine: 1})); y += rh + 20;
+  // ---- the italic write-up, the stats row
+  const wu = OHL.writeup(D2, 'wu', CW, 25, 9, [], {narrow: true});
+  if(wu.text){ const ww = wu.w || CW; h.push(`<div class="abs wu" style="left:${X0}pt;top:${y}pt;width:${ww}pt;height:${wu.n*25 + 2}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`); y += wu.n*25 + 2 + 18; }
+  const st = FXS.statItems(L).slice(0, 4);
+  h.push(`<div class="stats" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:62pt;flex-wrap:wrap">${st.map((t, i) => `<div class="s" style="flex:0 0 50%;height:31pt;${i < 2 ? '' : 'border-top:.75pt solid var(--fx-rule);'}${i % 2 ? '' : 'border-left:0'}" data-small="1" data-slot="fact.${i}" data-lines="1">${FXS.statHtml(t, 20, 12.5, 1)}</div>`).join('')}</div>`); y += 62 + 22;
+  // ---- the agent and the one logo
+  h.push(OHL.contact(D, {x: X0 - 4, y, w: CW + 8, h: 190, field: 'paper', tone: 'light', color: TK.ink, accent: TK.accent, size: 'email', nameFont: "'Cormorant Garamond'", nameWeight: 600, bodyFont: "'Montserrat'"}));
+  y += 190 + 4;
+  const fine = C.fineprint || 'Information deemed reliable but not guaranteed.';
+  const fn = FXP.lines(fine, "font:400 10pt/14pt 'Montserrat'", CW);
+  h.push(`<div class="abs fine" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${fn*14}pt" data-slot="fineprint" data-lines="${fn}" data-fine="1">${esc(fine)}</div>`);
+  y += fn*14 + 26;
+  // ---- the gutter: the address up the left edge
+  const len = Math.min(y - 60, 520), vy = 40 + len/2;
+  h.unshift(FXS.vAddress(((SW.data().listing || {}).address) || L.address, 33, vy, len, 28, 20));
+  h.push(`<div class="vrule" style="left:32.5pt;top:${40 + len + 14}pt;height:${Math.max(0, Math.min(44, y - len - 90))}pt"></div>`);
+  return {W, H: y, html: `<div class="page em" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${y}pt;background:var(--fx-paper)">${h.join('')}</div>`};
+});
+</script>
+</body>
+</html>

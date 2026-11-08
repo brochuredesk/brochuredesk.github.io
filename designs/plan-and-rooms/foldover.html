@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Plan and the Rooms fold-over</title>
+<link rel="stylesheet" href="plan-and-rooms.css">
+<script src="../engine/baths.js"></script>
+<script src="plan-and-rooms.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/agentcard.js"></script>
+<!--
+  The Plan and the Rooms · 11 x 17 book-fold brochure
+  11 x 17 sheet laid 17 wide and folded once down the middle: four upright 8.5 x 11 pages that open like a book
+  (0.125 in bleed, 0.25 in safe zone). Outside: back (left) + cover (right). Inside: left page + right page.
+  Nothing crosses the crease. White pages, crimson small caps kickers, condensed sans titles.
+    cover   whole-house photo across the top, address, facts, paragraph, a row of three photos
+    left    the room-size list beside the agent's floor plan (placed as given, turned on its side when that prints larger),
+            then "How the rooms connect" and the nearby places. With no plan: two photos take the plan's place.
+    right   two rows of photo-left, text-right, then a 2 x 2 of photos with captions
+    back    a 3-row grid of photo and text pairs, then the standard contact card
+  Copy comes as whole sentences (data.pr.*); plan-and-rooms.js picks the sentences that fill each box.
+  Modes (data.mode): proof = four panel pages; print = two spreads, each half clipped at the fold.
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = CN.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML='<p style="color:#000;padding:20pt">No data injected.</p>'; return; }
+  const mode = D.mode || 'proof';
+  const esc = CN.esc, L = D.listing, A = D.agent || {}, b = D.brand || {}, K = D.pr || {};
+  const issues = [];
+  await Promise.all(['500 10pt "IBM Plex Sans Condensed"','600 10pt "IBM Plex Sans Condensed"','700 10pt "IBM Plex Sans Condensed"','400 10pt Barlow','500 10pt Barlow','600 10pt Barlow','700 10pt Barlow'].map(f => document.fonts.load(f)));
+  const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot) || '';
+  const LH = 12.5;
+  const sattr = s => esc(JSON.stringify([].concat(s))).replace(/'/g, '&#39;');
+  const cap = (c, slot, lines) => `<div class="cap"><div class="h" data-slot="${slot}.h" data-lines="1">${esc(c.title)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div>
+      <div class="a" data-slot="${slot}" data-lh="${LH}" data-lines="${lines}" data-lead="" data-s='${sattr(c.s)}' style="height:${lines*LH}pt"></div></div>`;
+  const item = (c, slot, lines, grow) => `<div class="item" style="flex:${grow||1} 1 0">${CN.photo(D, c.photo, '', slot)}${cap(c, slot, lines)}</div>`;
+  const pair = (c, slot, w, cls, lh, grow) => `<div class="pair ${cls||''}" data-wmin="${w[0]}" data-wmax="${w[1]}" style="flex:${grow||1} 1 0"><div class="pw" style="flex:1 1 0">${CN.photo(D, c.photo, '', slot)}</div>
+      <div class="btxt" style="flex:0 0 ${w[1]}pt"><div class="h" data-slot="${slot}.h" data-lines="${cls === 'tight' ? 2 : 1}">${esc(c.title)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div>
+      <div class="a" data-slot="${slot}" data-lh="${lh}" data-lines="3" data-lead="" data-s='${sattr(c.s)}'></div></div></div>`;
+  const head = (k, t, slot) => `<div class="kicker hd-kick" data-slot="${slot}.kicker" data-lines="1">${esc(k)}</div><div class="title hd-title" data-slot="${slot}.title" data-lines="1">${esc(t)}</div><div class="rule" style="top:86pt"></div>`;
+  const placesH = (P, kick, slot) => `<div class="places"><div class="sk" data-slot="${slot}.k" data-lines="1">${esc(kick)}</div><div class="cells">${P.map((p, i) => `<div class="pc"><div class="pn" data-slot="${slot}${i}.n" data-lines="1">${esc(p.n)}</div><div class="pd" data-slot="${slot}${i}.d" data-lines="1">${esc(p.d)}${p.k ? ' · ' + esc(p.k) : ''}</div></div>`).join('')}</div></div>`;
+
+  // ================= COVER =================
+  function cover(){
+    const F = K.front || {}, st = CN.stats(L);
+    return `<div class="abs" style="left:-9pt;top:-9pt;width:630pt;height:810pt;display:flex;flex-direction:column;background:#fff">
+        <div style="flex:1 1 0;min-height:0;position:relative">${CN.photo(D, F.hero, 'position:absolute;inset:0', 'front.hero')}</div>
+        <div style="flex:none;padding:18pt 38pt 39pt 38pt;display:flex;flex-direction:column">
+          <div class="kicker" data-slot="front.location" data-lines="1" style="margin-bottom:4pt">${esc(F.location)}</div>
+          <div class="street" id="street" data-slot="front.address" data-lines="1" style="margin-bottom:8pt">${esc(L.address)}</div>
+          <div class="facts" data-slot="front.stats" data-lines="1">${st.map(s => `<div>${esc(s).replace(/½/g, '<span class="bd-half">½</span>')}</div>`).join('')}</div>
+          <div class="para" data-fillto="7-3" data-slot="front.house" data-lh="14" data-lead="" data-s='${sattr(F.house)}' style="margin-top:9pt"></div>
+          <div class="row" style="flex:none;height:176pt;margin-top:10pt">${F.three.map((c, i) => item(c, 'front.photo' + i, 3)).join('')}</div>
+        </div></div>`;
+  }
+
+  // ================= BACK =================
+  function back(){
+    const B = K.back || {};
+    let h = head(B.kicker, B.title, 'back'), k = 0;
+    const cell = (c, n) => c.under ? item(c, 'back.photo' + (k++), 4) : pair(c, 'back.photo' + (k++), n === 1 ? [190, 290] : [100, 150], 'tight', 14);
+    h += `<div class="flow" style="top:100pt;bottom:170pt;gap:10pt">${B.rows.map((r, ri) => `<div class="row" style="flex:${(B.flex || [])[ri] || 1} 1 0;gap:16pt">${r.map(c => cell(c, r.length)).join('')}</div>`).join('')}</div>`;
+    const fine = 'Information deemed reliable but not guaranteed; buyer to verify.';
+    h += ContactCard.html([29, 632, 554, 132], Object.assign({}, A, {headshot: hsSrc}), b, {layout: 'panel', fine, bottomGap: 0.5});
+    return h;
+  }
+
+  // ================= INSIDE LEFT =================
+  function left(){
+    const I = K.left || {}, hasPlan = !!D.plan, rooms = I.rooms || [], LP = I.photos || [];
+    const MAINY = 100;
+    let h = head(I.kicker, I.title, 'left');
+    const wrapOf = html => `<div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt">${html}</div>`;
+    const dis = I.planDisc || 'Approximate; not to scale. Buyer to verify.';
+    const legend = (x, y, w) => { const zs = IvoryPlan.zonesOf(D.plan);
+      const spans = Object.entries(IvoryPlan.ZONES).filter(([k]) => zs.includes(k)).map(([k, z]) => `<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, var(--paper))"></i>${z.label}</span>`);
+      return spans.length ? `<div class="plan-legend" style="left:${x}pt;top:${y}pt;width:${w}pt;justify-content:center">${spans.join('')}</div>` : ''; };
+    const img = hasPlan && D.plan.levels.every(l => l.kind === 'image');
+    const cap300 = img ? Math.min(...D.plan.levels.map(l => l.h)) * 72 / 300 * 0.985 : 1e9;
+    // the plan, as large as its picture allows (300 ppi) or its space holds, then a board cut to it
+    const measure = (w, hh) => IvoryPlan.draw(D.plan, {x: 0, y: 0, w, h: Math.max(60, Math.min(hh, cap300))}, {allowRotate: !img});
+    const place = (x, y, uW, uH, BW) => { const r = IvoryPlan.draw(D.plan, {x: x + (BW - uW) / 2, y: y + 8, w: uW, h: uH}, {allowRotate: !img}); window.planIssues = r.issues;
+      const BH = uH + 8 + 46;
+      return {BH, html: `<div class="board" style="left:${x}pt;top:${y}pt;width:${BW}pt;height:${BH}pt"></div>${wrapOf(r.html + legend(x, y + BH - 40, BW))}
+        <div class="plan-disclosure abs" style="left:${x}pt;top:${y + BH - 20}pt;width:${BW}pt;text-align:center" data-slot="left.planDisc" data-fine="1" data-lines="1">${esc(dis)}</div>`}; };
+    const note = (r, i, nl, lh) => `<div class="rs" data-fillto="${nl || 3}-1" data-slot="left.room${i}.note" data-lh="${lh || 14}" data-lead="" data-s='${sattr(r.s)}'></div>`;
+    const rowsList = (x, top, w, height, notes, stack) => { const rh = (height - 17) / Math.max(1, rooms.length), big = rh > 62, lh = big ? 16 : 14, nl = Math.max(1, Math.min(4, Math.floor(stack ? (rh - 5 - (big ? 18 : 15) - 3) / lh : (rh - 8) / lh))); return `<div class="sk abs" style="left:${x}pt;top:${top}pt;width:${w}pt" data-slot="left.listKicker" data-lines="1">Room dimensions</div>
+      <div class="rlist${stack ? ' stack' : ''}${big ? ' big' : ''} abs" style="left:${x}pt;top:${top + 17}pt;width:${w}pt;height:${height - 17}pt">${rooms.map((r, i) => `<div class="rr"><div class="rh"><div class="rn" data-slot="left.room${i}.n" data-lines="1">${esc(r.n)}</div>${r.d ? `<div class="rd" data-slot="left.room${i}.d" data-lines="1">${esc(r.d)}</div>` : ''}</div>${notes && r.s ? note(r, i, nl, lh) : ''}</div>`).join('')}</div>`; };
+    const connectBlock = (x, top, w, hh, fill) => `<div class="abs" style="left:${x}pt;top:${top}pt;width:${w}pt;${hh ? `height:${hh}pt;` : ''}display:flex;flex-direction:column"><div class="sk" data-slot="left.connectKicker" data-lines="1" style="margin-bottom:6pt">How the rooms connect</div>
+          <div class="para" data-fillto="${fill}" data-slot="left.connect" data-lh="14" data-lead="" data-s='${sattr(I.connect)}'></div></div>`;
+    const placesAt = top => `<div class="abs" style="left:29pt;top:${top}pt;width:554pt">${placesH(I.places, I.placesKicker, 'left.place')}</div>`;
+    const PLACES_TOP = 766 - 49;
+    if(hasPlan){
+      // beside the list when the plan is narrow (the list takes the left, the plan and "How the rooms connect" the right)
+      const r0 = measure(372 - 16, PLACES_TOP - 14 - MAINY - 54), uW0 = Math.ceil(r0.usedW), uH0 = Math.ceil(r0.usedH);
+      if(uW0 + 16 <= 330){
+        const BW = uW0 + 16, bx = 583 - BW, listW = bx - 29 - 18, pb = place(bx, MAINY, uW0, uH0, BW);
+        const rem = PLACES_TOP - 14 - (MAINY + pb.BH) - 14;
+        h += rowsList(29, MAINY, listW, PLACES_TOP - 14 - MAINY, true, listW < 400) + pb.html;
+        if(rem >= 90 && LP.length && rem >= 270){
+          const PH = Math.min(190, Math.max(150, rem - 150)), crem = rem - PH - 12;
+          h += connectBlock(bx, MAINY + pb.BH + 14, BW, crem, `${Math.floor((crem - 17) / 14)}-3`) + placesAt(PLACES_TOP)
+            + `<div class="abs" style="left:${bx}pt;top:${PLACES_TOP - 14 - PH}pt;width:${BW}pt;height:${PH}pt;display:flex">${item(LP[0], 'left.photo0', 3)}</div>`;
+        }
+        else if(rem >= 90) h += connectBlock(bx, MAINY + pb.BH + 14, BW, rem, `${Math.floor((rem - 17) / 14)}-3`) + placesAt(PLACES_TOP);
+        else {
+          // the plan is tall: shrink it so the connect paragraph sits under the list and plan
+          h = head(I.kicker, I.title, 'left');
+          const MB = 618, r1 = measure(372 - 16, MB - MAINY - 54), uW = Math.ceil(r1.usedW), uH = Math.ceil(r1.usedH), BW1 = uW + 16, bx1 = 583 - BW1, pb1 = place(bx1, MAINY, uW, uH, BW1);
+          h += rowsList(29, MAINY, bx1 - 29 - 18, MB - MAINY, true, true) + pb1.html + connectBlock(29, MB + 14, 554, 0, '5-3') + placesAt(PLACES_TOP);
+        }
+      } else {
+        // wide plan: at the left (board cut to it), "How the rooms connect" in the width beside it, the room sizes under both
+        const n = rooms.length, hasNotes = n <= 7 && rooms.some(r => r.s), RH = 40, listH = hasNotes ? 17 + n * RH : 17 + Math.ceil(n / 2) * 22;
+        const MB2 = PLACES_TOP - 14, Cn = (I.connect || []).join(' ').length;
+        let pick = null;
+        for(let w = 400; w >= 260; w -= 10){
+          const r1 = measure(w, MB2 - MAINY - listH - 12 - 54), uW = Math.ceil(r1.usedW), uH = Math.ceil(r1.usedH), BW = uW + 16, cw = 583 - 29 - BW - 18, BH = uH + 8 + 46;
+          if(cw < 150) continue;
+          const need = 17 + 14 * Math.ceil(Cn / (cw / 5.0));
+          if(!pick || need >= BH - 14) { pick = {uW, uH, BW, cw, BH}; if(need >= BH - 14) break; }
+        }
+        if(pick){
+          const bx = 29, pb = place(bx, MAINY, pick.uW, pick.uH, pick.BW), top = MAINY + pb.BH + 12;
+          h += pb.html + connectBlock(bx + pick.BW + 18, MAINY, pick.cw, pb.BH, `${Math.floor((pb.BH - 17) / 14)}-3`);
+          if(hasNotes) h += rowsList(29, top, 554, MB2 - top, true);
+          else {
+            const half = Math.ceil(n / 2), ord = [...rooms.slice(0, half), ...rooms.slice(half)];
+            const cell = (r, i) => `<div class="lr"><div class="ln" data-slot="left.room${i}.n" data-lines="1">${esc(r.n)}</div>${r.d ? `<div class="ld" data-slot="left.room${i}.d" data-lines="1">${esc(r.d)}</div>` : ''}</div>`;
+            const grid = []; for(let i = 0; i < half; i++){ grid.push(cell(ord[i], i)); if(ord[half + i]) grid.push(cell(ord[half + i], half + i)); }
+            h += `<div class="sk abs" style="left:29pt;top:${top}pt;width:554pt" data-slot="left.listKicker" data-lines="1">Room dimensions</div>
+              <div class="dgrid abs" style="left:29pt;top:${top + 17}pt;width:554pt;height:${MB2 - top - 17}pt">${grid.join('')}</div>`;
+          }
+          h += placesAt(PLACES_TOP);
+        } else {
+        const MB = 618, r1 = measure(538, MB - MAINY - listH - 12 - 54), uW = Math.ceil(r1.usedW), uH = Math.ceil(r1.usedH), BW = Math.max(uW + 16, 300), bx = 29 + (554 - BW) / 2, pb = place(bx, MAINY, uW, uH, BW);
+        const top = MAINY + pb.BH + 12;
+        if(hasNotes) h += pb.html + rowsList(29, top, 554, MB - top, true);
+        else {
+          const half = Math.ceil(n / 2), ord = [...rooms.slice(0, half), ...rooms.slice(half)];
+          const cell = (r, i) => `<div class="lr"><div class="ln" data-slot="left.room${i}.n" data-lines="1">${esc(r.n)}</div>${r.d ? `<div class="ld" data-slot="left.room${i}.d" data-lines="1">${esc(r.d)}</div>` : ''}</div>`;
+          const grid = []; for(let i = 0; i < half; i++){ grid.push(cell(ord[i], i)); if(ord[half + i]) grid.push(cell(ord[half + i], half + i)); }
+          h += pb.html + `<div class="sk abs" style="left:29pt;top:${top}pt;width:554pt" data-slot="left.listKicker" data-lines="1">Room dimensions</div>
+            <div class="dgrid abs" style="left:29pt;top:${top + 17}pt;width:554pt;height:${MB - top - 17}pt">${grid.join('')}</div>`;
+        }
+        h += connectBlock(29, MB + 14, 554, 0, '5-3') + placesAt(PLACES_TOP);
+        }
+      }
+    } else if(LP.length && rooms.length <= 7){
+      // no plan: the room sizes and "How the rooms connect" at the left, two photos in the plan's place at the right
+      const MB2 = PLACES_TOP - 18, CH = 100, LW = 330, PX = 29 + LW + 18;
+      h += rowsList(29, MAINY, LW, MB2 - MAINY - CH - 14, true, true) + connectBlock(29, MB2 - CH, LW, CH, `${Math.floor((CH - 17) / 14)}-3`)
+        + `<div class="abs" style="left:${PX}pt;top:${MAINY}pt;width:${583 - PX}pt;height:${MB2 - MAINY}pt;display:flex;flex-direction:column;gap:10pt">${LP.map((c, i) => item(c, 'left.photo' + i, 4)).join('')}</div>` + placesAt(PLACES_TOP);
+    } else {
+      // no plan: the room sizes with a line on where each room sits, down the whole page
+      const MB = 618, RHn = Math.min(54, (MB - MAINY - 17) / Math.max(1, rooms.length)), LB = MAINY + 17 + RHn * rooms.length;
+      h += rowsList(29, MAINY, 554, LB - MAINY, true) + connectBlock(29, LB + 16, 554, 0, '8-3') + placesAt(PLACES_TOP);
+    }
+    return h;
+  }
+
+  // ================= INSIDE RIGHT =================
+  function right(){
+    const R = K.right || {};
+    let k = 0;
+    return `${head(R.kicker, R.title, 'right')}
+      <div class="flow" style="top:100pt;bottom:26pt;gap:10pt">
+        ${R.pairs.map(c => pair(c, 'right.photo' + (k++), [230, 330], '', 14, 1.2)).join('')}
+        ${[0, 1].map(r => `<div class="row" style="flex:1.8 1 0;gap:10pt">${R.grid.slice(r*2, r*2 + 2).map(c => item(c, 'right.photo' + (k++), 3)).join('')}</div>`).join('')}
+      </div>`;
+  }
+
+  const panels = {front: cover(), back: back(), left: left(), right: right()};
+  const panel = h => `<div class="panel">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.back)}</div><div class="half r">${panel(panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.left)}</div><div class="half r">${panel(panels.right)}</div></div>`;
+  } else {
+    for(const id of ['front','left','right','back']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  document.querySelectorAll('#street').forEach(st => { let fs = 44; while(st.scrollWidth > st.clientWidth + 1 && fs > 30){ fs -= 1; st.style.fontSize = fs + 'pt'; } });
+  CN.fitTexts();
+  CN.fitPairs();
+  CN.fill();
+  ContactCard.fit(document);
+  issues.push(...CN.focus(D));
+  window.brochureCheck = () => CN.check(D, (window.planIssues||[]).concat(issues));
+  window.photoPlacements = CN.placements;
+})();
+</script>
+</body>
+</html>

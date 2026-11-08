@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Red Line Open House email</title>
+<link rel="stylesheet" href="../engine/ohlib.css">
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/setpage.js"></script>
+<!--
+  The Red Line's own Open House email (owner 11/2/2026, Full Lineup review Q2). The Open House flyer redrawn at 600 px: the tall red rail down
+  the left edge, full height, the event label turned up its length in white Oswald caps; then the big black Oswald date, the red time and a
+  red rule, the whole-house photo, the address, the facts as columns under red rules, the write-up, three rooms, the card with its red bar
+  and the one logo on the right. REALTOR(R) cases: what's served and the notes between two red rules, under the time. Every word is the
+  listing's or the package's existing copy.
+-->
+<style>
+  @font-face{font-family:'Oswald';font-weight:400;src:url(../../fonts/pool/oswald-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Oswald';font-weight:500;src:url(../../fonts/pool/oswald-latin-500-normal.woff2) format('woff2')}
+  @font-face{font-family:'Oswald';font-weight:600;src:url(../../fonts/pool/oswald-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Oswald';font-weight:700;src:url(../../fonts/pool/oswald-latin-700-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Sans 3';font-weight:400;src:url(../../fonts/pool/source-sans-3-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Sans 3';font-weight:600;src:url(../../fonts/pool/source-sans-3-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Sans 3';font-weight:700;src:url(../../fonts/pool/source-sans-3-latin-700-normal.woff2) format('woff2')}
+  :root{--red:#d7262b;--ink:#1b1b1d;--txt:#34383b;--mut:#686d71;--line:rgba(27,27,29,.22)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .page{font-family:'Source Sans 3';color:var(--ink)}
+  .t{position:absolute;white-space:nowrap;overflow:hidden}
+  .w{white-space:normal}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+SP.start(['700 10pt "Oswald"', '600 10pt "Oswald"', '500 10pt "Oswald"', '400 10pt "Oswald"', '400 10pt "Source Sans 3"', '600 10pt "Source Sans 3"', '700 10pt "Source Sans 3"'], D => {
+  const esc = Ivory.esc, L = D.listing, A = D.agent || {}, W = 450, RW = 44, MG = 20, X0 = RW + MG, CW = W - X0 - 22;
+  const FL = SP.floor('email'), FB = FL.body, FS = FL.small, FE = FL.event;
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id));
+  const T = SP.T, rect = SP.rect, wd = SP.width, fit = SP.fitSize, r1 = SP.r1;
+  const OS = "font-family:'Oswald'", SS = "font-family:'Source Sans 3'", RED = 'var(--red)', INK = 'var(--ink)';
+  const hs = OHL.cardMode(D) === 'headshot' && !!A.headshot;
+  const rule = (x, y, w, t) => rect(x, y, w, t || 1.25, 'background:var(--red)');
+  let h = '', y = 24, dSize = 40;
+  const tm = E.time ? E.time.replace(/(\d)\s+(am|pm)\b/gi, '$1 $2') : '';
+
+  // ---- 1. the date, the time, a red rule (the label is on the rail)
+  const dcss = `font-weight:700;${OS};letter-spacing:-.2pt`, longFit = fit(E.long, dcss, CW, 54, 30), dOne = wd(E.long, `${dcss};font-size:${longFit}pt`) <= CW && longFit >= 38;
+  if(dOne){ dSize = longFit; const hh = r1(longFit*1.22); h += T(`${dcss};font-size:${longFit}pt;color:${INK};text-align:left`, esc(E.long), X0, y, CW, hh, 'data-slot="oh.date" data-lines="1"'); y += hh; }
+  else { const sd = fit(E.monthDay || E.long, dcss, CW, 54, 30), hd = r1(sd*1.22); dSize = sd;
+    if(E.weekday){ const sw = Math.max(FE, 21), hw = r1(sw*1.4); h += T(`font-weight:600;${OS};font-size:${sw}pt;letter-spacing:.16em;text-transform:uppercase;color:${RED};text-align:left`, esc(E.weekday), X0, y, CW, hw, 'data-slot="oh.day" data-lines="1"'); y += hw; }
+    h += T(`${dcss};font-size:${sd}pt;color:${INK};text-align:left`, esc(E.monthDay || E.long), X0, y, CW, hd, 'data-slot="oh.date" data-lines="1"'); y += hd; }
+  if(tm){ const tcss = `font-weight:500;${OS}`, st = fit(tm, tcss, CW, 32, FE), ht = r1(st*1.3); h += T(`${tcss};font-size:${st}pt;color:${RED};text-align:left`, esc(tm), X0, y, CW, ht, 'data-slot="oh.time" data-lines="1"'); y += ht; }
+  y += 6; h += rule(X0, y, CW); y += 14;
+  // what's served and the notes: between two red rules
+  const items = [[E.refreshments, true, 'oh.refreshments'], [E.note, false, 'oh.note']].filter(i => i[0]);
+  if(items.length){ const bs = FB, blh = r1(bs*1.35), pad = 8, bl = items.map(([t, b, slot]) => ({t, b, slot, n: SP.linesNW(t, `font:${b ? 700 : 600} ${bs}pt/${blh}pt 'Source Sans 3'`, CW - 2)}));
+    let yy = y;
+    bl.forEach((q, i) => { h += rect(X0, yy, CW, i ? .75 : 1.25, `background:${i ? 'var(--line)' : 'var(--red)'}`); yy += pad;
+      h += `<div class="abs w" style="left:${X0}pt;top:${yy}pt;width:${CW - 2}pt;height:${q.n*blh + 3}pt;font:${q.b ? 700 : 600} ${bs}pt/${blh}pt 'Source Sans 3';color:${INK}" data-slot="${q.slot}" data-lines="${q.n}">${esc(q.t)}</div>`; yy += q.n*blh + pad; });
+    h += rule(X0, yy, CW).replace('<div class="abs"', '<div class="abs" data-box="oh.box"'); y = yy + 16; }
+
+  // ---- 2. the photo
+  const fr = SP.heroFrame(D, hero, CW, 250, true);
+  h += OHL.photo(D, hero, `left:${X0 + (CW - fr.w)/2}pt;top:${y}pt;width:${fr.w}pt;height:${fr.h}pt`); y += fr.h + 16;
+
+  // ---- 3. the address and the facts
+  const acss = `font-weight:700;${OS};letter-spacing:-.2pt`, as = fit(L.address, acss, CW, Math.min(44, dSize - 2), 24), num = (L.address.match(/^\s*(\d+[A-Za-z-]*)\s+(.*)$/) || [null, '', L.address]);
+  if(wd(L.address, `${acss};font-size:${as}pt`) <= CW){ h += T(`${acss};font-size:${as}pt;color:${INK};text-align:left`, esc(L.address), X0, y, CW, r1(as*1.25), 'data-slot="address" data-lines="1"'); y += r1(as*1.25); }
+  else { const s2 = fit(num[2], acss, CW, Math.min(40, dSize - 2), 22); h += T(`${acss};font-size:${s2}pt;color:${INK};text-align:left`, esc(num[1]), X0, y, CW, r1(s2*1.25), 'data-slot="address" data-lines="1"') + T(`${acss};font-size:${s2}pt;color:${INK};text-align:left`, esc(num[2]), X0, y + r1(s2*1.25), CW, r1(s2*1.25), 'data-slot="address" data-lines="1"'); y += 2*r1(s2*1.25); }
+  const cs = Math.max(FS, 14), ccss = `font-weight:600;${OS};letter-spacing:.2em`; h += T(`${ccss};font-size:${cs}pt;color:${RED};text-align:left`, esc(OHL.place(L).toUpperCase()), X0, y + 2, CW, 22, 'data-slot="place" data-small="1" data-lines="1"'); y += 36;
+  const f = SP.facts(D), lcss = `font-weight:600;${OS};letter-spacing:.14em;text-transform:uppercase`, per = f.length, gap = 12, vs = 32, l2 = Math.max(FS, 12);
+  const wideLab = f.some(([lb]) => wd(lb.toUpperCase(), `${lcss};font-size:${l2}pt`) > (CW - (per - 1)*gap)/per), p2 = wideLab ? 2 : per, cw2 = (CW - (p2 - 1)*gap)/p2, rh = r1(vs*1.2) + r1(l2*1.5) + 8;
+  f.forEach(([lb, v, key], i) => { const cx = X0 + (i % p2)*(cw2 + gap), cy = y + Math.floor(i/p2)*(rh + 4);
+    h += rule(cx, cy, cw2, 1) + T(`font-weight:600;${OS};font-size:${vs}pt;color:${INK};text-align:left`, v, cx, cy + 5, cw2, r1(vs*1.2), `data-slot="fact.${key}" data-lines="1"`) + T(`${lcss};font-size:${l2}pt;color:var(--mut);text-align:left`, esc(lb), cx, cy + 5 + r1(vs*1.2), cw2, r1(l2*1.5), 'data-small="1"'); });
+  y += Math.ceil(f.length/p2)*(rh + 4) + 10;
+
+  // ---- 4. the write-up, then three rooms
+  const wlh = 21, wu = SP.fillText(SP.pool(D), `font:400 ${FB}pt/${wlh}pt 'Source Sans 3';text-align:left`, CW, 6, true);
+  if(wu){ h += `<div class="abs w" style="left:${X0}pt;top:${y}pt;width:${wu.w}pt;height:${wu.n*wlh}pt;font:400 ${FB}pt/${wlh}pt 'Source Sans 3';color:var(--txt)" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`; y += wu.n*wlh + 16; }
+  const nR = Math.min(3, rooms.length);
+  if(nR){ const g = 8, pw = (CW - g*(nR - 1))/nR; for(let i = 0; i < nR; i++) h += OHL.photo(D, rooms[i], `left:${X0 + i*(pw + g)}pt;top:${y}pt;width:${pw}pt;height:${r1(pw*.72)}pt`); y += r1(pw*.72) + 22; }
+
+  // ---- 5. the card: a red bar, the light Oswald name, REALTOR(R), CALL / TEXT; a hairline, the one logo
+  const lab2 = A.phoneLabel || 'Call / Text', nar = A.nar || /realtor/i.test(A.designation || ''), hsd = hs ? 62 : 0, tw0 = r1(CW*.62), tx = X0 + 14 + (hsd ? hsd + 10 : 0), tw = tw0 - 14 - (hsd ? hsd + 10 : 0);
+  const nS = fit(A.name || '', `font-weight:400;${OS}`, tw, 30, 22), lcssA = `font-weight:600;${OS};letter-spacing:.14em;text-transform:uppercase;font-size:${FS}pt`;
+  const stack = wd(lab2.toUpperCase(), lcssA) + 14 + wd(A.phone || '', `font-weight:700;${SS};font-size:${FB}pt`) > tw;
+  const pS = stack ? 19 : Math.min(19, fit(A.phone || '', `font-weight:700;${SS}`, tw - wd(lab2.toUpperCase(), lcssA) - 14, 19, FB)), cardH = Math.max(hsd, r1(nS*1.25) + (nar ? 18 : 0) + (stack ? 18 : 0) + 32) + 8;
+  h += rect(X0, y, 4, cardH, 'background:var(--red)');
+  if(hs) h += `<div class="abs" style="left:${X0 + 14}pt;top:${y + (cardH - hsd)/2}pt;width:${hsd}pt;height:${hsd}pt;border-radius:50%;overflow:hidden"><img src="${esc(A.headshot)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;
+  let cy = y + 4;
+  h += T(`font-weight:400;${OS};font-size:${nS}pt;color:${INK};text-align:left`, esc(A.name || ''), tx, cy, tw, r1(nS*1.25), 'data-slot="agent.name" data-lines="1"'); cy += r1(nS*1.25);
+  if(nar){ h += T(`${lcssA};letter-spacing:.2em;color:var(--mut);text-align:left`, 'REALTOR®', tx, cy, tw, 18, 'data-slot="agent.desig" data-small="1" data-lines="1"'); cy += 18; }
+  if(stack){ h += T(`${lcssA};color:${RED};text-align:left`, esc(lab2), tx, cy, tw, 18, 'data-small="1"'); cy += 18; }
+  h += T(`font-weight:700;${SS};font-size:${pS}pt;color:${INK};text-align:left`, `${stack ? '' : `<span data-small="1" style="font-weight:600;${OS};font-size:${FS}pt;letter-spacing:.14em;text-transform:uppercase;color:${RED};margin-right:8pt">${esc(lab2)}</span>`}${esc(A.phone || '')}`, tx, cy + 2, tw, 28, 'data-slot="agent.phone" data-lines="1"');
+  const lgW = r1(CW - tw0 - 18), lgH = Math.min(r1(lgW*.36), cardH - 4);
+  h += rect(X0 + tw0 + 8, y + 4, .75, cardH - 8, 'background:var(--line)') + OHL.logo(D, 'light', `left:${X0 + CW - lgW}pt;top:${y + (cardH - lgH)/2}pt;width:${lgW}pt;height:${lgH}pt;justify-content:flex-start`);
+  y += cardH + 18;
+  h += `<div class="abs" data-fine="1" data-slot="fineprint" data-lines="1" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:14pt;font:400 10pt/14pt 'Source Sans 3';color:var(--mut)">${esc((D.companion || {}).fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  y += 14 + 24;
+  // ---- the rail, once the height is known
+  const lab = E.label.toUpperCase(), rcss = `font-weight:700;${OS};letter-spacing:.1em`, len = y - 44, rs = fit(lab, rcss, len, 22, FE);
+  const railTxt = `<div class="t" style="left:${RW/2 - y/2}pt;top:${y/2 - RW/2}pt;width:${y}pt;height:${RW}pt;line-height:${RW}pt;transform:rotate(-90deg);${rcss};font-size:${rs}pt;color:#fff;text-align:center" data-slot="oh.label" data-lines="1" data-bg="#d7262b">${esc(lab)}</div>`;
+  const after = () => document.querySelectorAll('[data-slot="oh.note"],[data-slot="oh.refreshments"]').forEach(el => { el.innerHTML = el.innerHTML.replace(/[^\s<>]*‑[^\s<>]*/g, m => `<span style="white-space:nowrap">${m.replace(/‑/g, '-')}</span>`); });
+  return {W, H: y, after, html: `<div class="page em" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${y}pt;background:#fff">${h}${rect(0, 0, RW, y, 'background:var(--red)')}${railTxt}</div>`};
+});
+</script>
+</body>
+</html>

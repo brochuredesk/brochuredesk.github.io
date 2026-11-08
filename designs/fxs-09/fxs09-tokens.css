@@ -1,0 +1,53 @@
+/* fxs-09 tokens: THE one source for the set's palette, type, rules and marks (FX09 look: deep navy, white serif address, big-numerals stat row).
+   Every piece reads these variables: fold-over, flyer, Open House flyer and email, postcards, socials and carousels.
+   Two schemes: the ROOT scheme is the navy page (covers, flyer front, Open House, postcard fronts, socials); `.cream` is the cream page
+   (fold-over back and inside, flyer back, postcard backs) where the same names flip: navy type on cream, the navy box with cream type. Lengths are pt. */
+:root{
+  --fx-navy:#16223a; --fx-cream:#f1eadf; --fx-copper:#d98f52; --fx-slate:#c9d1de;
+  /* palette, navy scheme */
+  --fx-paper:#16223a;
+  --fx-band:#1c2e4b;            /* a step lighter than the page: cards and wells on navy */
+  --fx-ink:#f1eadf;             /* big type; also the fill of the event box */
+  --fx-ink2:#d98f52;            /* labels, kickers, the place line: copper */
+  --fx-text:#c9d1de;            /* body copy */
+  --fx-text-dark:#f1eadf;       /* fact values, phone */
+  --fx-mute:#a9b4c7;            /* REALTOR(R), email line, fine print */
+  --fx-rule:rgba(241,234,223,.3);
+  --fx-on-ink:#16223a;          /* type on the cream box */
+  --fx-on-ink-soft:#4a5875;
+  --fx-box-bg:#f1eadf;          /* the event box and the like: cream on navy */
+  --fx-bar:#d98f52;             /* the copper bar beside a write-up and the agent */
+  /* type: DM Serif Display for the address, titles, numerals; DM Sans for everything else */
+  --fx-serif:'DM Serif Display',Georgia,'Times New Roman',serif;
+  --fx-font:'DM Sans',Helvetica,Arial,sans-serif;
+  --fx-w-light:400; --fx-w-reg:400; --fx-w-med:500; --fx-w-semi:600; --fx-w-bold:700; --fx-w-heavy:700;
+  /* label style: small caps, wide tracking (FX09: 11 px, 3-5 px tracking) */
+  --fx-label-w:500; --fx-label-track:3pt;
+  /* rules and marks */
+  --fx-rule-w:.75pt;            /* hairline */
+  --fx-bar-w:3pt;               /* the copper bar */
+  /* photo shapes: square corners everywhere (FX09 has none) */
+  --fx-m:22pt;                  /* outer margin: FX09's 48 px */
+  /* the shared agent card reads these */
+  --cc-paper:#16223a; --cc-ink:#f1eadf; --cc-muted:#c9d1de; --cc-accent:#d98f52; --cc-line:rgba(241,234,223,.3);
+  --cc-display:'DM Serif Display',Georgia,serif; --cc-body:'DM Sans',Helvetica,Arial,sans-serif;
+  --font-display:'DM Serif Display',Georgia,serif; --font-body:'DM Sans',Helvetica,Arial,sans-serif;
+  --ink:#f1eadf; --muted:#c9d1de; --accent:#d98f52; --paper:#16223a; --navy:#16223a; --gold:#d98f52; --gold-ink:#d98f52;
+}
+.cream{   /* round 2 (11/7): every panel is the same solid navy; the class stays so pieces keep their markup */
+  --fx-paper:#16223a; --fx-band:#1c2e4b; --fx-ink:#f1eadf; --fx-ink2:#d98f52; --fx-text:#c9d1de; --fx-text-dark:#f1eadf; --fx-mute:#a9b4c7;
+  --fx-rule:rgba(241,234,223,.3); --fx-on-ink:#16223a; --fx-on-ink-soft:#4a5875; --fx-box-bg:#f1eadf; --fx-bar:#d98f52;
+  --cc-paper:#16223a; --cc-ink:#f1eadf; --cc-muted:#c9d1de; --cc-accent:#d98f52; --cc-line:rgba(241,234,223,.3);
+  --ink:#f1eadf; --muted:#c9d1de; --accent:#d98f52; --paper:#16223a;
+}
+/* DM Sans has 400-700 and DM Serif Display one weight: the other weights the pieces ask for map to the nearest file, so nothing is ever synthesized */
+@font-face{font-family:'DM Sans';font-weight:300;src:url(../../fonts/pool/dm-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'DM Sans';font-weight:400;src:url(../../fonts/pool/dm-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'DM Sans';font-weight:500;src:url(../../fonts/pool/dm-sans-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'DM Sans';font-weight:600;src:url(../../fonts/pool/dm-sans-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'DM Sans';font-weight:700;src:url(../../fonts/pool/dm-sans-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'DM Sans';font-weight:800;src:url(../../fonts/pool/dm-sans-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'DM Serif Display';font-weight:300;src:url(../../fonts/pool/dm-serif-display-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'DM Serif Display';font-weight:400;src:url(../../fonts/pool/dm-serif-display-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'DM Serif Display';font-weight:700;src:url(../../fonts/pool/dm-serif-display-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'DM Serif Display';font-weight:800;src:url(../../fonts/pool/dm-serif-display-latin-400-normal.woff2) format('woff2')}

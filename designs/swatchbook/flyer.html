@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Swatchbook two-sided flyer</title>
+<link rel="stylesheet" href="swatchbook.css">
+<script src="swatchbook.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/agentcard.js"></script>
+<!--
+  BrochureDesk · Swatchbook · two-sided 8.5 x 11 listing flyer (trim 612 x 792 pt, white 18 pt margin in print). data.piece.side = "front" | "back".
+  Same family as the fold-over: the agent's brand color is the field, gold small caps, Manrope headings, Source Sans captions with a bold
+  lead, white boxes with gold labels, the whole-house photo across the top of the front, the plan on white on the back.
+  Rules (product.md: two-sided flyer rules 10/28; the owner's Round 4 review 11/1/2026): one brokerage logo per side (the shared contact card
+  carries it); the front shows the whole house; the back carries as much real detail as fits; no price, no QR code, no photo numbers;
+  room sizes in feet only (18' x 12'); the half bath's 1/2 at full size (BD.bathNum); text fills its box and runs edge to edge with the
+  photos and boxes beside it; the details grid shows a fifth line (lot size) when the listing has one, otherwise its four lines grow to fill.
+
+  FRONT   kicker, street, the whole house across the field, the write-up beside the white details grid (they end on one line), three
+          captioned photos, the agent card.
+  BACK    With a plan (data.plan): the agent's own plan at one scale (never redrawn) on white with its legend, two captioned photos, the nearby
+          row, the card. Without: a white floor-by-floor box (each floor's rooms in feet, beside its write-up), captioned photos, the nearby
+          row, the card.
+
+  Copy: data.companion.flyer = {
+    front: {kicker, location, hero: id, lines: n, head, intro: [sentence | [long, short], ...], row: [{photo, lead, s: [...]} x3]},
+    back:  {plan: {kicker, title}, noplan: {kicker, title}, planH, planLines, photos: [{photo, lead, s}], photosNoplan: [...],
+            floors: [{n, level, lines, s: [...]}], nearby: [{dist, place}]}}
+  Sentences are whole sentences; the fill pass (swatchbook.js) picks the ones that set in exactly the box's lines.
+-->
+<style>
+  .fl-street{position:absolute;font-family:var(--font-display);font-weight:500;letter-spacing:-.6pt;color:#fff;white-space:nowrap;overflow:hidden}
+  .gbox{background:#fff;display:flex;flex-direction:column;padding:6pt 18pt;min-width:0}
+  .gbox .r{flex:1 1 0;display:flex;align-items:center;justify-content:space-between;border-top:.6pt solid var(--line);min-height:0}
+  .gbox .r:first-child{border-top:0}
+  .gbox .l{font:700 9pt/11pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--gold-ink);white-space:nowrap}
+  .gbox .v{font-family:var(--font-display);font-weight:500;font-size:17pt;line-height:20pt;letter-spacing:-.2pt;color:var(--ink);white-space:nowrap}
+  .fl-sub{font:600 9.5pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--gold);white-space:nowrap;overflow:hidden}
+  .flfloors{background:#fff;display:flex;flex-direction:column;padding:11pt 18pt 11pt}
+  .flfloors .fr2{border-top:.6pt solid var(--line);padding-top:9pt;margin-top:9pt}
+  .flfloors .fr2:first-child{border-top:0;padding-top:0;margin-top:0}
+  .flfloors .fn2{font:700 9.5pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--gold-ink);white-space:nowrap;overflow:hidden;margin-bottom:5pt}
+  .flfloors .fb2{display:flex;gap:24pt}
+  .flfloors .ft2{font-size:10.5pt;line-height:13.5pt;color:var(--ink);overflow:hidden;flex:none}
+  .flfloors .rt{flex:1;min-width:0;display:flex;flex-direction:column}
+  .flfloors .rr{display:flex;justify-content:space-between;align-items:center;border-top:.5pt solid var(--line);font-size:9.5pt;color:var(--ink);white-space:nowrap}
+  .flfloors .rr:first-child{border-top:0}
+  .flfloors .rr b{font-weight:600}
+  .flfloors .rr span{font-variant-numeric:tabular-nums;color:var(--text)}
+  .fbox{background:#fff;display:flex;gap:22pt;padding:11pt 18pt 11pt;align-items:stretch}
+  .fbox .wh{width:128pt;flex:none;display:flex;flex-direction:column;justify-content:center}
+  .fbox .k{font:600 9.5pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--gold-ink);white-space:nowrap}
+  .fbox .h{font-family:var(--font-display);font-weight:500;font-size:16pt;line-height:20pt;letter-spacing:-.3pt;color:var(--ink);margin-top:4pt}
+  .fbox .wi{flex:1;min-width:0;display:grid;grid-template-columns:1fr 1fr 1fr;column-gap:18pt;align-content:center}
+  .fbox .wi .l{font:700 9pt/11pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--gold-ink);white-space:nowrap}
+  .fbox .wi .t{font-size:10.5pt;line-height:13.2pt;color:var(--ink);margin-top:2pt;overflow:hidden}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = SW.esc, b = D.brand || {}, A = D.agent || {}, L = D.listing, S = D.sw || {};
+  const FL = (D.companion || {}).flyer || {}, FF = FL.front || {}, FB = FL.back || {};
+  const side = (D.piece || {}).side === 'back' ? 'back' : 'front';
+  document.body.dataset.mode = D.mode || 'email';
+  await SW.setup(D);
+  const issues = [];
+  const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot) || '';
+  const X = 30, Wd = 552, LH = 12.5, CAPPAD = 5;
+  // room sizes in feet only (owner Round 4, 11/1/2026): 18' x 12'
+  const feet = t => String(t == null ? '' : t).replace(/(\d+)(?:\.\d+)?(?:'\s?\d+(?:\.\d+)?"?)?'?\s*x\s*(\d+)(?:\.\d+)?(?:'\s?\d+(?:\.\d+)?"?)?'?/g, "$1' x $2'");
+  const feetS = s => [].concat(s || []).map(x => Array.isArray(x) ? x.map(feet) : feet(x));
+  const attr = a => esc(JSON.stringify(a)).replace(/'/g, '&#39;');
+  const capH = lines => CAPPAD + lines*LH;
+  const cap = (c, slot, lines, cls) => {
+    c = c || {};
+    const lh = /\bbig\b/.test(cls||'') ? 13.5 : LH;
+    return `<div class="cap ${cls||''}" style="height:${CAPPAD + lines*lh}pt"><div class="a" data-slot="${slot}" data-lh="${lh}" data-lines="${lines}" data-s='${attr(feetS(c.s))}' data-lead="${esc(feet(c.lead||''))}" style="height:${lines*lh}pt"></div></div>`;
+  };
+  const item = (c, slot, lines, grow, cls) => `<div class="item" style="flex:${grow||1} 1 0">${SW.photo(D, c.photo, '', slot)}${cap(c, slot, lines, cls)}</div>`;
+  const para = (s, slot, lines, lh, cls, style) => `<div class="${cls||'intro'}" data-slot="${slot}" data-lines="${lines}" data-s='${attr(feetS(s))}' style="height:${lines*lh}pt;line-height:${lh}pt;${style||''}"></div>`;
+  const num = v => Number(v).toLocaleString('en-US');
+  let h = '';
+
+  // ======================================= FRONT =======================================
+  if(side === 'front'){
+    // the details grid: lot size is the fifth line when the listing has one; four lines grow to fill the box otherwise
+    const bn = BD.bathNum(L), rows = [];
+    if(L.beds) rows.push(['Bedrooms', String(L.beds)]);
+    if(L.baths || L.halfBaths) rows.push([bn.label, bn.num]);
+    if(bn.half) rows.push(['Half baths', bn.half.replace(/\D+/g, '')]);
+    if(L.sqft) rows.push(['Living area', `${num(L.sqft)} sq ft`]);
+    if(L.yearBuilt) rows.push(['Built in', String(L.yearBuilt)]);
+    const lot = String(L.lotSize || '').replace(/\s*lot$/i, '').replace(/Sq Ft/i, 'sq ft');
+    const grid = rows.slice(0, lot ? 4 : 5); if(lot) grid.push(['Lot size', lot]);
+    const n = FF.lines || 7, blockH = 18 + n*14.5, LW = 306, HH = FF.heroH || 232;
+    h += `<div class="kicker abs" style="left:${X}pt;top:30pt;width:${Wd}pt;height:12pt" data-slot="front.location" data-lines="1">${esc(FF.location || (L.neighborhood + '  ·  ' + SW.place(L)))}</div>`;
+    h += `<div class="fl-street" id="street" style="left:${X}pt;top:46pt;width:${Wd}pt;height:46pt;font-size:40pt;line-height:46pt" data-slot="front.address" data-lines="1">${esc(L.address)}</div>`;
+    h += `<div class="flow" style="left:${X}pt;right:${X}pt;top:100pt;bottom:${792-646}pt;gap:14pt">
+        <div style="flex:none;position:relative;height:${HH}pt">${SW.heroHtml(D, FF.hero || 'front', 0, 0, Wd, HH, 'front.hero', FF.side)}</div>
+        <div style="flex:none;height:${blockH}pt;display:flex;gap:24pt">
+          <div style="width:${LW}pt;flex:none"><div class="fl-sub" style="height:18pt;padding-top:1pt" data-slot="front.head" data-lines="1">${esc(FF.head || 'The house')}</div>${para(FF.intro, 'front.about', n, 14.5, 'intro')}</div>
+          <div class="gbox" style="flex:1">${grid.map((r, i) => `<div class="r"><span class="l" data-slot="front.grid${i}.l" data-lines="1">${esc(r[0])}</span><span class="v" data-slot="front.grid${i}.v" data-lines="1">${r[1]}</span></div>`).join('')}</div>
+        </div>
+        <div class="row" style="flex:1 1 0;gap:14pt">${(FF.row || []).map((c, i) => item(c, 'front.photo'+i, 3, 1, '')).join('')}</div>
+      </div>`;
+  }
+
+  // ======================================= BACK =======================================
+  else {
+    const hasPlan = !!D.plan, T = (hasPlan ? FB.plan : FB.noplan) || {};
+    h += `<div class="kicker abs" style="left:${X}pt;top:30pt;width:420pt;height:12pt" data-slot="back.kicker" data-lines="1">${esc(T.kicker)}</div>`;
+    h += `<div class="title abs" style="left:${X}pt;top:44pt;width:${Wd}pt;height:32pt" data-slot="back.title" data-lines="1">${esc(T.title)}</div>`;
+    let flowTop, body = '';
+    const P = (hasPlan ? FB.photos : FB.photosNoplan) || [];
+    if(hasPlan){
+      const planTop = 88, Hp = FB.planH || 240;
+      const r = IvoryPlan.draw(D.plan, {x: X + 12, y: planTop + 8, w: Wd - 24, h: Hp - 4}, {allowRotate: true});
+      window.planIssues = r.issues;
+      const ly = planTop + Hp + 4;
+      h += `<div class="abs" style="left:${X}pt;top:${planTop}pt;width:${Wd}pt;height:${ly + 11 + 9 - planTop}pt;background:#fff"></div><div class="panel" style="left:0;top:0"><div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt;--paper:#fff">${r.html}</div></div>`;
+      const zs = IvoryPlan.zonesOf(D.plan);
+      const leg = Object.entries(IvoryPlan.ZONES).filter(([k]) => zs.includes(k))
+        .map(([k, z]) => `<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, var(--paper))"></i>${z.label}</span>`);
+      if(zs.includes('outdoor')) leg.push(`<span><i style="background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--accent) 35%, var(--paper)) 0 .6pt, var(--paper) .6pt 2.8pt)"></i>Outdoor</span>`);
+      const note = (D.plan.source || 'The listing floor plan, placed as given.') + ' Sizes are approximate.' + ((r.angle === 90 || r.angle === 270) ? ' Turned on its side.' : '');
+      h += `<div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt;--paper:#fff"><div class="plan-legend" style="left:${X + 12}pt;top:${ly}pt">${leg.join('')}</div>
+            <div class="plan-disclosure" style="left:${X + 270}pt;width:${Wd - 282}pt;top:${ly + 1}pt" data-slot="back.plannote" data-lines="1" data-fine="1">${esc(note)}</div></div>`;
+      flowTop = ly + 11 + 9 + 14;
+      body = `<div class="row" style="flex:1 1 0;gap:14pt">${P.map((c, i) => item(c, 'back.photo'+i, FB.planLines || 4, 1, 'big')).join('')}</div>`;
+    } else {
+      flowTop = 90;
+      // floor by floor: the listing's rooms in feet beside each floor's write-up
+      const sentence = s => { s = String(s || '').replace(/\s*\/\s*/g, ' / ').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); };
+      const fls = (FB.floors || []).map(f => {
+        const rooms = (L.rooms || []).filter(r => r.level === f.level);
+        const lines = Math.max(f.lines || 2, Math.ceil(rooms.length*12.6/13.5));
+        return {f, rooms, lines};
+      });
+      body = `<div class="flfloors" style="flex:none">${fls.map(({f, rooms, lines}, i) => {
+        const hh = lines*13.5, pitch = rooms.length ? hh/rooms.length : 0, tw = rooms.length ? 290 : 520;
+        return `<div class="fr2"><div class="fn2" data-slot="back.floor${i}.name" data-lines="1">${esc(f.n)}</div><div class="fb2" style="height:${hh}pt">
+          <div class="ft2" data-slot="back.floor${i}" data-lines="${lines}" data-s='${attr(feetS(f.s))}' style="width:${tw}pt;height:${hh}pt"></div>
+          ${rooms.length ? `<div class="rt">${rooms.map((r, j) => `<div class="rr" style="height:${pitch.toFixed(2)}pt"><b data-slot="back.floor${i}.room${j}" data-lines="1">${esc(sentence(r.name))}</b><span data-slot="back.floor${i}.size${j}" data-lines="1">${esc(feet(r.size))}</span></div>`).join('')}</div>` : ''}
+        </div></div>`; }).join('')}</div>
+        ${FB.box ? `<div class="fbox" style="flex:none"><div class="wh"><div class="k" data-slot="back.box.kicker" data-lines="1">${esc(FB.box.kicker)}</div><div class="h" data-slot="back.box.heading" data-lines="3" style="height:60pt;overflow:hidden">${esc(FB.box.heading)}</div></div>
+          <div class="wi">${FB.box.items.map((it, i) => `<div><div class="l" data-slot="back.box.l${i}" data-lines="1">${esc(it.l)}</div><div class="t" data-slot="back.box.t${i}" data-lines="${FB.box.lines || 3}" style="height:${(FB.box.lines || 3)*13.2}pt" data-s='${attr(feetS(it.s))}'></div></div>`).join('')}</div></div>` : ''}
+        <div class="row" style="flex:1 1 0;gap:14pt">${P.map((c, i) => item(c, 'back.photo'+i, P.length > 2 ? 4 : 5, 1, 'big')).join('')}</div>`;
+    }
+    const near = (FB.nearby || (S.back || {}).nearby || []).slice(0, 3);
+    const compact = hasPlan && (FB.planH || 0) >= 260;
+    const nearHTML = `<div class="near${compact ? ' compact' : ''}" style="margin-top:${compact ? 2 : 6}pt"><div style="display:contents">${near.map((x, i) => `<div class="c"><div class="d" data-slot="back.near${i}.dist" data-lines="1">${esc(x.dist)}</div><div class="p" data-slot="back.near${i}.place" data-lines="1">${esc(x.place)}</div></div>`).join('')}</div></div>`;
+    h += `<div class="flow onnavy" style="left:${X}pt;right:${X}pt;top:${flowTop}pt;bottom:${792-646}pt;gap:12pt">${body}${nearHTML}</div>`;
+  }
+  h += ContactCard.html([X, 656, Wd, 98], Object.assign({}, A, {headshot: hsSrc}), Object.assign({}, b, {logo: b.logoOnDark || b.logo}), {layout: 'panel', size: 'mid', postcard: true, fine: '', bottomGap: 0.5, fieldAccent: true});
+  h += `<div class="abs" style="left:${X}pt;top:762pt;width:${Wd}pt;height:8pt;font-size:6.5pt;line-height:8pt;color:var(--on-navy-soft);white-space:nowrap;overflow:hidden;text-align:center" data-slot="fineprint" data-lines="1" data-fine="1">Information deemed reliable but not guaranteed; buyer to verify.</div>`;
+  const f = SW.frame(D, 612, 792, h);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  const st = document.getElementById('street'); if(st){ let fs = 40; while(st.scrollWidth > st.clientWidth + 1 && fs > 30){ fs -= 1; st.style.fontSize = fs + 'pt'; } }
+  document.querySelectorAll('.plan-room span').forEach(e => { e.textContent = feet(e.textContent); });   // a drawn plan's sizes print in feet too
+  SW.fill();
+  SW.fitLogos();
+  ContactCard.fit(document);
+  issues.push(...SW.focus(D));
+  window.brochureCheck = () => SW.check(D, (window.planIssues || []).concat(issues));
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>

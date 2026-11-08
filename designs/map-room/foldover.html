@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · The Map Room fold-over</title>
+<link rel="stylesheet" href="map-room.css">
+<script src="map-room.js"></script>
+<!--
+  BrochureDesk · The Map Room · 11 x 17 fold-over
+  11 x 17 sheet folded once across the middle: four landscape 11 x 8.5 panels (792 x 612 pt), 0.125 in (9 pt) bleed.
+    outside spread: back (turned 180, on top) over cover      inside spread: inside top over inside bottom
+  The plan is the map: the agent's own floor plan fills the centre of the first inside panel, flanked by two photo and
+  caption pairs on each side. The second inside panel is a 3 x 2 grid of rooms. The back carries the two big shared rooms.
+  With no plan the centre becomes a large photo above a column of room sizes.
+
+  Modes (data.mode):  proof  four panel pages, 810 x 630 pt each (trim + bleed)
+                      print  two spreads, 810 x 1242 pt, each half clipped at the fold
+  The floor plan is the agent's own drawing, placed as given (no redraw): data.plan.levels = [{name, photo, w, h}].
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = MR.data(), esc = MR.esc; MR.fitMode = !!D.fit;
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  await MR.cardReady;
+  const mode = D.mode || 'proof', L = D.listing, A = D.agent || {}, b = D.brand || {}, C = D.copy || {}, issues = [];
+  if(b.accent) document.documentElement.style.setProperty('--accent', b.accent);
+  await Promise.all(['700 10pt','400 10pt','600 10pt','500 10pt'].flatMap(w => [document.fonts.load(`${w} 'Public Sans'`), document.fonts.load(`${w} 'Source Serif 4'`)]));
+  document.body.dataset.mode = mode;
+  const hasPlan = !!(D.plan && D.plan.levels && D.plan.levels.length);
+  const hs = (D.photos||{})[A.headshot] ? D.photos[A.headshot].src : (A.headshot || '');
+  const flood = MR.floodStated(L.description);
+  const BOT = 596;            // text and photos on the inside panels end here (0.25 in safe zone is 594; the card owns the last strip)
+  const Y0 = 82, G = 12;      // body top under the header rule; gutter between photos
+
+  // ================= COVER =================
+  const addrSize = (txt, w) => { for(let fs = 38; fs > 30; fs -= 1){ const m = document.createElement('span'); m.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font:400 ${fs}pt/42pt var(--font-display);letter-spacing:-.5pt`; m.textContent = txt; document.body.appendChild(m); const ok = m.getBoundingClientRect().width*72/96 <= w; m.remove(); if(ok) return fs; } return 30; };
+  function cover(){
+    const K = C.front || {}, st = (K.stack || []).slice(0, 3), PB = 418, SW = 312, HW = 490;
+    let h = MR.photo(D, K.hero, -9, -9, HW + 9, PB + 9);
+    const sh = (PB + 9 - 2*8)/3;
+    st.forEach((id, i) => { h += MR.photo(D, id, HW + 8, -9 + i*(sh + 8), SW + 9 + 1, sh); });
+    h += MR.kick(K.kicker || MR.place(L) + ' ' + (L.zip||''), 'front.kicker', 24, 430, 372);
+    h += `<div class="abs addr" style="left:24pt;top:442pt;width:380pt;height:42pt;font-size:${addrSize(L.address, 380)}pt" data-slot="front.address" data-lines="1">${esc(L.address)}</div>`;
+    const sp = MR.facts(L);
+    h += `<div class="abs facts${sp.length > 4 ? ' five' : ''}" style="left:420pt;top:436pt;width:348pt;height:40pt">${sp.map((f,i)=>`<div class="f"><div class="v" data-slot="front.facts.${i}.v" data-lines="1">${esc(f.v)}</div><div class="l" data-slot="front.facts.${i}.l" data-lines="1">${esc(f.l)}</div></div>`).join('')}</div>`;
+    h += MR.rule(24, 492, 744);
+    h += MR.kick(K.introHead || 'The house', 'front.introhead', 24, 502, 372);
+    h += `<div class="abs body" style="left:24pt;top:516pt;width:372pt;height:78pt" data-slot="front.intro" data-lines="6" data-cap="1">${esc(MR.txt(K.intro))}</div>`;
+    h += MR.kick(K.newHead || 'What is new', 'front.newhead', 420, 502, 348);
+    h += `<div class="abs checks" style="left:420pt;top:518pt;width:348pt">${(K.items||[]).slice(0,6).map((t,i)=>`<div data-slot="front.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div>`;
+    if(K.tag) h += `<div class="abs" style="left:420pt;top:578pt;height:16pt"><span class="tag" data-slot="front.tag" data-lines="1">${esc(K.tag)}</span></div>`;
+    return h;
+  }
+
+  // ================= BACK =================
+  function back(){
+    const B = C.back || {}, its = (B.items || []).slice(0, 2), w = (744 - G)/2, ph = 239;
+    let h = MR.kick(B.kicker, 'back.kicker', 24, 26, 700) + MR.title(B.title, 'back.title', 24, 36) + MR.rule(24, 74, 744);
+    its.forEach((it, i) => { const x = 24 + i*(w + G);
+      h += MR.photo(D, it.id, x, Y0, w, ph);
+      h += MR.cap(it, `back.cap${i}`, x, Y0 + ph + 8, w, {lines: 4, min: 4, max: 4, wide: true}); });
+    // around the house and the two covered spaces, in one row above the card
+    const ay = 428, nb = (B.nearby || []).slice(0, 3), sp = (B.spaces || []).slice(0, 2);
+    h += `<div class="abs kick" style="left:24pt;top:${ay + 4}pt;width:118pt;height:22pt;white-space:normal;line-height:11pt" data-slot="back.aroundhead" data-lines="2">${esc(B.aroundHead || 'Around the house')}</div>`;
+    h += `<div class="abs around" style="left:150pt;top:${ay}pt;width:420pt;display:flex">${nb.map((x,i)=>`<div style="width:140pt;flex:none"><div class="d" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}<small>${esc(x.u || 'miles')}</small></div><div class="p" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}</div>`;
+    h += `<div class="abs" style="left:572pt;top:${ay}pt;width:.8pt;height:34pt;background:var(--line)"></div>`;
+    h += `<div class="abs around" style="left:586pt;top:${ay}pt;width:182pt;display:flex">${sp.map((x,i)=>`<div style="width:92pt;flex:none"><div class="d" style="font-size:15pt" data-slot="back.space${i}.v" data-lines="1">${esc(x.v)}</div><div class="p" data-slot="back.space${i}.l" data-lines="1">${esc(x.l)}</div></div>`).join('')}</div>`;
+    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', brokerage: true, fine: B.footnote || ''});
+    return h;
+  }
+
+  // ================= INSIDE TOP =================
+  function top(){
+    const T = C.top || {};
+    let h = MR.kick(T.kicker, 'top.kicker', 24, 26, 560) + MR.title(T.title, 'top.title', 24, 36, 600) + MR.logo(D, 588, 26, 180, 28, 'flex-end') + MR.rule(24, 74, 744);
+    const CW = 232, CX = 270, CWD = 252, avail = BOT - Y0, pair = (avail - G)/2, LN = 4, ph = pair - 6 - MR.capH(LN);
+    const side = (arr, x, pre) => arr.slice(0, 2).forEach((it, j) => { const y = Y0 + j*(pair + G);
+      h += MR.photo(D, it.id, x, y, CW, ph);
+      h += MR.cap(it, `${pre}${j}`, x, y + ph + 6, CW, {lines: LN, min: LN, max: LN}); });
+    side(T.left || [], 24, 'top.l'); side(T.right || [], 536, 'top.r');
+    h += `<div class="abs" style="left:${CX - 6}pt;top:${Y0}pt;width:${CWD + 12}pt;height:${avail}pt;background:#f3f6fa"></div>`;
+    if(hasPlan){
+      const pl = MR.plan(D, {x:CX, y:Y0 + 10, w:CWD, h:avail - 54});
+      issues.push(...pl.issues); h += pl.html;
+      h += `<div class="abs body" style="left:${CX}pt;top:${BOT - 38}pt;width:${CWD}pt;height:34pt;font-size:8pt;line-height:10.5pt;text-align:center" data-slot="top.plannote" data-lines="3">${esc(MR.txt(T.planNote))}</div>`;
+    } else {
+      const Z = T.center || {}, cp = 222, rooms = (Z.rooms || []).slice(0, 11), LC = 4;
+      h += MR.photo(D, Z.photo && Z.photo.id, CX - 6, Y0, CWD + 12, cp);
+      h += MR.cap(Z.photo, 'top.center', CX, Y0 + cp + 8, CWD, {lines: LC, min: LC, max: LC});
+      const ty = Y0 + cp + 8 + MR.capH(LC) + 10;
+      h += MR.kick(Z.head || 'Room sizes', 'top.legend.head', CX, ty, CWD);
+      h += `<div class="legend" style="left:${CX}pt;top:${ty + 14}pt;width:${CWD}pt"><table>${rooms.map((r,i)=>`<tr><td data-slot="top.room${i}.n">${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</table></div>`;
+    }
+    return h;
+  }
+
+  // ================= INSIDE BOTTOM =================
+  function bottom(){
+    const T = C.bottom || {}, its = (T.items || []).slice(0, 6), w = (744 - 2*G)/3, LN = 4, avail = BOT - Y0, pitch = (avail - G)/2, ph = pitch - 6 - MR.capH(LN);
+    let h = MR.kick(T.kicker, 'bottom.kicker', 24, 26, 600) + MR.title(T.title, 'bottom.title', 24, 36, 744) + MR.rule(24, 74, 744);
+    its.forEach((it, i) => { const r = Math.floor(i/3), c = i%3, x = 24 + c*(w + G), y = Y0 + r*(pitch + G);
+      h += MR.photo(D, it.id, x, y, w, ph);
+      h += MR.cap(it, `bottom.cap${i}`, x, y + ph + 6, w, {lines: LN, min: LN, max: LN}); });
+    return h;
+  }
+
+  const panels = {front: cover(), back: back(), top: top(), bottom: bottom()};
+  const panel = (cls, h) => `<div class="panel ${cls||''}">${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside"><div class="half top">${panel('flip', panels.back)}</div><div class="half bottom">${panel('', panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside"><div class="half top">${panel('', panels.top)}</div><div class="half bottom">${panel('', panels.bottom)}</div></div>`;
+  } else {
+    for(const id of ['front','top','bottom','back']) html += `<div class="page" data-page="${id}">${panel('', panels[id])}</div>`;
+  }
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  MR.fitLogos();
+  ContactCard.fit(document);
+  document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  window.brochureCheck = () => MR.check(D, issues);
+})();
+</script>
+</body>
+</html>

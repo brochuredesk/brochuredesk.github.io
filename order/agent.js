@@ -817,6 +817,10 @@
     const arr = arrangement(pkg, designId), ids = arr.map(i => 'p' + i);
     const P = {};
     arr.forEach(i => { const ph = pkg.photos[i]; P['p' + i] = {src: photoUrlNow(ph.url), tags: [ph.desc || '', ph.note || ''].filter(Boolean).join(', '), role: ph.role, exterior: ph.exterior, house: ph.house, fullHouse: ph.house ? true : undefined}; });
+    // a template may name the sample house's photos itself (a default 'front' hero): each such name shows the package's
+    // photo it maps to (the same match as the example copy)
+    const exP = await example(designId);
+    if(exP && exP.photos){ const m = photoMap(exP, ids); for(const [eid, pid] of Object.entries(m)) if(!P[eid] && P[pid]) P[eid] = P[pid]; }
     const S = d.sample || {};
     const fonts = fontsFor(pkg, fs);
     const kit = kitOverride !== undefined ? kitOverride : brandKit();
@@ -844,7 +848,11 @@
       companion: written ? Object.assign({fineprint: FINE_PRINT}, written.companion) : pre.companion,
       copyPending: false}, written ? {} : {preview: true}, plan ? {planPreview: plan, planNote: PLAN_NOTE} : {},
       // the colored plan is saved as masks and labels; each design tints it in its own colors, never a second read
-      written && pkg.plan && fp && fp.active ? {plan: pkg.plan} : {});
+      written && pkg.plan && fp && fp.active ? {plan: pkg.plan} : {},
+      // some designs read their copy under their own name (data.ct, data.pr, data.sw: copy-example.json "as")
+      (await example(designId) || {}).as ? {[(await example(designId)).as]: written ? written.copy : pre.copy} : {},
+      // and some read part of it from their own key (copy.cards -> data.cards: copy-example.json "lift")
+      Object.fromEntries(((await example(designId) || {}).lift || []).map(k => [k, ((written ? written.copy : pre.copy) || {})[k] || {}])));
   }
   // The design's own example copy gives the shape and the length of every slot. Photo sections get the room heading of
   // the photo placed there and a line about that room; other text gets a line about what that part will say.
@@ -870,8 +878,8 @@
         if('walls' in v || 'rooms' in v && 'w' in v) return null;   // the sample's drawn plan: never shown for another listing
         // a photo's own fields take its room; any other object is a section that collects the rooms placed in it
         const o = {}, g = {rooms: []};
-        if('photo' in v){ o.photo = first ? ids[0] : rest[n++ % rest.length]; first = false; g.room = roomOf(o.photo); if(group) group.rooms.push(g.room); }
-        for(const [k, x] of Object.entries(v)) if(k !== 'photo') o[k] = walk(x, path.concat(k), g);
+        if(typeof v.photo === 'string'){ o.photo = first ? ids[0] : rest[n++ % rest.length]; first = false; g.room = roomOf(o.photo); if(group) group.rooms.push(g.room); }
+        for(const [k, x] of Object.entries(v)) if(k !== 'photo' || typeof x !== 'string') o[k] = walk(x, path.concat(k), g);
         // a section's kicker names the rooms in it (after its photos are placed)
         if(typeof o.kicker === 'string' && g.rooms.length) o.kicker = [...new Set(g.rooms.map(PT.heading))].slice(0, 2).join(' + ');
         return o;
@@ -912,6 +920,18 @@
   }
   const ro = new ResizeObserver(es => es.forEach(e => fit(e.target)));
   // draws [{piece, panel, label}] into `box`; onReady(frame, sheet, part) runs after each template finishes laying out
+  // a street address that doesn't fit on one line drops its suffix (Street, Drive...), as the print renderer does,
+  // (templates/_shared/addressfit.js, owner 10/30/2026)
+  async function addressFit(fr){
+    const w = fr.contentWindow, doc = fr.contentDocument;
+    if(!w || !doc) return;
+    if(!w.AddressFit) await new Promise(r => { const sc = doc.createElement('script'); sc.src = '/designs/engine/addressfit.js'; sc.onload = sc.onerror = r; doc.head.appendChild(sc); });
+    try { if(w.AddressFit) w.AddressFit.run(); } catch(e){ console.warn(e); }
+    // then every text box shrinks to fit (8 pt floor) and grows back up to 10 pt, as on the print file (config/copy-rules.json)
+    if(!w.ShrinkFit) await new Promise(r => { const sc = doc.createElement('script'); sc.src = '/designs/engine/shrinkfit.js'; sc.onload = sc.onerror = r; doc.head.appendChild(sc); });
+    try { if(w.ShrinkFit) w.ShrinkFit.run(TYPE_SIZE); } catch(e){ console.warn(e); }
+  }
+  const TYPE_SIZE = {floor: 8, fineFloor: 6, growTo: 10, step: 0.25, minLeading: 1.15, growSamples: true};
   async function drawParts(box, designId, parts, data, onReady){
     await photosReady;
     const html = {};
@@ -936,10 +956,68 @@
       fr.title = pt.label;
       fr.onload = () => { const w = fr.contentWindow;
         Promise.resolve(w.brochureReady).then(() => fr.contentDocument.fonts ? fr.contentDocument.fonts.ready : 0)
-          .then(() => { if(d.preview) PT.fitPreview(fr.contentDocument); fit(s); if(onReady) onReady(fr, s, pt); }).finally(done); fit(s); };
+          .then(() => addressFit(fr)).then(() => { if(d.preview) PT.fitPreview(fr.contentDocument); fit(s); if(onReady) onReady(fr, s, pt); }).finally(done); fit(s); };
       fr.srcdoc = srcdoc(designId, html[pt.piece.file], d, pt.panel);
     });
     await Promise.all(ready);
+  }
+
+  // ---------- socials, Open House email and Just Sold postcard of the design (owner 11/7/2026) ----------
+  // Only what the owner approved for this design (pieces.json "extras", Just Sold sizes in its pieces). Each shows small
+  // here; a click opens it full size in a new tab (an image download comes with the server renderer, as in the library).
+  const looksOf = id => looksCache[id] || (looksCache[id] = fetch(`/designs/${id}/looks.json`).then(r => r.ok ? r.json() : {}).catch(() => ({})));
+  const looksCache = {};
+  let PLACES = null;
+  async function extraParts(id){
+    const S = await spec(id), X = S.extras || {}, lk = await looksOf(id), out = [];
+    PLACES = PLACES || await fetch('/designs/engine/social-places.json').then(r => r.json()).catch(() => ({shapes: {post: [1080, 1350]}}));
+    const sh = shape => ({shape, px: PLACES.shapes[shape] || [1080, 1350]});
+    const socialFile = (lk.social || {}).file || 'social.html';
+    for(const [m, name] of [['jl', 'Just Listed'], ['js', 'Just Sold']]) if(X[m] && lk.social)
+      for(const shape of Object.keys(PLACES.shapes).filter(x => x !== 'slide'))
+        out.push({group: `${name} socials`, label: `${name}, ${shape}`, look: {socialLook: lk.social}, piece: Object.assign({id: `${m}-${shape}`, file: socialFile, moment: m, kind: 'social'}, sh(shape))});
+    const oh = partsFor(S, 'open-house-flyer', pkg), ohP = oh && oh[0].piece, ohLook = ohP && (lk.email || {})[ohP.id];
+    if(ohP && ohLook){
+      const social = Object.assign({}, ohLook, ohLook.socialSig && !ohLook.social ? {social: ohLook.socialSig} : {});
+      if(X.ohEmail) out.push({group: 'Open House email', label: 'Open House email', look: {emailLook: ohLook},
+        piece: Object.assign({}, ohP, {id: ohP.id + '-email', of: ohP.id, kind: 'email', file: ohP.emailFile || 'email.html'})});
+      if(X.ohSocials) for(const shape of Object.keys(PLACES.shapes).filter(x => x !== 'slide'))
+        out.push({group: 'Open House socials', label: `Open House, ${shape}`, look: {emailLook: social},
+          piece: Object.assign({}, ohP, {id: `${ohP.id}-oh-${shape}`, of: ohP.id, kind: 'oh-social', file: ohP.socialFile || 'email.html'}, sh(shape))});
+    }
+    for(const z of ['6x11', '6x9']) for(const side of ['front', 'back']){
+      const p = S.pieces.find(x => x.id === `just-sold-${z}-${side}`);
+      if(p) out.push({group: 'Just Sold postcard', label: `Just Sold ${z.replace('x', ' x ')}, ${side}`, look: {}, piece: p});
+    }
+    return out;
+  }
+  async function drawExtras(boxId){
+    const box = $('#' + boxId), id = pkg.design;
+    const all = await extraParts(id);
+    box.hidden = !all.length;
+    if(!all.length){ box.innerHTML = ''; return; }
+    // on the page: the post of each social set, the email and the 6 x 11 Just Sold card; every size opens from the list
+    const shown = all.filter(x => !/socials$/.test(x.group) || x.piece.shape === 'post').filter(x => !/^Just Sold 6 x 9/.test(x.label));
+    const groups = [...new Set(all.map(x => x.group))];
+    box.innerHTML = `<h3>More for this listing</h3><p class="fine">Your socials, Open House email and Just Sold postcard in this design${pkg.copy[id] ? '' : ' (rough draft text until you finalize)'}.</p>
+      <div class="minis xminis"></div>
+      <label class="fine">Open full size <select class="xopen"><option value="">Pick one</option>${groups.map(g => `<optgroup label="${esc(g)}">${all.map((x, i) => x.group === g ? `<option value="${i}">${esc(x.label)}</option>` : '').join('')}</optgroup>`).join('')}</select></label>`;
+    const base = await dataFor(id, !!pkg.copy[id]);
+    // one look per frame: draw each tile on its own
+    const minis = box.querySelector('.xminis');
+    minis.innerHTML = shown.map(() => '<div class="xone"></div>').join('');
+    shown.forEach((x, i) => drawParts(minis.children[i], id, [{piece: x.piece, label: x.label}], Object.assign({}, base, x.look))
+      .then(() => { const c = minis.children[i].querySelector('figcaption'); if(c) c.textContent = x.label; }));
+    box.querySelector('.xopen').onchange = async e => { const x = all[+e.target.value]; e.target.value = ''; if(x) openExtra(id, x, base); };
+  }
+  async function openExtra(id, x, base){
+    const print = /^just-sold-/.test(x.piece.id);
+    const data = Object.assign({}, base, x.look, {mode: print ? 'print' : 'email', piece: x.piece});
+    let html = srcdoc(id, await tpl(id, x.piece.file), data, null, true);
+    html = html.split('"/designs/').join(`"${location.origin}/designs/`);   // a new tab has no base of its own
+    const url = URL.createObjectURL(new Blob([html], {type: 'text/html'}));
+    await ask(`<h2>${esc(x.label)}</h2><p><a class="btn" href="${url}" target="_blank" rel="noopener">Open it in a new tab</a></p>
+      <p class="fine">${print ? 'Print it from the new tab (pick Save as PDF); the print file at full size comes with the order.' : `${(x.piece.px || [])[0] || 600} px wide. A one-click image download comes with the server renderer.`}</p>`, [['Done', 'done', 'line']]);
   }
 
   // ---------- 2. gallery ----------
@@ -1236,13 +1314,13 @@
       + soonOf(pkg).filter(id => (SOON[pkg.design] || []).includes(id)).map(id => `<option disabled>${pieceLabel(id)} (Coming soon)</option>`).join('');
     $('#roughTitle').textContent = `Rough draft: ${pkg.listing.address}`;
     $('#copyStyle').value = pkg.copyStyle; $('#styleSample').textContent = `Sounds like: "${STYLE_SAMPLE[pkg.copyStyle]}"`;
-    swatches(); await designTabs(); drawStrip(); await fontBox(); planControls(); await drawRough();
+    swatches(); await designTabs(); drawStrip(); await fontBox(); planControls(); await drawRough(); drawExtras('extrasRough');
   }
   $('#roughPiece').onchange = e => { roughPiece = e.target.value; drawRough(); };
   async function designTabs(){
     const l = await eligible();
     $('#designFlip').innerHTML = l.map(({d}) => `<button type="button" role="tab" aria-selected="${d.id === pkg.design}" data-flip="${d.id}">${esc(d.name)}${d.test ? ' (test)' : ''}</button>`).join('');
-    $$('[data-flip]').forEach(b => b.onclick = async () => { pkg.design = b.dataset.flip; save(); await designTabs(); drawStrip(); await fontBox(); drawRough(); });
+    $$('[data-flip]').forEach(b => b.onclick = async () => { pkg.design = b.dataset.flip; save(); await designTabs(); drawStrip(); await fontBox(); drawRough(); drawExtras('extrasRough'); });
   }
   function swatches(){
     const box = $('#swatches');
@@ -1479,7 +1557,7 @@
     $('#finalPiece').innerHTML = ps.map(id => `<option value="${id}"${id === finalPiece ? ' selected' : ''}>${pieceLabel(id)}${pkg.approvals[id] ? ' (approved)' : ''}</option>`).join('');
     $('#finalTitle').textContent = `Proof: ${pkg.listing.address}`;
     $('#backToRough').hidden = !!pkg.paid;
-    ohFit = null; await ohFields(); planSizesBox(); approveBox(); switchTiles(); await drawFinal();
+    ohFit = null; await ohFields(); planSizesBox(); approveBox(); switchTiles(); await drawFinal(); drawExtras('extrasFinal');
     // a proof that hasn't had its fill pass or outside AI check yet (written before it existed, or interrupted) gets one now
     const w = pkg.copy[pkg.design]; if(w && !pkg.paid && pkg.stage === 'final'){ if(!w.filled) await fillPass(); if(!w.aiCheck) await aiCheckPass(); }
   }

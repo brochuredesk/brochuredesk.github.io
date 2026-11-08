@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Answer Book Open House email</title>
+<link rel="stylesheet" href="../engine/ohlib.css">
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/setpage.js"></script>
+<!--
+  Answer Book's own Open House email (owner 11/2/2026, Full Lineup review Q2). The Open House flyer redrawn at 600 px, on warm paper in
+  Manrope and deep teal, built on the set's question and answer: Gold Tab (open-house-a): the gold tab with the label, the big date, the
+  time, a hairline, the house, the address, the facts as one line between hairlines, a gold-dash question over its answer beside two
+  interiors, the card under the heavy teal rule. Dark Callout (open-house-b): the teal callout band with the gold date, the house with a
+  teal facts column beside it, the address, then each question over its answer beside its room. The questions and answers are the
+  package's own Open House copy (copy.pc.oh). REALTOR(R) cases: what's served and the notes between two hairlines under the time.
+-->
+<style>
+  @font-face{font-family:'Manrope';font-weight:500;src:url(../../fonts/pool/manrope-latin-500-normal.woff2) format('woff2')}
+  @font-face{font-family:'Manrope';font-weight:600;src:url(../../fonts/pool/manrope-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Manrope';font-weight:700;src:url(../../fonts/pool/manrope-latin-700-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Sans 3';font-weight:400;src:url(../../fonts/pool/source-sans-3-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Sans 3';font-weight:600;src:url(../../fonts/pool/source-sans-3-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Sans 3';font-weight:700;src:url(../../fonts/pool/source-sans-3-latin-700-normal.woff2) format('woff2')}
+  :root{--paper:#f4f1e9;--ink:#22383a;--txt:#3e4f50;--kick:#3b5c59;--gold:#d6a943;--dark:#22393b;--ond:#f4f1e9;--line:rgba(34,56,58,.28)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .page{font-family:'Source Sans 3';color:var(--ink)}
+  .t{position:absolute;white-space:nowrap;overflow:hidden}
+  .w{white-space:normal}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+SP.start(['700 10pt "Manrope"', '600 10pt "Manrope"', '500 10pt "Manrope"', '400 10pt "Source Sans 3"', '600 10pt "Source Sans 3"', '700 10pt "Source Sans 3"'], D => {
+  const esc = Ivory.esc, L = D.listing, A = D.agent || {}, W = 450, MG = 26, CW = W - 2*MG, G = 6;
+  const FL = SP.floor('email'), FB = FL.body, FS = FL.small, FE = FL.event;
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight'), DARK = D.piece.of === 'open-house-b';
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id));
+  const T = SP.T, rect = SP.rect, wd = SP.width, fit = SP.fitSize, r1 = SP.r1;
+  const MF = "font-family:'Manrope'", SS = "font-family:'Source Sans 3'", INK = 'var(--ink)', GOLD = 'var(--gold)';
+  const hs = OHL.cardMode(D) === 'headshot' && !!A.headshot;
+  const hair = (x, y, w, c, t) => rect(x, y, w, t || .75, `background:${c || 'var(--line)'}`);
+  const PC = ((D.copy || {}).pc || {}).oh || {}, okId = id => id && (D.photos || {})[id] && id !== hero;
+  const QA = [];
+  if(!DARK && PC.a && PC.a.q && PC.a.text) QA.push({q: PC.a.q, a: PC.a.text, ids: ((PC.a.photos || []).filter(okId).length ? PC.a.photos.filter(okId) : rooms.slice(0, 2)).slice(0, 2)});
+  if(DARK && PC.b && PC.b.caps) PC.b.caps.filter(c => c.q && c.a && okId(c.id)).forEach(c => QA.push({q: c.q, a: c.a, ids: [c.id]}));
+  if(!QA.length) rooms.slice(0, DARK ? 3 : 1).forEach(id => QA.push({q: '', a: SP.caption(D, id).join(' '), ids: DARK ? [id] : rooms.slice(0, 2)}));
+  let h = '', y = 0, dSize = 40;
+  const tm = E.time ? E.time.replace(/(\d)\s+(am|pm)\b/gi, '$1 $2') : '';
+  const ink = DARK ? GOLD : INK, onInk = DARK ? 'var(--ond)' : INK;
+
+  // ---- 1. the event: the gold tab and big date on paper, or the teal callout band with the gold date
+  const lab = E.label.toUpperCase(), lcss = `font-weight:700;${SS};letter-spacing:.16em`, tabPad = 10, lw = DARK ? CW - 18 : CW - 2*tabPad;
+  let ls = fit(lab, lcss, lw, 22, FE), lines = [lab];
+  if(wd(lab, `${lcss};font-size:${ls}pt`) > lw){ lines = OHL.labelLines(E.label, 2).map(t => t.toUpperCase()); ls = Math.min(22, ...lines.map(t => fit(t, lcss, lw, 22, FE))); }
+  const lh = r1(ls*1.55), labH = lines.length*lh + (DARK ? 0 : 8), tw = Math.max(...lines.map(t => wd(t, `${lcss};font-size:${ls}pt`))) + 2*tabPad;
+  const dcss = `font-weight:500;${MF};letter-spacing:-.5pt`, longFit = fit(E.long, dcss, CW, 50, 30), dOne = wd(E.long, `${dcss};font-size:${longFit}pt`) <= CW && longFit >= 36;
+  const dp = [];
+  if(dOne){ dSize = longFit; const hh = r1(longFit*1.2); dp.push({h: hh, f: yy => T(`${dcss};font-size:${longFit}pt;color:${ink};text-align:left`, esc(E.long), MG, yy, CW, hh, 'data-slot="oh.date" data-lines="1"' + (DARK ? ' data-bg="#22393b"' : ''))}); }
+  else { const sd = fit(E.monthDay || E.long, dcss, CW, 50, 30), hd = r1(sd*1.2); dSize = sd;
+    if(E.weekday){ const sw = Math.max(FE, 21), hw = r1(sw*1.45); dp.push({h: hw, f: yy => T(`font-weight:600;${SS};font-size:${sw}pt;letter-spacing:.16em;text-transform:uppercase;color:${DARK ? onInk : 'var(--kick)'};text-align:left`, esc(E.weekday), MG, yy, CW, hw, 'data-slot="oh.day" data-lines="1"' + (DARK ? ' data-bg="#22393b"' : ''))}); }
+    dp.push({h: hd, f: yy => T(`${dcss};font-size:${sd}pt;color:${ink};text-align:left`, esc(E.monthDay || E.long), MG, yy, CW, hd, 'data-slot="oh.date" data-lines="1"' + (DARK ? ' data-bg="#22393b"' : ''))}); }
+  if(tm){ const tcss = `font-weight:600;${SS}`, st = fit(tm, tcss, CW, 26, FE), ht = r1(st*1.4); dp.push({h: ht, f: yy => T(`${tcss};font-size:${st}pt;color:${onInk};text-align:left`, esc(tm), MG, yy, CW, ht, 'data-slot="oh.time" data-lines="1"' + (DARK ? ' data-bg="#22393b"' : ''))}); }
+  const dH = dp.reduce((a, p) => a + p.h, 0);
+  if(DARK){ const bandH = 24 + labH + 6 + dH + 22; h += rect(0, 0, W, bandH, 'background:var(--dark)'); y = 24;
+    h += rect(MG, y + (lh - 2)/2, 10, 2, 'background:var(--gold)') + lines.map((t, i) => T(`${lcss};font-size:${ls}pt;color:var(--ond);text-align:left`, esc(t), MG + 16, y + i*lh, CW - 16, lh, 'data-slot="oh.label" data-lines="1" data-bg="#22393b"')).join(''); y += labH + 6;
+    dp.forEach(p => { h += p.f(y); y += p.h; }); y = bandH + 18; }
+  else { y = 26; h += rect(MG, y, tw, labH, 'background:var(--gold)') + lines.map((t, i) => T(`${lcss};font-size:${ls}pt;color:var(--ink);text-align:left`, esc(t), MG + tabPad, y + 4 + i*lh, tw - tabPad, lh, 'data-slot="oh.label" data-lines="1" data-bg="#d6a943"')).join(''); y += labH + 6;
+    dp.forEach(p => { h += p.f(y); y += p.h; }); y += 8; h += hair(MG, y, CW, 'var(--ink)', 1); y += 18; }
+  // what's served and the notes: between two hairlines, a gold dash before each
+  const items = [[E.refreshments, true, 'oh.refreshments'], [E.note, false, 'oh.note']].filter(i => i[0]);
+  if(items.length){ const bs = FB, blh = r1(bs*1.35), pad = 7, iw = CW - 16, bl = items.map(([t, b, slot]) => ({t, b, slot, n: SP.linesNW(t, `font:${b ? 700 : 400} ${bs}pt/${blh}pt 'Source Sans 3'`, iw)}));
+    let yy = y;
+    bl.forEach((q, i) => { h += hair(MG, yy, CW, i ? 'var(--line)' : 'var(--ink)', i ? .75 : 1.25); yy += pad; h += rect(MG, yy + blh/2 - 1, 7, 1.7, 'background:var(--gold)') +
+      `<div class="abs w" style="left:${MG + 14}pt;top:${yy}pt;width:${iw}pt;height:${q.n*blh + 3}pt;font:${q.b ? 700 : 400} ${bs}pt/${blh}pt 'Source Sans 3';color:var(--ink)" data-slot="${q.slot}" data-lines="${q.n}">${esc(q.t)}</div>`; yy += q.n*blh + pad; });
+    h += hair(MG, yy, CW, 'var(--ink)', 1.25).replace('<div class="abs"', '<div class="abs" data-box="oh.box"'); y = yy + 18; }
+
+  // ---- 2. the house (Dark Callout: with the teal facts column beside it)
+  const f = SP.facts(D), PWd = CW, fr = SP.heroFrame(D, hero, PWd, 270, true), n = f.length;
+  if(DARK){ const l2 = Math.max(FS, 12), lhh = r1(l2*1.4), vs = 30, sh = vs*1.2 + lhh + 20, cw = CW/n, lc = `font-weight:600;${SS};letter-spacing:.08em;text-transform:uppercase`;
+    h += OHL.photo(D, hero, `left:${MG + (CW - fr.w)/2}pt;top:${y}pt;width:${fr.w}pt;height:${fr.h}pt`); y += fr.h;
+    h += rect(MG, y, CW, sh, 'background:var(--dark)');
+    f.forEach(([lb, v, key], i) => { const cx = MG + i*cw + 12; h += (i ? rect(MG + i*cw, y + 12, .75, sh - 24, 'background:rgba(244,241,233,.25)') : '') + T(`font-weight:500;${MF};font-size:${vs}pt;color:var(--gold);text-align:left`, v, cx, y + 10, cw - 14, r1(vs*1.2), `data-slot="fact.${key}" data-lines="1"`) + T(`${lc};font-size:${l2}pt;color:var(--ond);text-align:left`, esc(lb), cx, y + 10 + r1(vs*1.2), cw - 14, lhh, 'data-small="1"'); });
+    y += sh + 18; }
+  else { h += OHL.photo(D, hero, `left:${MG + (CW - fr.w)/2}pt;top:${y}pt;width:${fr.w}pt;height:${fr.h}pt`); y += fr.h + 18; }
+
+  // ---- 3. the address; the facts as one line (Gold Tab)
+  const acss = `font-weight:500;${MF};letter-spacing:-.4pt`, as = fit(L.address, acss, CW, Math.min(44, dSize - 2), 24), num = (L.address.match(/^\s*(\d+[A-Za-z-]*)\s+(.*)$/) || [null, '', L.address]);
+  if(wd(L.address, `${acss};font-size:${as}pt`) <= CW){ h += T(`${acss};font-size:${as}pt;color:${INK};text-align:left`, esc(L.address), MG, y, CW, r1(as*1.25), 'data-slot="address" data-lines="1"'); y += r1(as*1.25); }
+  else { const s2 = fit(num[2], acss, CW, Math.min(40, dSize - 2), 22); h += T(`${acss};font-size:${s2}pt;color:${INK};text-align:left`, esc(num[1]), MG, y, CW, r1(s2*1.25), 'data-slot="address" data-lines="1"') + T(`${acss};font-size:${s2}pt;color:${INK};text-align:left`, esc(num[2]), MG, y + r1(s2*1.25), CW, r1(s2*1.25), 'data-slot="address" data-lines="1"'); y += 2*r1(s2*1.25); }
+  const cs = Math.max(FS, 12.5); h += T(`font-weight:600;${SS};font-size:${cs}pt;letter-spacing:.18em;color:var(--kick);text-align:left`, esc(OHL.place(L).toUpperCase()), MG, y + 2, CW, r1(cs*1.7), 'data-slot="place" data-small="1" data-lines="1"'); y += r1(cs*1.7) + 14;
+  if(!DARK){
+    const vs = 16, wOne = t => wd(t, `font-weight:600;${SS};font-size:${vs}pt`), txt = f.map(it => it[1] + ' ' + (it[2] === 'year' ? 'Built in' : it[0])), ws = txt.map(wOne), total = ws.reduce((a, t) => a + t, 0), one = total + (n - 1)*10 <= CW, per = one ? n : Math.ceil(n/2), cw = CW/per, rws = Math.ceil(n/per), lhf = 24, sp = one ? (CW - total)/Math.max(1, n - 1) : 0;
+    h += hair(MG, y, CW, 'var(--ink)', 1) + hair(MG, y + rws*lhf + 9, CW);
+    f.forEach(([lb, v, key], i) => { const cx = MG + (one ? ws.slice(0, i).reduce((a, t) => a + t, 0) + i*sp : (i % per)*cw), cy = y + 5 + Math.floor(i/per)*lhf;
+      const t = key === 'year' ? `<span style="font-weight:400;color:var(--txt)">Built in</span> <b style="font-weight:700">${esc(v)}</b>` : `<b style="font-weight:700">${v}</b> <span style="font-weight:400;color:var(--txt)">${esc(lb)}</span>`;
+      h += T(`${SS};font-size:${vs}pt;color:var(--ink);text-align:left`, t, cx, cy, (one ? ws[i] + 6 : cw), lhf, `data-slot="fact.${key}" data-lines="1"`); });
+    y += rws*lhf + 9 + 20; }
+
+  // ---- 4. questions over answers beside their rooms
+  QA.slice(0, DARK ? 3 : 1).forEach((qa, qi) => {
+    const ids = qa.ids, pw = r1(CW*(ids.length > 1 ? .42 : .36)), tw2 = CW - pw - 14, left = DARK && qi % 2 === 0, tx = left ? MG + pw + 14 : MG, px = left ? MG : MG + CW - pw;
+    const qs = FB, as2 = FB, lh2 = 21, hasQ = !!qa.q, qh = hasQ ? 24 : 0;
+    const r = SP.fillText([String(qa.a).split(/(?<=[.!?])\s+(?=[A-Z0-9])/).filter(t => t && !SP.VAGUE.test(t)).join(' ')], `font:400 ${as2}pt/${lh2}pt 'Source Sans 3';text-align:left`, tw2, 12, true, .6); if(!r) return;
+    const th = qh + r.n*lh2 + 3, ph = Math.max(th, ids.length > 1 ? 150 : 96);
+    if(hasQ) h += rect(tx, y + qh/2 - 1 + (ph - th)/2, 7, 1.7, 'background:var(--gold)') + T(`font-weight:700;${SS};font-size:${qs}pt;color:var(--ink);text-align:left`, esc(qa.q), tx + 14, y + (ph - th)/2, tw2 - 14, qh, 'data-slot="oh.q" data-lines="1"');
+    h += `<div class="abs w" style="left:${tx}pt;top:${y + (ph - th)/2 + qh}pt;width:${r.w}pt;height:${r.n*lh2 + 3}pt;font:400 ${as2}pt/${lh2}pt 'Source Sans 3';color:var(--txt);text-align:left" data-slot="listing.body" data-lines="${r.n}">${esc(r.text)}</div>`;
+    if(ids.length > 1){ const hh = (ph - G)/2; ids.forEach((id, i) => { h += OHL.photo(D, id, `left:${px}pt;top:${y + i*(hh + G)}pt;width:${pw}pt;height:${hh}pt`); }); }
+    else h += OHL.photo(D, ids[0], `left:${px}pt;top:${y}pt;width:${pw}pt;height:${ph}pt`);
+    y += ph + 18; });
+
+  // ---- 5. the card under the heavy teal rule, the one logo on the right
+  const lab2 = A.phoneLabel || 'Call / Text', nar = A.nar || /realtor/i.test(A.designation || ''), hsd = hs ? 62 : 0, tw0 = r1(CW*.62), tx0 = MG + (hsd ? hsd + 12 : 0), tw3 = tw0 - (hsd ? hsd + 12 : 0);
+  const nS = fit(A.name || '', `font-weight:500;${MF}`, tw3, 30, 22), lcssA = `font-weight:600;${SS};letter-spacing:.12em;text-transform:uppercase;font-size:${FS}pt`;
+  const stack = wd(lab2.toUpperCase(), lcssA) + 14 + wd(A.phone || '', `font-weight:700;${SS};font-size:${FB}pt`) > tw3;
+  const pS = stack ? 19 : Math.min(19, fit(A.phone || '', `font-weight:700;${SS}`, tw3 - wd(lab2.toUpperCase(), lcssA) - 14, 19, FB)), cardH = Math.max(hsd, r1(nS*1.25) + (nar ? 19 : 0) + (stack ? 19 : 0) + 30) + 4;
+  h += hair(MG, y, CW, 'var(--ink)', 2); y += 12;
+  if(hs) h += `<div class="abs" style="left:${MG}pt;top:${y + (cardH - hsd)/2}pt;width:${hsd}pt;height:${hsd}pt;border-radius:50%;overflow:hidden"><img src="${esc(A.headshot)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;
+  let cy = y;
+  h += T(`font-weight:500;${MF};font-size:${nS}pt;color:${INK};text-align:left`, esc(A.name || ''), tx0, cy, tw3, r1(nS*1.25), 'data-slot="agent.name" data-lines="1"'); cy += r1(nS*1.25);
+  if(nar){ h += T(`${lcssA};letter-spacing:.2em;color:var(--kick);text-align:left`, 'REALTOR®', tx0, cy, tw3, 19, 'data-slot="agent.desig" data-small="1" data-lines="1"'); cy += 19; }
+  if(stack){ h += T(`${lcssA};color:var(--kick);text-align:left`, esc(lab2), tx0, cy, tw3, 19, 'data-small="1"'); cy += 19; }
+  h += T(`font-weight:700;${SS};font-size:${pS}pt;color:${INK};text-align:left`, `${stack ? '' : `<span data-small="1" style="font-weight:600;${SS};font-size:${FS}pt;letter-spacing:.12em;text-transform:uppercase;color:var(--kick);margin-right:8pt">${esc(lab2)}</span>`}${esc(A.phone || '')}`, tx0, cy + 2, tw3, 28, 'data-slot="agent.phone" data-lines="1"');
+  const lgW = r1(CW - tw0 - 14), lgH = Math.min(r1(lgW*.36), cardH);
+  h += OHL.logo(D, 'light', `left:${MG + CW - lgW}pt;top:${y + (cardH - lgH)/2}pt;width:${lgW}pt;height:${lgH}pt;justify-content:flex-start`);
+  y += cardH + 18;
+  h += `<div class="abs" data-fine="1" data-slot="fineprint" data-lines="1" style="left:${MG}pt;top:${y}pt;width:${CW}pt;height:14pt;font:400 10pt/14pt 'Source Sans 3';color:var(--kick)">${esc((D.companion || {}).fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  y += 14 + 24;
+  const after = () => document.querySelectorAll('[data-slot="oh.note"],[data-slot="oh.refreshments"]').forEach(el => { el.innerHTML = el.innerHTML.replace(/[^\s<>]*‑[^\s<>]*/g, m => `<span style="white-space:nowrap">${m.replace(/‑/g, '-')}</span>`); });
+  return {W, H: y, after, html: `<div class="page em" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${y}pt;background:var(--paper)">${h}</div>`};
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>midnight Open House email</title>
+<link rel="stylesheet" href="../engine/ohlib.css">
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/setpage.js"></script>
+<!--
+Midnight Residence's own Open House email (owner 11/2/2026, Full Lineup review Q2), the Gold Bar flyer redrawn at 600 px: a short
+  gold bar, tracked gold caps, the serif date and the time in gold, what's served and the notes in a gold-outlined box, the whole
+  house across the full width, the serif address with the one logo at its right, the facts in one row between gold hairlines, the
+  write-up, three rooms with their names in the serif, and the agent card with its gold edge. Left-aligned, photo-led. The event
+  ends well inside the first 600 px. Every word is the listing's or the package's copy.
+-->
+<style>
+  @font-face{font-family:'Newsreader';font-weight:400;src:url(../../fonts/pool/newsreader-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Newsreader';font-weight:500;src:url(../../fonts/pool/newsreader-latin-500-normal.woff2) format('woff2')}
+  @font-face{font-family:'Newsreader';font-weight:600;src:url(../../fonts/pool/newsreader-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Sans 3';font-weight:400;src:url(../../fonts/pool/source-sans-3-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Sans 3';font-weight:600;src:url(../../fonts/pool/source-sans-3-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Sans 3';font-weight:700;src:url(../../fonts/pool/source-sans-3-latin-700-normal.woff2) format('woff2')}
+  :root{--field:#121a2b;--acc:#c9a96a;--txt:#dfe3ec;--dk:#121a2b;--line:rgba(201,169,106,.55)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .page{font-family:'Source Sans 3'}
+  .t{position:absolute;white-space:nowrap;overflow:hidden}
+  .w{white-space:normal}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+SP.start(['400 10pt "Newsreader"', '500 10pt "Newsreader"', '600 10pt "Newsreader"', '400 10pt "Source Sans 3"', '600 10pt "Source Sans 3"', '700 10pt "Source Sans 3"'], D => {
+  const esc = Ivory.esc, L = D.listing, A = D.agent || {}, W = 450;
+  const FL = SP.floor('email'), FE = FL.event, FB = FL.body, FS = FL.small;
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  if(E.time) E.time = E.time.replace(/(\d)\s+(am|pm)\b/gi, '$1 $2');
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id));
+  const shape = 'email', isOH = true, isJS = false, kind = 'oh', H = 0;
+  const r1 = SP.r1, T = SP.T, rect = SP.rect, wd = SP.width, fit = SP.fitSize;
+  const hs = OHL.cardMode(D) === 'headshot' && !!A.headshot;
+  const AR = "font-family:'Newsreader'", AS = "font-family:'Source Sans 3'", TONE = 'dark';
+  const ADDR = false ? L.address.toUpperCase() : L.address;
+  let TIGHT = false;   // the heavy case on a short shape: leading and padding close up (never the type: that stays at its floor)
+
+  const noteBox = (w, k, P) => {
+    const items = [E.refreshments && [E.refreshments, true, 'oh.refreshments'], E.note && [E.note, false, 'oh.note']].filter(Boolean); if(!items.length) return null;
+    const s = r1(Math.max(FB, FB*1.15*k)), lh = r1(s*(TIGHT ? 1.15 : 1.3)), pad = TIGHT ? 4 : r1(Math.max(8, s*.7)), ps = items.map(([text, bold, slot]) => {
+      const css = `font:${bold ? 700 : 500} ${s}pt/${lh}pt 'Source Sans 3'`; return {text, bold, slot, n: SP.linesNW(text, css, w - 2*pad - 2)}; });
+    const h = ps.reduce((a, q) => a + q.n*lh, 0) + 2*pad + (ps.length - 1)*(2*pad);
+    return {h, draw: (x, y) => { let yy = y + pad, o = rect(x, y, w, h, `border:1pt solid ${P.line}`).replace('<div class="abs"', '<div class="abs" data-box="oh.box"');
+      ps.forEach((q, i) => { if(i){ o += rect(x, yy + pad - .4, w, .75, `background:${P.line}`); yy += 2*pad; }
+        o += `<div class="abs w" style="left:${x + pad + 1}pt;top:${yy}pt;width:${w - 2*pad - 2}pt;height:${q.n*lh + 3}pt;text-wrap:balance;font:${q.bold ? 700 : 500} ${s}pt/${lh}pt 'Source Sans 3';color:${P.body}" data-slot="${q.slot}" data-lines="${q.n}">${esc(q.text)}</div>`; yy += q.n*lh; });
+      return o; }};
+  };
+  const addrNum = (ADDR.match(/^\s*(\d+[A-Za-z-]*)\s+(.*)$/) || [null, '', ADDR]);
+  // the address: big Archivo; one line when it fits at its size, else the number over the street
+  const address = (w, k, max, P) => {
+    const css = `font-weight:500;${AR};letter-spacing:-.5pt`, s = fit(ADDR, css, w, r1(Math.max(FE*1.1, max*k)), FE);
+    if(wd(ADDR, `${css};font-size:${s}pt`) <= w){ const h = r1(s*1.18); return {h, draw: (x, y) => T(`${css};font-size:${s}pt;color:${P.ink};text-align:left`, esc(ADDR), x, y, w, h, 'data-slot="address" data-lines="1"')}; }
+    const st = addrNum[2], s2 = fit(st, css, w, r1(Math.max(FE*1.1, max*k*.85)), FE), h = r1(s2*1.18);
+    return {h: h*2, bad: wd(st, `${css};font-size:${s2}pt`) > w, draw: (x, y) => T(`${css};font-size:${s2}pt;color:${P.ink};text-align:left`, esc(addrNum[1]), x, y, w, h, 'data-slot="address" data-lines="1"') +
+      T(`${css};font-size:${s2}pt;color:${P.ink};text-align:left`, esc(st), x, y + h, w, h, 'data-slot="address" data-lines="1"')};
+  };
+  const city = (w, k, P) => { const t = OHL.place(L).toUpperCase(), css = `font-weight:500;${AR};letter-spacing:.2em`, s = fit(t, css, w, r1(Math.max(FS*1.1, 13*k)), FS), h = r1(s*1.5);
+    if(wd(t, `${css};font-size:${s}pt`) > w) return null;
+    return {h, draw: (x, y) => T(`${css};font-size:${s}pt;color:${P.sub};text-align:left`, esc(t), x, y, w, h, 'data-slot="place" data-lines="1"')}; };
+  // the facts as a stack of window cells: a mint edge, the caps label over the bold number (the flyer's table, set as lights)
+  const cells = (w, k, P, o) => {
+    o = o || {}; const f = SP.facts(D); if(!f.length) return null;
+    const lcss = `font-weight:500;${AR};letter-spacing:.1em;text-transform:uppercase`, l2 = Math.max(FS, r1(11*k)), vs = Math.max(FB*1.2, r1(22*k)), lh = r1(l2*1.4), vh = r1(vs*1.2), ch = lh + vh + 8, n = f.length, per = o.cols || 1;
+    const cw = (w - (per - 1)*10)/per; if(f.some(([lb]) => wd(lb.toUpperCase(), `${lcss};font-size:${l2}pt`) > cw - 12)) return null;
+    const rws = Math.ceil(n/per);
+    return {h: rws*ch - 8, draw: (x, y) => f.map(([lb, v, key], i) => { const cx = x + (i % per)*(cw + 10), cy = y + Math.floor(i/per)*ch;
+      return rect(cx, cy, 3, lh + vh, `background:${P.bar}`) + T(`${lcss};font-size:${l2}pt;color:${P.sub};text-align:left`, esc(lb), cx + 10, cy, cw - 10, lh, 'data-small="1"') +
+        T(`font-weight:500;${AR};font-size:${vs}pt;color:${P.ink};text-align:left`, v, cx + 10, cy + lh, cw - 10, vh, `data-slot="fact.${key}" data-lines="1"`); }).join('')};
+  };
+  // the agent card: a bar, round headshot when the card has one, name, REALTOR(R), Call / Text and the phone
+  const agent = (w, k, P, o) => {
+    o = o || {};
+    const hsd = hs && !o.nohs ? r1(Math.min(w*.26, 54)) : 0, tx = 10 + (hsd ? hsd + 8 : 0), tw = w - tx;
+    const ncss = `font-weight:500;${AR}`, nS = fit(A.name || '', ncss, tw, r1(Math.max(FB*1.45, 24*k)), FB);
+    const nH = r1(nS*(TIGHT ? 1.1 : 1.2)), nar = A.nar || /realtor/i.test(A.designation || ''), dS = Math.max(FS, r1(10.5*k)), dH = r1(dS*(TIGHT ? 1.2 : 1.5));
+    const lab = A.phoneLabel || 'Call / Text'; let pS = r1(Math.max(FB*1.1, 17*k));
+    const lcss = `font-weight:500;${AR};letter-spacing:.12em;text-transform:uppercase`, lS = Math.max(FS, r1(10.5*k));
+    const oneLine = () => wd(lab.toUpperCase(), `${lcss};font-size:${lS}pt`) + 8 + wd(A.phone || '', `font-weight:700;${AS};font-size:${pS}pt`) <= tw;
+    while(!oneLine() && pS > FB) pS = r1(pS - .5);
+    const stack = !oneLine(), pH = r1(pS*(TIGHT ? 1.15 : 1.3)), lH = r1(lS*(TIGHT ? 1.2 : 1.5)), ch = nH + (nar ? dH : 0) + (stack ? lH : 0) + pH, h = Math.max(ch, hsd) + 6;
+    return {h, bad: wd(A.name || '', `${ncss};font-size:${nS}pt`) > tw, draw: (x, y) => {
+      let s = rect(x, y, 3, h, `background:${P.bar}`);
+      if(hsd) s += `<div class="abs" style="left:${x + 10}pt;top:${y + (h - hsd)/2}pt;width:${hsd}pt;height:${hsd}pt;border-radius:50%;overflow:hidden;border:1.5pt solid ${P.bar}"><img src="${esc(A.headshot)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;
+      let yy = y + (h - ch)/2;
+      s += T(`${ncss};font-size:${nS}pt;color:${P.ink};text-align:left`, esc(A.name || ''), x + tx, yy, tw, nH, 'data-slot="agent.name" data-lines="1"'); yy += nH;
+      if(nar){ s += T(`${lcss};font-size:${dS}pt;color:${P.sub};text-align:left;letter-spacing:.2em`, 'REALTOR®', x + tx, yy, tw, dH, 'data-slot="agent.desig" data-small="1" data-lines="1"'); yy += dH; }
+      if(stack){ s += T(`${lcss};font-size:${lS}pt;color:${P.sub};text-align:left`, esc(lab), x + tx, yy, tw, lH, 'data-small="1"'); yy += lH; }
+      s += T(`font-weight:700;${AS};font-size:${pS}pt;color:${P.ink};text-align:left`, `${stack ? '' : `<span data-small="1" style="${lcss};font-size:${lS}pt;color:${P.sub};margin-right:8pt">${esc(lab)}</span>`}${esc(A.phone || '')}`, x + tx, yy, tw, pH, 'data-slot="agent.phone" data-lines="1"');
+      return s; }};
+  };
+  const writeup = (w, k, maxN, P) => { const s = r1(Math.max(FB, FB*1.15*k)), lh = r1(s*1.38), css = `font:500 ${s}pt/${lh}pt 'Source Sans 3';text-align:left`;
+    const r = SP.fillText(SP.pool(D), css, w, maxN, true); if(!r) return null;
+    return {h: r.n*lh + 2, draw: (x, y) => `<div class="abs w" style="left:${x}pt;top:${y}pt;width:${r.w}pt;height:${r.n*lh}pt;font:500 ${s}pt/${lh}pt 'Source Sans 3';color:${P.body};text-align:left" data-slot="listing.body" data-lines="${r.n}">${esc(r.text)}</div>`}; };
+  // Just Sold: the short "thinking about selling" line from the Just Sold copy; each part's size steps down until it is one line or its last line is 3/4 full
+  const soldBlock = (w, k, P) => { const S = SP.soldLine(D), sb0 = r1(Math.max(FB, FB*1.15*k)), hs0 = r1(Math.max(FB*1.3, 22*k));
+    const sized = (text, start, min, mk) => { if(!text) return {n: 0, s: start, l: 0, w}; let best = null; for(let f = 1; f >= .66; f -= .04){ const ww = r1(w*f*2)/2; for(let s = start; s >= min; s -= .5){ const m = SP.para(text, mk(s, r1(s*1.25)), ww); if(m.n === 1 || m.fill >= .75){ best = {n: m.n, s, l: r1(s*1.25), w: ww}; break; } } if(best) break; } if(!best){ const m = SP.para(text, mk(min, r1(min*1.25)), w); best = {n: m.n, s: min, l: r1(min*1.25), w}; } return best; };
+    const hd = sized(S.head, hs0, FB*1.1, (s, l) => `font:500 ${s}pt/${l}pt 'Newsreader'`), ln = sized(S.line, sb0, FB, (s, l) => `font:500 ${s}pt/${l}pt 'Source Sans 3'`);
+    const h = hd.n*hd.l + ln.n*ln.l + (hd.n && ln.n ? 3 : 0); if(!h) return null;
+    return {h, draw: (x, y) => (hd.n ? `<div class="abs w" style="left:${x}pt;top:${y}pt;width:${hd.w}pt;height:${hd.n*hd.l + 3}pt;font:500 ${hd.s}pt/${hd.l}pt 'Newsreader';color:${P.sub}" data-slot="sold.head" data-lines="${hd.n}">${esc(S.head)}</div>` : '') +
+      (ln.n ? `<div class="abs w" style="left:${x}pt;top:${y + hd.n*hd.l + (hd.n ? 3 : 0)}pt;width:${ln.w}pt;height:${ln.n*ln.l + 3}pt;font:500 ${ln.s}pt/${ln.l}pt 'Source Sans 3';color:${P.body}" data-slot="sold.line" data-lines="${ln.n}">${esc(S.line)}</div>` : '')}; };
+  const logoBlk = (w, maxH) => { const lgH = r1(Math.min(maxH, w*.34)), lgW = r1(Math.min(w, lgH/.36)); return {h: lgH, w: lgW, draw: (x, y) => OHL.logo(D, TONE, `left:${x}pt;top:${y}pt;width:${lgW}pt;height:${lgH}pt;justify-content:flex-start`)}; };
+
+  const place = (html, x, y) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:0;height:0;overflow:visible">${html}</div>`;
+
+  const GOLD = {ink: '#fff', sub: 'var(--acc)', body: 'var(--txt)', line: 'var(--line)', bar: 'var(--acc)'}, P = GOLD;
+  const plain = v => String(v).replace(/<[^>]*>/g, '');
+  // the facts: one row (or two) between two gold hairlines, the serif number then the gold small-caps label
+  const factRow = (w, k) => {
+    const f = SP.facts(D); if(!f.length) return null;
+    const ns = Math.max(FB*1.35, r1(22*k)), ls = Math.max(FS, r1(11*k)), lcss = `font-weight:600;${AS};letter-spacing:.12em;text-transform:uppercase;font-size:${ls}pt`;
+    const items = f.map(([lb, v, key]) => ({lb, v, key, vw: wd(plain(v), `font-weight:500;${AR};font-size:${ns}pt`), lw: wd(lb.toUpperCase(), lcss)}));
+    items.forEach(i => { i.w = i.vw + 5 + i.lw; });
+    for(const nr of [1, 2]){
+      const per = Math.ceil(items.length/nr), rws = []; for(let i = 0; i < items.length; i += per) rws.push(items.slice(i, i + per));
+      if(rws.some(r => r.reduce((a, q) => a + q.w, 0) + 12*(r.length - 1) > w)) continue;
+      const rh = r1(ns*1.3), pad = TIGHT ? 3 : 7, h = rws.length*rh + 2*pad + (rws.length - 1)*3;
+      return {h, draw: (x, y) => {
+        let s = rect(x, y, w, .9, 'background:var(--acc)') + rect(x, y + h - .9, w, .9, 'background:var(--acc)'), yy = y + pad;
+        rws.forEach(r => { const sum = r.reduce((a, q) => a + q.w, 0), gp = r.length > 1 ? (w - sum)/(r.length - 1) : 0; let xx = x;
+          r.forEach(q => { s += T(`font-weight:500;${AR};font-size:${ns}pt;color:#fff;text-align:left`, q.v, xx, yy, q.vw + 3, rh, `data-slot="fact.${q.key}" data-lines="1"`) +
+            T(`${lcss};color:var(--acc);text-align:left`, esc(q.lb), xx + q.vw + 5, yy + (ns - ls)*.3, q.lw + 3, rh, 'data-small="1"'); xx += q.w + gp; });
+          yy += rh + 3; });
+        return s; }};
+    }
+    return null;
+  };
+  // three rooms in a row, the room's name in the serif under each (from the listing's photo tags)
+  const trio = (w, ph, names) => {
+    let n = Math.min(3, rooms.length); if(!n) return null;
+    const gg = 6, ns = Math.max(FB, 14), nh = names ? r1(ns*1.35) : 0, fits = (m, pw) => rooms.slice(0, m).every(id => wd(SP.roomName(D, id), `font-weight:500;${AR};font-size:${ns}pt`) <= pw);
+    if(names && !fits(n, (w - gg*(n - 1))/n) && n > 2) n = 2;
+    const pw = (w - gg*(n - 1))/n;
+    return {h: ph + nh, draw: (x, y) => rooms.slice(0, n).map((id, i) => OHL.photo(D, id, `left:${x + i*(pw + gg)}pt;top:${y}pt;width:${pw}pt;height:${ph}pt`) +
+      (names ? T(`font-weight:500;${AR};font-size:${ns}pt;color:#fff;text-align:left`, esc(SP.roomName(D, id)), x + i*(pw + gg), y + ph + 2, pw, nh, 'data-slot="room.name" data-lines="1"') : '')).join('')};
+  };
+  const heroAt = (x, y, w, h) => { const fr = SP.heroFrame(D, hero, w, h, true); return {fr, html: OHL.photo(D, hero, `left:${x + (w - fr.w)/2}pt;top:${y}pt;width:${fr.w}pt;height:${fr.h}pt`)}; };
+  const BS = "'Source Sans 3'", G6 = 5;
+  const MG = 24, CW = W - 2*MG;
+  let h = '', y = 26;
+  // 1. the event
+  TIGHT = false; h += rect(MG, y, 34, 2.5, 'background:var(--acc)'); y += 11;
+  const lab = E.label.toUpperCase(), lcss = `font-weight:700;${AS};letter-spacing:.2em`;
+  let ls = fit(lab, lcss, CW, 20, FE), lines = [lab]; if(wd(lab, `${lcss};font-size:${ls}pt`) > CW){ lines = OHL.labelLines(E.label, 2).map(t => t.toUpperCase()); ls = Math.min(...lines.map(t => fit(t, lcss, CW, 20, FE))); }
+  const lh = r1(ls*1.45); lines.forEach((t, i) => { h += T(`${lcss};font-size:${ls}pt;color:var(--acc);text-align:left`, esc(t), MG, y + i*lh, CW, lh, 'data-slot="oh.label" data-lines="1"'); }); y += lines.length*lh + 2;
+  const dcss = `font-weight:500;${AR};letter-spacing:-.4pt`, ds = fit(E.long, dcss, CW, 46, 30);
+  if(wd(E.long, `${dcss};font-size:${ds}pt`) <= CW){ const dh = r1(ds*1.2); h += T(`${dcss};font-size:${ds}pt;color:#fff;text-align:left`, esc(E.long), MG, y, CW, dh, 'data-slot="oh.date" data-lines="1"'); y += dh; }
+  else { const s2 = fit(E.monthDay || E.long, dcss, CW, 46, 30), d2 = r1(s2*1.2);
+    if(E.weekday){ const hw = r1(FE*1.4); h += T(`font-weight:600;${AS};font-size:${FE}pt;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);text-align:left`, esc(E.weekday), MG, y, CW, hw, 'data-slot="oh.day" data-lines="1"'); y += hw; }
+    h += T(`${dcss};font-size:${s2}pt;color:#fff;text-align:left`, esc(E.monthDay || E.long), MG, y, CW, d2, 'data-slot="oh.date" data-lines="1"'); y += d2; }
+  if(E.time){ const ts = fit(E.time, `font-weight:500;${AR}`, CW, 28, FE), th = r1(ts*1.3); h += T(`font-weight:500;${AR};font-size:${ts}pt;color:var(--acc);text-align:left`, esc(E.time), MG, y + 2, CW, th, 'data-slot="oh.time" data-lines="1"'); y += th + 2; }
+  const bx = noteBox(CW, 1, P); if(bx){ y += 14; h += bx.draw(MG, y); y += bx.h; }
+  y += 20;
+  // 2. the whole house, full width
+  const hf = heroAt(0, y, W, 270); h += hf.html; y += hf.fr.h + 18;
+  // 3. address and the logo, the city, the facts row, the write-up
+  const lg = logoBlk(CW*.3, 48), ad = address(CW - lg.w - 16, 1, Math.min(40, ds - 1), P), ct = city(CW - lg.w - 16, 1, P), addrH = Math.max(ad.h + (ct ? ct.h : 0), lg.h);
+  h += ad.draw(MG, y) + (ct ? ct.draw(MG, y + ad.h) : '') + lg.draw(MG + CW - lg.w, y + (addrH - lg.h)/2); y += addrH + 12;
+  const fr = factRow(CW, 1.1); if(fr){ h += fr.draw(MG, y); y += fr.h + 14; }
+  const wlh = 21, wu = SP.fillText(SP.pool(D), `font:500 ${FB}pt/${wlh}pt '${'Source Sans 3'}';text-align:left`, CW, 8, true);
+  if(wu){ h += `<div class="abs w" style="left:${MG}pt;top:${y}pt;width:${wu.w}pt;height:${wu.n*wlh}pt;font:500 ${FB}pt/${wlh}pt ${BS};color:var(--txt)" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`; y += wu.n*wlh + 16; }
+  // 4. rooms with names
+  const tr = trio(CW, 92, true); if(tr){ h += tr.draw(MG, y); y += tr.h + 18; }
+  // 5. the card
+  h += rect(MG, y, CW, .9, 'background:var(--acc)'); y += 12;
+  const ag = agent(CW, 1.15, P, {}); h += ag.draw(MG, y); y += ag.h + 16;
+  h += `<div class="abs" data-fine="1" data-slot="fineprint" data-lines="1" style="left:${MG}pt;top:${y}pt;width:${CW}pt;height:14pt;font:400 10pt/14pt ${BS};color:var(--acc)">${esc((D.companion || {}).fineprint || 'Information deemed reliable but not guaranteed.')}</div>`; y += 14 + 22;
+  const after = () => document.querySelectorAll('[data-slot="oh.note"],[data-slot="oh.refreshments"]').forEach(el => { el.innerHTML = el.innerHTML.replace(/[^\s<>]*‑[^\s<>]*/g, m => `<span style="white-space:nowrap">${m.replace(/‑/g, '-')}</span>`); });
+  return {W, H: y, after, html: `<div class="page em" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${y}pt;background:var(--field)">${h}</div>`};
+
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · FX extras · FX09 Open House</title>
+<link rel="stylesheet" href="fx.css">
+<link rel="stylesheet" href="fxs09-tokens.css">
+<script src="fxs09-tk.js"></script>
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="fxs09-head.js"></script>
+<script src="fxs09-patch.js"></script>
+<!--
+  FX09 (deep navy, white serif address, big-numerals stat row) as a one-sided Open House flyer. Trim 612 x 792 pt.
+  Top: the kicker row, then the event on a cream card: label and weekday over a hairline, the date in the serif, the time in bold sans at 60% of the
+  date's size; the REALTOR(R) perks (refreshments, note) sit in a navy bar across the card, two lines at most. Public and REALTOR(R) share this layout,
+  only the wording changes. Under it: the white serif address, the place in italic copper, the whole house (55% of the page width) with the four
+  numerals and a room beside it, the write-up beside its copper bar, then the shared agent card and the one logo.
+-->
+<style>
+  .sheet{background:var(--fx-paper)}
+  .lab{font:700 20pt/24pt 'DM Sans';letter-spacing:2.6pt;text-transform:uppercase;color:var(--fx-ink2);white-space:nowrap}
+  .wk{font:700 11pt/14pt 'DM Sans';letter-spacing:5pt;text-transform:uppercase;color:var(--fx-ink2);white-space:nowrap}
+  .dt{font:400 60pt/63pt 'DM Serif Display';letter-spacing:-1.2pt;color:var(--fx-copper);white-space:nowrap;overflow:hidden}
+  .tm{font:700 36pt/40pt 'DM Sans';letter-spacing:-.5pt;color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+  .evb{font:500 12pt/16pt 'DM Sans';text-align:center;color:var(--fx-on-ink)}
+  .evb.b{font-weight:700}
+  .place{font:italic 400 22.5pt/27pt 'DM Serif Display';color:var(--fx-ink2);white-space:nowrap}
+  .str{font:400 46pt/50pt 'DM Serif Display';letter-spacing:-.5pt;color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+  .sv{font:400 30pt/33pt 'DM Serif Display';color:var(--fx-ink);white-space:nowrap}
+  .sl{font:500 8pt/11pt 'DM Sans';letter-spacing:2pt;text-transform:uppercase;color:var(--fx-text);white-space:nowrap}
+  .wu{font:400 12pt/18pt 'DM Sans';color:var(--fx-ink)}
+  .oh-agent-name{font-family:'DM Serif Display';font-weight:400}
+  .oh-agent{font-family:'DM Sans'}
+  .fine{font:400 6.6pt/8pt 'DM Sans';color:var(--fx-mute);white-space:nowrap}
+</style>
+<style>.photo::after{content:'';position:absolute;inset:4pt;border:1pt solid #d98f52;pointer-events:none}</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['700 10pt "DM Sans"', '500 10pt "DM Sans"', '400 10pt "DM Sans"', '400 10pt "DM Serif Display"', 'italic 400 10pt "DM Serif Display"'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  // the write-up pool: no drive-time lines; for agents (broker and REALTOR® opens) it leads with what they tell buyers (gated, roof, garage, deck)
+  if((C.postcard || {}).master){ const drive = /minutes|miles|short drive|drive away|drive from|are close|is close/i, draw = /gated|roof|garage|deck|pergola|stone|island|corner/i;
+    let M = C.postcard.master.filter(t => !drive.test(t)); if(E.kind !== 'public') M = M.filter(t => draw.test(t)).concat(M.filter(t => !draw.test(t))); C.postcard.master = M; }
+  const archScore = id => { const p = D.photos[id] || {}; const k = /^(family|living|great|open)/.test(id) ? 3 : /^(dining|primary)(?!.*bath)/.test(id) ? 2 : /kitchen|bar|bath|stair|foyer|entry/.test(id) ? 0 : 1; return k*10 + (p.w && p.h ? Math.min(p.w/p.h, 1.6) : 1); };   // the widest living room, never a wall corner
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id)).sort((a, b) => archScore(b) - archScore(a));
+  const wid = (t, css) => { const m = document.createElement('span'); m.style.cssText = `position:absolute;left:-9999pt;visibility:hidden;white-space:nowrap;${css}`; m.textContent = t; document.body.appendChild(m); const w = m.getBoundingClientRect().width*.75; m.remove(); return w; };
+  const fitS = (t, css, w, max, min) => { let s = max; while(s > min && wid(t, `${css};font-size:${s}pt`) > w) s -= .5; return s; };
+  const X0 = 36, X1 = 576, CW = 540, SERIF = "font-family:'DM Serif Display';letter-spacing:-.5pt";
+  const place2 = [L.city, L.state || 'Texas'].filter(Boolean).join(', ');
+  const HEAD = FX09HEAD(D);
+  let h = '';
+  // ---- the shared header: the neighborhood in copper, the stories and a selling fact at the right
+  h += `<div class="abs" style="left:${X0}pt;top:30pt;width:260pt;height:12pt;font:700 9pt/12pt 'DM Sans';letter-spacing:3.75pt;color:var(--fx-ink2);text-transform:uppercase;white-space:nowrap" data-slot="kicker.left" data-lines="1">${esc(HEAD.left)}</div>`;
+  h += `<div class="abs" style="left:${X0 + 216}pt;top:30pt;width:${CW - 216}pt;height:12pt;font:500 9pt/12pt 'DM Sans';letter-spacing:3pt;color:var(--fx-text);text-align:right;white-space:nowrap" data-slot="kicker.right" data-lines="1">${esc(HEAD.right)}</div>`;
+  h += `<div class="abs" style="left:${X0}pt;top:46pt;width:${CW}pt;height:.75pt;background:var(--fx-rule)"></div>`;
+  // ---- the event, straight on the navy: the label, the day in copper spaced caps, the date in huge serif numerals, the time in bold sans at 60% of that, the perks on a cream bar
+  const IX = X0, IW = CW, lines = [[E.refreshments, 'oh.refreshments', 'evb b'], [E.note, 'oh.note', 'evb']];
+  const probe = Ivory.eventBox(lines, IX, 0, IW, 16, 3, {padY: 8, padX: 14, scale: 1});
+  const hasBox = !!probe.h;
+  const DS = 60, TS = DS*.6;   // the time is 60% of the date
+  let ey = 56;
+  h += `<div class="abs lab" style="left:${IX}pt;top:${ey}pt;width:${IW}pt;height:24pt" data-fit="20,20" data-slot="oh.label" data-lines="1">${esc(E.label)}</div>`; ey += 27;
+  h += `<div class="abs wk" style="left:${IX}pt;top:${ey}pt;width:${IW}pt;height:14pt" data-slot="oh.weekday" data-lines="1">${esc(E.weekday)}</div>`; ey += 16;
+  const md = String(E.monthDay || E.long);
+  h += `<div class="abs dt" style="left:${IX - 2}pt;top:${ey}pt;width:${IW + 2}pt;height:${DS*1.1}pt;font-size:${DS}pt;line-height:${DS*1.05}pt" data-fit="${DS},40" data-slot="oh.date" data-lines="1">${esc(md)}</div>`; ey += DS*1.05;
+  if(E.time){ h += `<div class="abs tm" style="left:${IX}pt;top:${ey}pt;width:${IW}pt;height:${TS*1.2}pt;font-size:${TS}pt;line-height:${TS*1.1}pt" data-fit="${TS},20" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`; ey += TS*1.1; }
+  if(hasBox){ ey += 8; h += Ivory.eventBox(lines, IX, ey, IW, 16, 3, {bg: 'var(--fx-box-bg)', padY: 8, padX: 14, scale: 1}).html; ey += probe.h; }
+  h += `<div class="abs" style="left:${X0}pt;top:${ey + 8}pt;width:${CW}pt;height:.75pt;background:var(--fx-rule)"></div>`;
+  let y = ey + 16;
+  // ---- the street and the place
+  const sf = fitS(L.address, SERIF + ";font-weight:400", CW, 40, 30);
+  h += `<div class="abs str" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${sf*1.1}pt;font-size:${sf}pt;line-height:${sf*1.1}pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`; y += sf*1.1;
+  h += `<div class="abs place" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:27pt;font-size:20pt;line-height:24pt" data-slot="place" data-lines="1">${esc(place2)}</div>`; y += 30;
+  // ---- the write-up at the cover's size: whole sentences that fill the lines (the last line at least 3/4 full), then the hero takes the height that is left
+  const FOOT = 696, SH = 62;   // SH: the rule, the numerals and their labels
+  const wuCls = s => { const c = 'wu' + String(s).replace('.', '_'); if(!document.querySelector('style[data-c="' + c + '"]')){ const st = document.createElement('style'); st.dataset.c = c; st.textContent = `.${c}{font:400 ${s}pt/${s*1.55}pt 'DM Sans';color:var(--fx-ink)}`; document.head.appendChild(st); } return c; };
+  const pickWu = maxN => { for(const s of [13.2, 12.5, 12, 13.5, 11.5]) for(let k = 0; k <= 20; k += (k < 6 ? 1 : 2)) for(let n = maxN; n >= 3; n--){ const w = CW - 18 - k*4, t2 = OHL.writeup(D, wuCls(s), w, s*1.55, n, null, {narrow: true}); if(t2.text && t2.fill >= .75 && t2.n >= 3){ return Object.assign(t2, {s, w: t2.w || w}); } } return null; };
+  let wu = null, heroH = 0;
+  for(const maxN of [6, 5, 4]){ wu = pickWu(maxN); if(!wu) continue; heroH = FOOT - 14 - wu.n*wu.s*1.55 - 16 - SH - 12 - y; if(heroH >= 200) break; }
+  if(!wu) wu = {text: '', n: 0, s: 12, w: CW - 18};
+  heroH = Math.min(259, Math.max(heroH, 150));
+  // ---- the whole house, the full width
+  const fr = OHL.fitHero(D, hero, 368, Math.round(heroH)), sideX = X0 + fr.w + 14, sideW = X1 - sideX, sideH = (fr.h - 14)/2;
+  h += OHL.photo(D, hero, `left:${X0}pt;top:${y}pt;width:${fr.w}pt;height:${fr.h}pt`);
+  const sideRooms = rooms.filter((id, i, arr) => arr.findIndex(o => o.replace(/\d+[a-z]?$/, '') === id.replace(/\d+[a-z]?$/, '')) === i).slice(0, 2);
+  sideRooms.forEach((id, i) => { h += OHL.photo(D, id, `left:${sideX}pt;top:${y + i*(sideH + 14)}pt;width:${sideW}pt;height:${sideH}pt`); });
+  y += fr.h + 14;
+  // ---- the four numerals, as on the cover
+  const stats = FXS_STATS(L), cw4 = CW/stats.length;
+  h += `<div class="abs" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:.75pt;background:var(--fx-rule)"></div>`; y += 12;
+  stats.forEach(([v, l], i) => { h += `<div class="abs" style="left:${X0 + i*cw4}pt;top:${y}pt;width:${cw4}pt;text-align:center"><div class="sv" style="font-size:19pt;line-height:22pt" data-slot="stat.${i}" data-lines="1">${esc(v)}</div><div class="sl" style="font-size:8.25pt;letter-spacing:2.25pt;margin-top:3pt" data-slot="stat.${i}.label" data-lines="1">${esc(l)}</div></div>`;
+    if(i) h += `<div class="abs" style="left:${X0 + i*cw4}pt;top:${y + 3}pt;width:.75pt;height:34pt;background:var(--fx-copper)"></div>`; });
+  y += 38 + 16;
+  // ---- the write-up beside its copper bar (the bar ends where the text ends)
+  const wuL = wu.s*1.55;
+  if(wu.text){ h += `<div class="abs" style="left:${X0}pt;top:${y + 2}pt;width:3pt;height:${wu.n*wuL - 4}pt;background:var(--fx-bar)"></div><div class="abs ${wuCls(wu.s)}" style="left:${X0 + 18}pt;top:${y}pt;width:${wu.w}pt;height:${wu.n*wuL + 2}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text).replace(/\S*\w-\w\S*/g, t => `<span style="white-space:nowrap">${t}</span>`)}</div>`; }
+  // ---- the agent (the shared card) and the one logo
+  h += `<div class="abs" style="left:${X0}pt;top:${FOOT}pt;width:${CW}pt;height:.75pt;background:var(--fx-rule)"></div>`;
+  h += OHL.contact(D, {x: X0, y: FOOT + 8, w: CW, h: 64, tone: 'dark', field: 'dark', color: TK.ink, accent: TK.ink2, nameSize: 21, logoW: 190, logoH: 40, nameFont: "'DM Serif Display'", nameWeight: 400, bodyFont: "'DM Sans'"});
+  h += `<div class="abs fine" style="left:${X0}pt;top:776pt;width:${CW}pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  return OHL.frame(D, h);
+  function FXS_STATS(L){ const o = [], n = v => Number(v).toLocaleString('en-US');
+    if(L.beds) o.push([String(L.beds), 'Bedrooms']);
+    if(L.baths){ const bn = BD.bathNum(L); o.push([String(bn.num).replace(/<[^>]*>/g, ''), bn.label]); }
+    if(L.sqft) o.push([n(L.sqft), 'Square feet']);
+    const yr = L.yearBuilt || L.year; if(yr) o.push([String(yr), 'Year built']);
+    const lot = String(L.lotSize || '').match(/^([\d,\.]+)\s*sq ft/i); if(lot) o.push([lot[1], 'Lot sq ft']);
+    return o.slice(0, 5); }
+});
+</script>
+</body>
+</html>

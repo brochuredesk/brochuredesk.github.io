@@ -1,0 +1,117 @@
+/* fxs-11: design set built from the FX11 two-sided flyer (white, big black sans address, arch photo, icon fact row).
+   THIS FILE IS THE TOKENS SOURCE: every piece (fold-over, flyer, Open House flyer and email, postcards, socials, carousels)
+   reads its palette, type, rules and marks from the variables below (fxs11.js reads them back as FXS.tok), so nothing drifts.
+   Lengths are pt (1/72 in). Source look: docs/design/two-sided-flyers/canvas/FX11-front.dc.html and FX11-back.dc.html. */
+
+@import url(fxs11-tokens.css);
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#14100d}
+body{font-family:var(--fx-font);color:var(--fx-ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased;font-kerning:normal}
+img{display:block}
+@page{margin:0}
+.abs{position:absolute}
+
+/* pages */
+.page{position:relative;background:var(--fx-paper);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+@media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+.panel{position:absolute;left:9pt;top:9pt;width:612pt;height:792pt;background:var(--fx-paper)}
+.half{position:absolute;top:0;height:810pt;width:621pt;overflow:hidden}
+.half.l{left:0}.half.r{left:621pt}
+.half.r .panel{left:0}
+.bg-band{display:none}
+.bg-paper{position:absolute;left:-9pt;top:-9pt;right:-9pt;bottom:-9pt;background:var(--fx-paper)}
+
+/* type */
+.lbl{font:var(--fx-label-w) 10pt/12pt var(--fx-font);letter-spacing:var(--fx-label-track);text-transform:uppercase;color:var(--fx-ink2);white-space:nowrap;overflow:hidden;text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:4pt}
+.ttl{font-family:var(--fx-font);font-weight:var(--fx-w-bold);color:var(--fx-ink);white-space:nowrap;overflow:hidden;letter-spacing:.75pt;text-transform:uppercase}
+.ttl b{font-weight:var(--fx-w-heavy)}
+.body{font:var(--fx-w-reg) 10.5pt/16pt var(--fx-font);color:var(--fx-text);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font:400 6.6pt/8pt var(--fx-font);color:var(--fx-mute);white-space:nowrap;overflow:hidden}
+
+/* photos (square; the arch carries its own radius) and their captions: bold lead, then the text */
+.ph{position:relative;overflow:hidden;background:#3d2f26;min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:14pt;min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;left:var(--fx-m);right:var(--fx-m);display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font:400 9.5pt/12.5pt var(--fx-font);color:var(--fx-text);overflow:hidden}
+.cap .a b{font-weight:700;color:var(--fx-ink)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+/* facts and place */
+.fact .fl{font:700 9pt/11pt var(--fx-font);letter-spacing:1.5pt;text-transform:uppercase;color:var(--fx-ink2);white-space:nowrap}
+.fact .fv{font:400 15pt/18pt var(--fx-font);color:var(--fx-text-dark);white-space:nowrap}
+.place{font:500 13.5pt/17pt var(--fx-font);color:var(--fx-ink2)}
+
+/* the black event/feature box with the round left end */
+.inkbox{background:var(--fx-band);border:.75pt solid var(--fx-outline);color:var(--fx-on-ink)}
+.inkbox .k{font:700 9pt/12pt var(--fx-font);letter-spacing:2pt;text-transform:uppercase;color:var(--fx-on-ink-soft);white-space:nowrap}
+.inkbox .h{font:300 22pt/26pt var(--fx-font);color:var(--fx-on-ink);letter-spacing:-.3pt}
+.inkbox .h b{font-weight:700}
+.inkbox .l{font:700 9pt/11pt var(--fx-font);letter-spacing:1.6pt;text-transform:uppercase;color:var(--fx-on-ink);white-space:nowrap}
+.inkbox .t{font:400 10pt/13pt var(--fx-font);color:var(--fx-on-ink-soft);overflow:hidden}
+
+/* nearby row */
+.near{flex:none;display:flex;gap:0;border-top:var(--fx-rule-w) solid var(--fx-rule);padding-top:9pt}
+.near .c{flex:1;min-width:0;padding-left:14pt;border-left:var(--fx-rule-w) solid var(--fx-rule)}
+.near .c:first-child{padding-left:0;border-left:0}
+.near .d{font:700 17pt/21pt var(--fx-font);color:var(--fx-ink);white-space:nowrap;overflow:hidden;letter-spacing:-.2pt}
+.near .p{font:600 8pt/10pt var(--fx-font);letter-spacing:1.2pt;text-transform:uppercase;color:var(--fx-ink2);overflow:hidden;margin-top:1pt;min-height:20pt}
+.near.compact{padding-top:6pt}
+.near.compact .d{font-size:14pt;line-height:17pt}
+.near.compact .p{font-size:8pt;line-height:10pt}
+
+/* floor plan (IvoryPlan reads these) */
+.plan-legend{position:absolute;display:flex;gap:18pt;font:600 8.5pt/11pt var(--fx-font);color:var(--fx-card);white-space:nowrap}
+.plan-legend i{display:inline-block;width:11pt;height:11pt;margin-right:5pt;vertical-align:-2pt;border:.6pt solid rgba(0,0,0,.4)}
+.plan-disclosure{position:absolute;font-size:7pt;line-height:9pt;color:var(--fx-mute);white-space:nowrap;overflow:hidden;text-align:right}
+.plan-room{position:absolute;text-align:center;font:400 8pt/9.5pt var(--fx-font);color:var(--fx-on-card);white-space:nowrap}
+.plan-room b{display:block;font-weight:600;font-size:8pt;line-height:9.5pt}
+.plan-room span{display:block;color:var(--fx-on-card-soft);font-size:8pt;line-height:9.5pt}
+.plan-level{text-align:center;font:700 10pt/12pt var(--fx-font);letter-spacing:1.5pt;text-transform:uppercase;color:var(--fx-on-card);white-space:nowrap;overflow:hidden}
+.plan-svg{position:absolute;overflow:visible}
+
+/* logos float: never boxed */
+.logo{display:flex;align-items:center;justify-content:flex-start;overflow:hidden}
+.logo img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+.logo .word{font:700 12pt/14pt var(--fx-font);color:var(--fx-ink);letter-spacing:.4pt;text-transform:uppercase;white-space:nowrap}
+
+/* the agent line on a cover (name, REALTOR(R), phone) */
+.agentline .n{font:600 24pt/28pt var(--fx-font);color:var(--fx-ink);white-space:nowrap;overflow:hidden}
+.agentline .d{font:500 8.5pt/11pt var(--fx-font);letter-spacing:3pt;color:var(--fx-mute);white-space:nowrap}
+.agentline .p{font:600 17pt/21pt var(--fx-font);color:var(--fx-text-dark);white-space:nowrap}
+
+/* mail-vendor zones on postcard proofs */
+.mg{position:absolute;box-sizing:border-box;color:rgba(0,0,0,.45);font:600 6pt/1.4 var(--fx-font);letter-spacing:.45pt;text-transform:uppercase}
+.mg-stamp{border:.75pt dashed rgba(0,0,0,.35);text-align:center;padding-top:36pt}
+.mg-addr{border:.75pt solid rgba(0,0,0,.2)}
+.mg-bar{border:.75pt dashed rgba(0,0,0,.3)}
+.mg .gl{position:absolute}
+.mg .aline{position:absolute;height:.75pt;background:rgba(0,0,0,.2)}
+
+/* the shared agent card in this set's hand: semibold name and number */
+body .cc .cc-name{font-weight:600}
+body .cc .cc-phone{font-weight:600}
+.hsbox{overflow:hidden;background:var(--fx-band)}
+.hsbox img{width:100%;height:100%;object-fit:cover;object-position:center 22%}
+
+/* FX11 marks: the white pill, the outlined pill tags, centered icon facts, square bullets, the photo column */
+.pill{display:flex;align-items:center;justify-content:center;border-radius:var(--fx-pill-r);white-space:nowrap}
+.pill.solid{background:var(--fx-card);color:var(--fx-on-card);font:700 15pt/1 var(--fx-font)}
+.pill.tag{border-radius:999px;border:.75pt solid var(--fx-outline);height:30pt;padding:0 12pt;font:600 10.5pt/1 var(--fx-font);letter-spacing:.9pt;color:var(--fx-ink);text-transform:uppercase}
+.tags{position:absolute;display:flex;flex-wrap:wrap;gap:9pt 7.5pt;align-content:flex-start}
+.stat{position:absolute;text-align:center}
+.stat .sn{white-space:nowrap}
+.stat .sl{font:500 9.75pt/12pt var(--fx-font);letter-spacing:.9pt;text-transform:uppercase;color:var(--fx-facts);white-space:nowrap;overflow:hidden}
+.stat svg{margin:0 auto 4pt}
+.sq{display:flex;gap:6pt;font:400 9.75pt/14pt var(--fx-font);color:var(--fx-text)}
+.sq i{font-style:normal;color:var(--fx-ink)}
+.card{background:var(--fx-card)}
+.planwrap{--paper:#EFE9E1;--ink:#2c211b;--accent:#2c211b}
+.hsbox{background:var(--fx-band)}
+.logo img{filter:none}

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Split Edition Open House email</title>
+<link rel="stylesheet" href="../engine/ohlib.css">
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/setpage.js"></script>
+<!--
+  Split Edition's own Open House email (owner 11/2/2026, Full Lineup review Q2). The Open House flyer redrawn at 600 px: the burgundy label,
+  the serif date, the time, a burgundy rule, the address as the flyer sets it (the big serif number with the street smaller beside it,
+  the city in caps), then the split: the pale-rose facts column beside the house, the same height; the write-up in serif; two rooms with
+  their names; the card with a burgundy hairline over it and the one logo on the right. REALTOR(R) cases: what's served and the notes in
+  a rose box with a burgundy edge, under the rule. Every word is the listing's or the package's existing copy.
+-->
+<style>
+  @font-face{font-family:'Source Serif 4';font-weight:400;src:url(../../fonts/pool/source-serif-4-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Serif 4';font-weight:500;src:url(../../fonts/pool/source-serif-4-latin-500-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Serif 4';font-weight:600;src:url(../../fonts/pool/source-serif-4-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Albert Sans';font-weight:400;src:url(../../fonts/pool/albert-sans-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Albert Sans';font-weight:500;src:url(../../fonts/pool/albert-sans-latin-500-normal.woff2) format('woff2')}
+  @font-face{font-family:'Albert Sans';font-weight:600;src:url(../../fonts/pool/albert-sans-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Albert Sans';font-weight:700;src:url(../../fonts/pool/albert-sans-latin-700-normal.woff2) format('woff2')}
+  :root{--acc:#8f2430;--ink:#201c1d;--txt:#3c383a;--mut:#76696c;--soft:#f6eeee;--line:#cdb9bc}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .page{font-family:'Albert Sans';color:var(--ink)}
+  .t{position:absolute;white-space:nowrap;overflow:hidden}
+  .w{white-space:normal}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+SP.start(['400 10pt "Source Serif 4"', '500 10pt "Source Serif 4"', '600 10pt "Source Serif 4"', '400 10pt "Albert Sans"', '500 10pt "Albert Sans"', '600 10pt "Albert Sans"', '700 10pt "Albert Sans"'], D => {
+  const esc = Ivory.esc, L = D.listing, A = D.agent || {}, W = 450, MG = 26, CW = W - 2*MG, G = 6;
+  const FL = SP.floor('email'), FB = FL.body, FS = FL.small, FE = FL.event;
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id));
+  const T = SP.T, rect = SP.rect, wd = SP.width, fit = SP.fitSize, r1 = SP.r1;
+  const SF = "font-family:'Source Serif 4'", AS = "font-family:'Albert Sans'", ACC = 'var(--acc)', INK = 'var(--ink)';
+  const hs = OHL.cardMode(D) === 'headshot' && !!A.headshot;
+  const hair = (x, y, w, c) => rect(x, y, w, .75, `background:${c || 'var(--line)'}`);
+  let h = '', y = 28, dSize = 40;
+  const tm = E.time ? E.time.replace(/(\d)\s+(am|pm)\b/gi, '$1 $2') : '';
+
+  // ---- 1. the label, the date, the time, a rule
+  const lab = E.label.toUpperCase(), lcss = `font-weight:600;${AS};letter-spacing:.2em`;
+  let ls = fit(lab, lcss, CW, 22, FE), lines = [lab];
+  if(wd(lab, `${lcss};font-size:${ls}pt`) > CW){ lines = OHL.labelLines(E.label, 2).map(t => t.toUpperCase()); ls = Math.min(22, ...lines.map(t => fit(t, lcss, CW, 22, FE))); }
+  const lh = r1(ls*1.5);
+  lines.forEach((t, i) => { h += T(`${lcss};font-size:${ls}pt;color:${ACC};text-align:left`, esc(t), MG, y + i*lh, CW, lh, 'data-slot="oh.label" data-lines="1"'); }); y += lines.length*lh + 2;
+  const dcss = `font-weight:400;${SF};letter-spacing:-.4pt`, longFit = fit(E.long, dcss, CW, 46, 30), dOne = wd(E.long, `${dcss};font-size:${longFit}pt`) <= CW && longFit >= 36;
+  if(dOne){ dSize = longFit; const hh = r1(longFit*1.2); h += T(`${dcss};font-size:${longFit}pt;color:${INK};text-align:left`, esc(E.long), MG, y, CW, hh, 'data-slot="oh.date" data-lines="1"'); y += hh; }
+  else { const sd = fit(E.monthDay || E.long, dcss, CW, 46, 30), hd = r1(sd*1.2); dSize = sd;
+    if(E.weekday){ const sw = Math.max(FE, 20), hw = r1(sw*1.5); h += T(`font-weight:600;${AS};font-size:${sw}pt;letter-spacing:.2em;text-transform:uppercase;color:${ACC};text-align:left`, esc(E.weekday), MG, y, CW, hw, 'data-slot="oh.day" data-lines="1"'); y += hw; }
+    h += T(`${dcss};font-size:${sd}pt;color:${INK};text-align:left`, esc(E.monthDay || E.long), MG, y, CW, hd, 'data-slot="oh.date" data-lines="1"'); y += hd; }
+  if(tm){ const tcss = `font-weight:500;${AS}`, st = fit(tm, tcss, CW, 26, FE), ht = r1(st*1.4); h += T(`${tcss};font-size:${st}pt;color:${INK};text-align:left`, esc(tm), MG, y, CW, ht, 'data-slot="oh.time" data-lines="1"'); y += ht; }
+  y += 6; h += rect(MG, y, CW, 1.5, 'background:var(--acc)'); y += 16;
+  // what's served and the notes: a rose box with a burgundy edge
+  const items = [[E.refreshments, true, 'oh.refreshments'], [E.note, false, 'oh.note']].filter(i => i[0]);
+  if(items.length){ const bs = FB, blh = r1(bs*1.35), pad = 11, bw = CW - 2*pad - 5, bl = items.map(([t, b, slot]) => ({t, b, slot, n: SP.linesNW(t, `font:${b ? 600 : 500} ${bs}pt/${blh}pt 'Albert Sans'`, bw)}));
+    const bh = bl.reduce((a, q) => a + q.n*blh, 0) + 2*pad + (bl.length - 1)*pad; let yy = y + pad;
+    h += rect(MG, y, CW, bh, 'background:var(--soft)').replace('<div class="abs"', '<div class="abs" data-box="oh.box"') + rect(MG, y, 3, bh, 'background:var(--acc)');
+    bl.forEach((q, i) => { if(i) h += hair(MG + pad + 5, yy - pad/2, bw);
+      h += `<div class="abs w" style="left:${MG + pad + 5}pt;top:${yy}pt;width:${bw}pt;height:${q.n*blh + 3}pt;font:${q.b ? 600 : 500} ${bs}pt/${blh}pt 'Albert Sans';color:${INK}" data-slot="${q.slot}" data-lines="${q.n}">${esc(q.t)}</div>`; yy += q.n*blh + pad; });
+    y += bh + 18; }
+
+  // ---- 2. the address as the flyer sets it
+  const num = (L.address.match(/^\s*(\d+[A-Za-z-]*)\s+(.*)$/) || [null, '', L.address]), ncss = `font-weight:400;${SF};letter-spacing:-1pt`, scss = `font-weight:400;${SF}`;
+  let n = Math.min(64, dSize - 2), s = 0; const sz = () => { s = r1(Math.max(FE, n*.42)); return wd(num[1], `${ncss};font-size:${n}pt`) + 12 + wd(num[2], `${scss};font-size:${s}pt`); };
+  while(n > 34 && sz() > CW) n = r1(n - 1); sz();
+  const nw = wd(num[1], `${ncss};font-size:${n}pt`), nh = r1(n*1.1);
+  h += T(`${ncss};font-size:${n}pt;color:${INK};text-align:left`, esc(num[1]), MG, y, nw + 4, nh, 'data-slot="address" data-lines="1"') + T(`${scss};font-size:${s}pt;color:${INK};text-align:left`, esc(num[2]), MG + nw + 12, y + nh*.84 - r1(s*1.02), CW - nw - 12, r1(s*1.3), 'data-slot="address" data-lines="1"');
+  y += nh;
+  const cs = Math.max(FS, 12.5); h += T(`font-weight:600;${AS};font-size:${cs}pt;letter-spacing:.2em;color:${ACC};text-align:left`, esc(OHL.place(L).toUpperCase()), MG, y, CW, r1(cs*1.7), 'data-slot="place" data-small="1" data-lines="1"'); y += r1(cs*1.7) + 16;
+
+  // ---- 3. the split: the rose facts column beside the house, the same height
+  const SW = r1(CW*.38), PWd = CW - SW - G, fr = SP.heroFrame(D, hero, PWd, 230, true), bh = fr.h;
+  const f = SP.facts(D), lcss2 = `font-weight:600;${AS};letter-spacing:.06em;text-transform:uppercase`, l2 = Math.max(FS, 12), rh = bh/f.length, pad = 12, lhh = r1(l2*1.4), vs = Math.max(15.5, Math.min(r1(rh - lhh - 6), 28));
+  h += rect(MG, y, SW, bh, 'background:var(--soft)') + OHL.photo(D, hero, `left:${MG + SW + G + (PWd - fr.w)}pt;top:${y}pt;width:${fr.w}pt;height:${bh}pt`);
+  f.forEach(([lb, v, key], i) => { const cy = y + i*rh + Math.max(0, (rh - lhh - r1(vs*1.15))/2);
+    h += (i ? hair(MG + pad, y + i*rh, SW - 2*pad) : '') + T(`${lcss2};font-size:${l2}pt;color:${ACC};text-align:left`, esc(lb), MG + pad, cy, SW - 2*pad, lhh, 'data-small="1"') +
+      T(`${scss};font-size:${vs}pt;color:${INK};text-align:left`, v, MG + pad, cy + lhh, SW - 2*pad, r1(vs*1.15), `data-slot="fact.${key}" data-lines="1"`); });
+  y += bh + 20;
+
+  // ---- 4. the write-up in serif, then two rooms with their names
+  const wlh = 22, wu = SP.fillText(SP.pool(D), `font:400 ${FB}pt/${wlh}pt 'Source Serif 4';text-align:left`, CW, 6, true);
+  if(wu){ h += `<div class="abs w" style="left:${MG}pt;top:${y}pt;width:${wu.w}pt;height:${wu.n*wlh}pt;font:400 ${FB}pt/${wlh}pt 'Source Serif 4';color:var(--txt)" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`; y += wu.n*wlh + 18; }
+  const nR = Math.min(2, rooms.length);
+  if(nR){ const g = 10, pw = (CW - g*(nR - 1))/nR, ph = r1(pw*.62); for(let i = 0; i < nR; i++){ const id = rooms[i], nm = SP.roomName(D, id);
+      h += OHL.photo(D, id, `left:${MG + i*(pw + g)}pt;top:${y}pt;width:${pw}pt;height:${ph}pt`) + T(`font-weight:500;${SF};font-size:${Math.max(FS, 14)}pt;color:${INK};text-align:left`, esc(nm), MG + i*(pw + g), y + ph + 3, pw, 22, 'data-small="1"'); }
+    y += ph + 22 + 18; }
+
+  // ---- 5. the card: a burgundy hairline over it, the name in serif, REALTOR(R), CALL / TEXT and the phone; the one logo on the right
+  const lab2 = A.phoneLabel || 'Call / Text', nar = A.nar || /realtor/i.test(A.designation || ''), hsd = hs ? 62 : 0, tw0 = r1(CW*.62), tx = MG + (hsd ? hsd + 12 : 0), tw = tw0 - (hsd ? hsd + 12 : 0);
+  const nS = fit(A.name || '', `font-weight:400;${SF}`, tw, 30, 22), lcssA = `font-weight:600;${AS};letter-spacing:.14em;text-transform:uppercase;font-size:${FS}pt`;
+  const stack = wd(lab2.toUpperCase(), lcssA) + 14 + wd(A.phone || '', `font-weight:600;${AS};font-size:${FB}pt`) > tw;
+  const pS = stack ? 19 : Math.min(19, fit(A.phone || '', `font-weight:600;${AS}`, tw - wd(lab2.toUpperCase(), lcssA) - 14, 19, FB)), cardH = Math.max(hsd, r1(nS*1.25) + (nar ? 19 : 0) + (stack ? 19 : 0) + 30) + 4;
+  h += rect(MG, y, CW, 1.5, 'background:var(--acc)'); y += 12;
+  if(hs) h += `<div class="abs" style="left:${MG}pt;top:${y + (cardH - hsd)/2}pt;width:${hsd}pt;height:${hsd}pt;border-radius:50%;overflow:hidden"><img src="${esc(A.headshot)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;
+  let cy = y;
+  h += T(`font-weight:400;${SF};font-size:${nS}pt;color:${INK};text-align:left`, esc(A.name || ''), tx, cy, tw, r1(nS*1.25), 'data-slot="agent.name" data-lines="1"'); cy += r1(nS*1.25);
+  if(nar){ h += T(`${lcssA};letter-spacing:.2em;color:var(--mut);text-align:left`, 'REALTOR®', tx, cy, tw, 19, 'data-slot="agent.desig" data-small="1" data-lines="1"'); cy += 19; }
+  if(stack){ h += T(`${lcssA};color:${ACC};text-align:left`, esc(lab2), tx, cy, tw, 19, 'data-small="1"'); cy += 19; }
+  h += T(`font-weight:600;${AS};font-size:${pS}pt;color:${INK};text-align:left`, `${stack ? '' : `<span data-small="1" style="font-weight:600;${AS};font-size:${FS}pt;letter-spacing:.14em;text-transform:uppercase;color:${ACC};margin-right:8pt">${esc(lab2)}</span>`}${esc(A.phone || '')}`, tx, cy + 2, tw, 28, 'data-slot="agent.phone" data-lines="1"');
+  const lgW = r1(CW - tw0 - 14), lgH = Math.min(r1(lgW*.36), cardH);
+  h += OHL.logo(D, 'light', `left:${MG + CW - lgW}pt;top:${y + (cardH - lgH)/2}pt;width:${lgW}pt;height:${lgH}pt;justify-content:flex-start`);
+  y += cardH + 18;
+  h += `<div class="abs" data-fine="1" data-slot="fineprint" data-lines="1" style="left:${MG}pt;top:${y}pt;width:${CW}pt;height:14pt;font:400 10pt/14pt 'Albert Sans';color:var(--mut)">${esc((D.companion || {}).fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  y += 14 + 24;
+  const after = () => document.querySelectorAll('[data-slot="oh.note"],[data-slot="oh.refreshments"]').forEach(el => { el.innerHTML = el.innerHTML.replace(/[^\s<>]*‑[^\s<>]*/g, m => `<span style="white-space:nowrap">${m.replace(/‑/g, '-')}</span>`); });
+  return {W, H: y, after, html: `<div class="page em" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${y}pt;background:#fff">${h}</div>`};
+});
+</script>
+</body>
+</html>
