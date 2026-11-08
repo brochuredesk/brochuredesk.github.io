@@ -94,7 +94,7 @@ window.brochureReady = (async function(){
       const r = IvoryPlan.draw(D.plan, {x:41, y:planTop + 8, w:530, h:Hp - 4}, {allowRotate:true});
       window.planIssues = r.issues;
       const ly0 = planTop + Hp + 4;
-      h += `<div class="abs" style="left:29pt;top:${planTop}pt;width:554pt;height:${ly0 + 11 + 9 - planTop}pt;background:#fff"></div><div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt;--paper:#fff">${r.html}</div>`;
+      h += `<div class="abs planbg" style="left:29pt;top:${planTop}pt;width:554pt;height:${ly0 + 11 + 9 - planTop}pt;background:#fff"></div><div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt;--paper:#fff">${r.html}</div>`;
       const zs = IvoryPlan.zonesOf(D.plan);
       const leg = Object.entries(IvoryPlan.ZONES).filter(([k])=>zs.includes(k))
         .map(([k,z])=>`<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, var(--paper))"></i>${z.label}</span>`);

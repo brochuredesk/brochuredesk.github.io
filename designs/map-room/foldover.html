@@ -82,7 +82,7 @@ window.brochureReady = (async function(){
       h += MR.photo(D, it.id, x, y, CW, ph);
       h += MR.cap(it, `${pre}${j}`, x, y + ph + 6, CW, {lines: LN, min: LN, max: LN}); });
     side(T.left || [], 24, 'top.l'); side(T.right || [], 536, 'top.r');
-    h += `<div class="abs" style="left:${CX - 6}pt;top:${Y0}pt;width:${CWD + 12}pt;height:${avail}pt;background:#f3f6fa"></div>`;
+    h += `<div class="abs planbg" style="left:${CX - 6}pt;top:${Y0}pt;width:${CWD + 12}pt;height:${avail}pt;background:#f3f6fa"></div>`;
     if(hasPlan){
       const pl = MR.plan(D, {x:CX, y:Y0 + 10, w:CWD, h:avail - 54});
       issues.push(...pl.issues); h += pl.html;
