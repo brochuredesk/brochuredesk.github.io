@@ -76,7 +76,11 @@ window.brochureReady = (async function(){
       const pool = capC.s.slice(); draws(((F.about || {}).s || []).concat(((D.companion || {}).flyer || {}).front ? [] : [])).forEach(x => { if(!pool.some(y => sameF(x, y))) pool.push(x); }); capC.s = pool; }
     if(capC.s){ const kept = capC.s.filter(x => ![].concat(x).some(a => backSet.has(norm(a)))); if(kept.length >= 2) capC.s = kept; }
         const roomIds = FXS.coverRooms(D).filter(id => (D.photos||{})[id] && !(D.photos[id]||{}).fullHouse && id !== F.cap.photo && !/bath|powder|shower|toilet/.test(id)).slice(0, 2);
-    h += SW.heroHtml(D, F.cap.photo, hx, M, hw, hh, 'front.hero', F.side || roomIds);
+    // Just Sold: a frame too tall for the whole house is cut to the height at which the house fits (the roof and both sides stay) and centered up and down
+    let hy = M, hh2 = hh;
+    { const hp0 = (D.photos || {})[F.cap.photo] || {};
+      if(sold && hp0.box && hp0.w && hp0.h && !SW.fits(D, F.cap.photo, hw, hh)){ hh2 = Math.floor(hw/((hp0.w/hp0.h)*(hp0.box[2] - hp0.box[0]))) - 1; hy = M + (hh - hh2)/2; } }
+    h += SW.heroHtml(D, F.cap.photo, hx, hy, hw, hh2, 'front.hero', F.side || roomIds);
     [F.cap.photo].concat(F.side || roomIds).forEach(id => { if(/bath|powder|shower|toilet|laundry/.test(id)) issues.push({slot: 'front.hero', kind: 'toilet-forward-photo-on-front', detail: id + ' is a bath or toilet photo on a front'}); });
     const capLines = sold ? 3 : 6, LHJ = big ? 15.6 : 14.4, FSJ = big ? 11.9 : 10.6;   // owner 11/7: the Just Listed write-up is bigger and runs six lines
     const SLH = big ? 17.5 : 15.5;

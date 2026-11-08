@@ -62,7 +62,7 @@
     lines.sort((a,b)=>a.top-b.top);
     const box = el.getBoundingClientRect().width;
     const last = lines[lines.length-1];
-    return {n: lines.length, fill: last ? (last.r-last.l)/box : 0};
+    return {n: lines.length, fill: last ? (last.r-last.l)/box : 0, min: lines.length > 1 ? Math.min(...lines.slice(0, -1).map(l => (l.r - l.l)/box)) : 1};
   };
   SW.textWidth = el => { const r = document.createRange(); r.selectNodeContents(el); return pt(r.getBoundingClientRect().width); };
   const html = (lead, sents) => (lead ? `<b>${esc(lead)}</b> ` : '') + esc(sents.join(' '));
@@ -78,6 +78,7 @@
     const test = pick => {
       if(SW.rep5((lead ? lead + ' ' : '') + pick.join(' '))) return;
       if(/photo\d/.test(el.dataset.slot || '') && window.FXS && FXS.sharedNouns) for(let a = 0; a < pick.length; a++) for(let b = a + 1; b < pick.length; b++) if(FXS.sharedNouns(pick[a], pick[b]).length >= 2) return;   // a caption never says one noun pair twice
+      if(el.dataset.justify && window.FXS && FXS.sameFact) for(let a = 0; a < pick.length; a++) for(let b = a + 1; b < pick.length; b++) if(FXS.sameFact(pick[a], pick[b])) return;   // a justified write-up never says one fact twice
       const est = (lead0 + pick.join(' ').length) / cpl;
       if(est < T - 1.5 || est > T + 0.9) return;
       el.innerHTML = html(lead, pick);
@@ -86,8 +87,9 @@
       if(L.n === T - 1 && (!lo || L.fill > lo.fill)) lo = {fill: L.fill};
       if(L.n !== T) return;
       if(!near || L.fill > near.fill) near = {pick, fill: L.fill};
-      if(L.fill < 0.76) return;
-      const score = (L.fill >= 0.8 ? 1000 : 500) - pick.length * 10 + L.fill;   // the fewest, fullest sentences that fill the box; the last line well filled
+      if(L.fill < Math.max(0.76, +el.dataset.fill || 0)) return;   // data-fill: a write-up's own floor (0.9, owner 11/7-11/8)
+      if(el.dataset.lfill && L.min < +el.dataset.lfill) return;   // a justified write-up: every line already 80%+ full set ragged, so justifying never opens wide gaps
+      const score = (L.fill >= 0.8 ? 1000 : 500) - pick.length * 10 + L.fill + (el.dataset.lfill ? 20*L.min : 0);   // the fewest, fullest sentences that fill the box; the last line well filled
       if(!best || score > best.score) best = {score, pick, fill: L.fill};
     };
     const walk = (m, i, acc) => {
@@ -109,6 +111,18 @@
     for(let k = 0; k <= maxK; k++){ el.style.width = (base - k*(+el.dataset.nstep || 6)) + 'pt'; const b = pickFor(el, T); if(b) return b; }
     el.style.width = base + 'pt'; return pickFor(el, T);
   };
+  SW.pfN = pfN;
+  // after the fill: a full-width justified write-up whose sentences end short of its box takes the smallest bigger type (0.25 pt steps, up to 1.25x) at which a set of
+  // its sentences fills the box, every line 80%+ and the last 90%+ set ragged; then it is justified (owner 11/7 bigger type fills, 11/8 no blank space; as FXS-14 FO.grow)
+  SW.grow = () => document.querySelectorAll('[data-justify]').forEach(el => { if(!el.textContent.trim()) return;
+    const H = +el.dataset.h0 || parseFloat(el.style.height), cs = getComputedStyle(el), fs0 = parseFloat(cs.fontSize)*0.75, r = (parseFloat(cs.lineHeight)*0.75)/fs0 || 1.5;
+    const keep = el.innerHTML; el.style.textAlign = 'left'; let best = null;
+    for(let fs = fs0; fs <= fs0*1.25 + 0.01 && !best; fs += 0.25){ el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs*r) + 'pt';
+      const T = Math.floor((H + 0.5)/(fs*r)); if(T < 2) continue;
+      for(const t of [T, T - 1]){ if(t*fs*r < H - 1.5*fs*r) continue; const b = pfN(el, t); if(b){ best = {fs, n: t, pick: b.pick}; break; } } }
+    if(!best){ el.style.fontSize = fs0 + 'pt'; el.style.lineHeight = (fs0*r) + 'pt'; el.innerHTML = keep; }
+    else { el.style.fontSize = best.fs + 'pt'; el.innerHTML = (el.dataset.lead ? `<b>${esc(el.dataset.lead)}</b> ` : '') + esc(best.pick.join(' ')); el.style.height = (best.n*best.fs*r) + 'pt'; el.dataset.lines = best.n; }
+    el.style.textAlign = 'justify'; });
   const LH = 12.5, CAPPAD = 5;
   SW.fill = () => {
     const issues = [];
@@ -130,6 +144,7 @@
         if(el.dataset.lh) el.style.height = (T * +el.dataset.lh) + 'pt';
       } else settle(el, +el.dataset.lines || 1);
     });
+    SW.grow();
     // photo captions shrink to what their sentences honestly fill (never padded): the photo takes the room. The captions in one row share a line count when they can.
     const groups = new Map();
     caps.forEach(el => { const g = el.closest('.row') || el; (groups.get(g) || groups.set(g, []).get(g)).push(el); });
@@ -204,7 +219,7 @@
       if(+el.dataset.lines < 2 || !el.textContent.trim()) return;
       const L = SW.lines(el);
       if(L.n < +el.dataset.lines) issues.push({slot:el.dataset.slot, kind:'caption-short', lines:L.n, want:+el.dataset.lines, diag: el.dataset.diag || ''});
-      else if(L.fill < 0.75) issues.push({slot:el.dataset.slot, kind:'last-line-short', pct:Math.round(L.fill*100), diag: el.dataset.diag || ''});
+      else if(L.fill < Math.max(0.75, (+el.dataset.fill || 0) - 0.005)) issues.push({slot:el.dataset.slot, kind:'last-line-short', pct:Math.round(L.fill*100), diag: el.dataset.diag || ''});
     });
     document.querySelectorAll('.ph').forEach(el=>{
       const img = el.querySelector('img'), slot = el.dataset.slotPhoto || el.dataset.photo || 'photo';
@@ -615,7 +630,7 @@
       y += ph + 25 + lines*13.5;
     } else {
       const pick4 = PB.length >= 1 ? PB.slice(0, 2).map(c => Object.assign({}, c)) : FXS.pick(D, all, 6, {avoid: used, exactAvoid: !!o.outdoor, outdoor: !!o.outdoor, house: !!o.outdoor}).filter(c => !FXS.isHouse(D, c.photo) || SW.fits(D, c.photo, rw, 112));
-      const n = pick4.length >= 4 ? 4 : 2, ph = n === 4 ? Math.max(70, Math.min(108, Math.floor((cardsTop - 12 - 88 - 186)/2))) : Math.min(214, cardsTop - 12 - 88 - 27 - 14 - 25 - 40.5), lines = 3;
+      const n = pick4.length >= 4 ? 4 : 2, ph = n === 4 ? Math.max(70, Math.min(108, Math.floor((cardsTop - 12 - 88 - 186)/2))) : Math.min(214 + 20, cardsTop - 12 - 88 - 27 - 14 - 25 - 40.5), lines = 3;
       const use = pick4.filter(c => !FXS.isHouse(D, c.photo) || SW.fits(D, c.photo, rw, ph)).slice(0, n);
       while(!PB.length && use.length < n){ const more = FXS.pick(D, all, 10, {avoid: used.concat(use.map(c => c.photo)), exactAvoid: !!o.outdoor, outdoor: !!o.outdoor, house: !!o.outdoor}).filter(c => !FXS.isHouse(D, c.photo) || SW.fits(D, c.photo, rw, ph)).filter(c => !use.includes(c) && !use.some(u => SW.famOf(u.photo) === SW.famOf(c.photo))); if(!more.length) break; use.push(more[0]); }
       rf(use); shown = use.slice(); use.forEach((c, i) => { const r = Math.floor(i/2), cx = X0 + (i%2)*(rw + gap), cy = y + r*(ph + 25 + lines*13.5 + 14);
@@ -636,7 +651,7 @@
     const aboutKept0 = aboutS.filter(x => ![].concat(x).some(a => shownSet.has(nk(a))) && !(/garage/i.test([].concat(x)[0]) && /garage/i.test(covTxt))), aboutKept1 = aboutKept0.filter(x => ![].concat(x).some(a => capAlts.concat(chosen).some(c => FXS.sameFact(a, c)))), aboutKept = aboutKept1.length >= 4 ? aboutKept1 : aboutKept0;
     if(!hasPlan || (PB.length === 1 && !wide3)){
       const lh = 21, availA = cardsTop - 12 - y - 30, maxL = Math.max(3, Math.min(6, Math.floor(availA/lh))), tr = []; for(let t = maxL; t >= 3; t--) tr.push(t);
-      h += `<div class="abs" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${cardsTop - 12 - y}pt;display:flex;flex-direction:column;justify-content:center"><div style="flex:none;height:12pt;margin-bottom:8pt">${FXS.label('About the house', 'back.about.label')}</div><div class="wu" data-slot="back.about" data-lines="${maxL}" data-try="${tr.join(',')}" data-lh="${lh}" ${sd(aboutKept.length >= 3 ? aboutKept : aboutS)} style="flex:none;width:${CW}pt;height:${maxL*lh}pt;font-size:14.5pt;line-height:${lh}pt"></div></div>`;
+      h += `<div class="abs" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${cardsTop - 12 - y}pt;display:flex;flex-direction:column;justify-content:center"><div style="flex:none;height:12pt;margin-bottom:8pt">${FXS.label('About the house', 'back.about.label')}</div><div class="wu" data-narrow="0" data-fill="0.9" data-lfill="0.8" data-justify="1" data-h0="${cardsTop - 12 - y - 20 - 4}" data-slot="back.about" data-lines="${maxL}" data-try="${tr.join(',')}" data-lh="${lh}" ${sd(aboutKept.length >= 3 ? aboutKept : aboutS)} style="flex:none;width:${CW}pt;height:${maxL*lh}pt;font-size:14.5pt;line-height:${lh}pt"></div></div>`;
     } else cardsTop = Math.max(y + 8, cardsTop);
     const cw2 = rw, bx = [X0, X0 + rw + gap];
     const padTo = (a, b) => a.concat(b.filter(t => !a.includes(t))).slice(0, rowsN), c2all = SF.outside.slice(0, rowsN - near.length).concat(near);

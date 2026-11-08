@@ -52,7 +52,7 @@
     lines.sort((a,b)=>a.top-b.top);
     const box = el.getBoundingClientRect().width;
     const last = lines[lines.length-1];
-    return {n: lines.length, fill: last ? (last.r-last.l)/box : 0};
+    return {n: lines.length, fill: last ? (last.r-last.l)/box : 0, min: lines.length > 1 ? Math.min(...lines.slice(0, -1).map(l => (l.r - l.l)/box)) : 1};
   };
   SW.textWidth = el => { const r = document.createRange(); r.selectNodeContents(el); return pt(r.getBoundingClientRect().width); };
   const html = (lead, sents) => (lead ? `<b>${esc(lead)}</b> ` : '') + esc(sents.join(' '));
@@ -82,8 +82,9 @@
       if(L.n === T - 1 && (!lo || L.fill > lo.fill)) lo = {fill: L.fill};
       if(L.n !== T) return;
       if(!near || L.fill > near.fill) near = {pick, fill: L.fill};
-      if(L.fill < 0.76) return;
-      const score = (L.fill >= 0.8 ? 1000 : 500) - pick.length * 10 + L.fill;   // the fewest, fullest sentences that fill the box; the last line well filled
+      if(L.fill < Math.max(0.76, +el.dataset.fill || 0)) return;   // data-fill: a write-up's own floor for its last line (0.9, owner 11/7-11/8)
+      if(el.dataset.lfill && L.min < +el.dataset.lfill) return;   // a justified write-up: every other line already 80%+ full set ragged, so justifying never opens wide gaps
+      const score = (L.fill >= 0.8 ? 1000 : 500) - pick.length * 10 + L.fill + (el.dataset.lfill ? 20*L.min : 0);   // the fewest, fullest sentences that fill the box; the last line well filled
       if(!best || score > best.score) best = {score, pick, fill: L.fill};
     };
     const walk = (m, i, acc) => {
@@ -105,6 +106,7 @@
     for(let k = 0; k <= maxK; k++){ el.style.width = (base - k*(+el.dataset.nstep || 6)) + 'pt'; const b = pickFor(el, T); if(b) return b; }
     el.style.width = base + 'pt'; return pickFor(el, T);
   };
+  SW.pfN = pfN;   // SW.grow re-picks a write-up's sentences at a bigger size
   const LH = 12.5, CAPPAD = 5;
   SW.fill = () => {
     const issues = []; USED.clear();
@@ -113,7 +115,7 @@
       const lead = el.dataset.lead || '', b = pfN(el, T);
       if(b){ el.innerHTML = html(lead, b.pick); delete el.dataset.diag; b.pick.forEach(t => USED.add(nrm(t))); }
       else { const pk = el.__near ? el.__near.pick : JSON.parse(el.dataset.s).map(x => [].concat(x)[0]); el.innerHTML = html(lead, pk); pk.forEach(t => USED.add(nrm(t))); }
-      el.dataset.lines = T; return !!b;
+      el.dataset.lines = T; if(el.dataset.justify && b) el.style.textAlign = 'justify'; return !!b;
     };
     rest.forEach(el => {
       // data-try="5,4,3": the line counts this box may take (most lines first); the first that the whole sentences fill (last line 3/4 full) wins
@@ -147,7 +149,71 @@
       const lh0 = +els[0].dataset.lh || LH;
       els.forEach(e => { e.parentElement.style.height = (CAPPAD + h * lh0) + 'pt'; });
     });
+    SW.grow();
     return issues;
+  };
+
+  // A full-width write-up (data-justify: owner 11/8, a write-up beside a plan or photo keeps its column's full width, every line to the edge, last line 90%+):
+  // when its sentences end short of the box, it takes the smallest bigger type (0.25 pt steps, up to 1.25x) at which a set of its sentences fills the box,
+  // every line 80%+ and the last 90%+ set ragged; then it is justified. Runs after SW.fill.
+  // a cover write-up that keeps every sentence (data-just): the type moves in 0.1 pt steps until the lines as the page really sets them end 90%+ full in the same room
+  SW.tune = () => document.querySelectorAll('[data-just]').forEach(el => { if(!el.textContent.trim()) return;
+    const n0 = +el.dataset.lines, cs0 = getComputedStyle(el), fs0 = parseFloat(cs0.fontSize)*0.75, lh0 = parseFloat(cs0.lineHeight)*0.75, H = n0*lh0, w1 = el.style.width, w0 = +el.dataset.w0 || parseFloat(w1);
+    const okLh = (fs, n) => { const q = H/n/fs; return q >= 1.3 && q <= 1.65; };   // the box keeps its height: one line more or less changes the line spacing a little
+    const order = [0]; for(let k = 1; k <= 40; k++) order.push(-k, k);
+    el.style.width = w0 + 'pt';   // the column's full width
+    const keepH = el.innerHTML; let ok = null;
+    for(const k of order){ const fs = fs0 + k*0.1; el.style.fontSize = fs + 'pt'; const L = SW.lines(el);   // 1: the same sentences, type moves
+      if(Math.abs(L.n - n0) <= 1 && L.fill >= 0.9 && okLh(fs, L.n)){ ok = {fs, n: L.n}; break; } }
+    if(!ok){   // 2: the sentence versions move too (every sentence stays), last line 90%+, every other line 70%+ set ragged
+      const alts = JSON.parse(el.dataset.s).flatMap(x => [].concat(x)), txt = el.textContent, mine = alts.filter(t => txt.indexOf(t) >= 0);
+      mine.forEach(t => USED.delete(nrm(t))); const was = [el.dataset.fill, el.dataset.lfill, el.dataset.narrow]; el.dataset.fill = '0.9'; el.dataset.lfill = '0.62'; el.dataset.narrow = '0';
+      outer: for(const k of order){ const fs = fs0 + k*0.1; el.style.fontSize = fs + 'pt';
+        for(const n of [n0, n0 - 1, n0 + 1]){ if(!okLh(fs, n)) continue; const b = pfN(el, n); if(b && b.pick.length >= +(el.dataset.min || 1)){ ok = {fs, n}; el.innerHTML = (el.dataset.lead ? `<b>${esc(el.dataset.lead)}</b> ` : '') + esc(b.pick.join(' ')); b.pick.forEach(t => USED.add(nrm(t))); break outer; } } }
+      if(!ok){ el.innerHTML = keepH; mine.forEach(t => USED.add(nrm(t))); if(was[0]) el.dataset.fill = was[0]; else delete el.dataset.fill; if(was[1]) el.dataset.lfill = was[1]; else delete el.dataset.lfill; el.dataset.narrow = was[2]; } }
+    if(ok){ el.style.fontSize = ok.fs + 'pt'; el.style.lineHeight = (H/ok.n) + 'pt'; el.style.height = H + 'pt'; el.dataset.lines = ok.n; el.style.textAlign = 'justify'; el.dataset.fill = '0.9'; }
+    else { el.style.fontSize = fs0 + 'pt'; el.style.width = w1; } });
+  SW.grow = () => {
+    SW.tune();
+    const groups = new Map();
+    document.querySelectorAll('[data-justify]').forEach(el => { if(!el.textContent.trim()) return; const k = el.dataset.group || el; (groups.get(k) || groups.set(k, []).get(k)).push(el); });
+    groups.forEach(els => {   // the write-ups of one group (the sections of a back, the entries of a list) share one type size
+      const S = els.map(el => { const cs = getComputedStyle(el), fs0 = parseFloat(cs.fontSize)*0.75, r = (parseFloat(cs.lineHeight)*0.75)/fs0 || 1.5, H = +(el.dataset.h0 || parseFloat(el.style.height)),
+        keep = el.innerHTML, txt = el.textContent, mine = JSON.parse(el.dataset.s).flatMap(x => [].concat(x)).filter(t => txt.indexOf(t) >= 0);
+        mine.forEach(t => USED.delete(nrm(t))); el.style.textAlign = 'left'; el.style.height = 'auto';   // its own sentences are free to be picked again
+        return {el, fs0, r, H, keep, mine, T0: Math.max(2, Math.round(H/(fs0*r)))}; });
+      if(S[0].el.dataset.spread){   // a list of short entries (the fact tiles): each takes the type size its own sentences fill at, within a quarter-point window of the others
+        const win = +S[0].el.dataset.spread; let done = null;
+        for(const tier of [{fill: '0.9', lfill: '0.8'}, {fill: '0.9', lfill: '0.7'}]){
+          S.forEach(o => { o.el.dataset.fill = tier.fill; o.el.dataset.lfill = tier.lfill; });
+          const feas = S.map(o => { const m = {}; for(let k = 0; k < 40; k++){ const fs = o.fs0 + k*0.25; if(fs > o.fs0*1.25 + 0.01) break; o.el.style.fontSize = fs + 'pt';
+            for(const t of [o.T0, o.T0 - 1]){ if(t < 2 || o.H/t < fs*1.3 || o.H/t > fs*1.75) continue; o.el.style.lineHeight = (o.H/t) + 'pt'; const b = pfN(o.el, t); if(b){ m[k] = {fs, n: t, pick: b.pick}; break; } } } return m; });
+          for(let k0 = 0; k0 < 40 && !done; k0++){ const sel = feas.map(m => { for(let k = k0; k <= k0 + win; k++) if(m[k]) return m[k]; return null; }); if(sel.every(Boolean)) done = sel.map((g, i) => Object.assign({o: S[i]}, g)); }
+          if(done) break; }
+        if(done){ done.forEach(g => { const el = g.o.el; el.style.fontSize = g.fs + 'pt'; el.innerHTML = (el.dataset.lead ? `<b>${esc(el.dataset.lead)}</b> ` : '') + esc(g.pick.join(' ')); g.pick.forEach(t => USED.add(nrm(t)));
+            el.style.lineHeight = (g.o.H/g.n) + 'pt'; el.style.height = g.o.H + 'pt'; el.dataset.lines = g.n; el.style.textAlign = 'justify'; }); return; }
+        S.forEach(o => { delete o.el.dataset.lfill; delete o.el.dataset.fill; });
+      }
+      let ok = null;
+      for(const tier of [{fill: '0.9', lfill: '0.8'}, {fill: '0.9', lfill: '0.72'}]){   // strict first; a little looser rather than falling back to short lines
+        S.forEach(o => { o.el.dataset.fill = tier.fill; o.el.dataset.lfill = tier.lfill; });
+        for(let k = 0; k < 30 && !ok; k++){
+          const picks = [];
+          for(const o of S){ const fs = o.fs0 + k*0.25; if(fs > o.fs0*1.25 + 0.01){ picks.length = 0; break; }
+            o.el.style.fontSize = fs + 'pt'; let got = null;   // the box keeps its height; the line height eases toward 1.3x the type before the line count drops
+            for(const t of [o.T0, o.T0 - 1]){ if(t < 2 || o.H/t < fs*1.3 || o.H/t > fs*1.75) continue; o.el.style.lineHeight = (o.H/t) + 'pt'; const b = pfN(o.el, t); if(b){ got = {o, fs, n: t, pick: b.pick}; break; } }
+            if(!got){ picks.length = 0; break; } picks.push(got); }
+          if(picks.length === S.length) ok = picks; else if(!picks.length && S[0].fs0 + k*0.25 > S[0].fs0*1.25) break; }
+        if(ok) break; }
+      if(ok) ok.forEach(g => { const el = g.o.el; el.style.fontSize = g.fs + 'pt'; el.innerHTML = (el.dataset.lead ? `<b>${esc(el.dataset.lead)}</b> ` : '') + esc(g.pick.join(' ')); g.pick.forEach(t => USED.add(nrm(t)));
+        el.style.lineHeight = (g.o.H/g.n) + 'pt'; el.style.height = g.o.H + 'pt'; el.dataset.lines = g.n; el.style.textAlign = 'justify'; });
+      else S.forEach(o => { const el = o.el;   // the pool is too short for this width: back to the set's earlier fit (ragged, narrowed a little), last line 3/4 full
+        el.style.fontSize = o.fs0 + 'pt'; el.style.lineHeight = (o.fs0*o.r) + 'pt'; el.dataset.nogrow = '1'; el.dataset.narrow = el.dataset.nfb || '8'; delete el.dataset.lfill; delete el.dataset.justify; el.dataset.fill = '0.75';
+        const tries = (el.dataset.try || '').split(',').map(Number).filter(Boolean); let T = tries.find(t => pfN(el, t)); if(!T) T = +el.dataset.lines;
+        const b = pfN(el, T); const pk = b ? b.pick : JSON.parse(el.dataset.s).map(x => [].concat(x)[0]);
+        el.innerHTML = (el.dataset.lead ? `<b>${esc(el.dataset.lead)}</b> ` : '') + esc(pk.join(' ')); pk.forEach(t => USED.add(nrm(t)));
+        const L = SW.lines(el); el.style.height = (L.n*o.fs0*o.r) + 'pt'; el.dataset.lines = L.n; el.style.textAlign = 'left'; });
+    });
   };
 
   // ---------- logos ----------
@@ -199,7 +265,7 @@
       if(+el.dataset.lines < 2 || !el.textContent.trim()) return;
       const L = SW.lines(el);
       if(L.n < +el.dataset.lines) issues.push({slot:el.dataset.slot, kind:'caption-short', lines:L.n, want:+el.dataset.lines, diag: el.dataset.diag || ''});
-      else if(L.fill < 0.75) issues.push({slot:el.dataset.slot, kind:'last-line-short', pct:Math.round(L.fill*100), diag: el.dataset.diag || ''});
+      else if(L.fill < Math.max(0.75, (+el.dataset.fill || 0) - 0.005)) issues.push({slot:el.dataset.slot, kind:'last-line-short', pct:Math.round(L.fill*100), diag: el.dataset.diag || ''});
     });
     document.querySelectorAll('.ph').forEach(el=>{
       const img = el.querySelector('img'), slot = el.dataset.slotPhoto || el.dataset.photo || 'photo';
@@ -543,7 +609,7 @@
     if(!pick){ for(let fs = 15; fs >= 10; fs -= .25){ const lh = Math.round(fs*1.42*4)/4, m = FXS.measureText(joined, `font-size:${fs}pt;line-height:${lh}pt`, W); if(m.n*lh <= avail){ pick = {fs, lh, n: m.n}; break; } } }
     pick = pick || {fs: 10, lh: 14, n: Math.floor(avail/14)};
     const tries = [pick.n, pick.n - 1, pick.n + 1].filter(t => t > 3);
-    h += `<div class="abs body" data-slot="front.summary" data-fixed="1" data-min="${sents.length}" data-narrow="8" data-nstep="4" data-lines="${pick.n}" data-try="${tries.join(',')}" data-lh="${pick.lh}" data-s='${esc(JSON.stringify((X11.frontWrite && X11.frontWrite.length ? X11.frontWrite : [].concat(o.intro || [])).map(t => [].concat(t)))).replace(/'/g,'&#39;')}' style="left:${X}pt;top:${y}pt;width:${W}pt;height:${pick.n*pick.lh}pt;font-size:${pick.fs}pt;line-height:${pick.lh}pt"></div>`;
+    h += `<div class="abs body" data-slot="front.summary" data-fixed="1" data-min="${sents.length}" data-narrow="8" data-nstep="4" data-just="1" data-lines="${pick.n}" data-try="${tries.join(',')}" data-lh="${pick.lh}" data-s='${esc(JSON.stringify((X11.frontWrite && X11.frontWrite.length ? X11.frontWrite : [].concat(o.intro || [])).map(t => [].concat(t)))).replace(/'/g,'&#39;')}' style="left:${X}pt;top:${y}pt;width:${W}pt;height:${pick.n*pick.lh}pt;font-size:${pick.fs}pt;line-height:${pick.lh}pt"></div>`;
     return h;
   };
 

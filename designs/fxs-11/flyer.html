@@ -112,6 +112,8 @@ window.brochureReady = (async function(){
       for(; nSec >= 2; nSec--){ const sum = secs.slice(0, nSec).reduce((a, x) => a + (x.planLines || 2), 0), lh = (availT - nSec*LBL - (nSec - 1)*8)/sum; if(lh >= 14.5){ lhS = Math.min(19, lh); break; } }
       if(nSec < 2) nSec = 2;
       fsS = Math.round(lhS*0.655*4)/4; linesPer = 2;
+      // the lines the column still has beyond each section's own count go to the sections in turn (no blank space, owner 11/7); the type then grows to fill them
+      { const tot = Math.floor((availT - nSec*LBL - (nSec - 1)*8)/lhS + 0.01); let have = secs.slice(0, nSec).map(x => x.planLines || 2), k = 0; while(have.reduce((a, b) => a + b, 0) < tot && k < 40){ have[k % nSec]++; k++; } secs.slice(0, nSec).forEach((x, i) => { x.planLines = have[i]; }); }
     } else {   // no plan: four lines a section when that still sets 12 pt or more, else three; the line height takes up the room
       for(const L_ of [4, 3, 2]){ const lh = (availT - nSec*LBL - (nSec - 1)*10)/(nSec*L_); if(lh >= 18.5 || L_ === 2){ lhS = Math.min(21.5, lh); linesPer = L_; break; } }
       fsS = Math.round(lhS*0.64*4)/4;
@@ -121,7 +123,7 @@ window.brochureReady = (async function(){
     let sh_ = '';
     useSecs.forEach((s, i) => {
       const myLines = hasPlan ? (s.planLines || base) : base, tr = [myLines];
-      sh_ += `<div style="flex:none"><div class="lbl" data-slot="back.sec${i}.label" data-lines="1">${esc(s.label)}</div><div class="body" style="margin-top:8pt;font-size:${fsS}pt;line-height:${lhS}pt;color:var(--fx-text)" data-slot="back.sec${i}" data-min="${s.min || 2}" data-narrow="5" data-nstep="8" data-lines="${myLines}" data-try="${tr.join(',')}" data-lh="${lhS}" ${sentData(s.s)}></div></div>`;
+      sh_ += `<div style="flex:none"><div class="lbl" data-slot="back.sec${i}.label" data-lines="1">${esc(s.label)}</div><div class="body" style="margin-top:8pt;font-size:${fsS}pt;line-height:${lhS}pt;color:var(--fx-text)" data-slot="back.sec${i}" data-min="${s.min || 2}" data-narrow="0" data-nfb="5" data-nstep="8" data-fill="0.9" data-lfill="0.8" data-justify="1" data-group="bsec" data-h0="${myLines*lhS}" data-lines="${myLines}" data-try="${tr.join(',')}" data-lh="${lhS}" ${sentData(s.s)}></div></div>`;
     });
     h += `<div class="abs" style="left:${TX}pt;top:${rTop}pt;width:${TW}pt;height:${availT}pt;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between">${sh_}</div>`;
     // the two outlined boxes side by side, as the FX11 back sets them

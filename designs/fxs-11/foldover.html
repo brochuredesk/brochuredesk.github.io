@@ -63,7 +63,7 @@ window.brochureReady = (async function(){
     return `<div class="abs lbl" style="left:${HX}pt;top:34pt;width:${o.kw || 330}pt;height:12pt" data-slot="${slotp}.kicker" data-lines="1">${esc(String(kicker).toUpperCase())}</div>
       <div class="abs ttl fit" style="left:${HX}pt;top:50pt;width:${HW}pt;height:38pt;font-size:24pt;line-height:38pt" data-slot="${slotp}.title" data-lines="1">${FXS.lightBold(title)}</div>`; };
   const intro = (c, slot, y, lines) => { const tr = []; for(let t = lines; t >= Math.max(2, lines - 2); t--) tr.push(t);
-    return `<div class="abs body" data-slot="${slot}" data-lines="${lines}" data-try="${tr.join(',')}" data-lh="16" ${sd(c)} style="left:${C0}pt;top:${y}pt;width:${CWI}pt;height:${lines*16}pt;font-size:10.5pt;line-height:16pt"></div>`; };
+    return `<div class="abs body" data-slot="${slot}" data-lines="${lines}" data-try="${tr.join(',')}" data-lh="16" ${slot === 'right.intro' ? `data-narrow="0" data-nfb="8" data-fill="0.9" data-lfill="0.8" data-justify="1" data-h0="${lines*16}"` : ''} ${sd(c)} style="left:${C0}pt;top:${y}pt;width:${CWI}pt;height:${lines*16}pt;font-size:10.5pt;line-height:16pt"></div>`; };
 
   const placed = new Set(); const _ph = SW.photo; SW.photo = (D_, id, st, sl) => { if(id) placed.add(id); return _ph(D_, id, st, sl); };
   // ================= COVER =================
@@ -120,10 +120,11 @@ window.brochureReady = (async function(){
     h += titleBlock(T.kicker || 'The house', T.title || '', 'back', TX, TW, topY);
     const ty = topY + 24 + 60 + 4;
     const secs = ((B.floors && B.floors.length) ? B.floors : (((D.companion || {}).flyer || {}).back || {}).floors || []).slice(0, 4), nSec = secs.length;
-    const per = Math.floor(((rBot - boxH - 18 - ty) - nSec*(14 + 6 + 24))/lhS/Math.max(1, nSec)), base = Math.max(2, Math.min(6, per));
+    // the room the column has goes to the sections as lines (a back with room takes more lines per section, then bigger type; owner 11/7 no blank space)
+    const availH = rBot - boxH - 18 - ty, tot = Math.floor((availH - nSec*25 - (nSec - 1)*8)/lhS), baseOf = i => Math.max(2, Math.floor(tot/Math.max(1, nSec)) + (i < tot % Math.max(1, nSec) ? 1 : 0));
     let sh_ = '';
-    secs.forEach((f, i) => { const tr = []; for(let t = base; t >= 1; t--) tr.push(t);
-      sh_ += `<div style="flex:none"><div class="lbl" data-slot="back.sec${i}.label" data-lines="1">${esc(String(f.n).toUpperCase())}</div><div class="body" style="margin-top:9pt;font-size:${fsS}pt;line-height:${lhS}pt;color:var(--fx-text)" data-slot="back.sec${i}" data-narrow="14" data-nstep="9" data-lines="${base}" data-try="${tr.join(',')}" data-lh="${lhS}" ${sd(f.s)}></div></div>`; });
+    secs.forEach((f, i) => { const base = baseOf(i), tr = []; for(let t = base; t >= 1; t--) tr.push(t);
+      sh_ += `<div style="flex:none"><div class="lbl" data-slot="back.sec${i}.label" data-lines="1">${esc(String(f.n).toUpperCase())}</div><div class="body" style="margin-top:9pt;font-size:${fsS}pt;line-height:${lhS}pt;color:var(--fx-text)" data-slot="back.sec${i}" data-narrow="0" data-nfb="14" data-nstep="9" data-fill="0.9" data-lfill="0.8" data-justify="1" data-group="bsec" data-h0="${base*lhS}" data-lines="${base}" data-try="${tr.join(',')}" data-lh="${lhS}" ${sd(f.s)}></div></div>`; });
     h += `<div class="abs" style="left:${TX}pt;top:${ty}pt;width:${TW}pt;height:${rBot - boxH - 18 - ty}pt;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between">${sh_}</div>`;
     h += FXS.twoBoxes(D, TX, rBot - boxH, TW, boxH, 'back.box', {size: 8.75});
     }
@@ -146,9 +147,9 @@ window.brochureReady = (async function(){
     // the kitchen box ends at the foot of the photo column: entries two full lines, about 0.1 in (7 pt) apart; the intro takes the lines above it
     const items = (box.items || []).slice(0, 6), EH = 52, GAPE = 7, boxH = 16 + 12 + 12 + 8 + items.length*EH + (items.length - 1)*GAPE + 16, boxTop = 744 - boxH;
     const iLh = 22, iMax = Math.max(4, Math.floor((boxTop - 18 - 130)/iLh)), tr = []; for(let t = iMax; t >= 4; t--) tr.push(t);
-    h += `<div class="abs body" data-slot="left.intro" data-lines="${iMax}" data-try="${tr.join(',')}" data-lh="${iLh}" ${sd(I.intro)} style="left:${TX}pt;top:130pt;width:${TW}pt;height:${iMax*iLh}pt;font-size:13.5pt;line-height:${iLh}pt;color:var(--fx-text)"></div>`;
+    h += `<div class="abs body" data-slot="left.intro" data-narrow="0" data-fill="0.9" data-lfill="0.8" data-justify="1" data-h0="${iMax*iLh}" data-lines="${iMax}" data-try="${tr.join(',')}" data-lh="${iLh}" ${sd(I.intro)} style="left:${TX}pt;top:130pt;width:${TW}pt;height:${iMax*iLh}pt;font-size:13.5pt;line-height:${iLh}pt;color:var(--fx-text)"></div>`;
     h += `<div class="abs inkbox" style="left:${TX}pt;top:${boxTop}pt;width:${TW}pt;height:${boxH}pt;padding:16pt 14pt"><div class="lbl" data-slot="left.box.kicker" data-lines="1">${esc(String(box.kicker || '').toUpperCase())}</div>
-      <div style="margin-top:12pt;border-top:var(--fx-rule-w) solid var(--fx-outline);padding-top:8pt;display:flex;flex-direction:column;gap:${GAPE}pt">${items.map((it, i) => `<div style="height:${EH}pt;overflow:hidden"><div class="sq" style="gap:7pt"><i>▪</i><div style="font:700 9.5pt/12pt var(--fx-font);letter-spacing:1.4pt;text-transform:uppercase;color:var(--fx-ink)" data-slot="left.box.l${i}" data-lines="1">${esc(it.l)}</div></div><div style="margin-left:14pt;margin-top:4pt;width:${TW - 28 - 14}pt;font:400 11pt/17pt var(--fx-font);color:var(--fx-text);overflow:hidden;height:34pt" data-slot="left.box.t${i}" data-lines="2" data-try="2" data-narrow="14" data-nstep="9" data-lh="17" ${sd(it.s)}></div></div>`).join('')}</div></div>`;
+      <div style="margin-top:12pt;border-top:var(--fx-rule-w) solid var(--fx-outline);padding-top:8pt;display:flex;flex-direction:column;gap:${GAPE}pt">${items.map((it, i) => `<div style="height:${EH}pt;overflow:hidden"><div class="sq" style="gap:7pt"><i>▪</i><div style="font:700 9.5pt/12pt var(--fx-font);letter-spacing:1.4pt;text-transform:uppercase;color:var(--fx-ink)" data-slot="left.box.l${i}" data-lines="1">${esc(it.l)}</div></div><div style="margin-left:14pt;margin-top:4pt;width:${TW - 28 - 14}pt;font:400 11pt/17pt var(--fx-font);color:var(--fx-text);overflow:hidden;height:34pt" data-slot="left.box.t${i}" data-lines="2" data-try="2" data-narrow="0" data-nfb="14" data-nstep="9" data-fill="0.9" data-lfill="0.8" data-justify="1" data-group="lbox" data-spread="2" data-h0="34" data-lh="17" ${sd(it.s)}></div></div>`).join('')}</div></div>`;
     h += FXS.logo(D, TX, 752, TW, 24, 'flex-end');
     return h;
   }

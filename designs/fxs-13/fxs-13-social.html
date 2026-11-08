@@ -56,6 +56,8 @@ FXP.start(['500 20pt "Bodoni Moda"', '600 20pt "Bodoni Moda"', '400 20pt "Cormor
     while(n > lines && s > o.min){ s -= .5; n = cnt(s); }
     if(s < o.min) s = o.min;
     n = cnt(s);
+    // the Just Sold lines: two lines whose last line runs short (a lone word) set as one line at the biggest size that holds it (down to 0.8 of the floor), never a stub
+    if(/^sold\.(head|line)$/.test(o.slot) && n > 1 && !o.parts && !o.rich && FXP.width(txt, css(s)) < 1.7*o.w){ for(let t = s; t >= o.min*0.8; t -= .5) if(cnt(t) === 1){ s = t; n = 1; break; } }
     const nn = Math.min(n, 99), h = Math.ceil(nn*s*lhk*100)/100 + 1.4 + (nn > 1 ? 2.5 : 0);
     const wid = nn === 1 ? (o.rich ? wdt(o.rich, css(s), true) : FXP.width(txt, css(s))) : o.w;
     const body = o.rich || (o.parts ? o.parts.map(esc).join('<br>') : esc(txt));
