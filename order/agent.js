@@ -2164,7 +2164,9 @@
     let can = {printers: [], pieces: {}};
     if(pr.id !== 'other') try { can = await fetch(UPLOAD_RUNNER + '/printers').then(r => r.json()); } catch(e) {}
     const covers = (can.pieces || {})[pr.id];      // the pieces this printer's recipe uploads (none listed = all)
-    const ready = (can.printers || []).includes(pr.id) && (!covers || covers.includes(piece));
+    const sizes = ((can.sizes || {})[pr.id] || {})[piece];   // postcard sizes this printer takes, when not all (PsPrint: 6x11)
+    const want = piece === 'postcard' ? (pkg.order.size === 'both' ? ['6x9', '6x11'] : [pkg.order.size]) : [];
+    const ready = (can.printers || []).includes(pr.id) && (!covers || covers.includes(piece)) && (!sizes || want.every(z => sizes.includes(z)));
     if(!ready){
       const v = await ask(`<h2>Download for ${esc(pr.name)}</h2><p>We can't upload to ${esc(pr.name)} for you yet. Download the print file and add it to your ${esc(pr.name)} order yourself.</p>`,
         [['Download it', 'dl'], ['Not now', 'no', 'line']]);
