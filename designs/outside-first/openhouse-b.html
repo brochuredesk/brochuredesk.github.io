@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Outside First Open House flyer · B</title>
+<link rel="stylesheet" href="outside-first.css">
+<link rel="stylesheet" href="outside-first-cards.css">
+<script src="outside-first.js"></script>
+<script src="outside-first-cards.js"></script>
+<script src="../engine/ivory.js"></script>
+<!--
+  Outside First · Open House flyer B "Garden Gate" (trim 612 x 792 pt, white margin in print).
+  A deep green-black spine runs down the left side and carries the event, stacked: the label in tan caps, the weekday,
+  the month, the day number at 118 pt, the time in light copper, then the special-notes and refreshments lines (broker
+  and REALTOR(R) opens, only when entered) at 12 pt in a cream event box with a thin copper border (The owner 10/30; Ivory.eventBox,
+  the agent resizes it with openHouse.box.w), then a tall interior photo that takes whatever height is left. The right
+  column reads outside in: city, state and ZIP, the address, the key facts, the whole-house photo (uncropped, 3:2), a
+  paragraph about the outdoor spaces that fills its box, and two outdoor-space photos with captions. The spine color runs
+  down the side and across the whole bottom in an L (The owner 10/30), behind the standard Right panel contact card in light
+  type (the one logo). The notes box is exactly as wide as the photo below it and lines up with its edges. No QR, no RSVP, no price.
+  Copy: data.cards.oh.b = {photo, spine, para: [sentences], row: [{id, name, tag, text: [sentences]}, ...]}.
+-->
+<style>
+  .spine{position:absolute;background:#1f2b2c}
+  .evb{font:600 12pt/15.5pt var(--font-body);color:#1f2b2c}
+  .evb.s{font-weight:700;color:#a8581d}
+  .ofl .cc{--cc-paper:#1f2b2c;--cc-ink:#fbf3e8;--cc-muted:#e6dcc9;--cc-accent:#f2b47e;--cc-line:rgba(251,243,232,.38)}
+  .ofl .fl-fine{color:#e6dcc9}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const PS = a => String(a || '').replace(/\s+Street(?=\s*(,|$|\s+(Unit|Apt|#|Suite)\b))/i, '').trim();   // print address rule (The owner 10/30): no "Street"
+  const D = OF.data(), esc = OF.esc, L = D.listing || {}, K = ((D.cards || {}).oh || {}).b || {};
+  await OFC.boot(D, () => {
+    const O = OFC.openHouse(D), m = OFC.metrics(D), W = 612, H = 792, SW = 198, spineEnd = 640;
+    const px = m.inset + 16, pw = SW - px - 14;
+    let h = '', y = 34;
+    // measured stack: each block gets the lines it needs at its own size
+    const block = (cls, style, lh, text, slot, extra) => {
+      const n = OFC.linesFor(style, text, pw, lh);
+      const out = `<div class="abs ${cls}" style="left:${px}pt;top:${y}pt;width:${pw}pt;height:${n*lh}pt;${extra || ''}${/nowrap/.test(style) ? '' : 'white-space:normal;'}" data-slot="${slot}" data-lines="${n}">${esc(text)}</div>`;
+      y += n*lh; return out;
+    };
+    let sp = '';
+    sp += block('sp-label', 'font:700 22pt/26pt var(--font-display);letter-spacing:2.4pt;text-transform:uppercase', 26, O.label, 'oh.label', 'white-space:normal;');
+    y += 10; sp += `<div class="abs" style="left:${px}pt;top:${y}pt;width:44pt;height:1.6pt;background:#f2b47e"></div>`; y += 14;
+    if(O.weekday){
+      sp += block('sp-wd', 'font:500 22pt/26pt var(--font-display);white-space:nowrap', 26, O.weekday, 'oh.weekday');
+      sp += block('sp-month', 'font:700 30pt/34pt var(--font-display);white-space:nowrap', 34, O.month, 'oh.month');
+      sp += block('sp-day', 'font:700 100pt/94pt var(--font-display);letter-spacing:-3pt;white-space:nowrap', 94, O.day, 'oh.date');
+    } else if(O.long){
+      sp += block('sp-raw', 'font:700 34pt/38pt var(--font-display)', 38, O.long, 'oh.date');
+    }
+    y += 12;
+    if(O.time) sp += block('sp-time', 'font:700 22pt/27pt var(--font-display)', 27, O.time, 'oh.time');
+    const evb = Ivory.eventBox([[O.note, 'oh.note', 'evb s'], [O.refreshments, 'oh.refreshments', 'evb']], px, y + 12, pw, 15.5, 4,
+      {bg: '#fff', line: '#bf6a2a', lineW: 1, padX: 9, padY: 9, maxW: pw});
+    sp += evb.html;
+    if(evb.h) y += 12 + evb.h;
+    const phY = y + 16, phH = spineEnd - 16 - phY;
+    sp += OFC.photo(D, K.spine, px, phY, pw, phH);
+    h += `<div class="spine" style="left:${m.inset}pt;top:${m.inset}pt;width:${SW - m.inset}pt;height:${H - 2*m.inset}pt"></div><div class="spine" style="left:${m.inset}pt;top:${spineEnd + 16}pt;width:${W - 2*m.inset}pt;height:${H - m.inset - spineEnd - 16}pt"></div>` + sp;
+
+    // right column, outside in
+    const rx = 226, rw = 350;
+    h += `<div class="abs fl-place" style="left:${rx}pt;top:22pt;width:${rw}pt;height:12pt" data-slot="oh.place" data-lines="1">${esc(OFC.placeZip(L))}</div>`;
+    h += `<div class="abs fl-addr" style="left:${rx}pt;top:36pt;width:${rw}pt;height:34pt;font-size:28pt" data-slot="address" data-lines="1">${esc(PS(L.address))}</div>`;
+    h += `<div class="abs fl-facts" style="left:${rx}pt;top:74pt;width:${rw}pt;height:14pt" data-slot="oh.facts" data-lines="1">${esc(OFC.factsLine(L))}</div>`;
+    h += `<div class="copper-rule" style="left:${rx}pt;width:${rw}pt;top:94pt"></div>`;
+    const hhh = Math.round(rw/1.5);
+    h += OFC.photo(D, K.photo || 'front', rx, 104, rw, hhh);
+    const py = 104 + hhh + 12, lh = 15.5;
+    const row = (K.row || []), capN = 3, rowPh = 112, rowTop = 640 - (rowPh + 6 + 12 + capN*11);
+    const n = Math.floor((rowTop - 12 - py)/lh);
+    h += OFC.para('oh.blurb', K.para || [], rx, py, rw, n, 11.5, lh, 'color:var(--text)');
+    const cw = (rw - 14)/2;
+    row.slice(0, 2).forEach((c, i) => {
+      const cx = rx + i*(cw + 14);
+      h += OFC.photo(D, c.id, cx, rowTop, cw, rowPh);
+      h += OFC.cap(c, `oh.cap${i}`, cx, rowTop + rowPh + 6, cw, capN);
+    });
+    h += `<div class="ofl">` + ContactCard.html([36, 660, 540, 102], Object.assign({}, D.agent || {}, {headshot: OFC.headshot(D)}), Object.assign({}, D.brand || {}, {logo: (D.brand || {}).logoOnDark || (D.brand || {}).logoKnockout || (D.brand || {}).logo}), {layout: 'panel', bottomGap: .5}) + `</div>`;
+    h += `<div class="ofl"><div class="abs fl-fine" style="left:36pt;top:764pt;width:540pt" data-slot="fineprint" data-lines="1" data-fine="1">Information deemed reliable but not guaranteed.</div></div>`;
+    return {html: OFC.frame(D, W, H, h), after: () => OFC.fitWidth('.fl-addr', 20)};
+  });
+})();
+</script>
+</body>
+</html>

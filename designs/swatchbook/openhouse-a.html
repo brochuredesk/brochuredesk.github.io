@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Swatchbook Open House flyer A</title>
+<link rel="stylesheet" href="swatchbook.css">
+<script src="swatchbook.js"></script>
+<script src="../engine/agentcard.js"></script>
+<script src="../engine/ivory.js"></script>
+<!--
+  BrochureDesk · Swatchbook · Open House flyer A "Cover Swatch" (8.5 x 11, trim 612 x 792 pt). The brand color is the field, the whole house runs wide
+  under the event, three interior photos with captions close the page above the standard contact card (templates/_shared/agentcard.js), which carries
+  the page's one brokerage logo. Open House standard: label 20 pt or larger, the date the largest type, the time 18 pt or larger, city, state and ZIP,
+  no RSVP, no QR, no price. Refreshments and the note show only on broker and REALTOR(R) opens, only when typed, at 12 pt in a white event box with a thin gold border under the time (The owner 10/30; Ivory.eventBox, openHouse.box.w resizes it).
+  Print: a white 0.25 in margin around the field (home printers). Copy: data.sw.pc.oh.a.photos (lead plus whole sentences).
+-->
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const PS = a => String(a || '').replace(/\s+Street(?=\s*(,|$|\s+(Unit|Apt|#|Suite)\b))/i, '').trim();   // print address rule (The owner 10/30): no "Street"
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = SW.esc, b = D.brand || {}, A = D.agent || {}, L = D.listing, K = (((D.sw || {}).pc || {}).oh || {}).a || {};
+  document.body.dataset.mode = D.mode || 'email';
+  await SW.setup(D);
+  const O = SW.openHouse(D), issues = [];
+  const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot) || '';
+  const X = 30, Wd = 552;
+  const sty = document.createElement('style'); sty.textContent = '.evb{font:600 12pt/15.5pt var(--font-body);color:var(--navy);text-align:left}.evb.b{font-weight:700}'; document.head.appendChild(sty);
+  const ph = (id, x, y, w, h, slot) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt">${SW.photo(D, id, 'position:absolute;inset:0', slot)}</div>`;
+  let h = '';
+  // the event
+  h += `<div class="abs oh-label" style="left:${X}pt;top:22pt;width:${Wd}pt;height:26pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
+  h += `<div class="abs oh-date" id="ohdate" style="left:${X}pt;top:48pt;width:${Wd}pt;height:46pt;font-size:40pt;line-height:46pt" data-slot="oh.date" data-lines="1">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-time" style="left:${X}pt;top:96pt;width:230pt;height:30pt;font-size:24pt;line-height:30pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
+  // the event box: what's served and the note, white with a thin gold border; the photo gives up the height it needs
+  const evb = Ivory.eventBox([[O.refreshments, 'oh.refreshments', 'evb b'], [O.note, 'oh.note', 'evb']], X, 134, Wd, 15.5, 2,
+    {bg: '#fff', line: 'var(--gold)', lineW: 1, padX: 14, padY: 6, scale: ((D.openHouse || {}).box || {}).w, maxW: Wd});
+  const heroTop = evb.h ? 134 + evb.h + 10 : 140;
+  h += evb.html;
+  // the whole house
+  h += SW.heroHtml(D, 'front', X, heroTop, Wd, 446 - heroTop, 'oh.hero', K.side);
+  // address, city state ZIP, three facts
+  h += `<div class="abs oh-addr" style="left:${X}pt;top:452pt;width:${Wd}pt;height:34pt;font-size:30pt;line-height:34pt" data-slot="address" data-lines="1">${esc(PS(L.address))}</div>`;
+  h += `<div class="abs oh-place" style="left:${X}pt;top:490pt;width:200pt;height:12pt" data-slot="place" data-lines="1">${esc(SW.place(L))}</div>`;
+  h += `<div class="abs oh-facts" style="left:${X + 190}pt;top:490pt;width:${Wd - 190}pt;height:12pt" data-slot="facts" data-lines="1">${SW.stats(L).slice(0, 3).map(esc).join('<i>&#9632;</i>')}</div>`;
+  // three interiors with captions
+  const ps = K.photos || [], gw = 14, pw = (Wd - gw*(ps.length - 1))/ps.length;
+  h += `<div class="abs row" style="left:${X}pt;top:512pt;width:${Wd}pt;height:148pt;gap:${gw}pt">${ps.map((c, i) => `<div class="item" style="flex:1 1 0">${SW.photo(D, c.photo, '', 'oh.photo'+i)}<div class="cap" style="height:42.5pt"><div class="a" data-slot="oh.photo${i}" data-lh="12.5" data-lines="4" data-lead="${esc(c.lead||'')}" data-s='${esc(JSON.stringify([].concat(c.s||[]))).replace(/'/g,'&#39;')}' style="height:37.5pt"></div></div></div>`).join('')}</div>`;
+  h += ContactCard.html([X, 666, Wd, 100], Object.assign({}, A, {headshot: hsSrc}), Object.assign({}, b, {logo: b.logoOnDark || b.logo}), {layout: 'panel', size: 'mid', fine: 'Information deemed reliable but not guaranteed; buyer to verify.', bottomGap: 0.5, fieldAccent: true});
+  const f = SW.frame(D, 612, 792, h);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  // the longest date still fits its line (down from 40 pt, never below 34)
+  const dt = document.getElementById('ohdate'); let fs = 40; while(dt.scrollWidth > dt.clientWidth + 1 && fs > 34){ fs -= 1; dt.style.fontSize = fs + 'pt'; }
+  SW.fill();
+  ContactCard.fit(document);
+  issues.push(...SW.focus(D));
+  window.brochureCheck = () => SW.check(D, issues);
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>
