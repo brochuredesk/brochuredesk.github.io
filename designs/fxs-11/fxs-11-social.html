@@ -577,9 +577,7 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
     const SH = u(wideS ? 128 : 190), mb = H - SH, colX = Math.round(W*(wideS ? .55 : kind === 'oh' ? .55 : .5)), colW = W - colX, tx = m, tw = colX - m - u(30), g = u(10);
     const slidePhoto = shape === 'slide' && D.piece.photo && D.piece.photo !== '@close' && D.piece.photo !== hero ? D.piece.photo : null;
     const heroId = slidePhoto || hero;
-    const tgSz0 = Math.max(F.body*1.02, u(28)), tgW = sz => FXS.tagLabels(D).slice(0, 3).reduce((a, t) => a + FXS.width(t, `font-family:Montserrat;font-weight:600;letter-spacing:.9pt;font-size:${sz}pt;text-transform:uppercase`) + 25.5, 0) + 15;
-    let tgSz = tgSz0; if(shape !== 'slide' && shape !== 'story'){ let s1 = tgSz0; while(tgW(s1) > W - 2*m && s1 > tgSz0*.8) s1 -= .25; if(tgW(s1) <= W - 2*m && s1 >= F.body) tgSz = s1; }   // the three pills on one row across the card when they fit at 80% of their size or more: no half-empty second row (owner 11/7)
-    const tgs = (kind === 'jl' && !wideS && shape !== 'story') ? FXS.tags(FXS.tagLabels(D).slice(0, 3), m, 0, W - 2*m, 9999, {size: tgSz, h: tgSz*2.7, gap: u(14), slot: 'tag'}) : {h: 0, html: ''}, tgBand = tgs.h ? tgs.h + u(34) : 0, mc = mb - tgBand;
+    const tgSz = Math.max(F.body*1.02, u(28)), tgs = (kind === 'jl' && !wideS && shape !== 'story') ? FXS.tags(FXS.tagLabels(D).slice(0, 3), m, 0, W - 2*m, 9999, {size: tgSz, h: tgSz*2.7, gap: u(14), slot: 'tag'}) : {h: 0, html: ''}, tgBand = tgs.h ? tgs.h + u(34) : 0, mc = mb - tgBand;
     let y0 = 0, headHtml = '';
     if(kind === 'oh'){   // the label on one line across the top
       const lab = T({slot: 'oh.label', text: E.label.toUpperCase(), css: caps(800, 2.6, TK.ink), x: m, y: m, w: W - 2*m, max: Math.max(F.ev*1.9, u(60)), min: F.ev*1.05, lines: 1, lh: 1.1});
@@ -599,108 +597,85 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
       if(wideS){ const rw = (colW - g)/2; pickRooms.forEach((id, i) => front.push(pic(id, colX + i*(rw + g), ry, rw, rest))); }
       else { const rh = (rest - g)/2; pickRooms.forEach((id, i) => front.push(pic(id, colX, ry + i*(rh + g), colW, rh))); }
     } else if(pickRooms.length >= 1 && rest > u(100)) front.push(pic(pickRooms[0], colX, ry, colW, rest));
-    // ---- the left column, built at a type scale SC (owner 11/7, repeated: no blank space): laid out at the card's own size first; when that leaves a
-    // tall empty band above the agent strip it is laid out again with the extra true copy it can hold (wide/GBP write-up, the Open House place line
-    // and write-up, the Just Sold seller ask) and the biggest type that still fits; what is left spreads between the blocks
-    let y, out, FILL = false, SC = 1, evEnd = 0;
-    const uc = v => u(v)*SC;
-    const col = () => {
     // ---- the left column, top to bottom; optional blocks are left out when they do not fit
-    y = y0 ? y0 : m; out = []; const marks = []; evEnd = 0;
-    const room = () => mc - uc(18) - y;
+    let y = y0 ? y0 : m, out = [];
+    const room = () => mc - u(18) - y;
     let kick = (NBH ? `${NBH} · ${L.city}` : L.city).toUpperCase(); if(NBH && FXP.width(kick, `${MONT};font-weight:600;letter-spacing:3pt;font-size:${F.small}pt`) > tw) kick = NBH.toUpperCase();
-    const addBlock = (html, h, gapAfter) => { const ga = gapAfter == null ? uc(16) : gapAfter; marks.push({i: out.length, ga}); out.push(html); y += h + ga; };
+    const addBlock = (html, h, gapAfter) => { out.push(html); y += h + (gapAfter == null ? u(16) : gapAfter); };
     // owner r1: on the story the write-up is longer and its type bigger, so it fills what is left of the column (largest type first; a line fewer is fine, a short last line is not)
     const storyWrite = () => {
       const okind = (D.openHouse || {}).kind || 'public', OWs = kind === 'oh' ? (((D.fx11 || {}).ohWrite || {})[okind] || (okind !== 'public' ? ((D.fx11 || {}).frontWrite || []).filter(t => !FXP.CONDITION.test(t)) : null)) : null;   // the Open House write-up the page names (fx11.ohWrite.public / .realtor); a REALTOR(R) post with none uses the front write-up: real facts, in order
       const words = new RegExp('\\b(' + FXS.tagLabels(D).slice(0, 3).join(' ').toLowerCase().match(/[a-z]{4,}/g).join('|') + ')\\b', 'i');   // a fact the pills already state is not repeated in the paragraph
       const master = ((D.companion || {}).postcard || {}).master || [], DS = Object.assign({}, D2, {companion: Object.assign({}, D2.companion, {postcard: Object.assign({}, (D2.companion || {}).postcard, OWs && OWs.length ? {master: OWs.slice(), __ok: true} : {master: master.filter(t => !FXP.CONDITION.test(t) && !words.test(t))})})});
       for(const strict of [true, false]) for(const k of (OWs && OWs.length ? Array.from({length: 17}, (_, q) => +(1 - q*.015).toFixed(3)) : [1.0, .93, .86, .8, .74, .68, .62])){   // a listed write-up never sets below the 12 px phone floor
-        const ws = Math.max(F.body*1.3*k, uc(44)*k), lhd = ws*1.38, fit = Math.floor((room() + 2)/lhd), wcls = 'wuS' + String(ws).replace('.', '_') + '_' + Math.round(tw);
+        const ws = Math.max(F.body*1.3*k, u(44)*k), lhd = ws*1.38, fit = Math.floor((room() + 2)/lhd), wcls = 'wuS' + String(ws).replace('.', '_') + '_' + Math.round(tw);
         if(fit < 3) continue;
         if(!document.querySelector('style[data-c="' + wcls + '"]')){ const st = document.createElement('style'); st.dataset.c = wcls; st.textContent = `.${wcls}{font-family:'Montserrat';font-weight:400;font-size:${ws}pt;line-height:${lhd}pt}`; document.head.appendChild(st); }
         if(OWs && OWs.length){   // the listed sentences in their order, as many as fill the block exactly (whole sentences, last line 3/4 full)
           let bestS = null; const NS = Math.min(OWs.length, 8);
           for(let mask = 1; mask < (1 << NS); mask++){ if(strict && (mask & 3) !== 3) continue; const idx = []; for(let q = 0; q < NS; q++) if(mask & (1 << q)) idx.push(q); const text = idx.map(q => OWs[q]).join(' '), r = OHL.measure(wcls, text, tw, lhd);
             if(r.n <= fit && r.n >= Math.max(3, fit - 1) && r.fill >= .75){ const sc = [r.n, idx.filter(q => q < 3).length, -idx.reduce((a, q) => a + q, 0)]; if(!bestS || sc[0] > bestS.sc[0] || (sc[0] === bestS.sc[0] && (sc[1] > bestS.sc[1] || (sc[1] === bestS.sc[1] && sc[2] > bestS.sc[2])))) bestS = {sc, text, n: r.n}; } }
-          if(bestS){ out.push(`<div class="abs ${wcls}" style="left:${tx}pt;top:${y}pt;width:${tw}pt;height:${bestS.n*lhd + 1}pt;color:var(--fx-text)" data-slot="listing.body" data-lines="${bestS.n}">${esc(bestS.text)}</div>`); y += bestS.n*lhd + uc(16); return true; }
+          if(bestS){ out.push(`<div class="abs ${wcls}" style="left:${tx}pt;top:${y}pt;width:${tw}pt;height:${bestS.n*lhd + 1}pt;color:var(--fx-text)" data-slot="listing.body" data-lines="${bestS.n}">${esc(bestS.text)}</div>`); y += bestS.n*lhd + u(16); return true; }
           continue; }
-        for(let n = fit; n >= Math.max(3, OWs && OWs.length ? fit : fit - 1); n--){ const r = OHL.writeup(DS, wcls, tw, lhd, n, [], {narrow: true}); if(r.text && r.fill >= .75 && r.n >= (OWs && OWs.length ? fit : fit - 1)){ out.push(`<div class="abs ${wcls}" style="left:${tx}pt;top:${y}pt;width:${r.w || tw}pt;height:${r.n*lhd + 1}pt;color:var(--fx-text)" data-slot="listing.body" data-lines="${r.n}">${esc(r.text)}</div>`); y += r.n*lhd + uc(16); return true; } }
+        for(let n = fit; n >= Math.max(3, OWs && OWs.length ? fit : fit - 1); n--){ const r = OHL.writeup(DS, wcls, tw, lhd, n, [], {narrow: true}); if(r.text && r.fill >= .75 && r.n >= (OWs && OWs.length ? fit : fit - 1)){ out.push(`<div class="abs ${wcls}" style="left:${tx}pt;top:${y}pt;width:${r.w || tw}pt;height:${r.n*lhd + 1}pt;color:var(--fx-text)" data-slot="listing.body" data-lines="${r.n}">${esc(r.text)}</div>`); y += r.n*lhd + u(16); return true; } }
       }
       return false;
     };
     const headline = (words, maxPx) => {
-      const css = `${MONT};font-weight:800;letter-spacing:1pt`, sz = Math.min(uc(maxPx), Math.min(...words.map(w2 => FXP.fitSize(w2, css, tw, uc(maxPx), F.ev*1.5)))), lh = sz*.98;
+      const css = `${MONT};font-weight:800;letter-spacing:1pt`, sz = Math.min(u(maxPx), Math.min(...words.map(w2 => FXP.fitSize(w2, css, tw, u(maxPx), F.ev*1.5)))), lh = sz*.98;
       words.forEach((w2, i) => out.push(`<div class="abs" style="left:${tx}pt;top:${y + i*lh}pt;width:${tw}pt;height:${lh + 2}pt;${MONT};font-weight:800;font-size:${sz}pt;line-height:${lh}pt;letter-spacing:1pt;color:var(--fx-ink);white-space:nowrap;overflow:hidden" data-slot="${i ? 'moment.2' : 'moment'}" data-lines="1">${esc(w2)}</div>`));
-      y += lh*words.length + uc(18);
+      y += lh*words.length + u(18);
     };
-    const kk = T({slot: 'place', text: kick, css: caps(600, 3, TK.text), x: tx, y, w: tw, max: Math.max(F.small*1.25, uc(30)), min: F.small, lh: 1.2, small: 1});
-    if(kind !== 'oh' && !wideS){ addBlock(kk.html, kk.h, uc(12)); }
+    const kk = T({slot: 'place', text: kick, css: caps(600, 3, TK.text), x: tx, y, w: tw, max: Math.max(F.small*1.25, u(30)), min: F.small, lh: 1.2, small: 1});
+    if(kind !== 'oh' && !wideS){ addBlock(kk.html, kk.h, u(12)); }
     if(kind === 'jl'){
       const kS = shape === 'story' ? 1.45 : shape === 'post' ? 1.12 : 1, gS = shape === 'story' ? 2.3 : kS;
       headline(wideS ? ['JUST LISTED'] : ['JUST', 'LISTED'], wideS ? 120 : 168);
-      const ad = addr(tx, y, tw, Math.max(F.ev*1.6, uc(70)), F.ev*1.05, INK, 'address'); addBlock(ad.html, ad.h, uc(14)*gS);
-      if(L.yearBuilt && room() > uc(380)){ const t = `BUILT IN ${L.yearBuilt}`, ts = Math.max(F.body*1.25, uc(38))*kS, pw = Math.min(tw, FXP.width(t, `${MONT};font-weight:700;font-size:${ts}pt`) + uc(70)), ph = ts*1.85;
-        addBlock(`<div class="abs pill solid" style="left:${tx}pt;top:${y}pt;width:${pw}pt;height:${ph}pt;border-radius:${ph/2}pt;font-size:${ts}pt" data-slot="built" data-lines="1">${esc(t)}</div>`, ph, uc(22)*gS); }
-      if((!wideS || (FILL && shape === 'gbp')) && room() > uc(FILL ? 130 : 260)){ const sr = FXS.statRow(L, tx, y, tw, {num: Math.max(F.body*1.4, uc(52))*kS, size: Math.max(F.body*1.02, uc(24)), track: .8, short: true, slot: 'fact', bathFull: true, spread: true}); addBlock(sr.html, sr.h, uc(26)*gS); }
-      if(shape === 'story' && room() > uc(200)){ const tg = FXS.tags(FXS.tagLabels(D).slice(0, 3), tx, y, tw, room(), {size: tgSz*1.1, h: tgSz*3.1, gap: uc(22), slot: 'tag'}); if(tg.html && tg.h <= room()) addBlock(tg.html, tg.h, uc(34)*gS); }   // the three pills stacked under the stats
+      const ad = addr(tx, y, tw, Math.max(F.ev*1.6, u(70)), F.ev*1.05, INK, 'address'); addBlock(ad.html, ad.h, u(14)*gS);
+      if(L.yearBuilt && room() > u(380)){ const t = `BUILT IN ${L.yearBuilt}`, ts = Math.max(F.body*1.25, u(38))*kS, pw = Math.min(tw, FXP.width(t, `${MONT};font-weight:700;font-size:${ts}pt`) + u(70)), ph = ts*1.85;
+        addBlock(`<div class="abs pill solid" style="left:${tx}pt;top:${y}pt;width:${pw}pt;height:${ph}pt;border-radius:${ph/2}pt;font-size:${ts}pt" data-slot="built" data-lines="1">${esc(t)}</div>`, ph, u(22)*gS); }
+      if(!wideS && room() > u(260)){ const sr = FXS.statRow(L, tx, y, tw, {num: Math.max(F.body*1.4, u(52))*kS, size: Math.max(F.body*1.02, u(24)), track: .8, short: true, slot: 'fact', bathFull: true, spread: true}); addBlock(sr.html, sr.h, u(26)*gS); }
+      if(shape === 'story' && room() > u(200)){ const tg = FXS.tags(FXS.tagLabels(D).slice(0, 3), tx, y, tw, room(), {size: tgSz*1.1, h: tgSz*3.1, gap: u(22), slot: 'tag'}); if(tg.html && tg.h <= room()) addBlock(tg.html, tg.h, u(34)*gS); }   // the three pills stacked under the stats
       if(shape === 'story') storyWrite();
-      else if(!wideS || FILL){   // a short description from the package copy, in cream, to the foot of the column (wide/GBP too when the column has room: owner 11/7, no blank space)
-        const ws = Math.max(F.body*0.98, uc(30)), lhd = ws*1.4, cap = FILL ? 9 : shape === 'story' ? 5 : 6, fit = Math.min(cap, Math.floor((room() + 2)/lhd)), wcls = 'wuD' + String(ws).replace('.', '_') + '_' + Math.round(tw);
+      else if(!wideS){   // a short description from the package copy, in cream, to the foot of the column
+        const ws = Math.max(F.body*0.98, u(30)), lhd = ws*1.4, cap = shape === 'story' ? 5 : 6, fit = Math.min(cap, Math.floor((room() + 2)/lhd)), wcls = 'wuD' + String(ws).replace('.', '_') + '_' + Math.round(tw);
         if(!document.querySelector('style[data-c="' + wcls + '"]')){ const st = document.createElement('style'); st.dataset.c = wcls; st.textContent = `.${wcls}{font-family:'Montserrat';font-weight:400;font-size:${ws}pt;line-height:${lhd}pt}`; document.head.appendChild(st); }
-        for(let n = fit; n >= 2; n--){ const r = OHL.writeup(D2, wcls, tw, lhd, n, [], {narrow: true}); if(r.text && (r.fill >= .75 || r.n === 1)){ out.push(`<div class="abs ${wcls}" style="left:${tx}pt;top:${y}pt;width:${r.w || tw}pt;height:${r.n*lhd + 1}pt;color:var(--fx-text)" data-slot="listing.body" data-lines="${r.n}">${esc(r.text)}</div>`); y += r.n*lhd + uc(16); break; } }
+        for(let n = fit; n >= 2; n--){ const r = OHL.writeup(D2, wcls, tw, lhd, n, [], {narrow: true}); if(r.text && (r.fill >= .75 || r.n === 1)){ out.push(`<div class="abs ${wcls}" style="left:${tx}pt;top:${y}pt;width:${r.w || tw}pt;height:${r.n*lhd + 1}pt;color:var(--fx-text)" data-slot="listing.body" data-lines="${r.n}">${esc(r.text)}</div>`); y += r.n*lhd + u(16); break; } }
       }
     } else if(kind === 'js'){
       headline(wideS ? ['JUST SOLD'] : ['JUST', 'SOLD'], wideS ? 120 : 168);
       const sl = FXP.soldLine(D);
-      const h1 = T({slot: 'sold.head', text: sl.head, css: `font-weight:700;color:var(--fx-ink)`, x: tx, y, w: tw*(wideS || FILL ? 1 : .85), max: Math.max(F.body*2.2, uc(56)), min: F.body, lines: wideS ? 2 : FILL ? 4 : 3, lh: 1.12}); addBlock(h1.html, h1.h, uc(14));
-      if(sl.line && room() > uc(wideS ? 210 : 150)){ const l2 = T({slot: 'sold.line', text: sl.line, css: `font-weight:500;color:var(--fx-text)`, x: tx, y, w: tw*(wideS ? .62 : .75), max: Math.max(F.body*1.5, uc(38)), min: F.body, lines: 2, lh: 1.2}); addBlock(l2.html, l2.h, uc(26)); }
-      if(room() > uc(FILL ? 80 : 120)){ const ad = addr(tx, y, tw, Math.max(F.ev*1.1, uc(44)), F.ev, INK, 'address'); addBlock(ad.html, ad.h, uc(6));
-        const pl = T({slot: 'place', text: OHL.place(L).toUpperCase(), css: caps(500, 2, TK.text), x: tx + 1, y, w: tw, max: Math.max(F.small*1.1, uc(24)), min: F.small, lh: 1.2, small: 1}); addBlock(pl.html, pl.h, uc(18)); }
-      if(FILL){ const ak = T({slot: 'sold.ask', text: 'Your home could be next.', css: `font-weight:700;color:var(--fx-ink)`, x: tx, y, w: tw, max: Math.max(F.body*1.6, uc(44)), min: F.body, lines: 2, lh: 1.15}); if(ak.h <= room()) addBlock(ak.html, ak.h, uc(16)); }   // a Just Sold card lists no features (owner 11/7): the seller ask fills the column
+      const h1 = T({slot: 'sold.head', text: sl.head, css: `font-weight:700;color:var(--fx-ink)`, x: tx, y, w: tw*(wideS ? 1 : .85), max: Math.max(F.body*2.2, u(56)), min: F.body, lines: wideS ? 2 : 3, lh: 1.12}); addBlock(h1.html, h1.h, u(14));
+      if(sl.line && room() > u(wideS ? 210 : 150)){ const l2 = T({slot: 'sold.line', text: sl.line, css: `font-weight:500;color:var(--fx-text)`, x: tx, y, w: tw*(wideS ? .62 : .75), max: Math.max(F.body*1.5, u(38)), min: F.body, lines: 2, lh: 1.2}); addBlock(l2.html, l2.h, u(26)); }
+      if(room() > u(120)){ const ad = addr(tx, y, tw, Math.max(F.ev*1.1, u(44)), F.ev, INK, 'address'); addBlock(ad.html, ad.h, u(6));
+        const pl = T({slot: 'place', text: OHL.place(L).toUpperCase(), css: caps(500, 2, TK.text), x: tx + 1, y, w: tw, max: Math.max(F.small*1.1, u(24)), min: F.small, lh: 1.2, small: 1}); addBlock(pl.html, pl.h, u(18)); }
     } else {
       // Open House: the weekday, the date as huge numerals, the time in a solid white pill, the perks in a white pill block, then the address and the stats
       const mo = String(E.monthDay || E.long).split(' '), dtxt = `${(mo[0] || '').slice(0, 3).toUpperCase()} ${mo.slice(1).join(' ')}`.trim();
-      const wk = wideS ? {html: '', h: 0} : T({slot: 'oh.weekday', text: E.weekday.toUpperCase(), css: caps(600, 4.5, TK.text), x: tx, y, w: tw, max: Math.max(F.body*1.3, uc(34)), min: F.body, lh: 1.15}); addBlock(wk.html, wk.h, uc(6));
-      const dcss = `${MONT};font-weight:800;letter-spacing:1pt`, ds = Math.min(uc(190), FXP.fitSize(dtxt, dcss, tw, uc(190), F.ev*1.4)), dh = ds*.98;
-      addBlock(`<div class="abs" style="left:${tx - 1}pt;top:${y}pt;width:${tw + 1}pt;height:${dh + 2}pt;${MONT};font-weight:800;font-size:${ds}pt;line-height:${dh}pt;letter-spacing:1pt;color:var(--fx-ink);white-space:nowrap;overflow:hidden" data-slot="oh.date" data-lines="1">${esc(dtxt)}</div>`, dh, uc(16));
-      if(E.time){ const tcss = `${MONT};font-weight:700`, tmin = F.ev*1.02, ts = Math.max(Math.min(ds*.6, FXP.fitSize(E.time, tcss, tw - uc(36), ds*.6, tmin)), tmin), one = FXP.width(E.time, `${tcss};font-size:${ts}pt`) + uc(36) <= tw;
-        if(one){ const pw = Math.min(tw, FXP.width(E.time, `${tcss};font-size:${ts}pt`) + uc(36)), ph = ts*1.8;
-          addBlock(`<div class="abs pill solid" style="left:${tx}pt;top:${y}pt;width:${pw}pt;height:${ph}pt;border-radius:${ph/2}pt;font-size:${ts}pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`, ph, uc(20)); }
-        else { const parts = E.time.replace(/\s+to\s+/, ' to|').split('|'), ph = ts*1.2*2 + uc(40);
-          addBlock(`<div class="abs pill solid" style="left:${tx}pt;top:${y}pt;width:${tw}pt;height:${ph}pt;border-radius:${Math.min(ph/2, uc(54))}pt;font-size:${ts}pt;line-height:1.2;text-align:center" data-slot="oh.time" data-lines="2">${parts.map(esc).join('<br>')}</div>`, ph, uc(20)); } }
+      const wk = wideS ? {html: '', h: 0} : T({slot: 'oh.weekday', text: E.weekday.toUpperCase(), css: caps(600, 4.5, TK.text), x: tx, y, w: tw, max: Math.max(F.body*1.3, u(34)), min: F.body, lh: 1.15}); addBlock(wk.html, wk.h, u(6));
+      const dcss = `${MONT};font-weight:800;letter-spacing:1pt`, ds = Math.min(u(190), FXP.fitSize(dtxt, dcss, tw, u(190), F.ev*1.4)), dh = ds*.98;
+      addBlock(`<div class="abs" style="left:${tx - 1}pt;top:${y}pt;width:${tw + 1}pt;height:${dh + 2}pt;${MONT};font-weight:800;font-size:${ds}pt;line-height:${dh}pt;letter-spacing:1pt;color:var(--fx-ink);white-space:nowrap;overflow:hidden" data-slot="oh.date" data-lines="1">${esc(dtxt)}</div>`, dh, u(16));
+      if(E.time){ const tcss = `${MONT};font-weight:700`, tmin = F.ev*1.02, ts = Math.max(Math.min(ds*.6, FXP.fitSize(E.time, tcss, tw - u(36), ds*.6, tmin)), tmin), one = FXP.width(E.time, `${tcss};font-size:${ts}pt`) + u(36) <= tw;
+        if(one){ const pw = Math.min(tw, FXP.width(E.time, `${tcss};font-size:${ts}pt`) + u(36)), ph = ts*1.8;
+          addBlock(`<div class="abs pill solid" style="left:${tx}pt;top:${y}pt;width:${pw}pt;height:${ph}pt;border-radius:${ph/2}pt;font-size:${ts}pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`, ph, u(20)); }
+        else { const parts = E.time.replace(/\s+to\s+/, ' to|').split('|'), ph = ts*1.2*2 + u(40);
+          addBlock(`<div class="abs pill solid" style="left:${tx}pt;top:${y}pt;width:${tw}pt;height:${ph}pt;border-radius:${Math.min(ph/2, u(54))}pt;font-size:${ts}pt;line-height:1.2;text-align:center" data-slot="oh.time" data-lines="2">${parts.map(esc).join('<br>')}</div>`, ph, u(20)); } }
       const items = [[E.refreshments, 'oh.refreshments', 700], [E.note, 'oh.note', 500]].filter(i => i[0]);
-      if(items.length){ const bf = Math.max(F.body*1.0, uc(30)), px_ = uc(26), py_ = uc(18); let by = y + py_; const rows = [];
+      if(items.length){ const bf = Math.max(F.body*1.0, u(30)), px_ = u(26), py_ = u(18); let by = y + py_; const rows = [];
         items.forEach(([t, slot, wt]) => { const r = T({slot, text: t, css: `font-weight:${wt};color:${TK.onCard};text-wrap:balance`, x: tx + px_, y: by, w: tw - 2*px_, max: bf, min: F.body, lines: 3, lh: 1.2, align: 'center'}); rows.push(r.html); by += r.h + 3; });
         by -= 3; const bh = by - y + py_;
-        if(bh < room() - uc(60)){ out.push(`<div class="abs" data-box="oh.box" style="left:${tx}pt;top:${y}pt;width:${tw}pt;height:${bh}pt;background:var(--fx-card);border-radius:${Math.min(bh/2, uc(40))}pt"></div>`, ...rows); y += bh + uc(22); } }
-      const grpStart = out.length, grpY0 = y; evEnd = out.length;   // everything below the time box is centered as one group in the room that is left (owner 11/7)
-      const cen = shape === 'story', ad = addr(tx, y, tw, Math.max(F.ev*1.2, uc(52)), F.ev*1.05, INK, 'address', cen ? 'center' : 'left'); addBlock(ad.html, ad.h, uc(4));   // the story: the address and the place line sit centered under the box
-      const pl = T({slot: 'place', text: OHL.place(L).toUpperCase(), css: caps(500, 2, TK.text), x: tx + 1, y, w: tw, max: Math.max(F.small*1.1, uc(24)), min: F.small, lh: 1.2, small: 1, align: cen ? 'center' : undefined}); if((!wideS || FILL) && room() > pl.h) addBlock(pl.html, pl.h, uc(16));
-      if((!wideS || FILL) && room() > uc(90)){ const sr = FXS.statRow(L, tx, y, tw, {num: shape === 'story' ? Math.max(F.body*0.95, uc(30)) : Math.max(F.body*1.3, uc(46)), size: shape === 'story' ? Math.max(F.body*0.95, uc(20)) : Math.max(F.body*1.02, uc(22)), track: .8, short: true, slot: 'fact', bathFull: true, spread: true}); addBlock(sr.html, sr.h, uc(10)); }   // the story's facts line is smaller, so it leads into the write-up
-      if(shape === 'story' || shape === 'post' || FILL) storyWrite();
-      if(shape === 'story' || shape === 'post'){ const grp = out.splice(grpStart), slack = Math.max(0, room() - uc(2)); if(grp.length) out.push(`<div class="abs" style="left:0;top:0;width:${W}pt;height:${H}pt;transform:translateY(${slack/2}pt);pointer-events:none">${grp.join('')}</div>`); }
+        if(bh < room() - u(60)){ out.push(`<div class="abs" data-box="oh.box" style="left:${tx}pt;top:${y}pt;width:${tw}pt;height:${bh}pt;background:var(--fx-card);border-radius:${Math.min(bh/2, u(40))}pt"></div>`, ...rows); y += bh + u(22); } }
+      const grpStart = out.length, grpY0 = y;   // everything below the time box is centered as one group in the room that is left (owner 11/7)
+      const cen = shape === 'story', ad = addr(tx, y, tw, Math.max(F.ev*1.2, u(52)), F.ev*1.05, INK, 'address', cen ? 'center' : 'left'); addBlock(ad.html, ad.h, u(4));   // the story: the address and the place line sit centered under the box
+      const pl = T({slot: 'place', text: OHL.place(L).toUpperCase(), css: caps(500, 2, TK.text), x: tx + 1, y, w: tw, max: Math.max(F.small*1.1, u(24)), min: F.small, lh: 1.2, small: 1, align: cen ? 'center' : undefined}); if(!wideS && room() > pl.h) addBlock(pl.html, pl.h, u(16));
+      if(!wideS && room() > u(90)){ const sr = FXS.statRow(L, tx, y, tw, {num: shape === 'story' ? Math.max(F.body*0.95, u(30)) : Math.max(F.body*1.3, u(46)), size: shape === 'story' ? Math.max(F.body*0.95, u(20)) : Math.max(F.body*1.02, u(22)), track: .8, short: true, slot: 'fact', bathFull: true, spread: true}); addBlock(sr.html, sr.h, u(10)); }   // the story's facts line is smaller, so it leads into the write-up
+      if(shape === 'story' || shape === 'post') storyWrite();
+      if(shape === 'story' || shape === 'post'){ const grp = out.splice(grpStart), slack = Math.max(0, room() - u(2)); if(grp.length) out.push(`<div class="abs" style="left:0;top:0;width:${W}pt;height:${H}pt;transform:translateY(${slack/2}pt);pointer-events:none">${grp.join('')}</div>`); }
     }
-    return {out, y, marks, evEnd, left: mc - uc(18) - y, slots: new Set((out.join('').match(/data-slot="[^"]+"/g) || []))};
-    };
-    let C0 = col();
-    if(shape !== 'slide' && C0.left > H*.02){ FILL = true; let best = null; const need = C0.slots;
-      for(let sc = 1; sc <= 1.6001; sc += .025){ SC = sc; const c = col(); if(c.left >= 0 && [...need].every(q => c.slots.has(q)) && (!best || c.slots.size >= best.n)) best = {sc, left: c.left, n: c.slots.size}; }   // the most blocks, then the biggest type that keeps them
-      if(best){ SC = best.sc; C0 = col(); } else { FILL = false; SC = 1; C0 = col(); }
-      // the spare height opens up the gaps between blocks (not inside a pair like the address and its place line, nor between the Open House event and the
-      // block under it: the event stays centered in its space)
-      const mk = C0.marks.filter((q, j) => j > 0 && C0.marks[j - 1].ga >= uc(10) && q.i > C0.evEnd), n = mk.length, sp = Math.max(0, C0.left);
-      if(FILL && n && sp > 2 && !((shape === 'story' || shape === 'post') && kind === 'oh')){ const o2 = C0.out.slice(); for(let q = 0; q < o2.length; q++){ const j = mk.filter(z => z.i <= q).length; if(j) o2[q] = `<div class="abs" style="left:0;top:0;width:${W}pt;height:${H}pt;transform:translateY(${(sp*j/n).toFixed(2)}pt);pointer-events:none">${o2[q]}</div>`; } C0.out = o2; C0.y += sp; }
-    }
-    out = C0.out; y = C0.y;
     if(y - u(16) > mc) tiny.push({slot: 'fx11', kind: 'left-column-overflows', detail: `the left column runs ${Math.round((y - mb)/FXP.K)} px past the strip`});
     // ---- the agent strip: hairline, name / REALTOR(R) / phone on the left, the one logo on the right
     const strip = agentStrip(m, tx, tw, mb, SH, wideS, shape === 'story' && (kind === 'jl' || kind === 'oh'));
-    if(tgs.html){ const labs = FXS.tagLabels(D).slice(0, 3), tcs = `font-family:Montserrat;font-weight:600;letter-spacing:.9pt;font-size:${tgSz}pt;text-transform:uppercase`, wOf = t => FXS.width(t, tcs) + 25.5, rows = [[]]; let cx = 0;
-      labs.forEach(t => { const tw0 = wOf(t); if(cx && cx + tw0 > W - 2*m){ rows.push([]); cx = 0; } rows[rows.length - 1].push(t); cx += tw0 + 7.5; });
-      let ti = 0; rows.forEach((r, ri) => { const rw = r.reduce((a, t) => a + wOf(t), 0) + (r.length - 1)*7.5, x0 = rows.length > 1 && shape !== 'slide' ? m + (W - 2*m - rw)/2 : m;   // a short second row sits centered under the first (owner 11/7: no half-empty row)
-        let h = FXS.tags(r, x0, mc + u(14) + ri*(tgSz*2.7 + u(14)), W - 2*m, 9999, {size: tgSz, h: tgSz*2.7, gap: u(14), slot: 'tag'}).html;
-        r.forEach((_, j) => { h = h.replace(`data-slot="tag.${j}" data-field="fx11.tags.${j}"`, `data-slot="tag.@${ti + j}" data-field="fx11.tags.@${ti + j}"`); }); out.push(h.replace(/\.@(\d)/g, '.$1')); ti += r.length; }); }
+    if(tgs.html){ const T0_ = FXS.tags(FXS.tagLabels(D).slice(0, 3), m, mc + u(14), W - 2*m, 9999, {size: tgSz, h: tgSz*2.7, gap: u(14), slot: 'tag'}); out.push(T0_.html); }
     front.push(headHtml); mid.push(out.join(''), strip.join(''));
   };
 

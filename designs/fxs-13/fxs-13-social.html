@@ -115,10 +115,10 @@ FXP.start(['500 20pt "Bodoni Moda"', '600 20pt "Bodoni Moda"', '400 20pt "Cormor
     const lab1 = FXP.fitSize(E.label.toUpperCase(), `${MONT};${caps(600, 3.4*k, TK.accent)}`, w, F.ev*1.3*k, F.ev);
     const parts = lab1 >= F.ev*1.02 || o.noSplit ? null : OHL.labelLines(E.label.toUpperCase(), 2);
     const lab = T({slot: 'oh.label', text: E.label.toUpperCase(), parts, css: caps(600, 3.4*k, TK.accent) + ';text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:5pt', x, y: yy, w, max: F.ev*1.3*k, min: F.ev, lines: parts ? 2 : 1, lh: o.tight ? 1.1 : 1.15});
-    if(!o.noHead){ out.push(lab.html); yy += lab.h + 5*k; right = Math.max(right, lab.w); } const labelLines = lab.n;
+    out.push(lab.html); yy += lab.h + 5*k; right = Math.max(right, lab.w); const labelLines = lab.n;
     const md = String(E.monthDay || E.long), sp = md.lastIndexOf(' ');
-    if(!o.merged && !o.noHead){
-      const wk = T({slot: 'oh.weekday', text: E.weekday.toUpperCase(), css: caps(600, o.smallWk ? 3 : 4.5, SOFT), x, y: yy, w, max: Math.max(o.smallWk ? F.small : F.body, 13)*Math.min(k, 1.25)*(o.bigWk || 1), min: o.smallWk ? F.small : F.body, lh: 1.15, small: o.smallWk ? 1 : 0});
+    if(!o.merged){
+      const wk = T({slot: 'oh.weekday', text: E.weekday.toUpperCase(), css: caps(600, o.smallWk ? 3 : 4.5, SOFT), x, y: yy, w, max: Math.max(o.smallWk ? F.small : F.body, 13)*Math.min(k, 1.25), min: o.smallWk ? F.small : F.body, lh: 1.15, small: o.smallWk ? 1 : 0});
       out.push(wk.html); yy += wk.h + 2*k; right = Math.max(right, wk.w);
     }
     const dtext = o.merged ? E.long : md;
@@ -156,11 +156,11 @@ FXP.start(['500 20pt "Bodoni Moda"', '600 20pt "Bodoni Moda"', '400 20pt "Cormor
     if(kind === 'oh') return evBlock(x, y, w, k, o.lvl || 0, o);
     const out = []; let yy = y;
     if(kind === 'js'){
-      const sl = FXP.soldLine(D), KC = shape === 'slide' ? 1.3 : 2.4, KL = shape === 'slide' ? 1.2 : 2.0;   // the cards' seller ask grows with the room the card has (owner 11/7: no blank space); the slides keep theirs
-      const hs = Math.max(F.body*1.6, 18)*Math.min(k, KC);
+      const sl = FXP.soldLine(D);
+      const hs = Math.max(F.body*1.6, 18)*Math.min(k, 1.3);
       const h1 = T({slot: 'sold.head', text: sl.head, css: `font-family:'Cormorant Garamond';font-weight:700;color:var(--fx-ink)`, x, y: yy, w, max: hs*1.15, min: F.body, lines: 2, lh: 1.12});
       out.push(h1.html); yy += h1.h + 3;
-      if(sl.line && !o.noLine){ const l2 = T({slot: 'sold.line', text: sl.line, css: `font-family:'Cormorant Garamond';font-weight:600;color:${SOFT}`, x, y: yy, w, max: Math.max(F.body*1.25, 15)*Math.min(k, KL), min: F.body, lines: 2, lh: 1.2}); out.push(l2.html); yy += l2.h; }
+      if(sl.line && !o.noLine){ const l2 = T({slot: 'sold.line', text: sl.line, css: `font-family:'Cormorant Garamond';font-weight:600;color:${SOFT}`, x, y: yy, w, max: Math.max(F.body*1.25, 15)*Math.min(k, 1.2), min: F.body, lines: 2, lh: 1.2}); out.push(l2.html); yy += l2.h; }
       yy += 9*Math.min(k, 1.3);
       const ad = addr(x, yy, w, F.ev*1.05*Math.min(k, 1.2), F.ev, TK.ink); out.push(ad.html); yy += ad.h + 1;
       const pl = T({slot: 'place', text: OHL.place(L).toUpperCase(), css: caps(500, w < 190 ? 1.2 : 2, SOFT), x: x + 1, y: yy, w, max: Math.max(F.small, 11), min: F.small, lh: 1.2, small: 1});
@@ -257,8 +257,6 @@ if(rowW() <= w){
     sealIn(x, y, w, h);
     return h;
   };
-  // the widest hero box (full column width first, never under 60% of it) whose height still holds the whole house: fit(avail) gives {w, h} or null
-  const wideHero = sw => ({fit: avail => { for(let f = 1; f >= .599; f -= .05){ const w = Math.floor(sw*f), h = Math.ceil(minH(hero, w)) + 1; if(h <= avail) return {w, h}; } return null; }});
   const stripFallback = (sw, hmax, x, y) => {   // no room photos at all: the house alone, as wide as the strip lets it be
     const fr = OHL.fitHero(D, hero, sw, Math.floor(hmax), true); front.push(pic(hero, x, y, fr.w, fr.h)); sealIn(x, y, fr.w, fr.h); return fr.h;
   };
@@ -284,13 +282,11 @@ if(rowW() <= w){
     let best = null;
     const lvls = kind === 'oh' ? [0] : [0], wls = kind === 'jl' ? [4, 3, 2, 1, 0] : [0];
     outer: for(const lvl of lvls) for(const wl of wls) for(let k = 1.7; k >= (POST ? .6 : .99); k -= (POST ? .05 : .1)){
-      const blk = info(tx, 0, tw, k, {lvl, wl, bigWk: POST ? 1.4 : 1}), blkH = blk.h + padB, ab = aBlock(k);
+      const blk = info(tx, 0, tw, k, {lvl, wl}), blkH = blk.h + padB, ab = aBlock(k);
       const avail = limit - y0 - blkH - (addrOH ? ab.h + F.small*1.4 + gapA : 0) - gapC - cH - 8 - gapR;
       if(avail >= (POST ? sMax : sMax*.97) || (k <= (POST ? .651 : 1.001) && avail >= sMin)){ best = {k, lvl, wl, blkH, avail, blk}; break outer; }
     }
     if(!best){ const blk = info(tx, 0, tw, 1, {lvl: 0, wl: 0}); best = {k: 1, lvl: 0, wl: 0, blkH: blk.h + padB, avail: limit - y0 - blk.h - padB - (addrOH ? 70 : 0) - gapC - cH - 8 - gapR, blk}; }
-    { const ph0 = Math.floor(Math.min(best.avail, sMax)), sp0 = best.avail - (bigPhoto || POST ? ph0 : OHL.fitHero(D, hero, sw, ph0, true).h);   // the photo is at its full size and height is left: the words grow into it (owner 11/7: no blank space above the agent)
-      if(!bigPhoto && sp0 > 8) for(let k2 = best.k + .05; k2 <= 2.4; k2 += .05){ const b2 = info(tx, 0, tw, k2, {lvl: best.lvl, wl: best.wl, bigWk: POST ? 1.4 : 1}), dh = b2.h + padB - best.blkH; if(dh > sp0 - 6) break; if(dh > 0) best = Object.assign({}, best, {k: k2, blkH: b2.h + padB, avail: best.avail - dh, blk: b2}); } }
     window.__dbg = {k: best.k, avail: best.avail, sMax, cH, ab: aBlock(best.k).h, blkH: best.blkH, y0};
     const ph = Math.floor(Math.min(best.avail, sMax)), spare = Math.max(0, best.avail - ph);
     const py = y0 + 8;
@@ -307,7 +303,7 @@ if(rowW() <= w){
     const bh = best.blkH + pad;
     const rad = Math.min(bh/2, 54);
     back.push(evFrame(AX, by, W - AX, bh));
-    const inf = info(tx, by + (POST ? 15 : 20) + pad/2, tw, best.k, {lvl: best.lvl, wl: best.wl, bigWk: POST ? 1.4 : 1});
+    const inf = info(tx, by + (POST ? 15 : 20) + pad/2, tw, best.k, {lvl: best.lvl, wl: best.wl});
     front.unshift(head.html, inf.html);
     let yy = by + bh + 4;
     if(addrOH){ const ab = addr(BW + 14, yy, W - m - BW - 14, F.ev*1.6, F.ev, INK); mid.push(ab.html); yy += ab.h;
@@ -343,13 +339,12 @@ if(rowW() <= w){
       return {k, ev, ad, pl, boxH, bf, px, py, leftH, h: stacked ? leftH + 14 + boxH : Math.max(leftH, boxH), rows};
     };
     let pick = null;
-    const HW = sq ? wideHero(sw) : null;   // the square: the house across the column, not a small photo with blank beside it (owner 11/7)
-    for(const need of HW ? [true, false] : [false]){ for(let k = 1.5; k >= .8; k -= .05){ const b = mk(k), avail = limit - top - 8 - (b.h + 34) - 12 - cH - (sq ? 0 : 0); if(need ? HW.fit(avail) && k >= .95 : avail >= (sq ? 90 : 190)){ pick = Object.assign(b, {avail}); break; } } if(pick) break; }
+    for(let k = 1.5; k >= .8; k -= .05){ const b = mk(k), avail = limit - top - 8 - (b.h + 34) - 12 - cH - (sq ? 0 : 0); if(avail >= (sq ? 90 : 190)){ pick = Object.assign(b, {avail}); break; } }
     if(!pick){ const b = mk(.8); pick = Object.assign(b, {avail: limit - top - 8 - (b.h + 34) - 12 - cH}); }
     const sh0 = Math.floor(Math.min(pick.avail, sw*.6));
     const py0 = top + 8;
     const pl = stripPlan(sw, sh0, Math.min(sh0, 40), []);
-    let sh; const hw = HW && HW.fit(pick.avail); if(hw) sh = heroBox(sx, py0, hw.w, hw.h); else if(pl){ drawStrip(pl, sx, py0); sh = pl.h; } else sh = stripFallback(sw, sh0, sx, py0);
+    let sh; if(pl){ drawStrip(pl, sx, py0); sh = pl.h; } else sh = stripFallback(sw, sh0, sx, py0);
     const spare = Math.max(0, pick.avail - sh), pad = Math.min(spare*.5, 22);
     const by = py0 + sh + 10 + pad*.3, bh = pick.h + 34 + pad, rad = Math.min(bh/2, 48);
     back.push(evFrame(AX, by, W - AX, bh));
@@ -371,7 +366,7 @@ if(rowW() <= w){
     const cOpt = Object.assign(cOptFor(), {ns: 17, ps: 14.5, lh: 30}), cH = Math.max(contact(0, 0, W - 2*m - BW*.2, cOpt).h, cOpt.lh);
     const items = [[E.refreshments, 'oh.refreshments', 700], [E.note, 'oh.note', 500]].filter(i => i[0]);
     const mk = k => {
-      const ev = evBlock(tx, 0, tw, k, 2, {tight: true, noSplit: true, bigWk: 1.4});
+      const ev = evBlock(tx, 0, tw, k, 2, {tight: true, noSplit: true});
       const bf = Math.max(F.body, 12.5)*Math.min(k, 1.15), px = 12, py = 7;
       let bsum = 0; items.forEach(([t, slot, wt]) => { const r = T({slot, text: t, css: `font-family:'Cormorant Garamond';font-weight:${wt === 700 ? 700 : 600};color:${INK}`, x: 0, y: 0, w: tw - 2*px, max: bf, min: F.body, lines: 2, lh: 1.22, align: 'center'}); bsum += r.h + 3; });
       const boxH = bsum - 3 + 2*py, ab = addr(tx, 0, W - m - tx, F.ev*1.6, F.ev, INK);
@@ -387,7 +382,7 @@ if(rowW() <= w){
     const sh = heroBox(sx, py0, sw, ph);   // the public post's hero box (left edge and width); only its height gives
     const by = py0 + sh + 12, bh = pick.bh, rad = Math.min(bh/2, 54);
     back.push(evFrame(AX, by, W - AX, bh));
-    const ev = evBlock(tx, by + 15, tw, pick.k, 2, {tight: true, noSplit: true, bigWk: 1.4}); mid.push(ev.html);   // the weekday bigger: it runs past the middle, no blank band beside it (owner 11/7)
+    const ev = evBlock(tx, by + 15, tw, pick.k, 2, {tight: true, noSplit: true}); mid.push(ev.html);
     if(ev.labelLines > 1) tiny.push({slot: 'oh.label', kind: 'label-wraps', detail: 'the REALTOR\u00ae OPEN HOUSE label does not set on one line'});
     const bxTop = by + 15 + ev.h + 8;
     mid.push(`<div class="abs" data-box="oh.box" style="left:${tx}pt;top:${bxTop}pt;width:${tw}pt;height:${pick.boxH}pt;background:var(--fx-card);border:.75pt solid var(--fx-rule)"></div>`);
@@ -400,39 +395,16 @@ if(rowW() <= w){
   };
 
   // =========================== square (Just Listed, Just Sold, Open House with no box) ===========================
-  // the public Open House square (owner 11/7: no blank space): the whole house can only be a small photo here, so the label and the weekday sit
-  // beside it, filling the row; the date, time and address under the rule as before, at the biggest size the height allows
-  const ohSquare = () => {
-    const m = Math.round(W*.035), top = m, sx = AX, sw = W - m - sx, tx = AX + 16, tw = W - m - 14 - tx, g = 18;
-    const cOpt = Object.assign(cOptFor(), {ns: Math.max(F.body*1.3, 17), ps: Math.max(F.body*1.15, 15), lh: Math.max(28, F.body*2.2)});
-    const cH = Math.max(contact(0, 0, W - 2*m, cOpt).h, cOpt.lh);
-    const head = (x, y, w, k) => { const lab = T({slot: 'oh.label', text: E.label.toUpperCase(), parts: OHL.labelLines(E.label.toUpperCase(), 2), css: caps(600, 3.4, TK.accent) + ';text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:5pt', x, y, w, max: F.ev*1.5*k, min: F.ev, lines: 2, lh: 1.2});
-      const wk = T({slot: 'oh.weekday', text: E.weekday.toUpperCase(), css: caps(600, 4.5, SOFT), x, y: y + lab.h + 8, w, max: Math.max(F.body, 13)*1.3*k, min: F.body, lh: 1.15}); return {h: lab.h + 8 + wk.h, html: lab.html + wk.html}; };
-    let best = null;
-    for(let k = 2.4; k >= .99; k -= .05){ const b = evBlock(tx, 0, tw, k, 0, {noHead: true}), bh = b.h + 32, hp = Math.floor(H - m - top - 4 - 10 - bh - 12 - cH - 16);
-      const fr = OHL.fitHero(D, hero, Math.floor(sw*.5), hp, true); if(fr.h >= Math.min(hp, 150) && hp >= 110){ best = {k, b, bh, hp, fr}; break; } }
-    if(!best){ const b = evBlock(tx, 0, tw, 1, 0, {noHead: true}), bh = b.h + 32, hp = Math.max(90, Math.floor(H - m - top - 14 - bh - 12 - cH - 16)); best = {k: 1, b, bh, hp, fr: OHL.fitHero(D, hero, Math.floor(sw*.5), hp, true)}; }
-    const fr = best.fr, py = top + 4; front.push(pic(hero, sx, py, fr.w, fr.h));
-    const hx = sx + fr.w + g, hw = sw - fr.w - g; let hk = 1.6; while(hk > .7 && head(hx, 0, hw, hk).h > fr.h) hk -= .05;
-    const hd = head(hx, 0, hw, hk); mid.push(head(hx, py + (fr.h - hd.h)/2, hw, hk).html);
-    const by = py + fr.h + 10, free = H - m - by - best.bh - 12 - cH, bh = best.bh + Math.max(0, free*.5);
-    back.push(evFrame(AX, by, W - AX, bh));
-    mid.push(evBlock(tx, by + 16 + (bh - best.bh)/2, tw, best.k, 0, {noHead: true}).html);
-    mid.push(contact(AX, Math.min(H - m - cH, by + bh + Math.max(6, (H - m - by - bh - cH)*.5)), W - m - AX, cOpt).html);
-  };
   const squareLayout = () => {
-    if(kind === 'oh') return ohSquare();
     const m = Math.round(W*.035), top = m, sx = AX, sw = W - m - sx, tx = AX + 16, tw = W - m - 14 - tx;
     let y = top, hd = {h: 0, html: ''};
     if(kind !== 'oh'){ hd = moment(BW + 10, y, W - m - BW - 10, {stack: false, max: 40}); y += hd.h + 6; }
     const cOpt = Object.assign(cOptFor(), {ns: Math.max(F.body*1.3, 17), ps: Math.max(F.body*1.15, 15), lh: Math.max(28, F.body*2.2)});
     const cH = Math.max(contact(0, 0, W - 2*m, cOpt).h, cOpt.lh);
     let best = null;
-    const HW = kind === 'oh' ? wideHero(sw) : null;   // the Open House square: the house across the column, not a small photo with blank beside it (owner 11/7)
-    for(let k = 1.5; k >= (HW ? .69 : .99); k -= .1){ const inf = info(tx, 0, tw, k, {lvl: 0, wl: 0}); const bh = inf.h + 32, avail = H - m - y - bh - 12 - cH - (kind === 'oh' ? 36 : 0) - 8; if((HW ? HW.fit(avail) : avail >= 78) || k <= (HW ? .701 : 1.001)){ best = {k, inf, bh, avail}; break; } }
+    for(let k = 1.5; k >= .99; k -= .1){ const inf = info(tx, 0, tw, k, {lvl: 0, wl: 0}); const bh = inf.h + 32, avail = H - m - y - bh - 12 - cH - (kind === 'oh' ? 36 : 0) - 8; if(avail >= 78 || k <= 1.001){ best = {k, inf, bh, avail}; break; } }
     const sh0 = Math.floor(Math.min(best.avail, sw*.5)), pl = stripPlan(sw, sh0, Math.min(sh0, 40), []);
-    let sh; const hw = HW && HW.fit(best.avail); if(hw){ sh = heroBox(sx, y + 4, hw.w, hw.h); } else if(pl){ drawStrip(pl, sx, y + 4); sh = pl.h; } else sh = stripFallback(sw, sh0, sx, y + 4);
-    { const ex = best.avail - sh; if(ex > 8) for(let k2 = best.k + .05; k2 <= 2.4; k2 += .05){ const i2 = info(tx, 0, tw, k2, {lvl: 0, wl: 0}), d = i2.h + 32 - best.bh; if(d > ex*.8) break; if(d > 0) best = Object.assign({}, best, {k: k2, inf: i2, bh: i2.h + 32, avail: best.avail - d}); } }   // the photo is as big as the house allows: the words grow into the height left (owner 11/7: no blank space)
+    let sh; if(pl){ drawStrip(pl, sx, y + 4); sh = pl.h; } else sh = stripFallback(sw, sh0, sx, y + 4);
     const by = y + 4 + sh + 8, bh = best.bh + Math.max(0, (best.avail - sh)*.4), rad = Math.min(bh/2, 44);
     back.push(evFrame(AX, by, W - AX, bh));
     const inf = info(tx, by + 16 + (bh - best.bh)/2, tw, best.k, {lvl: 0, wl: 0});

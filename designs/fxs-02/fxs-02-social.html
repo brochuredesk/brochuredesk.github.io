@@ -128,7 +128,7 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
     out.push(lab.html); yy += lab.h + 5*k; right = Math.max(right, lab.w); const labelLines = lab.n;
     const md = String(E.monthDay || E.long), sp = md.lastIndexOf(' ');
     if(!o.merged){
-      const wk = T({slot: 'oh.weekday', text: E.weekday.toUpperCase(), css: caps(600, o.smallWk ? 3 : 4.5, SOFT), x, y: yy, w, max: Math.max(o.smallWk ? F.small : F.body, 13)*Math.min(k, 1.25)*(o.bigWk || 1), min: o.smallWk ? F.small : F.body, lh: 1.15, small: o.smallWk ? 1 : 0});
+      const wk = T({slot: 'oh.weekday', text: E.weekday.toUpperCase(), css: caps(600, o.smallWk ? 3 : 4.5, SOFT), x, y: yy, w, max: Math.max(o.smallWk ? F.small : F.body, 13)*Math.min(k, 1.25), min: o.smallWk ? F.small : F.body, lh: 1.15, small: o.smallWk ? 1 : 0});
       out.push(wk.html); yy += wk.h + 2*k; right = Math.max(right, wk.w);
     }
     const dtext = o.merged ? E.long : md;
@@ -171,12 +171,10 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
     const out = []; let yy = y;
     if(kind === 'js' && shape !== 'slide'){   // owner review r2: the address at the top of the box, the call to action under it, bigger
       const sl = FXP.soldLine(D), kk = Math.min(k, 1.3);
-      const JP = shape === 'post';   // the post's black box has room across: a bigger address and the ask set full measure, no blank band beside them (owner 11/7: no blank space)
-      const ad = addr(x, yy, w, F.ev*1.15*Math.min(k, 1.2)*(JP ? 1.32 : 1), F.ev, TK.onInk); out.push(ad.html); yy += ad.h + 1;
-      const pl = T({slot: 'place', text: OHL.place(L).toUpperCase(), css: caps(500, w < 190 ? 1.2 : 2, SOFT), x: x + 1, y: yy, w, max: Math.max(F.small, 11)*(JP ? 1.2 : 1), min: F.small, lh: 1.2, small: 1}); out.push(pl.html); yy += pl.h + 11*kk;
+      const ad = addr(x, yy, w, F.ev*1.15*Math.min(k, 1.2), F.ev, TK.onInk); out.push(ad.html); yy += ad.h + 1;
+      const pl = T({slot: 'place', text: OHL.place(L).toUpperCase(), css: caps(500, w < 190 ? 1.2 : 2, SOFT), x: x + 1, y: yy, w, max: Math.max(F.small, 11), min: F.small, lh: 1.2, small: 1}); out.push(pl.html); yy += pl.h + 11*kk;
       const hs = Math.max(F.body*2.15, 24)*kk;
-      const one = JP && FXP.width(sl.head, `${MONT};font-weight:700;font-size:${hs*.8}pt`) <= w;   // the post: the ask on one full line when it fits at 80% of its size or more, else two lines
-      const h1 = T({slot: 'sold.head', text: sl.head, css: `font-weight:700;color:var(--fx-on-ink)${JP ? '' : ';text-wrap:balance'}`, x, y: yy, w, max: hs, min: one ? hs*.8 : F.body, lines: one ? 1 : 2, lh: 1.1, small: 1}); out.push(h1.html); yy += h1.h + 4;
+      const h1 = T({slot: 'sold.head', text: sl.head, css: `font-weight:700;color:var(--fx-on-ink);text-wrap:balance`, x, y: yy, w, max: hs, min: F.body, lines: 2, lh: 1.1, small: 1}); out.push(h1.html); yy += h1.h + 4;
       if(sl.line && !o.noLine){ const l2 = T({slot: 'sold.line', text: sl.line, css: `font-weight:600;color:var(--fx-on-ink)`, x, y: yy, w, max: Math.max(F.body*1.5, 18)*Math.min(k, 1.2), min: F.body, lines: 2, lh: 1.2}); out.push(l2.html); yy += l2.h; }
       if(side){ const fs2 = Math.max(F.body*1.1, 14)*kk; yy += 8*kk;   // owner 11/7, FXS-09 socials review 11/8 carried: a Just Sold card lists no house features; the seller ask instead
         const ask = sl.line && !o.noLine ? 'Your home could be next.' : 'Your home could be next. Call or text me.';
@@ -420,13 +418,13 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
     const cH = Math.max(contact(0, 0, W - 2*m, cOpt).h, cOpt.lh);
     let best = null;
     const FIXSQ = kind !== 'oh';   // owner review r4: the Just Listed / Just Sold square uses the same hero box as the post
-    for(let k = 1.5; k >= (FIXSQ ? .6 : .99); k -= (FIXSQ ? .05 : .1)){ const inf = info(tx, 0, tw, k, {lvl: 0, wl: 0, bigWk: 1.3}); const bh = inf.h + 32, avail = H - y - bh - cH - 2*GC - (kind === 'oh' ? 36 : 0); if(FIXSQ ? (avail >= HERO_H + 4 || k <= .66) : (avail >= 78 || k <= 1.001)){ best = {k, inf, bh, avail}; break; } }
+    for(let k = 1.5; k >= (FIXSQ ? .6 : .99); k -= (FIXSQ ? .05 : .1)){ const inf = info(tx, 0, tw, k, {lvl: 0, wl: 0}); const bh = inf.h + 32, avail = H - y - bh - cH - 2*GC - (kind === 'oh' ? 36 : 0); if(FIXSQ ? (avail >= HERO_H + 4 || k <= .66) : (avail >= 78 || k <= 1.001)){ best = {k, inf, bh, avail}; break; } }
     const sh0 = FIXSQ ? Math.floor(Math.min(best.avail, HERO_H)) : Math.floor(Math.min(best.avail, sw*.5)), pl = FIXSQ && sh0 >= HERO_H - 1 ? null : stripPlan(sw, sh0, Math.min(sh0, 40), []);
     let sh; if(FIXSQ && sh0 >= HERO_H - 1) sh = heroBox(sx, y + 4, sw, sh0); else if(pl){ drawStrip(pl, sx, y + 4); sh = pl.h; } else if(kind !== 'oh'){ const fr = OHL.fitHero(D, hero, sw, Math.floor(sh0), true); front.push(pic(hero, sx + (sw - fr.w)/2, y + 4, fr.w, fr.h, `border-radius:${Math.min(fr.h*.4, fr.w*.25)}pt 0 0 ${Math.min(fr.h*.4, fr.w*.25)}pt`)); sh = fr.h; }   // a fitted house sits centered, the white split evenly (owner review r5)
     else sh = stripFallback(sw, sh0, sx, y + 4);
     const by = y + 4 + sh + 8, bh = best.bh + Math.max(0, (best.avail - sh)*.4), rad = Math.min(bh/2, 44);
     back.push(rect(AX, by, W - AX, bh, `background:${INK};border-radius:${rad}pt 0 0 ${rad}pt`));
-    const inf = info(tx, by + 16 + (bh - best.bh)/2, tw, best.k, {lvl: 0, wl: 0, bigWk: 1.3});   // the weekday bigger: it runs past the middle of the box, no blank band beside it (owner 11/7)
+    const inf = info(tx, by + 16 + (bh - best.bh)/2, tw, best.k, {lvl: 0, wl: 0});
     front.push(hd.html, inf.html);
     let yy = by + bh + (kind === 'oh' ? 8 : 0);
     if(kind === 'oh'){ const ab = addr(BW + 14, yy, W - m - BW - 14, F.ev*1.3, F.ev, INK); mid.push(ab.html); yy += ab.h; const pl2 = T({slot: 'place', text: OHL.place(L).toUpperCase(), css: caps(500, 2, TK.textDark), x: BW + 15, y: yy, w: W - m - BW - 14, max: Math.max(F.small, 10), min: F.small, lh: 1.2, small: 1}); mid.push(pl2.html); yy += pl2.h; }
