@@ -3,8 +3,9 @@
    piece drew "map-missing" and was held back from the live flow. AT.ensureMap(D) fills D.map the same way, in the page:
      1. the listing's point: listing.lat/lng when given, else the address looked up on OpenStreetMap's Nominatim (free, no key);
         the sample listing (a made-up street) falls back to its ZIP
-     2. streets, parks, water and named places within 1,700 m from the Overpass API (the query atlas_map.py runs), in local
-        meters (x east, y south, the listing at 0,0); the city's downtown as the far arrow when it sits off the map
+     2. streets, parks, water and named places within 1,700 m, in local meters (x east, y south, the listing at 0,0): from
+        OpenFreeMap's vector tiles (free, no key, a CDN; 11/9), or the Overpass API (the query atlas_map.py runs) only when the
+        tiles fail; the city's downtown as the far arrow when it sits off the map
      3. Map Index and extra labels: the copy's own names when they are on this map; any that aren't are picked here from the
         map (nearest park, nearest grocery or cafe, downtown), so the index never shows a place the map can't draw
    The map is kept in localStorage per address (one lookup for every Atlas piece of a listing; Web Locks keep the gallery's
@@ -60,6 +61,77 @@
     return null;
   }
 
+  // ---- OpenFreeMap vector tiles (free, no key, served from a CDN; the same OpenStreetMap data, OpenMapTiles layers) ----
+  // the main source since 11/9: on 11/9 every public Overpass server answered 504 or timed out, the tiles answered at once
+  const OFM = 'https://tiles.openfreemap.org/planet', Z = 14;
+  // a minimal protobuf + Mapbox Vector Tile reader: only what the map needs (layers, features, tags, geometry)
+  function pbf(buf){
+    const b = new Uint8Array(buf); let i = 0;
+    const varint = () => { let r = 0, s = 0, x; do { x = b[i++]; r += (x & 0x7f) * Math.pow(2, s); s += 7; } while(x & 0x80); return r; };
+    const fields = (end, cb) => { while(i < end){ const k = varint(), f = Math.floor(k / 8), t = k & 7;
+      if(t === 0) cb(f, varint()); else if(t === 2){ const n = varint(), st = i; i += n; cb(f, null, st, st + n); }
+      else if(t === 1){ cb(f, null, i, i + 8, 'f64'); i += 8; } else if(t === 5){ cb(f, null, i, i + 4, 'f32'); i += 4; } else throw new Error('pbf'); } };
+    const str = (a, z) => new TextDecoder().decode(b.subarray(a, z));
+    const packed = (a, z) => { const out = [], keep = i; i = a; while(i < z) out.push(varint()); i = keep; return out; };
+    const value = (a, z) => { let v = null; const keep = i; i = a; fields(z, (f, n, s, e, w) => {
+      if(f === 1) v = str(s, e); else if(f === 2 || f === 3) v = new DataView(b.buffer, b.byteOffset + s, e - s)[f === 2 ? 'getFloat32' : 'getFloat64'](0, true);
+      else if(f === 4 || f === 5) v = n; else if(f === 6) v = (n % 2) ? -(n + 1) / 2 : n / 2; else if(f === 7) v = !!n; }); i = keep; return v; };
+    const layers = {};
+    fields(b.length, (f, n, s, e) => { if(f !== 3) return; const keep = i; i = s;
+      const L = {name: '', keys: [], vals: [], feats: [], extent: 4096};
+      fields(e, (g, m, s2, e2) => {
+        if(g === 1) L.name = str(s2, e2); else if(g === 3) L.keys.push(str(s2, e2)); else if(g === 4) L.vals.push(value(s2, e2));
+        else if(g === 5) L.extent = m;
+        else if(g === 2){ const F = {type: 0, tags: [], geom: []}, k2 = i; i = s2;
+          fields(e2, (h, q, s3, e3) => { if(h === 2) F.tags = packed(s3, e3); else if(h === 3) F.type = q; else if(h === 4) F.geom = packed(s3, e3); });
+          i = k2; L.feats.push(F); } });
+      i = keep; layers[L.name] = L; });
+    return layers;
+  }
+  const rings = g => { const out = []; let x = 0, y = 0, cur = null, j = 0;
+    while(j < g.length){ const c = g[j++], id = c & 7, n = c >> 3;
+      if(id === 7){ if(cur && cur.length) cur.push(cur[0]); continue; }
+      for(let r = 0; r < n; r++){ const dx = g[j++], dy = g[j++]; x += (dx >> 1) ^ -(dx & 1); y += (dy >> 1) ^ -(dy & 1);
+        if(id === 1){ cur = [[x, y]]; out.push(cur); } else cur.push([x, y]); } }
+    return out; };
+  const area2 = r => r.reduce((a, p, k) => { const q = r[(k + 1) % r.length]; return a + p[0] * q[1] - q[0] * p[1]; }, 0);
+  async function tilesData(lat0, lon0){
+    const tj = await (await timed(fetch(OFM), 20000)).json();
+    const url = tj.tiles[0], n = Math.pow(2, Z);
+    const tx = lon => (lon + 180) / 360 * n, ty = lat => (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n;
+    const dLat = R / 110574, dLon = R / (111320 * Math.cos(lat0 * Math.PI / 180));
+    const x0 = Math.floor(tx(lon0 - dLon)), x1 = Math.floor(tx(lon0 + dLon)), y0 = Math.floor(ty(lat0 + dLat)), y1 = Math.floor(ty(lat0 - dLat));
+    const jobs = [];
+    for(let x = x0; x <= x1; x++) for(let y = y0; y <= y1; y++) jobs.push([x, y]);
+    const got = await Promise.all(jobs.map(async ([x, y]) => {
+      const r = await timed(fetch(url.replace('{z}', Z).replace('{x}', x).replace('{y}', y)), 30000);
+      if(!r.ok) throw new Error('tile ' + r.status);
+      return [x, y, pbf(await r.arrayBuffer())]; }));
+    // the same element list Overpass gives (way geometry, node points, tags), so build() reads either one
+    const els = [], CLS = {minor: 'residential', service: null};
+    const ll = (x, y, ext) => (p => ({lon: (x + p[0] / ext) / n * 360 - 180, lat: Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + p[1] / ext) / n))) * 180 / Math.PI}));
+    for(const [x, y, layers] of got){
+      const each = (name, cb) => { const L = layers[name]; if(!L) return;
+        for(const F of L.feats){ const t = {}; for(let k = 0; k + 1 < F.tags.length; k += 2) t[L.keys[F.tags[k]]] = L.vals[F.tags[k + 1]];
+          cb(t, rings(F.geom).map(r => r.map(ll(x, y, L.extent))), F.type, rings(F.geom)); } };
+      each('transportation', (t, rs) => { const c = t.class in CLS ? CLS[t.class] : t.class; if(!c || t.brunnel === 'tunnel') return;
+        rs.forEach(g => els.push({type: 'way', geometry: g, tags: {highway: c + (t.ramp ? '_link' : '')}})); });
+      each('transportation_name', (t, rs) => { const c = t.class in CLS ? CLS[t.class] : t.class; if(!c || !t.name) return;
+        rs.forEach(g => els.push({type: 'way', geometry: g, tags: {highway: c, name: t.name}})); });
+      // city parks are landcover (class grass, subclass park/garden/...) and landuse playground; the tiles' own 'park' layer is
+      // nature reserves and historic districts, which the approved maps never shade
+      each('landcover', (t, rs, ty_, raw) => { if(/^(park|garden|golf_course|playground)$/.test(t.subclass || '')) rs.forEach((g, k) => { if(area2(raw[k]) > 0) els.push({type: 'way', geometry: g, tags: {leisure: t.subclass}}); }); });
+      each('landuse', (t, rs, ty_, raw) => { if(t.class === 'playground') rs.forEach((g, k) => { if(area2(raw[k]) > 0) els.push({type: 'way', geometry: g, tags: {leisure: 'playground'}}); }); });
+      each('water', (t, rs, ty_, raw) => rs.forEach((g, k) => { if(area2(raw[k]) > 0) els.push({type: 'way', geometry: g, tags: {natural: 'water'}}); }));
+      each('waterway', (t, rs) => { if(/^(river|stream|canal)$/.test(t.class)) rs.forEach(g => els.push({type: 'way', geometry: g, tags: {waterway: t.class}})); });
+      each('poi', (t, rs) => { if(!t.name || !rs[0] || !rs[0][0]) return; const sc = t.subclass || t.class, p = rs[0][0];
+        const k = /^(cafe|restaurant|library|school|marketplace|arts_centre|theatre)$/.test(sc) ? 'amenity' : /^(museum|gallery|attraction)$/.test(sc) ? 'tourism'
+          : /^(supermarket|mall)$/.test(sc) ? 'shop' : /^(park|garden)$/.test(sc) ? 'leisure' : null;
+        if(k) els.push({type: 'node', lat: p.lat, lon: p.lon, tags: {[k]: sc, name: t.name}}); });
+    }
+    return {elements: els};
+  }
+
   async function build(L, sample){
     const at = await locate(L, sample);
     if(!at) return {err: 'address-not-found'};
@@ -77,15 +149,31 @@
  nwr["shop"~"^(supermarket|mall)$"]["name"]${A};
  nwr["leisure"~"^(park|garden)$"]["name"]${A};
 );out geom;`;
-    const data = await overpass(q);
+    let data, fromTiles = true;
+    try { data = await tilesData(lat0, lon0); if(!data.elements.some(e => e.tags && e.tags.highway)) throw new Error('no streets in the tiles'); }
+    catch(e){ data = await overpass(q); fromTiles = false; }   // Overpass only when the tiles fail
     const ways = [], areas = [], places = [];
+    // tiles reach past the map's radius and carry each named street twice (its line and its name line): keep the parts
+    // inside the radius, and an unnamed line only where no named street already runs
+    const E = R + 100, inBox = q => Math.abs(q[0]) <= E && Math.abs(q[1]) <= E;
+    const runs = p => { if(!fromTiles) return [p]; const out = []; let cur = [];
+      p.forEach((q, k) => { const keep = inBox(q) || (k > 0 && inBox(p[k - 1])) || (k + 1 < p.length && inBox(p[k + 1]));
+        if(keep) cur.push(q); else { if(cur.length > 1) out.push(cur); cur = []; } });
+      if(cur.length > 1) out.push(cur); return out; };
+    const cell = q => Math.round(q[0] / 6) + ',' + Math.round(q[1] / 6), namedAt = new Set();
+    if(fromTiles) for(const e of data.elements) if(e.type === 'way' && e.tags.highway && e.tags.name) e.geometry.forEach(g => namedAt.add(cell(xy(g.lat, g.lon))));
+    const JUNK = /^(vacant|closed|unnamed|unknown|tbd|n\/a|none)$/i;
     for(const e of data.elements || []){
       const t = e.tags || {};
+      if(t.name && JUNK.test(String(t.name).trim())) delete t.name;
       if(e.type === 'way' && e.geometry){
         const p = e.geometry.map(g => xy(g.lat, g.lon));
-        if(t.highway){ const c = t.highway.replace('_link', ''); if(KEEP.has(c)) ways.push({n: straight(t.name || ''), c, p}); }
+        if(t.highway){ const c = t.highway.replace('_link', ''); if(!KEEP.has(c)) continue;
+          if(fromTiles && !t.name && p.filter(q => namedAt.has(cell(q))).length >= 0.8 * p.length) continue;
+          runs(p).forEach(r => ways.push({n: straight(t.name || ''), c, p: r})); }
+        else if(fromTiles && !p.some(inBox)) {}   // a park or pond wholly off the map
         else if(/^(park|playground|garden|golf_course)$/.test(t.leisure || '')) areas.push({k: 'park', line: false, p});
-        else if(t.natural === 'water' || t.waterway) areas.push({k: 'water', line: /^(river|stream|canal)$/.test(t.waterway || ''), p});
+        else if(t.natural === 'water' || t.waterway) { const line = /^(river|stream|canal)$/.test(t.waterway || ''); (line ? runs(p) : [p]).forEach(r => areas.push({k: 'water', line, p: r})); }
       }
       if(t.name && !t.highway && !t.waterway && t.natural !== 'water'){
         let plat, plon;
@@ -94,7 +182,7 @@
         else if(e.bounds){ plat = (e.bounds.minlat + e.bounds.maxlat) / 2; plon = (e.bounds.minlon + e.bounds.maxlon) / 2; }
         else continue;
         const k = t.amenity || t.tourism || t.shop || t.leisure, [x, y] = xy(plat, plon);
-        if(k) places.push({n: straight(t.name), k, x, y, m: Math.round(Math.hypot(x, y)), addr: straight([t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' '))});
+        if(k && (!fromTiles || Math.hypot(x, y) <= E)) places.push({n: straight(t.name), k, x, y, m: Math.round(Math.hypot(x, y)), addr: straight([t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' '))});
       }
     }
     const seen = new Set(), uniq = [];
@@ -184,7 +272,7 @@
       if(!got || !got.map) return [{slot: 'map', kind: 'map-missing', detail: (got && got.err) || 'no map data'}];
       D.map = got.map;
     }
-    fitIndex(D, built);
+    fitIndex(D, built || !!D.map.found);   // a listing's own map (built here, or saved on the package and passed back) always gets its index picked; only the samples' maps keep the copy's index as written
     window.atlasMapData = D.map;
     return D.map.found === 'zip' && !D.sample ? [{slot: 'map', kind: 'map-center-approx', detail: 'the address was not found; the map is centered on the ZIP'}] : [];
   };

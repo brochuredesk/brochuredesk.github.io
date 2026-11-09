@@ -260,7 +260,7 @@ window.brochureReady = (async function(){
   });
   // Map Index: the three rows spread to the bottom of the paragraph beside them
   const K = C.cover || {}, M = D.map;
-  const mi = m => { const v = Math.round(m / 1609.34 * 10) / 10; return `${v.toFixed(1)} ${v === 1 ? 'mile' : 'miles'}`; };
+  const mi = m => { const v = Math.max(0.1, Math.round(m / 1609.34 * 10) / 10);   /* never 0.0 */ return `${v.toFixed(1)} ${v === 1 ? 'mile' : 'miles'}`; };
   const all = M ? [...(M.places||[]), ...(M.far||[])] : [];
   const index = (K.index || []).slice(0, 3).map(i => { const p = all.find(q => q.n === i.name); return Object.assign({}, i, {p, miles: p ? mi(p.m || Math.hypot(p.x, p.y)) : ''}); });
   const rows = document.getElementById('idxrows');

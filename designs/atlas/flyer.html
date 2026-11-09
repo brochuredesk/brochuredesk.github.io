@@ -62,7 +62,7 @@
 window.brochureReady = (async function(){
   const D = AT.data();
   if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
-  const esc = AT.esc, pt = AT.pt, L = D.listing, b = D.brand || {}, C = D.copy || {}, CP = D.companion || {}, FL = CP.flyer || {};
+  const esc = AT.esc, pt = AT.pt, L = D.listing, b = D.brand || {}, C = D.copy || {}, CP = D.companion || (D.companion = {}), FL = CP.flyer || (CP.flyer = {});   // kept on D: the map step (atlas-mapdata.js) fills FL.mapExtras for a real listing
   const issues = await AT.fontsReady(D);
   document.body.dataset.mode = D.mode || 'email';
   const front = D.piece.side !== 'back';

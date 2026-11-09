@@ -422,7 +422,7 @@
   };
 
   // Map Index rows (name, distance) from the listing's map and the copy's index
-  AT.mileText = m => { const v = Math.round(m / 1609.34 * 10) / 10; return `${v.toFixed(1)} ${v === 1 ? 'mile' : 'miles'}`; };
+  AT.mileText = m => { const v = Math.max(0.1, Math.round(m / 1609.34 * 10) / 10);   /* a place a few doors down reads 0.1, never 0.0 */ return `${v.toFixed(1)} ${v === 1 ? 'mile' : 'miles'}`; };
   AT.mapIndex = D => {
     const M = D.map || {}, all = [...(M.places||[]), ...(M.far||[])], K = (D.copy||{}).cover || {};
     return (K.index || []).slice(0, 3).map(i => { const p = all.find(q => q.n === i.name); return Object.assign({}, i, {p, miles: p ? AT.mileText(p.m || Math.hypot(p.x, p.y)) : ''}); });
