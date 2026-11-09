@@ -15,8 +15,9 @@
   const FN_AI = SUPABASE_URL + '/functions/v1/package-ai';
   const FN_CHECKOUT = SUPABASE_URL + '/functions/v1/checkout';
   const FN_FILES = SUPABASE_URL + '/functions/v1/order-files';
-  // the upload runner (uploader/runner.py in the code repo); null until it's hosted, so uploads offer the download instead
-  const UPLOAD_RUNNER = null;
+  // the upload runner (uploader/runner.py in the code repo), on the upload server since 11/9/2026; a printer or piece
+  // without a recorded recipe offers the download instead
+  const UPLOAD_RUNNER = 'https://upload.brochuredesk.com';
   // same ids and names as config/printers.json in the code repo
   const PRINTERS = [['vistaprint', 'Vistaprint'], ['fedex-office', 'FedEx Office'], ['uprinting', 'UPrinting'], ['gotprint', 'GotPrint'],
     ['next-day-flyers', 'Next Day Flyers'], ['printplace', 'PrintPlace'], ['smartpress', 'Smartpress'], ['overnight-prints', 'Overnight Prints'],
@@ -2160,7 +2161,10 @@
   }
   async function toPrinter(piece){
     const pr = await pickPrinter(); if(!pr) return;
-    const ready = pr.id !== 'other' && (await UploadPanel.printers(UPLOAD_RUNNER)).includes(pr.id);
+    let can = {printers: [], pieces: {}};
+    if(pr.id !== 'other') try { can = await fetch(UPLOAD_RUNNER + '/printers').then(r => r.json()); } catch(e) {}
+    const covers = (can.pieces || {})[pr.id];      // the pieces this printer's recipe uploads (none listed = all)
+    const ready = (can.printers || []).includes(pr.id) && (!covers || covers.includes(piece));
     if(!ready){
       const v = await ask(`<h2>Download for ${esc(pr.name)}</h2><p>We can't upload to ${esc(pr.name)} for you yet. Download the print file and add it to your ${esc(pr.name)} order yourself.</p>`,
         [['Download it', 'dl'], ['Not now', 'no', 'line']]);
@@ -2170,7 +2174,7 @@
     const {data} = sb ? await sb.auth.getSession() : {data: {}};
     const token = data.session ? data.session.access_token : '';
     // the upload server makes the print files first (uploader/printmaker.py: POST /print), then uploads them
-    const KEYS = {foldover: ['brochure'], 'open-house-flyer': ['open-house'], postcard: pkg.order.size === 'both' ? ['just-listed-6x11', 'just-listed-6x9'] : ['postcard']};
+    const KEYS = {foldover: ['brochure', 'brochure-outside', 'brochure-inside'], 'open-house-flyer': ['open-house'], postcard: pkg.order.size === 'both' ? ['just-listed-6x11', 'just-listed-6x9'] : ['postcard']};
     await ask(`<h2>Making your print files</h2><p>This takes a minute or two. Keep this page open.</p>`, [['OK', 'ok']]);
     let made = {};
     try { made = await fetch(UPLOAD_RUNNER + '/print', {method: 'POST', headers: {'content-type': 'application/json', authorization: 'Bearer ' + token},
