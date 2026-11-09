@@ -128,7 +128,7 @@ window.brochureReady = (async function(){
       h += `<div class="abs sk" style="left:${Z.zA[0]}pt;top:${pTop}pt;width:${rW}pt;height:10pt" data-slot="sold.servicesLabel" data-lines="1">${esc(C.servicesLabel || 'What I do for sellers')}</div>`;
       h += `<div class="abs svc" style="left:${Z.zA[0]}pt;top:${pTop + 14}pt;width:${rW}pt;height:${Z.zA[1] - 16 - pTop - 14}pt">${(C.services || []).slice(0, 4).map((s, i) => `<div class="it"><b>${i + 1}</b><span data-slot="sold.svc${i}" data-lines="3">${esc(s)}</span></div>`).join('')}</div>`;
       h += `<div class="abs sk" style="left:${X}pt;top:${ky}pt;width:${LZ - X}pt;height:10pt" data-slot="sold.stepsLabel" data-lines="1">${esc(C.stepsLabel || 'How I’d start')}</div>`;
-      (big ? C.steps11 : C.steps9 || []).slice(0, 3).forEach((s, i) => { const x = X + i*(sw + gap);
+      ((big && C.steps11) || C.steps9 || []).slice(0, 3).forEach((s, i) => { const x = X + i*(sw + gap);
         h += `<div class="tile stp" style="left:${x}pt;top:${sy}pt;width:${sw}pt;height:${sT}pt;padding:8pt 9pt"><div class="n">${i + 1}</div><div class="t" data-slot="sold.step${i}" data-para="1" data-min="4" data-fillbox="1" style="height:48pt">${esc(s)}</div></div>`; });
     }
     h += `<div class="abs" data-gapcheck="back.photos" style="left:0;top:0">${g}</div>`;
