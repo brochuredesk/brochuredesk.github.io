@@ -478,6 +478,7 @@
     let spec = D.fontSpec;
     if(!spec){ try { spec = await fetch('fonts.json').then(r => r.json()); } catch(e) { spec = null; } }
     const iss = await AT.applyFonts(D, spec);
+    if(AT.ensureMap) iss.push(...await AT.ensureMap(D));   // a real listing's street map (atlas-mapdata.js)
     await AT.cardReady;
     return iss;
   };

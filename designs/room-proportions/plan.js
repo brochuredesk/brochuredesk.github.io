@@ -736,7 +736,23 @@
     return {html, issues, scale:Math.min(...sc), mixedScale: Math.max(...sc) > 1.1 * Math.min(...sc), usedW:allW, usedH:allH, rotated:ang!==0, angle:ang, front:frontNow || '', insets:0, levels:lv.length,
             detached: G ? 1 : 0, detachedSmaller: !!(G && G.smaller)};
   }
-  const drawAny = (plan, box, opt) => plan && plan.kind === 'color' ? drawColor(plan, box, opt) : draw(plan, box, opt);
+  // no redrawn plan yet (the order flow's rough draft, or a listing without one): the rough draft's simple preview plan
+  // (data.planPreview, one picture per floor, side by side at one height) sits in the plan box; with no plan at all the box
+  // says the design needs one and the checks report it (the order flow grays plan-only designs out; 11/8: drew nothing and
+  // threw before this)
+  function noPlan(box){
+    const D = (window.RP && RP.data && RP.data()) || {}, pre = (D.planPreview || []).filter(p => p && p.src);
+    const at = `position:absolute;left:${box.x}pt;top:${box.y}pt;width:${box.w}pt;height:${box.h}pt;`;
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const html = pre.length
+      ? `<div class="plan-preview" data-plan-preview="1" style="${at}display:flex;gap:18pt;align-items:center;justify-content:center">${pre.map(p =>
+          `<img src="${esc(p.src)}" alt="" style="flex:1 1 0;min-width:0;max-height:100%;object-fit:contain">`).join('')}</div>`
+      : `<div class="plan-missing" style="${at}display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6pt;background:#f1f1ee;color:#55554f;font-size:11pt;text-align:center"><b>This design needs a floor plan</b><span style="font-size:9pt">Add a plan that lists the rooms, or pick a design made for homes without one.</span></div>`;
+    const issues = pre.length ? [] : [{slot:'plan', kind:'requires-floor-plan', detail:'Room Proportions needs a floor plan; the design is grayed out for this listing'}];
+    return {html, issues, scale:1, mixedScale:false, usedW:box.w, usedH:box.h, rotated:false, angle:0, front:'', insets:0, levels:pre.length};
+  }
+  const drawAny = (plan, box, opt) => !plan || !(plan.levels || []).length ? noPlan(box)
+    : plan.kind === 'color' ? drawColor(plan, box, opt) : draw(plan, box, opt);
   const zonesOf = plan => plan && plan.kind === 'color' ? [...new Set(plan.levels.flatMap(L=>Object.keys(L.layers||{}).filter(k=>k in ZONES)))]
     : [...new Set(plan.levels.flatMap(l=>l.rooms.map(zoneOf)))];
 

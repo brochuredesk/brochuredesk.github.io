@@ -821,6 +821,13 @@
              feature: {photo: ids[ids.length - 1], title: '', body: ''}, locationTitle: '', locationBody: '', footnote: FINE_PRINT}};
   }
   const draftCompanion = ids => ({fineprint: FINE_PRINT, flyerPhotos: ids.slice(0, 7), postcard: {photos: ids.slice(0, 5)}});
+  // Atlas builds a listing's street map in the browser (templates/atlas/atlas-mapdata.js, OpenStreetMap); the first drawn
+  // map is kept on the package so every later piece, and the print server, use the same one instead of fetching again
+  const mapKey = L => ['address', 'city', 'zip'].map(k => String((L || {})[k] ?? '').toLowerCase().trim()).join('|');
+  const savedMap = () => pkg && pkg.map && pkg.map.key === mapKey(pkg.listing) ? pkg.map.data : null;
+  function keepMap(w){
+    try { if(pkg && w && w.atlasMapData && !savedMap()){ pkg.map = {key: mapKey(pkg.listing), data: w.atlasMapData}; save(); } } catch(e){ console.warn(e); }
+  }
   async function dataFor(designId, final){
     const d = designs.find(x => x.id === designId) || {}, fs = await fontSpec(designId);
     const arr = arrangement(pkg, designId), ids = arr.map(i => 'p' + i);
@@ -857,6 +864,7 @@
       companion: written ? Object.assign({fineprint: FINE_PRINT}, written.companion) : pre.companion,
       copyPending: false}, written ? {} : {preview: true}, plan ? {planPreview: plan, planNote: PLAN_NOTE} : {},
       pkg.colors ? {colors: pkg.colors} : {},   // the fold-over's background and plan box (owner 11/7/2026)
+      savedMap() ? {map: savedMap()} : {},   // Atlas: the street map drawn once for this listing (print uses the same one)
       // the colored plan is saved as masks and labels; each design tints it in its own colors, never a second read
       written && pkg.plan && fp && fp.active ? {plan: pkg.plan} : {},
       // some designs read their copy under their own name (data.ct, data.pr, data.sw: copy-example.json "as")
@@ -970,7 +978,7 @@
           .then(() => addressFit(fr)).then(() => { if(d.preview) PT.fitPreview(fr.contentDocument);
             // the fold-over's background and plan box colors, over the design's own (pieces.json); text flips by contrast
             if(pt.piece.kind === 'foldover' && d.colors && w.FoldColors) w.FoldColors.apply(d.colors, pt.piece.colors || {});
-            fit(s); if(onReady) onReady(fr, s, pt); }).finally(done); fit(s); };
+            keepMap(w); fit(s); if(onReady) onReady(fr, s, pt); }).finally(done); fit(s); };
       fr.srcdoc = srcdoc(designId, html[pt.piece.file], d, pt.panel, false, pt.piece.kind === 'foldover');
     });
     await Promise.all(ready);

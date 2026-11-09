@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Room Proportions fold-over</title>
+<link rel="stylesheet" href="rp.css">
+<script src="rp.js"></script>
+<script src="plan.js"></script>
+<!--
+  BrochureDesk · Room Proportions · 11 x 17 fold-over
+  11 x 17 half-fold, four upright 11 x 8.5 landscape panels, 0.125 in (9 pt) bleed on every edge. Lengths are pt.
+    outside sheet: back (the floor plan, true-to-scale room boxes, the standard contact card) over the cover
+    inside sheet:  Inside, Room by Room (photo frames cut to each room's real proportions) over Outside and Around
+
+  Needs a floor plan (pieces.json requiresFloorPlan): the agent's own plan is placed as given (data.plan, kind "color", one
+  image per floor; plan.js turns it on its side when that prints it a third larger) and the true-to-scale boxes beside it come
+  from the listing's room sizes. No plan = this design is grayed out in the picker; it has no no-plan version.
+
+  Photos go by priority: the front exterior is the cover's hero; main living areas first (living, kitchen, dining, family),
+  then the primary bedroom and bath, then the other bedrooms; the best backyard shot leads the Outside and Around panel; the
+  cover strip takes the remaining outdoor shots, then the next-best rooms, bathrooms last. Panel titles come from the writer.
+  Copy comes from data.copy.rp (per-photo master sentences the box fills from), never from the template.
+  One brokerage logo per open spread: the contact card's on the outside sheet, the upper right of the first inside panel on the
+  inside sheet (none near the crease). No price, no photo numbers, no QR, no pins on the plan.
+-->
+<style>
+  .page{position:relative;background:var(--paper);overflow:hidden;margin:0 auto;break-after:page;page-break-after:always}
+  body[data-mode=proof] .page{width:810pt;height:630pt}
+  body[data-mode=print] .page{width:810pt;height:1242pt}
+  @media screen{.page{margin:12pt auto;box-shadow:0 2pt 12pt rgba(0,0,0,.35)}}
+  @page{margin:0}
+  @media print{ body[data-mode=proof] .page{page:proof} body[data-mode=print] .page{page:spread} }
+  @page proof{size:810pt 630pt}
+  @page spread{size:810pt 1242pt}
+  .panel{position:absolute;width:792pt;height:612pt;left:9pt;top:9pt}
+  .half{position:absolute;left:0;width:810pt;height:621pt;overflow:hidden}
+  .half.top{top:0}.half.bottom{top:621pt}
+  .half.top .panel{top:9pt}.half.bottom .panel{top:0}
+  .half .panel.flip{transform:rotate(180deg);transform-origin:396pt 306pt}
+
+  .hdr-kick{left:24pt;top:23.5pt;width:560pt}
+  .hdr-logo{right:24pt;top:24.5pt;height:37pt;width:268pt}  /* 25% larger, centered between the page's top edge and the rule at 86pt (center 43pt) */
+  .hdr-title{left:23pt;top:42pt;width:745pt;font-size:34pt;line-height:40pt;height:40pt;font-weight:500}
+  .hdr-rule{left:24pt;width:744pt;top:86pt;height:1pt;background:var(--ink);opacity:.55}
+  .hdr-sub{left:24pt;top:92pt;width:744pt;font:600 10.5pt/13pt var(--font-body);color:var(--accent);white-space:nowrap;overflow:hidden}
+
+  .read-k{font:700 10.5pt/13pt var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;color:var(--accent)}
+  .read-t{font:400 10.4pt/14.2pt var(--font-body);color:var(--ink);overflow:hidden}
+  .ftable{display:flex;flex-direction:column;min-height:0}
+  .ftable .fr{flex:1;display:flex;justify-content:space-between;align-items:center;border-top:.6pt solid var(--line);font:400 10.6pt/13pt var(--font-body);color:var(--muted)}
+  .ftable .fr:last-child{border-bottom:.6pt solid var(--line)}
+  .ftable .fr b{font-weight:700;color:var(--ink);white-space:nowrap}
+  .scale-k{font:700 9.5pt/12pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+  .scale-note{font:400 9.2pt/12.2pt var(--font-body);color:var(--muted);overflow:hidden}
+  .tick{position:absolute;width:.8pt;height:7pt;background:var(--ink)}
+  .tickn{position:absolute;font:400 8pt/9pt var(--font-body);color:var(--ink);text-align:center;width:30pt;white-space:nowrap}
+
+  .aside-intro{overflow:hidden}
+  .aside-intro .k{white-space:nowrap;overflow:hidden;font:700 8.5pt/10pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--warm);margin-bottom:6pt}
+  .aside-intro .p{font:400 11.4pt/15.6pt var(--font-body);color:var(--ink);overflow:hidden}
+  .callout{background:var(--accent);color:#fff;padding:13pt 14pt;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+  .callout .ct{text-wrap:balance;font:600 14pt/17pt var(--font-display);color:#fff;letter-spacing:-.2pt}
+  .callout .ci{font:400 10.4pt/13pt var(--font-body);color:#fff;display:flex;gap:7pt;align-items:baseline;white-space:nowrap;overflow:hidden}
+  .callout .ci b{width:5pt;height:5pt;background:var(--gold);flex:none;transform:translateY(-1pt)}
+  .nearbar{background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:space-around;padding:0 14pt;overflow:hidden}
+  .nearbar .n{display:flex;align-items:baseline;gap:6pt;white-space:nowrap}
+  .nearbar .d{font:600 17pt/20pt var(--font-display);color:var(--gold)}
+  .nearbar .u{font:600 8pt/10pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:#fff}
+  .nearbar .p{font:600 11pt/14pt var(--font-body);color:#fff}
+  .stack-f{display:flex;flex-direction:column;justify-content:space-evenly;flex:1;min-height:0}
+  .stack-f .r{display:flex;align-items:center;gap:9pt;border-top:.6pt solid var(--line);flex:1;font:600 14pt/16pt var(--font-display);color:var(--ink);white-space:nowrap}
+  .stack-f .r:last-child{border-bottom:.6pt solid var(--line)}
+  .stack-f .r b{width:5pt;height:5pt;background:var(--gold);flex:none}
+  .addr-big{font-size:46pt;line-height:52pt;height:52pt;font-weight:500;letter-spacing:-.8pt}
+</style>
+</head>
+<body data-mode="proof">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+RP.whenFonts(function(){
+  const D = RP.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = RP.esc, b = D.brand || {}, A = D.agent || {}, L = D.listing, R = (D.copy || {}).rp || {};
+  const mode = D.mode || 'proof';
+  document.body.dataset.mode = mode;
+  RP.applyBrand(b);
+  const planIssues = [];
+
+  // ---------- which photo goes where ----------
+  const items = RP.rooms(D), byId = Object.fromEntries(items.map(i => [i.id, i]));
+  const ratioOf = id => (D.photos[id].w && D.photos[id].h) ? D.photos[id].w / D.photos[id].h : 1.5;
+  const fronts = items.filter(i => i.kind === 'front').sort((a, c) => (RP.fullHouse(D, c.id) - RP.fullHouse(D, a.id)) || a.order - c.order);
+  const hero = fronts[0] || items.filter(i => i.kind === 'outdoor')[0];
+  fronts.slice(1).forEach(i => i.kind = 'outdoor');
+  const rest0 = items.filter(i => i !== hero);
+  const outRank = i => /backyard|yard|patio|pergola|deck/i.test(D.photos[i.id].tags || '') && !/side yard/i.test(D.photos[i.id].tags || '') ? 0 : /terrace|balcony|garage/i.test(D.photos[i.id].tags || '') ? 1 : /court|walk|side|exterior|street/i.test(D.photos[i.id].tags || '') ? 2 : 3;
+  const outdoors = rest0.filter(i => i.kind === 'outdoor').sort((a, c) => outRank(a) - outRank(c) || a.order - c.order);
+  const seen = {};
+  const interior = rest0.filter(i => i.kind !== 'outdoor').sort((a, c) => a.pr - c.pr || a.order - c.order)
+    .map(i => { seen[i.kind] = (seen[i.kind] || 0) + 1; return Object.assign({}, i, {pr2: i.pr + 3*(seen[i.kind] - 1)}); })
+    .sort((a, c) => a.pr2 - c.pr2 || a.order - c.order);
+  const top = interior.slice(0, 6);
+  const rest = interior.slice(6);
+  const isWet = i => /^(bath|shower|closet)$/.test(i.kind);
+  const lead = outdoors[0] || rest.shift();
+  const poolAll = outdoors.slice(1).concat(rest.filter(i => !isWet(i)), rest.filter(isWet));
+  const whole = poolAll.filter(i => RP.fullHouse(D, i.id));   // another whole-house shot never goes in a thin strip frame
+  const pool = poolAll.filter(i => !whole.includes(i));
+  const tall = ratioOf(hero.id) < 1.05;
+  const stripN = tall ? 2 : 4;
+  const strip = pool.slice(0, stripN), pool2 = pool.slice(stripN);
+  const small = whole.concat(pool2).slice(0, 2), row3 = whole.concat(pool2).slice(2, 5);
+
+  // ---------- text ----------
+  const T = id => (R.text || {})[id] || {t: '', s: []};
+  const dimsOf = it => it && it.sz ? RP.dimsText(it.sz[0], it.sz[1]) : '';
+  const cap = (id, x, y, w, n, o) => {
+    o = o || {};
+    const t = T(id), it = byId[id], dm = dimsOf(it);
+    const th = o.big ? 13 : 11.4, lh = o.big ? 12.4 : 11.2;
+    return `<div class="abs cap${o.big ? ' big' : ''}" style="left:${x}pt;top:${y}pt;width:${w}pt">`
+      + `<div class="t" data-slot="cap.${id}.t" data-lines="1">${esc(t.t)}${dm ? `<i>${esc(dm)}</i>` : ''}</div>`
+      + `<div class="b" data-slot="cap.${id}.b" data-lines="${n}" data-fill="${n}" data-sents="${esc(JSON.stringify(t.s))}" style="height:${n*lh}pt"></div></div>`;
+  };
+  const pairOf = (id, w) => ({s: T(id).s, w});
+  const capH = (n, big) => (big ? 13 : 11.4) + 1.5 + n*(big ? 12.4 : 11.2);
+  const photo = (id, x, y, w, h, extra) => RP.pframe(D, id, `left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${extra||''}`);
+  const place = [L.neighborhood, RP.placeZip(L)].filter(Boolean).join(' · ');
+  const logoHTML = (cls) => b.logo ? `<div class="logo ${cls}"><img src="${esc(b.logo)}" alt=""></div>` : `<div class="logo ${cls}"><span class="text">${esc(b.brokerage || '')}</span></div>`;
+  const header = (kick, title, sub, withLogo) => `<div class="abs kick hdr-kick" data-slot="hdr.kicker" data-lines="1">${esc(kick)}</div>`
+      + (withLogo ? logoHTML('hdr-logo') : '')
+      + `<div class="abs display hdr-title" data-slot="hdr.title" data-lines="1" style="${withLogo ? 'width:520pt' : ''}">${esc(title)}</div><div class="abs hdr-rule"></div>`
+      + (sub ? `<div class="abs hdr-sub" data-slot="hdr.sub" data-lines="1">${esc(sub)}</div>` : '');
+
+  // ================= BACK: the floor plan =================
+  function back(){
+    let h = header(L.address, 'Floor Plan', '', false);
+    const box = {x: 24, y: 98, w: 544, h: 238};
+    const run = RPPlan.draw(D.plan, box, {allowRotate: true});
+    h += run.html; planIssues.push(...run.issues);
+    document.body.dataset.planAngle = run.angle;
+    // reading the plan: bigger, and it fills the column down to the facts table
+    const rs = R.read || [];
+    const rowsF = [['Bedrooms', L.beds], ...BD.bathCells(L).map(c => [c[1], c[0]]), ['Living area', L.sqft ? Number(L.sqft).toLocaleString('en-US') + ' sq ft' : ''], L.yearBuilt ? ['Built', L.yearBuilt] : ['Stories', L.stories]].filter(r => r && r[1] !== '' && r[1] != null);
+    h += `<div class="abs" style="left:592pt;top:98pt;width:176pt;height:238pt;display:flex;flex-direction:column">
+        <div><div class="read-k" data-slot="read.k" data-lines="1">Reading the plan</div>
+          <div class="read-t" style="margin-top:6pt;height:${8*14.2}pt" data-slot="read.t" data-lines="8" data-fill="8" data-fillmin="5" data-sents="${esc(JSON.stringify(rs))}"></div></div>
+        <div class="ftable" style="flex:1;margin-top:8pt">${rowsF.map(r => `<div class="fr"><span>${esc(r[0])}</span><b data-slot="read.f.${esc(r[0])}" data-lines="1">${esc(r[1])}</b></div>`).join('')}</div></div>`;
+    // rooms drawn to one scale
+    h += `<div class="hair" style="left:24pt;width:744pt;top:346pt;background:var(--ink);opacity:.4"></div>`;
+    const sb = RP.scaleBoxes(D, 544, 84, 7);
+    h += `<div class="abs scale-k" style="left:24pt;top:353pt;width:560pt" data-slot="scale.k" data-lines="1">Drawn to the same scale: 1 inch = ${sb.ftPerIn} feet when printed at full size</div>`;
+    h += `<div class="abs" style="left:24pt;top:372pt;width:544pt;height:84pt">${sb.html}</div>`;
+    // scale bar and note
+    const bw = 72, bx = 592, by = 438;
+    h += `<div class="abs scale-note" style="left:${bx}pt;top:372pt;width:176pt;height:49pt" data-slot="scale.note" data-lines="4" data-fill="4" data-sents="${esc(JSON.stringify([R.scaleNote || 'The boxes use the sizes the listing gives for each room.', 'Hold one up beside a photo to judge the room.', 'Covered and open areas are hatched.', 'The primary bedroom is tinted.', 'Sizes are approximate.']))}"></div>`;
+    h += `<div class="sbar" style="left:${bx}pt;top:${by}pt;width:${bw}pt"></div>`;
+    [0, 1, 2, 3, 4].forEach(k => h += `<div class="tick" style="left:${bx + bw*k/4}pt;top:${by - 7}pt"></div><div class="tickn" style="left:${bx + bw*k/4 - 15}pt;top:${by + 8}pt">${Math.round(sb.ftPerIn*k/4)}</div>`);
+    h += `<div class="abs" style="left:${bx + bw + 14}pt;top:${by + 8}pt;font:400 8pt/9pt var(--font-body);color:var(--ink)">feet</div>`;
+    const dist = RP.district(L), fine = 'Information deemed reliable but not guaranteed; buyer to verify. Room sizes are approximate, from the listing.' + (dist ? ` Living area per ${dist}.` : '');
+    h += ContactCard.html([24, 468, 744, 136], A.headshot ? Object.assign({}, A) : A, b, {layout: 'panel', fine});
+    return h;
+  }
+
+  // ================= COVER =================
+  function cover(){
+    let h = '';
+    const t = T(hero.id), stats = RP.stats(L);
+    if(!tall){
+      h += photo(hero.id, -9, -9, 556, 380);
+      h += `<div class="abs" style="left:570pt;top:24pt;width:198pt;height:347pt;display:flex;flex-direction:column;gap:12pt">
+        <div class="kick" data-slot="cover.place" data-lines="1" style="flex:none">${esc(place)}</div>
+        <div class="stack-f">${stats.map((s, i) => `<div class="r" data-slot="cover.stat${i}" data-lines="1"><b></b>${esc(s)}</div>`).join('')}</div>
+        <div class="cap big" style="flex:none"><div class="t" data-slot="cover.cap.t" data-lines="1">${esc(t.t)}</div><div class="b" data-slot="cover.cap.b" data-lines="6" data-fill="6" data-fillmin="4" data-sents="${esc(JSON.stringify(t.s))}" style="height:${6*12.4}pt"></div></div></div>`;
+      h += `<div class="abs display addr-big" style="left:23pt;top:380pt;width:745pt" data-slot="cover.address" data-lines="1">${esc(L.address)}</div>`;
+      const n = strip.length, gap = 14, w = (744 - gap*(n-1))/n, py = 441;
+      const N = RP.bestN(strip.map(it => pairOf(it.id, w)), 3), ph = 588 - py - capH(N) - 6;
+      strip.forEach((it, i) => { const x = 24 + i*(w + gap); h += photo(it.id, x, py, w, ph) + cap(it.id, x, py + ph + 6, w, N); });
+    } else {
+      h += photo(hero.id, -9, -9, 389, 630);
+      h += `<div class="abs kick" style="left:404pt;top:26pt;width:364pt" data-slot="cover.place" data-lines="1">${esc(place)}</div>`;
+      const aH = RP.measure(`<div class="display" style="font-size:42pt;line-height:46pt;white-space:normal;letter-spacing:-.8pt">${esc(L.address)}</div>`, 365);
+      h += `<div class="abs display" style="left:403pt;top:44pt;width:365pt;height:${aH + 4}pt;font-size:42pt;line-height:46pt;white-space:normal;letter-spacing:-.8pt" data-slot="cover.address" data-lines="${Math.round(aH/46)}">${esc(L.address)}</div>`;
+      const fy = 44 + aH + 16;
+      const fHtml = `<div class="facts" style="padding:9pt 0;flex-wrap:wrap;gap:6pt 14pt;justify-content:flex-start">${stats.map((s, i) => `<span class="f" data-slot="cover.stat${i}" data-lines="1">${esc(s)}</span>${i < stats.length - 1 ? '<span class="sq"></span>' : ''}`).join('')}</div>`;
+      const fH = RP.measure(fHtml, 364);
+      h += `<div class="abs" style="left:404pt;top:${fy}pt;width:364pt">${fHtml}</div>`;
+      const cy = fy + fH + 16, CN = RP.bestN([{s: t.s, w: 364}], 7, true);
+      h += `<div class="abs cap big" style="left:404pt;top:${cy}pt;width:364pt"><div class="t" data-slot="cover.cap.t" data-lines="1">${esc(t.t)}</div><div class="b" data-slot="cover.cap.b" data-lines="${CN}" data-fill="${CN}" data-sents="${esc(JSON.stringify(t.s))}" style="height:${CN*12.4}pt"></div></div>`;
+      const n = strip.length, gap = 14, w = (364 - gap*(n-1))/n, py = cy + capH(CN, true) + 16;
+      const N = RP.bestN(strip.map(it => pairOf(it.id, w)), 6), ph = 588 - py - capH(N) - 6;
+      strip.forEach((it, i) => { const x = 404 + i*(w + gap); h += photo(it.id, x, py, w, ph) + cap(it.id, x, py + ph + 6, w, N); });
+    }
+    return h;
+  }
+
+  // ================= INSIDE TOP: room by room =================
+  function insideTop(){
+    const kinds = new Set(top.map(i => i.kind));
+    const kick = ['living', 'kitchen', 'dining'].some(k => kinds.has(k)) ? 'Living, kitchen and bedrooms' : 'Room by room';
+    let h = header(R.inside && R.inside.kick || kick, (R.inside && R.inside.title) || 'Inside, Room by Room', (R.inside && R.inside.sub) || '', true);
+    const rows = [top.slice(0, 3), top.slice(3, 6)].filter(r => r.length), gap = 14;
+    const Y0 = 118, Y1 = 588, rg0 = 14, area = Y1 - Y0;
+    const sums = rows.map(r => r.reduce((a, i) => a + RP.frameRatio(i), 0));
+    // the biggest frames that still leave room beside each row for a text box (at least 176 pt wide)
+    let Hasd = 110; for(let t = 170; t > 100; t--){ if(rows.every((r, k) => 744 - sums[k]*t - gap*(r.length-1) >= 176)){ Hasd = t; break; } }
+    // then the most caption lines that fit under them and that every caption can fill
+    let N = 2, CH = capH(2), H = Hasd;
+    for(let n = 7; n >= 2; n--){
+      const c = capH(n), ha = Math.floor((area - rg0*(rows.length-1) - rows.length*c) / rows.length), h = Math.min(Hasd, ha);
+      if(h < Hasd - 8 && n > 2) continue;
+      if(rows.flat().every(it => RP.bestN([pairOf(it.id, RP.frameRatio(it)*h)], n) === n) || n === 2){ N = n; CH = c; H = h; break; }
+    }
+    const rg = area - rows.length*(H + CH), rowGap = rows.length > 1 ? Math.max(rg0, rg/(rows.length-1)) : 0;
+    rows.forEach((r, k) => {
+      const y = Y0 + k*(H + CH + rowGap) + (rows.length > 1 ? 0 : 0);
+      let x = 24;
+      r.forEach(it => { const w = RP.frameRatio(it)*H; h += photo(it.id, x, y, w, H) + cap(it.id, x, y + H + 6, w, N); x += w + gap; });
+      const aw = 768 - x, bh = H + CH;
+      if(aw >= 150){
+        if(k === 0){
+          const lines = Math.floor((bh - 22) / 15.6);
+          h += `<div class="abs aside-intro" style="left:${x}pt;top:${y}pt;width:${aw}pt;height:${bh}pt;border-top:2pt solid var(--accent);padding-top:9pt"><div class="k" data-slot="intro.k" data-lines="1">${esc((R.inside && R.inside.glance) || 'At a glance')}</div><div class="p" style="height:${lines*15.6}pt" data-slot="intro.p" data-lines="${lines}" data-fill="${lines}" data-fillmin="${lines-2}" data-sents="${esc(JSON.stringify(R.intro || []))}"></div></div>`;
+        } else if(R.callout){
+          h += `<div class="abs callout" style="left:${x}pt;top:${y}pt;width:${aw}pt;height:${bh}pt"><div class="ct" data-slot="callout.t" data-lines="2" style="max-height:36pt;overflow:hidden">${esc(R.callout.title)}</div>${R.callout.items.slice(0, 7).map((it, i) => `<div class="ci" data-slot="callout.i${i}" data-lines="1"><b></b>${esc(it)}</div>`).join('')}</div>`;
+        }
+      }
+    });
+    return h;
+  }
+
+  // ================= INSIDE BOTTOM: outside and around =================
+  function insideBottom(){
+    const o = R.outside || {};
+    let h = header(o.kicker || 'Outside and around', o.title || 'Outside and Around', '', false);
+    // lead: the best backyard shot, big; its caption beside it
+    h += photo(lead.id, 24, 98, 404, 232);
+    const NL = RP.bestN([pairOf(lead.id, 322)], 6, true);
+    h += cap(lead.id, 446, 98, 322, NL, {big: true});
+    const gap = 14, ns = Math.max(1, small.length), sw = (322 - gap*(ns - 1))/ns, Ns = RP.bestN(small.map(it => pairOf(it.id, sw)), 4);
+    const sY = 98 + capH(NL, true) + 12, sh = 330 - sY - capH(Ns) - 6;
+    small.forEach((it, i) => { const x = 446 + i*(sw + gap); h += photo(it.id, x, sY, sw, sh) + cap(it.id, x, sY + sh + 6, sw, Ns); });
+    // lower row
+    const n = row3.length, wts = row3.map((_, i) => n === 3 && i === 2 ? 1.55 : 1), tot = wts.reduce((a, c) => a + c, 0), u = (744 - gap*(n-1))/tot;
+    const N3 = RP.bestN(row3.map((it, i) => pairOf(it.id, u*wts[i])), 3), ph = (R.nearby || []).length ? 548 - 344 - capH(N3) - 6 : 588 - 344 - capH(N3) - 6;   // no nearby bar: the row runs to the bottom margin
+    let x = 24;
+    row3.forEach((it, i) => { const w = u*wts[i]; h += photo(it.id, x, 344, w, ph) + cap(it.id, x, 344 + ph + 6, w, N3); x += w + gap; });
+    const nb = (R.nearby || []).slice(0, 3);
+    if(nb.length) h += `<div class="abs nearbar" style="left:24pt;top:556pt;width:744pt;height:32pt">${nb.map((p, i) => `<div class="n"><span class="d" data-slot="near${i}.d" data-lines="1">${esc(p.dist)}</span><span class="u">miles</span><span class="p" data-slot="near${i}.p" data-lines="1">${esc(p.place)}</span></div>`).join('')}</div>`;
+    return h;
+  }
+
+  const pages = {back: back(), front: cover(), top: insideTop(), bottom: insideBottom()};
+  const panel = (cls, html) => `<div class="panel ${cls}">${html}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside"><div class="half top">${panel('flip', pages.back)}</div><div class="half bottom">${panel('', pages.front)}</div></div>`;
+    html += `<div class="page" data-page="inside"><div class="half top">${panel('', pages.top)}</div><div class="half bottom">${panel('', pages.bottom)}</div></div>`;
+  } else {
+    [['front', pages.front], ['top', pages.top], ['bottom', pages.bottom], ['back', pages.back]].forEach(([n, h]) => html += `<div class="page" data-page="${n}">${panel('', h)}</div>`);
+  }
+  document.getElementById('pages').innerHTML = html;
+  document.body.dataset.version = RP.version(D).id;
+  RP.shapeLogos();
+  // a long neighborhood line on the cover tightens its letter spacing (down to 0.5 pt) before it would overflow
+  document.querySelectorAll('[data-slot="cover.place"]').forEach(el => { let ls = 1.5; while(el.scrollWidth > el.clientWidth + 1 && ls > 0.5){ ls -= 0.1; el.style.letterSpacing = ls + 'pt'; } });
+  ContactCard.fit(document);
+  RP.fillAll();
+  window.brochureCheck = () => RP.check(planIssues.concat(RPPlan.check(), RP.emptyChecks()));
+  // frames settle once the photos have loaded (the renderer waits for this promise)
+  return Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; }))).then(() => { RP.fitFrames(); ContactCard.fit(document); });
+});
+</script>
+</body>
+</html>

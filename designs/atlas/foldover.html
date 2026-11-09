@@ -7,6 +7,7 @@
 <script src="atlas.js"></script>
 <script src="atlas-plan.js"></script>
 <script src="atlas-map.js"></script>
+<script src="atlas-mapdata.js"></script>
 <!--
   BrochureDesk · The Neighborhood Atlas · 11 x 17 fold-over
   11 x 17 sheet folded once down the middle: four upright 8.5 x 11 panels, 0.125 in (9 pt) bleed, 0.25 in safe zone.
@@ -83,6 +84,7 @@ window.brochureReady = (async function(){
   let spec = D.fontSpec;
   if(!spec){ try { spec = await fetch('fonts.json').then(r => r.json()); } catch(e) { spec = null; } }
   issues.push(...await AT.applyFonts(D, spec));
+  if(AT.ensureMap) issues.push(...await AT.ensureMap(D));   // a real listing's street map (atlas-mapdata.js)
 
   // ---------- the floor plan decides whether this design can be made ----------
   const planOK = AT.planOK(D), levels = AT.levels(D), flabels = AT.floorLabels(D);

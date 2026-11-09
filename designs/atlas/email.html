@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · atlas · Open House email version</title>
+<link rel="stylesheet" href="atlas.css">
+<script src="atlas.js"></script>
+<script src="atlas-map.js"></script>
+<script src="atlas-mapdata.js"></script>
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/carousel.js"></script>
+<script src="atlas-social.js"></script>
+<!-- The email version of this set's Open House flyer (templates/_shared/ohemail.js); its look is in email.json. -->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+/* The Atlas street map, drawn by the set's own code (atlas-map.js) exactly as the Open House flyer and the postcards draw it:
+   the listing's pin, its neighbors named, north arrow and quarter-mile scale, credited under it. Recipe block {t:'map', h, after}. */
+OHEmail.blocks.map = (b, ctx) => {
+  const OHC = (((ctx.D.copy || {}).pc || {}).oh || {}).a || {}, h = b.h || 190, y = ctx.y + (b.top || 0);
+  ctx.push(AT.mapBox('map', ctx.PL, y, ctx.CW, h, OHC.extras || [], true, true, true).replace('class="mapbox abs"', 'class="mapbox abs" data-small="1" data-lbl="12.5"'));
+  ctx.push(`<div class="abs nw" data-fine="1" style="left:${ctx.PL}pt;top:${y + h + 4}pt;width:${ctx.CW}pt;height:12pt;font:400 10pt/12pt ${ctx.L.body};color:${ctx.L.muted};text-align:right">Street map drawn from OpenStreetMap data. \u00a9 OpenStreetMap contributors</div>`);
+  return y + h + 16 + (b.after != null ? b.after : 20);
+};
+OHEmail.start([], D => { const b = D.brand || {}, r = document.documentElement.style; if(b.accent){ r.setProperty('--accent', b.accent); r.setProperty('--ink', b.accent); } if(b.paper) r.setProperty('--paper', b.paper); });</script>
+<script>atlasSocialMap();</script>
+</body>
+</html>
