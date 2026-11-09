@@ -2174,12 +2174,12 @@
     const {data} = sb ? await sb.auth.getSession() : {data: {}};
     const token = data.session ? data.session.access_token : '';
     // the upload server makes the print files first (uploader/printmaker.py: POST /print), then uploads them
-    const KEYS = {foldover: ['brochure', 'brochure-outside', 'brochure-inside'], 'open-house-flyer': ['open-house'], postcard: pkg.order.size === 'both' ? ['just-listed-6x11', 'just-listed-6x9'] : ['postcard']};
     await ask(`<h2>Making your print files</h2><p>This takes a minute or two. Keep this page open.</p>`, [['OK', 'ok']]);
     let made = {};
     try { made = await fetch(UPLOAD_RUNNER + '/print', {method: 'POST', headers: {'content-type': 'application/json', authorization: 'Bearer ' + token},
       body: JSON.stringify({packageId: pkg.id, printer: pr.id, pieces: [piece]})}).then(r => r.json()); } catch(e) { made = {error: 'network'}; }
-    const files = made.ok ? Object.fromEntries((KEYS[piece] || []).filter(k => made.files[k]).map(k => [k, made.files[k]])) : {};
+    // every file made for this piece goes; the printer's recipe picks its own (one per side, both postcard sizes)
+    const files = made.ok ? Object.assign({}, made.files) : {};
     if(!Object.keys(files).length){
       const v = await ask(`<h2>We couldn't make the print file</h2><p>${made.problems && made.problems.length ? esc(made.problems.join(' ')) : 'Something went wrong on our side. Nothing was sent to the printer.'}</p>`,
         [['Download it instead', 'dl'], ['Not now', 'no', 'line']]);
