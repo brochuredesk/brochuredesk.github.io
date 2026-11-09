@@ -222,8 +222,9 @@
         const edge = (document.body.dataset.mode === 'print' && field && field.getBoundingClientRect().bottom < sr.bottom) ? field.getBoundingClientRect().bottom : sr.bottom;
         const g2 = toPt(edge - r.bottom);
         if(g2 < 4) issues.push({slot:'contact-card', kind:'footer-too-close-to-edge', gapPt:+g2.toFixed(1)}); }
+      // the postcard card (opts.postcard) lines its brokerage group up with the agent block on purpose, so it is not centered
       const panel = card.querySelector('.cc-panel');
-      if(panel && vis(panel)){
+      if(panel && vis(panel) && card.dataset.post !== '1'){
         const pr = panel.getBoundingClientRect(), kids = [...panel.children].filter(vis);
         if(kids.length){
           const bx = kids.map(e => e.getBoundingClientRect());

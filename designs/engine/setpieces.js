@@ -289,9 +289,27 @@
   // the postcard card on a back: full width under the address block, above the barcode strip, at the sizes that fit the
   // 80 pt between them (Swatchbook's, approved 10/29); o.s overrides, o.dark = the set's field is dark
   SP.postCard = (D, Z, W, o) => { o = o || {};
+    if(o.dark) D = SP.onDark(D);
     const s = Object.assign({inlineLabel: true, desigInline: true, pad: [8, 16, 7], hsGap: 14, hsW: 78, name: 27, nameFloor: 18, phone: 17, label: 8.5, line: 10, rowGap: 16,
       panelW: 176, panelPad: [6, 10], panelGap: 4, office: 9.5, officeLH: 1.2, logo: {wide: [118, 28], square: [32, 32], tall: [36, 36]}}, o.s || {});
-    return SP.card(D, [o.x || 24, Z.cardY, W - 2*(o.x || 24), Z.cardH], {postcard: true, fine: '', grow: 0, fieldAccent: true, s}); };
+    return SP.card(D, [o.x || 24, Z.cardY, W - 2*(o.x || 24), Z.cardH], Object.assign({postcard: true, fine: '', grow: 0, fieldAccent: true, s},
+      D.brand && D.brand._knock ? {logoStyle: 'filter:brightness(0) invert(1)'} : {})); };
+  // the brokerage logo for a dark field: the brand's on-dark version, else its white knockout, else the logo knocked out white
+  SP.onDark = D => { const b = Object.assign({}, D.brand || {});
+    if(b.logoOnDark) b.logo = b.logoOnDark; else if(b.logoKnockout) b.logo = b.logoKnockout; else if(b.logo) b._knock = true;
+    return Object.assign({}, D, {brand: b}); };
+
+  // ---------- the whole-card back (owner 11/7/2026) ----------
+  // Every postcard back carries the set's design across the whole card, mail side included; only the postage box, the
+  // address block and the barcode strip stay clear, on a light tint. SP.backField lays the set's field full bleed (with
+  // its motif on top, all under the content); SP.mailTint lays the light tint under the three mail zones, as tabs off the
+  // right edge (postage off the top too, barcode off the bottom). Both are data-under: the mail-zone check skips them.
+  SP.backField = (W, H, bg, motif) => `<div class="abs sp-bfield" data-under="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:${H + 18}pt;background:${bg};overflow:hidden">${motif || ''}</div>`;
+  SP.mailTint = (Z, W, H, o) => { o = o || {}; const t = o.color || '#f7f5f0', p = o.pad == null ? 6 : o.pad, r = o.radius || 0, ed = o.edge || '';
+    const [zP, zA, zB] = [Z.zP, Z.zA, Z.zB], box = (x, y, x2, y2, rad) => `<div class="abs sp-tint" data-under="1" style="left:${x}pt;top:${y}pt;width:${x2 - x}pt;height:${y2 - y}pt;background:${t};${rad}${ed}"></div>`;
+    return box(zP[0] - p, -9, W + 9, zP[1] + zP[3] + p, r ? `border-bottom-left-radius:${r}pt;` : '')
+      + box(zA[0] - p, zA[1] - Math.min(p, 1), W + 9, zA[1] + zA[3] + Math.min(p, 4), r ? `border-top-left-radius:${r}pt;border-bottom-left-radius:${r}pt;` : '')
+      + box(zB[0] - p, zB[1] - Math.min(p, 2), W + 9, H + 9, r ? `border-top-left-radius:${r}pt;` : ''); };
 
   // ---------- the mail side ----------
   // The Just Listed library's zones (jllib.js zones(), px x 0.75), as [x, y, w, h] in pt on the trim: postage top right,

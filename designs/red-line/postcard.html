@@ -43,6 +43,9 @@
   .board{position:absolute;background:var(--accent)}
   .bigb{font:700 15pt/17pt var(--font-display);letter-spacing:.3pt;text-transform:uppercase;color:#fff;overflow:hidden}
   .cta{font:700 17pt/20pt var(--font-display);color:var(--ink);overflow:hidden}
+  /* the back (owner 11/7/2026): charcoal over the whole card; the red rail, the red rules and the red board carry the set */
+  body.pc-back{--paper:#1b1b1d;--ink:#ffffff;--text:#dcdcdc;--muted:#b4b6b8;--accent:#e2353a}
+  body.pc-back .cc{--cc-paper:#1b1b1d;--cc-ink:#ffffff;--cc-muted:#c4c6c8;--cc-accent:#ef5a5e;--cc-line:rgba(226,53,58,.6)}
 </style>
 </head>
 <body data-mode="email">
@@ -101,6 +104,8 @@ window.brochureReady = (async function(){
   } else {
     // ---------- back ----------
     const Z = SP.mail(W), X = 30, LZ = Z.zA[0] - 12, rW = Z.zP[0] - 12 - Z.zA[0], pTop = 56;
+    document.body.classList.add('pc-back');
+    h += SP.backField(W, H, '#1b1b1d') + SP.mailTint(Z, W, H, {color: '#f6f5f3'});
     h += `<div class="rail" style="left:-9pt;top:-9pt;width:21pt;height:${H + 18}pt"></div>`;
     const ret = SP.returnLines(D);
     h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:16pt;width:${rW}pt;height:32pt;text-align:right"><b data-slot="return0" data-lines="1" style="display:block">${esc(ret[0] || '')}</b>${ret.slice(1).map((r, i) => `<span data-slot="return${i + 1}" data-lines="1" style="display:block">${esc(r)}</span>`).join('')}</div>`;
@@ -136,8 +141,8 @@ window.brochureReady = (async function(){
     // the red board under the postage box, bleeding off the right edge
     const sl = C.slab || {};
     h += `<div class="board" data-blk="1" style="left:${Z.zP[0]}pt;top:${Z.zP[1] + Z.zP[3] + 8}pt;width:${W - Z.zP[0] + 9}pt;height:${Z.zA[1] - Z.zP[1] - Z.zP[3] - 16}pt;padding:6pt 18pt 6pt 10pt;display:flex;flex-direction:column;justify-content:center"><div class="bigb" data-slot="slab.big" data-lines="3">${esc(sl.big || '')}</div></div>`;
-    h += `<div class="rule" style="left:${X}pt;top:${Z.cardY - 4}pt;width:${W - M - X}pt;height:2.2pt"></div>`;
-    h += SP.postCard(D, Z, W, {x: X - 6});
+    h += `<div class="rule" style="left:${X}pt;top:${Z.cardY - 4}pt;width:${Z.zA[0] - 12 - X}pt;height:2.2pt"></div>`;
+    h += SP.postCard(D, Z, W, {x: X - 6, dark: true});
     h += SP.fine(D, X, 396, Z.zB[0] - 12 - X, 'var(--text)');
     h += SP.mailGuides(D, Z);
   }

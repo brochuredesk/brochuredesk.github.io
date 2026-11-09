@@ -48,6 +48,10 @@
   .board{position:absolute;background:var(--soft);border-top:1.4pt solid var(--accent)}
   .bigb{font:400 15pt/17pt var(--font-display);color:var(--accent);flex:none}
   .cta{font:400 16pt/19pt var(--font-display);color:var(--ink);overflow:hidden}
+  /* the back (owner 11/7/2026): the set's oxblood over the whole card, white serif type, blush rules and the blush board */
+  body.pc-back{--paper:#4a1820;--ink:#ffffff;--text:#f0e2e4;--muted:#d6bfc3;--accent:#f0c9ce;--line:rgba(240,201,206,.4);--soft:#f6eeee}
+  body.pc-back .cc{--cc-paper:#4a1820;--cc-ink:#ffffff;--cc-muted:#e2cdd0;--cc-accent:#f0c9ce;--cc-line:rgba(240,201,206,.5)}
+  body.pc-back .bigb{color:#8f2430}
 </style>
 </head>
 <body data-mode="email">
@@ -99,7 +103,9 @@ window.brochureReady = (async function(){
   } else {
     // ---------- back ----------
     const Z = SP.mail(W), X = M, LZ = Z.zA[0] - 12, rW = Z.zP[0] - 12 - Z.zA[0], pTop = 58;
-    h += `<div class="abs" data-blk="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:15pt;background:var(--accent)"></div>`;
+    document.body.classList.add('pc-back');
+    h += SP.backField(W, H, '#4a1820') + SP.mailTint(Z, W, H, {color: '#f8f3f2'});
+    h += `<div class="abs" data-blk="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:15pt;background:#8f2430"></div>`;
     const ret = SP.returnLines(D);
     h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:16pt;width:${rW}pt;height:32pt;text-align:right">${ret.slice(0, 3).map((r, i) => i ? `<span data-slot="return${i}" data-lines="1" style="display:block">${esc(r)}</span>` : `<b data-slot="return0" data-lines="1" style="display:block">${esc(r)}</b>`).join('')}</div>`;
     h += `<div class="abs bst" style="left:${X}pt;top:16pt;width:${LZ - X}pt;height:32pt"><span class="s" data-slot="back.status.s" style="font-size:${big ? 28 : 26}pt">${esc(status)}</span><span class="a" data-slot="back.status.a">${esc(L.address)}</span></div>`;
@@ -113,7 +119,8 @@ window.brochureReady = (async function(){
       const bk = C.back || [], n = big ? 4 : 3, items = bk.slice(0, n), rItem = bk[4], gap = 10, ph = 72;
       const pw = (LZ - X - (n - 1)*gap)/n;
       items.forEach((c, i) => { const x = X + i*(pw + gap); g += SP.photo(D, c.id, x, pTop, pw, ph, 'back.photo' + i); h += cap(c, x, pTop + ph, pw, 'back.cap' + i, 'back'); });
-      if(rItem){ g += SP.photo(D, rItem.id, Z.zA[0], pTop, rW, ph, 'back.photoR'); h += cap(rItem, Z.zA[0], pTop + ph, rW, 'back.capR', 'back'); }
+      // (11/7) the photo beside the address block is a little shorter, so its caption ends clear of the address tint
+      if(rItem){ const rh = ph - 8; g += SP.photo(D, rItem.id, Z.zA[0], pTop, rW, rh, 'back.photoR'); h += cap(rItem, Z.zA[0], pTop + rh, rW, 'back.capR', 'backR'); }
       const ty = pTop + ph + 22 + 3*clh + 10, afs = big ? 12.5 : 10.5, alh = big ? 16 : 15;
       h += `<div class="abs ab" style="left:${X}pt;top:${ty}pt;width:${LZ - X}pt;height:${Math.floor((Z.cardY - 10 - ty)/alh)*alh}pt;font-size:${afs}pt;line-height:${alh}pt" data-slot="back.about" data-para="1"${big ? ' data-nobal="1"' : ''} data-min="3" data-fillbox="1">${esc(big ? C.about11 : C.about9)}</div>`;
     } else {
@@ -135,8 +142,8 @@ window.brochureReady = (async function(){
     // the rose block under the postage box, under a burgundy rule, bleeding off the right edge
     const sl = C.slab || {};
     h += `<div class="board" data-blk="1" style="left:${Z.zP[0]}pt;top:${Z.zP[1] + Z.zP[3] + 8}pt;width:${W - Z.zP[0] + 9}pt;height:${Z.zA[1] - Z.zP[1] - Z.zP[3] - 16}pt;padding:7pt 18pt 6pt 10pt;display:flex;flex-direction:column;justify-content:center"><div class="bigb">${String(sl.big || '').split(/\s+/).filter(Boolean).reduce((a, w) => { const l = a[a.length - 1]; if(l && l.length + w.length < 10) a[a.length - 1] = l + ' ' + w; else a.push(w); return a; }, []).map((c, i) => `<div data-slot="slab.big${i}" data-lines="1">${esc(c)}</div>`).join('')}</div></div>`;
-    h += `<div class="rule" style="left:${X}pt;top:${Z.cardY - 4}pt;width:${W - 2*M}pt;height:1.2pt;background:var(--accent)"></div>`;
-    h += SP.postCard(D, Z, W);
+    h += `<div class="rule" style="left:${X}pt;top:${Z.cardY - 4}pt;width:${Z.zA[0] - 12 - X}pt;height:1.2pt;background:var(--accent)"></div>`;
+    h += SP.postCard(D, Z, W, {dark: true});
     h += SP.fine(D, X, 396, Z.zB[0] - 12 - X, 'var(--text)');
     h += SP.mailGuides(D, Z);
   }

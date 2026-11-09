@@ -9,7 +9,7 @@
    copy. Base file: oh-email-r3-10-31 (10/30 write-up rule); merge keeps this wider version. */
 (function(){
   const MIN = 0.75;
-  const SKIP = /^(oh\.(refreshments|note|label|date|time|day)|fine|disclaimer|address|place|fact|.*\.(facts|stats))/;
+  const SKIP = /^(oh\.(refreshments|note|label|date|time|day)|fine|disclaimer|address|return|place|fact|.*\.(facts|stats))/;
   const lines = el => {
     const r = document.createRange(); r.selectNodeContents(el);
     const rows = [];

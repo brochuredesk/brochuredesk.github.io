@@ -13,12 +13,12 @@
   Front: the status ("Just Listed" / "Just Sold") in big Playfair with the brokerage logo (the side's one logo), a rule,
   a whole-house photo with a supporting column (two captioned interiors, or the sold note), then a bottom band: address and
   facts with "Presented by" (listed), or the call to action with the agent (sold).
-  Back: status line, photos that never repeat the front, the write-up (listed) or the steps list (sold), a rule, then the
-  shared Right panel contact card (templates/_shared/agentcard.js, band preset), which carries the back's one logo. On the
-  6 x 11 Just Listed back the MLS room sizes sit beside the card; when the card needs that width (a headshot, a long
-  name) they move up beside the write-up instead, so nothing collides.
-  The right 289.5 pt (4.02 in) is the mail vendor's panel: return address, postage and address zones from data.mailVendor;
-  until one is chosen they are drawn as guides on proofs and left clear in print.
+  Back (owner 11/7/2026: the design runs across the whole card, mail side included): Ivory's dark green to every edge with a
+  cream edge along the top; the status line, photos that never repeat the front, the write-up (listed) or the photos and steps
+  (sold) in the left zone; beside the address block the MLS room sizes (listed) or the invitation and the number (sold);
+  the return address beside the postage box. Then the postcard contact card (templates/_shared/agentcard.js, postcard true)
+  full width under the address block, which carries the back's one logo, and the fine print beside the barcode strip.
+  Mail zones are the shared ones (postage, address block, barcode strip), on Ivory's cream; guides on proofs, clear in print.
 
   Copy: Just Listed data.companion.postcard {eyebrow, master: [sentences, most important first], drop: [1-based sentence
   numbers in the order they give way], captions: {photoId: the front's one-line room detail, e.g. 'Marble-look counters,
@@ -60,6 +60,17 @@
   .mail .guide{position:absolute;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#9a958b;text-transform:uppercase}
   .mail .stamp{border:.75pt dashed #b9b4aa;text-align:center;padding-top:13pt}
   .mail .aline{position:absolute;height:.75pt;background:#d9d5cc}
+  /* the back (owner 11/7/2026): Ivory's dark green (its accent) over the whole card, cream type; the mail zones on the cream */
+  body.pc-back{--ink:#f3f0ea;--muted:#d5d2c6;--line:rgba(243,240,234,.28)}
+  body.pc-back .cc{--cc-paper:var(--paper);--cc-ink:#f3f0ea;--cc-muted:#d8d5ca;--cc-accent:#e9dfc4;--cc-line:rgba(243,240,234,.35)}
+  body.pc-back .pc-status .ad{opacity:.8}
+  body.pc-back .pc-disc{opacity:.8}
+  .pc-ret{font:400 8pt/10pt var(--font-body);color:#e4dfd6;text-align:right;white-space:nowrap;overflow:hidden}
+  .pc-ret b{font-weight:600;letter-spacing:.6pt;text-transform:uppercase;color:var(--ink)}
+  .mailg2{position:absolute;background:rgba(255,255,255,.92)}
+  .mailg2.stamp{border:.75pt dashed #b9b4aa;text-align:center;padding-top:36pt;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#9a958b;text-transform:uppercase}
+  .mailg2 .g{position:absolute;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#9a958b;text-transform:uppercase;white-space:nowrap}
+  .mailg2 .al{position:absolute;height:.75pt;background:#d9d5cc}
 </style>
 </head>
 <body data-mode="email">
@@ -107,7 +118,8 @@ Ivory.whenFonts(function(){
   const roomOrder = sold ? ['kitchen','living','primary','openplan','nook'] : ['kitchen','living','primary','patio','nook'];
   const ordered = [...new Set(roomOrder.filter(r => inner.includes(r)).concat(inner))];
   const frontIds = sold ? [] : ordered.slice(0, 2);
-  const backPool = ordered.filter(id => !frontIds.includes(id));
+  // (11/7) no two back photos under the same room name (two "Family room" shots read as a repeat)
+  const backPool = (() => { const seen = new Set(); return ordered.filter(id => !frontIds.includes(id)).filter(id => { const n = (Ivory.caption(D, id) || {}).name || id; if(seen.has(n)) return false; seen.add(n); return true; }); })();
   const cap = id => Ivory.caption(D, id);
 
   const statusWord = sold ? 'Just Sold' : 'Just Listed';
@@ -167,57 +179,80 @@ Ivory.whenFonts(function(){
     }
   } else {
     // ---------- back ----------
-    const X = 22.5, mailX = W - 289.5, cw = mailX - 2*X;
+    // owner 11/7/2026: the design runs across the whole card, mail side included. Ivory's dark green (its accent) becomes the field,
+    // edge to edge, with the cream type, cream rules and the Playfair of the fronts; only the postage box, the address block and the
+    // barcode strip stay clear, on the cream of the fronts. Mail zones are the shared ones (setpieces.js SP.mail: the Just
+    // Listed library's); the postcard contact card runs full width under the address block, above the barcode strip.
+    document.body.classList.add('pc-back');
+    // the field is the set's accent (the dark green rules and type of the fronts; the brand's own accent when it has one),
+    // deepened until cream type reads on it; labels and the call to action print in cream
+    let FIELD = '#2f4a3a';
+    { const cs = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), m = cs.match(/^#?([0-9a-f]{6})$/i);
+      if(m){ const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v/12.92 : Math.pow((v + .055)/1.055, 2.4); }; return .2126*f(c[0]) + .7152*f(c[1]) + .0722*f(c[2]); };
+        let c = [0, 2, 4].map(i => parseInt(m[1].substr(i, 2), 16)); const cream = lum([243, 240, 234]);
+        for(let i = 0; i < 40 && (cream + .05)/(lum(c) + .05) < 8; i++) c = c.map(v => Math.round(v*.9));
+        FIELD = '#' + c.map(v => v.toString(16).padStart(2, '0')).join(''); }
+      document.body.style.setProperty('--accent', '#e9dfc4'); document.body.style.setProperty('--paper', FIELD); }
+    const X = 22.5, zP = [W - 96, 12, 84, 98.25], zA = [W - 243, 187.5, 240, 112.5], zB = [W - 342, 387, 342, 45];
+    const LZ = zA[0] - 12, lw = LZ - X, rx = zA[0], rW = zP[0] - 12 - zA[0], cardY = zA[1] + zA[3] + 5, cardH = 80, top = 48;
     const short = String(L.address||'').replace(/\s+(street|st\.?|avenue|ave\.?|drive|dr\.?|road|rd\.?|lane|ln\.?|boulevard|blvd\.?|court|ct\.?|way|place|pl\.?)$/i, '');
-    h += `<div class="abs pc-status" style="left:${X}pt;top:22pt;width:${cw}pt;height:14pt" data-slot="status" data-lines="1"><span class="st">${esc(statusWord)}</span><span class="ln"></span><span class="ad">${esc(sold && big ? L.address : short)}</span></div>`;
-    const cardH = 108, fineY = 432 - 9 - 15, cardY = fineY - 6 - cardH, hairY = cardY - 7;
+    h += `<div class="abs" data-under="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:${H + 18}pt;background:${FIELD}"></div>`;
+    { const tint = (x, y, x2, y2) => `<div class="abs" data-under="1" style="left:${x}pt;top:${y}pt;width:${x2 - x}pt;height:${y2 - y}pt;background:#f3f0ea"></div>`;
+      h += tint(zP[0] - 6, -9, W + 9, zP[1] + zP[3] + 6) + tint(zA[0] - 6, zA[1] - 1, W + 9, zA[1] + zA[3] + 4) + tint(zB[0] - 6, zB[1] - 2, W + 9, H + 9); }
+    // a red edge along the top, up to the postage tint
+    h += `<div class="abs" data-under="1" style="left:-9pt;top:-9pt;width:${zP[0] - 6 + 9}pt;height:13pt;background:var(--accent)"></div>`;
+    h += `<div class="abs pc-status" style="left:${X}pt;top:22pt;width:${lw}pt;height:14pt" data-slot="status" data-lines="1"><span class="st">${esc(statusWord)}</span><span class="ln"></span><span class="ad">${esc(short)}</span></div>`;
+    // the return address beside the postage box
+    h += `<div class="abs pc-ret" style="left:${rx}pt;top:13pt;width:${rW}pt;height:32pt" data-slot="return" data-lines="3"><b>${esc(b.brokerage || '')}</b>${[].concat(b.returnAddress || b.address || []).flatMap(a => String(a).split('\n')).map(s => s.trim()).filter(Boolean).slice(0, 2).map(a => '<br>' + esc(a)).join('')}</div>`;
+    const rooms = Ivory.roomRows(L, 5);
     if(!sold){
-      const n = big ? 3 : 2, gw = 13.5, pw = (cw - gw*(n - 1))/n, ps = backPool.slice(0, n);
+      const n = big ? 3 : 2, gw = 13.5, pw = (lw - gw*(n - 1))/n, ps = backPool.slice(0, n);
       ps.forEach((id, i) => { const x = X + i*(pw + gw), c = cap(id);
-        h += ph(id, x, 48, pw, 81);
-        h += `<div class="abs pc-bcap" style="left:${x}pt;top:133pt;width:${pw}pt;height:36pt"><div class="n" data-slot="back${i}.name" data-lines="1">${esc(c.name)}</div>` +
+        h += ph(id, x, top, pw, 104);
+        h += `<div class="abs pc-bcap" style="left:${x}pt;top:156pt;width:${pw}pt;height:36pt"><div class="n" data-slot="back${i}.name" data-lines="1">${esc(c.name)}</div>` +
              `<div class="d" style="height:24pt;overflow:hidden" data-slot="back${i}.detail" data-lines="2">${esc(c.detail)}</div></div>`; });
-      h += `<div class="abs pc-lbl" style="left:${X}pt;top:176pt;width:${cw}pt;height:9pt">About this home</div>`;
-      // the write-up: the master sentences, least important dropping first until it fits above the rule
+      h += `<div class="abs pc-lbl" style="left:${X}pt;top:199pt;width:${lw}pt;height:9pt">About this home</div>`;
       const ss = (PC.master && PC.master.length) ? PC.master : (PC.notes ? (PC.notes.match(/[^.!?]+[.!?]+/g) || [PC.notes]) : []);
       const drop = PC.drop || [3, 5, 6, 4, 7, 2];
       const pri = k => { const i = drop.indexOf(k); return i < 0 ? 99 : i; };
-      const aH = Math.floor((hairY - 6 - 188)/15.1)*15.1;
-      h += pending ? Ivory.ghost(X, 190, cw, 5, 15.1)
-         : `<div class="abs pc-about" id="about" data-slot="about" style="left:${X}pt;top:188pt;width:${cw}pt;height:${aH}pt">${ss.map((s, k) => `<span data-p="${pri(k + 1)}">${esc(s.trim())} </span>`).join('')}</div>`;
+      const aH = Math.floor((cardY - 6 - 211)/15.1)*15.1;
+      h += pending ? Ivory.ghost(X, 213, lw, 5, 15.1)
+         : `<div class="abs pc-about" id="about" data-slot="about" style="left:${X}pt;top:211pt;width:${lw}pt;height:${aH}pt">${ss.map((s, k) => `<span data-p="${pri(k + 1)}">${esc(s.trim())} </span>`).join('')}</div>`;
+      // beside the address block, under the return address: the MLS room sizes (else one more captioned room)
+      if(rooms.length >= 3)
+        h += `<div class="abs pc-rooms" id="roomsR" style="left:${rx}pt;top:${top + 6}pt;width:${rW}pt;height:${zA[1] - 16 - top}pt;border-top:1.1pt solid var(--accent);padding-top:7pt;display:flex;flex-direction:column">
+            <div class="pc-lbl" style="height:9pt;margin-bottom:4pt;flex:none">Room sizes</div>${rooms.map(r => `<div class="r" style="flex:1;align-items:center;border-bottom:.6pt solid var(--line);font-size:10pt"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')}</div>`;
+      else if(backPool[n]){ const c = cap(backPool[n]);
+        h += ph(backPool[n], rx, top, rW, 81);
+        h += `<div class="abs pc-bcap" style="left:${rx}pt;top:133pt;width:${rW}pt;height:36pt"><div class="n" data-slot="backR.name" data-lines="1">${esc(c.name)}</div><div class="d" style="height:24pt;overflow:hidden" data-slot="backR.detail" data-lines="2">${esc(c.detail)}</div></div>`; }
     } else {
-      const pw = big ? 187.5 : 147, gap = 4.5, sh = (hairY - 12 - 48 - 2*gap)/3;
-      backPool.slice(0, 3).forEach((id, k) => h += ph(id, X, 48 + k*(sh + gap), pw, sh));
-      const lx = X + pw + 16.5, lw = cw - pw - 16.5;
+      const pw = big ? 187.5 : 140, gap = 4.5, sh = (cardY - 10 - top - 2*gap)/3;
+      backPool.slice(0, 3).forEach((id, k) => h += ph(id, X, top + k*(sh + gap), pw, sh));
+      const lx = X + pw + 16.5, sw = LZ - lx;
       const steps = PC.steps || ['Walk through your home with you and hear your plans.', 'Pull recent sales on your street and nearby.',
         'Give you a price range in writing, at no cost.', 'Point out what to fix and what to leave alone.', 'Talk through timing that works for you.'];
       const fs = big ? 12 : 9.75, gapI = big ? 9 : 5.25;
-      h += `<div class="abs" id="steps" style="left:${lx}pt;top:46pt;width:${lw}pt;height:${hairY - 12 - 46}pt;display:flex;flex-direction:column;overflow:hidden">
+      h += `<div class="abs" id="steps" style="left:${lx}pt;top:46pt;width:${sw}pt;height:${cardY - 10 - 46}pt;display:flex;flex-direction:column;overflow:hidden">
           <div class="pc-lbl" style="height:9pt;flex:none">${esc(PC.stepsLabel || 'Here’s how I’d start')}</div>
           <div class="pc-steps" data-slot="sold.steps" style="font:400 ${fs}pt/1.38 var(--font-body);margin-top:${big ? 10.5 : 7.5}pt">${steps.map(s => `<div class="it" style="margin-bottom:${gapI}pt"><span class="bx"></span><span>${esc(s)}</span></div>`).join('')}</div>
           <div class="display" style="font-size:${big ? 17.25 : 12.75}pt;line-height:1.25;color:var(--accent);margin-top:${big ? 6 : 3}pt;white-space:normal" data-slot="sold.call">${esc(PC.call || 'Call or text me anytime.')}</div></div>`;
+      // beside the address block: the invitation in the Playfair, over a red rule
+      h += `<div class="abs" style="left:${rx}pt;top:${top + 6}pt;width:${rW}pt;height:${zA[1] - 16 - top}pt;border-top:1.1pt solid var(--accent);padding-top:9pt;display:flex;flex-direction:column;justify-content:space-between">
+          <div class="display" style="font-size:19pt;line-height:1.2;color:var(--ink);white-space:normal;text-align:center" data-slot="sold.invite">${esc(PC.invite || 'Selling soon? Let’s sit down.')}</div>
+          <div><div class="pc-lbl" style="height:9pt;margin-bottom:5pt">Call or text</div><div class="display" style="font-size:${big ? 21 : 19}pt;line-height:1.1;color:var(--accent);white-space:nowrap" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div></div></div>`;
     }
-    h += `<div class="pc-hair" style="left:${X}pt;top:${hairY}pt;width:${cw}pt"></div>`;
-    // the contact card (band preset); on the 6 x 11 Just Listed back the room sizes sit beside it
-    const rooms = (!sold && big) ? Ivory.roomRows(L, 5) : [];
-    const roomsW = 124, rgap = 12;
-    const cardW = rooms.length ? cw - roomsW - rgap : cw;
-    // the 6 x 9 backs keep the gray brokerage band across the card's bottom (owner 10/27); the 6 x 11 backs keep the standard card
-    h += Ivory.card(D, {x: X, y: cardY, w: cardW, h: cardH, layout: 'band', bandTint: !big});
-    if(rooms.length)
-      h += `<div class="abs pc-rooms" id="rooms" style="left:${X + cardW + rgap}pt;top:${cardY}pt;width:${roomsW}pt;height:${cardH}pt;border-left:.75pt solid var(--line);padding-left:10pt">
-          <div class="pc-lbl" style="height:9pt;margin:5pt 0 6pt">Room sizes</div>${rooms.map(r => `<div class="r"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')}</div>`;
-    h += `<div class="abs pc-disc" style="left:${X}pt;top:${fineY}pt;width:${cw}pt;height:15pt" data-slot="fineprint" data-lines="2" data-fine="1">${esc(fine)}</div>`;
-
-    // the mail panel
-    const V = D.mailVendor || {}, guide = (D.mode || 'email') !== 'print', mw = W - mailX;
-    const bl = (D.mode === 'print') ? 9 : 0;
-    h += `<div class="mail" data-mail="1" style="left:${mailX}pt;top:${-bl}pt;width:${mw + bl}pt;height:${H + 2*bl}pt">
-        <div class="ret" style="left:18pt;top:${21 + bl}pt;width:170pt"><b>${esc(b.brokerage || '')}</b>${[].concat(b.address || []).length ? '<br>' + esc([].concat(b.address).join(', ')) : ''}</div>
-        ${guide ? `<div class="guide stamp" style="right:${18 + bl}pt;top:${18 + bl}pt;width:72pt;height:49.5pt">Postage<br><span style="text-transform:none">mail vendor</span></div>
-        ${[0,1,2,3].map(i => `<div class="aline" style="left:49.5pt;width:${mw - 90}pt;top:${225 + bl + i*17.25}pt"></div>`).join('')}
-        <div class="guide" style="left:49.5pt;top:${296 + bl}pt;width:${mw - 70}pt">${esc(V.name ? 'Mailing address area · laid out to ' + V.name + '’s template' : 'Mailing address area · filled by the mail vendor')}</div>` : ''}
-      </div>`;
+    // the postcard contact card: full width, agent left, the brokerage right, on the field
+    { const hs = Ivory.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : ''), knock = !(b.logoOnDark || b.logoKnockout);
+      h += ContactCard.html([X, cardY, W - 2*X, cardH], Object.assign({}, A, {headshot: hs}), Object.assign({}, b, {logo: b.logoOnDark || b.logoKnockout || b.logo}),
+        Object.assign({postcard: true, fine: '', grow: 0, s: {inlineLabel: true, pad: [8, 16, 7], hsGap: 14, hsW: 78, name: 27, nameFloor: 18, phone: 17, label: 8.5, line: 10, rowGap: 16,
+          panelW: 176, panelPad: [6, 10], panelGap: 4, office: 9.5, officeLH: 1.2, logo: {wide: [118, 28], square: [32, 32], tall: [36, 36]}}}, knock ? {logoStyle: 'filter:brightness(0) invert(1)'} : {})); }
+    h += `<div class="abs pc-disc" style="left:${X}pt;top:${432 - 12 - 22.5}pt;width:${zB[0] - 12 - X}pt;height:22.5pt;display:flex;align-items:flex-end" data-slot="fineprint" data-lines="3" data-fine="1"><span>${esc(fine)}</span></div>`;
+    // mail zones: guides on proofs, clear in print
+    window.mailZones = {postage: zP, address: zA, barcode: zB};
+    if((D.mode || 'email') !== 'print'){ const V = D.mailVendor || {};
+      h += `<div class="mailg2 stamp" data-z="1" style="left:${zP[0]}pt;top:${zP[1]}pt;width:${zP[2]}pt;height:${zP[3]}pt">Postage<br><span style="text-transform:none">mail vendor</span></div>
+        <div class="mailg2" data-z="1" style="left:${zA[0]}pt;top:${zA[1]}pt;width:${zA[2]}pt;height:${zA[3]}pt">${[0,1,2,3].map(i => `<div class="al" style="left:22pt;right:22pt;top:${24 + i*17.25}pt"></div>`).join('')}<div class="g" style="left:22pt;top:97pt">${esc(V.name ? 'Address block · ' + V.name : 'Address block · mail vendor')}</div></div>
+        <div class="mailg2" data-z="1" style="left:${zB[0]}pt;top:${zB[1]}pt;width:${zB[2]}pt;height:${zB[3]}pt;border:.75pt dashed #c9c5bb"><div class="g" style="left:10pt;top:17pt">Barcode strip · keep clear</div></div>`; }
   }
 
   const f = Ivory.frame(D, W, H, h);
@@ -266,8 +301,13 @@ Ivory.whenFonts(function(){
   if(stp){ const list = stp.querySelector('.pc-steps'), mx = big ? 13.5 : 12.75, PX = 96/72;
     const used = () => [...stp.children].reduce((a, e) => a + e.offsetHeight + parseFloat(getComputedStyle(e).marginTop), 0);
     let s = parseFloat(getComputedStyle(list).fontSize)*72/96;
-    while(s < mx){ list.style.fontSize = (s + 0.25) + 'pt'; if(used() > stp.clientHeight - 2*PX){ list.style.fontSize = s + 'pt'; break; } s += 0.25; }
-    list.dataset.pt = s; }
+    const nl = () => [...list.querySelectorAll('.it span:last-child')].map(e => e.getClientRects().length && Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight || 1)));
+    const n0 = nl().join();   // (11/7) growing never rewraps a step
+    while(s < mx){ list.style.fontSize = (s + 0.25) + 'pt'; if(used() > stp.clientHeight - 2*PX || nl().join() !== n0){ list.style.fontSize = s + 'pt'; break; } s += 0.25; }
+    list.dataset.pt = s;
+    // (11/7) any height still left spreads evenly between the steps, so the column runs to its foot
+    const its = [...list.querySelectorAll('.it')], left = stp.clientHeight - 2*PX - used();
+    if(its.length > 1 && left > 0){ const add = Math.min(left/its.length, 26*PX); its.forEach(e => { e.style.marginBottom = (parseFloat(getComputedStyle(e).marginBottom) + add) + 'px'; }); } }
   // 6 x 9 fronts: the agent block sits centered between the text above it and the card's bottom edge (10/25)
   const sheetTop = () => document.querySelector('.sheet').getBoundingClientRect().top;
   const ptOf = el => el.getBoundingClientRect().height / el.offsetHeight || 1;   // px per CSS px (zoom)

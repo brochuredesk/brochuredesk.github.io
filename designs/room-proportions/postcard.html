@@ -44,6 +44,13 @@
   .mailg .guide{position:absolute;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#9a958b;text-transform:uppercase;white-space:nowrap}
   .mailg.stamp{border:.75pt dashed #b9b4aa;text-align:center;padding-top:36pt;font:600 6pt/1.4 var(--font-body);letter-spacing:.45pt;color:#9a958b;text-transform:uppercase}
   .mailg .aline{position:absolute;height:.75pt;background:#d9d5cc}
+  /* the back (owner 11/7/2026): the set's deep green over the whole card under a faint drafting grid (the rooms are measured);
+     cream type, the gold for sizes and the status, the mail zones on a cream tint */
+  body.pc-back{--paper:#22382c;--ink:#f6f2e7;--accent:#e6c46e;--muted:#cfd6cc;--warm:#f0a07e;--gold:#e6c46e;--line:rgba(246,242,231,.3)}
+  body.pc-back .cc{--cc-paper:#22382c;--cc-ink:#f6f2e7;--cc-muted:#cdd5cb;--cc-accent:#e6c46e;--cc-line:rgba(230,196,110,.5)}
+  body.pc-back .pc-bst .ret{color:#e9e5da}
+  body.pc-back .cc[data-contactcard]{background:transparent !important}
+  .dgrid{position:absolute;inset:0;background-image:linear-gradient(rgba(246,242,231,.09) .7pt,transparent .7pt),linear-gradient(90deg,rgba(246,242,231,.09) .7pt,transparent .7pt),linear-gradient(rgba(246,242,231,.035) .5pt,transparent .5pt),linear-gradient(90deg,rgba(246,242,231,.035) .5pt,transparent .5pt);background-size:45pt 45pt,45pt 45pt,9pt 9pt,9pt 9pt;background-position:9pt 9pt}
 </style>
 </head>
 <body data-mode="email">
@@ -142,12 +149,18 @@ RP.whenFonts(async function(){
     if(!noCard) h += ContactCard.html([24, 348, 600 + (big ? 144 : 0), 64], A, b, {layout: 'panel', size: 'short', grow: 0, bottomGap: 0.5});
   } else {
     // ---------- back ----------
-    // The design runs across the whole back. Mail zones are the Just Listed library's (templates/jl-library/jllib.js zones(), px x 0.75):
+    // The design runs across the whole back (owner 11/7/2026: the deep-green field and its drafting grid to every edge, only the
+    // three mail zones on a light tint). Mail zones are the Just Listed library's (templates/jl-library/jllib.js zones(), px x 0.75):
     // postage, the address block above the card, the barcode strip under it. Everything else is the design's.
     const X = 22.5, cw = W - 2*X, zP = [W - 96, 12, 84, 98.25], zA = [W - 243, 187.5, 240, 112.5], zB = [W - 342, 387, 342, 45];
     const short = String(L.address || '').replace(/\s+(street|st\.?|avenue|ave\.?|drive|dr\.?|road|rd\.?|lane|ln\.?|boulevard|blvd\.?|court|ct\.?|way|place|pl\.?)$/i, '');
     const rowW = zP[0] - 12 - X;   // the header row and the photo row run right up to the postage box
-    const ret = [].concat(b.address || []).flatMap(a => String(a).split('\n')).map(s => s.trim()).filter(Boolean).slice(0, 2);
+    document.body.classList.add('pc-back');
+    h += `<div class="abs" data-under="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:${H + 18}pt;background:#22382c;overflow:hidden"><div class="dgrid"></div></div>`;
+    { const tint = (x, y, x2, y2) => `<div class="abs" data-under="1" style="left:${x}pt;top:${y}pt;width:${x2 - x}pt;height:${y2 - y}pt;background:#f8f5ec"></div>`;
+      h += tint(zP[0] - 6, -9, W + 9, zP[1] + zP[3] + 6) + tint(zA[0] - 6, zA[1] - 1, W + 9, zA[1] + zA[3] + 1.5) + tint(zB[0] - 6, zB[1] - 2, W + 9, H + 9); }
+    window.mailZones = {postage: zP, address: zA, barcode: zB};
+    const ret = [].concat(b.returnAddress || b.address || []).flatMap(a => String(a).split('\n')).map(s => s.trim()).filter(Boolean).slice(0, 2);
     h += `<div class="abs pc-bst" style="left:${X}pt;top:14pt;width:${rowW}pt;height:30pt" data-slot="status" data-lines="1"><span class="st">${statusWord}</span><span class="ln"></span><span class="ad">${esc(short)}</span>
       <span class="ln" style="max-width:34pt"></span><span class="ret">${b.brokerage ? '<b>' + esc(b.brokerage) + '</b>' : ''}${ret.map(r => '<br>' + esc(r)).join('')}</span></div>`;
     // photos: rooms not shown on the front, those with a real size first, then by how much a buyer cares (RP.PRIORITY)
@@ -158,8 +171,10 @@ RP.whenFonts(async function(){
     { const sized = pool.filter(it => it.sz); if(sized.length >= 3){ pool.length = 0; pool.push(...sized); } }
     // the fewest frames that bring the row's height down to 122 pt, so the row fills the width with an even 10 pt gap
     let r = null, bp = [];
-    for(let n = 2; n <= Math.min(pool.length, 6); n++){ bp = pool.slice(0, n).map(it => it.id); r = row(bp, X, 0, rowW, 10, 400); if(r.RH <= 122) break; }
-    if(r.RH > 122) r = row(bp, X, 0, rowW, 10, 122);
+    // (11/7: at most 102 pt, so the captions under the row end above the address block's tint)
+    const RHmax = zA[1] - 1 - 4 - 26 - 52;
+    for(let n = 2; n <= Math.min(pool.length, 6); n++){ bp = pool.slice(0, n).map(it => it.id); r = row(bp, X, 0, rowW, 10, 400); if(r.RH <= RHmax) break; }
+    if(r.RH > RHmax) r = row(bp, X, 0, rowW, 10, RHmax);
     const pTop = 52, capY = pTop + r.RH + 4;
     r.items.forEach((it, i) => { h += ph(it.id, it.x, pTop, it.w, r.RH) + roomCap(it.id, `back${i}`, it.x, capY, it.w + it.gap - 4); });
     // the card: full width, above the barcode strip and under the address block
@@ -167,7 +182,8 @@ RP.whenFonts(async function(){
     const kickY = capY + 24 + 8, txtY = kickY + 14, lh = 14, tw = zA[0] - 9 - X, lines = Math.floor((cardY - 5 - txtY - 1.5) / lh);
     h += `<div class="abs kick" style="left:${X}pt;top:${kickY}pt;width:${tw}pt;height:9pt" data-slot="back.label" data-lines="1">${esc(sold ? (SC.label || 'Thinking of selling?') : 'About this home')}</div>`;
     h += RP.sentBox('back.about', X, txtY, tw, lines, lh, 9.8, sold ? (SC.back || []) : (PC.back || []), 'color:var(--ink)').replace('data-fill=', `data-fillmin="${lines - 2}" data-avail="${lines*lh}" data-fill=`);
-    h += ContactCard.html([X, cardY, cw, cardH], A, Object.assign({}, b, {web: ''}), {postcard: true, fine: '', s: Object.assign({inlineLabel: true, pad: [10, 20, 8], panelPad: [5, 14], logo: {wide: [150, 42], square: [46, 46], tall: [50, 50]}}, big ? {} : {name: 26, nameFloor: 18, phone: 16, line: 9.5, rowGap: 12, panelW: 184, hsW: 80, hsGap: 14, pad: [10, 14, 8], logo: {wide: [140, 38], square: [44, 44], tall: [48, 48]}})});
+    const knock = !(b.logoOnDark || b.logoKnockout);
+    h += ContactCard.html([X, cardY, cw, cardH], A, Object.assign({}, b, {web: '', logo: b.logoOnDark || b.logoKnockout || b.logo}), {postcard: true, fine: '', logoStyle: knock ? 'filter:brightness(0) invert(1)' : '', s: Object.assign({inlineLabel: true, pad: [10, 20, 8], panelPad: [5, 14], logo: {wide: [150, 42], square: [46, 46], tall: [50, 50]}}, big ? {} : {name: 26, nameFloor: 18, phone: 16, line: 9.5, rowGap: 12, panelW: 184, hsW: 80, hsGap: 14, pad: [10, 14, 8], logo: {wide: [140, 38], square: [44, 44], tall: [48, 48]}})});
     const fineW = zB[0] - 10 - X, fineH = Math.ceil(RP.measure(`<div style="font:400 6pt/7.5pt var(--font-body)">${esc(fine)}</div>`, fineW) / 7.5) * 7.5;
     h += `<div class="abs pc-disc" style="left:${X}pt;top:${432 - 12 - fineH}pt;width:${fineW}pt;height:${fineH}pt" data-slot="fineprint" data-lines="${fineH/7.5}" data-fine="1">${esc(fine)}</div>`;
     // mail zones: drawn as guides on proofs, left clear in print

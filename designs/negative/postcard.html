@@ -52,6 +52,15 @@
   .stp .n{font:900 20pt/22pt var(--font-display);color:#fff;height:22pt;letter-spacing:-.3pt}
   .stp .t{font-size:9.5pt;line-height:12pt;color:#f0f0f0;overflow:hidden;margin-top:4pt}
   .bigb{font:900 12.5pt/14.5pt var(--font-display);letter-spacing:.2pt;text-transform:uppercase;color:#fff;overflow:hidden}
+  /* the back (owner 11/7/2026): the set's negative turned over. Black runs over the whole card; the black blocks of the
+     fold-over print white here (status band, caption tiles, step tiles, the block under the postage box, the bottom bar) */
+  body.pc-back{--paper:#000;--ink:#fff;--text:#e6e6e6;--muted:#bdbdbd;--accent:#fff;--line:rgba(255,255,255,.4)}
+  body.pc-back .cc{--cc-paper:#000000;--cc-ink:#ffffff;--cc-muted:#c8c8c8;--cc-accent:#ffffff;--cc-line:rgba(255,255,255,.4)}
+  body.pc-back .blk,body.pc-back .tile{background:#fff}
+  body.pc-back .bst .s,body.pc-back .bst .a,body.pc-back .bigb,body.pc-back .tile .nm,body.pc-back .stp .n{color:#000}
+  body.pc-back .tile .tx,body.pc-back .stp .t{color:#1c1c1c}
+  body.pc-back .ret b,body.pc-back .sk,body.pc-back .svc .it b{color:#fff}
+  body.pc-back .svc .it{border-top-color:#fff}
 </style>
 </head>
 <body data-mode="email">
@@ -96,6 +105,8 @@ window.brochureReady = (async function(){
   } else {
     // ---------- back ----------
     const Z = SP.mail(W), X = M, LZ = Z.zA[0] - 12, rW = Z.zP[0] - 12 - Z.zA[0], pTop = 54;
+    document.body.classList.add('pc-back');
+    h += SP.backField(W, H, '#000') + SP.mailTint(Z, W, H, {color: '#f4f4f2'});
     h += `<div class="blk" data-blk="1" style="left:-9pt;top:-9pt;width:${LZ + 9}pt;height:55pt"></div>`;
     h += `<div class="abs bst" style="left:${X}pt;top:4pt;width:${LZ - X - 14}pt;height:38pt" data-slot="back.status" data-lines="1"><span class="s">${esc(status)}</span><span class="a">${esc(L.address)}</span></div>`;
     const ret = SP.returnLines(D);
@@ -115,7 +126,7 @@ window.brochureReady = (async function(){
       const ids = C.photos || [], gap = 10, pw = (LZ - X - gap)/2, sw = (LZ - X - 2*gap)/3, sT = 94, sy = cardTop - sT, ky = sy - 14, ph = ky - 8 - pTop;
       ids.slice(0, 2).forEach((id, i) => { g += SP.photo(D, id, X + i*(pw + gap), pTop, pw, ph, 'back.photo' + i); });
       h += `<div class="abs sk" style="left:${Z.zA[0]}pt;top:${pTop}pt;width:${rW}pt;height:10pt" data-slot="sold.servicesLabel" data-lines="1">${esc(C.servicesLabel || 'What I do for sellers')}</div>`;
-      h += `<div class="abs svc" style="left:${Z.zA[0]}pt;top:${pTop + 14}pt;width:${rW}pt;height:${Z.zA[1] - 4 - pTop - 14}pt">${(C.services || []).slice(0, 4).map((s, i) => `<div class="it"><b>${i + 1}</b><span data-slot="sold.svc${i}" data-lines="3">${esc(s)}</span></div>`).join('')}</div>`;
+      h += `<div class="abs svc" style="left:${Z.zA[0]}pt;top:${pTop + 14}pt;width:${rW}pt;height:${Z.zA[1] - 16 - pTop - 14}pt">${(C.services || []).slice(0, 4).map((s, i) => `<div class="it"><b>${i + 1}</b><span data-slot="sold.svc${i}" data-lines="3">${esc(s)}</span></div>`).join('')}</div>`;
       h += `<div class="abs sk" style="left:${X}pt;top:${ky}pt;width:${LZ - X}pt;height:10pt" data-slot="sold.stepsLabel" data-lines="1">${esc(C.stepsLabel || 'How I’d start')}</div>`;
       (big ? C.steps11 : C.steps9 || []).slice(0, 3).forEach((s, i) => { const x = X + i*(sw + gap);
         h += `<div class="tile stp" style="left:${x}pt;top:${sy}pt;width:${sw}pt;height:${sT}pt;padding:8pt 9pt"><div class="n">${i + 1}</div><div class="t" data-slot="sold.step${i}" data-para="1" data-min="4" data-fillbox="1" style="height:48pt">${esc(s)}</div></div>`; });
@@ -124,12 +135,12 @@ window.brochureReady = (async function(){
     // the black block under the postage box, bleeding off the right edge
     const sl = C.slab || {};
     // owner 10/30: on the Just Listed 6x11 the block runs down to the foot of the photo tiles (top unchanged), text centered
-    const tall = big && !sold, sTop = Z.zP[1] + Z.zP[3] + 8, sBot = tall ? pTop + 64 + 66 : Z.zA[1] - 8;
-    h += `<div class="blk" data-blk="1" style="left:${Z.zP[0]}pt;top:${sTop}pt;width:${W - Z.zP[0] + 9}pt;height:${sBot - sTop}pt;padding:6pt ${tall ? '19pt 6pt 10pt' : '14pt 6pt 12pt'};display:flex;flex-direction:column;justify-content:center${tall ? ';text-align:center' : ''}"><div class="bigb" data-slot="slab.big" data-lines="3">${esc(sl.big || '')}</div></div>`;
+    const tall = big && !sold, sTop = Z.zP[1] + Z.zP[3] + 8, sBot = tall ? Math.min(pTop + 64 + 66, Z.zA[1] - 10) : Z.zA[1] - 10;
+    h += `<div class="blk" data-blk="1" style="left:${Z.zP[0]}pt;top:${sTop}pt;width:${W - Z.zP[0] + 9}pt;height:${sBot - sTop}pt;padding:6pt ${tall ? '19pt 6pt 10pt' : '14pt 6pt 12pt'};display:flex;flex-direction:column;justify-content:center;text-align:center"><div class="bigb" data-slot="slab.big" data-lines="3">${esc(sl.big || '')}</div></div>`;
     // the card, then the bottom bar carrying the disclaimer
-    h += SP.postCard(D, Z, W);
+    h += SP.postCard(D, Z, W, {dark: true});
     h += `<div class="blk" data-blk="1" style="left:-9pt;top:392pt;width:${Z.zB[0] - 12 + 9}pt;height:49pt"></div>`;
-    h += SP.fine(D, X, 396, Z.zB[0] - 12 - X - 8, '#fff');
+    h += SP.fine(D, X, 396, Z.zB[0] - 12 - X - 8, '#000');
     h += SP.mailGuides(D, Z);
   }
 
