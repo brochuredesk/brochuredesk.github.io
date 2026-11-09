@@ -66,7 +66,7 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
   const hsOn = OHL.cardMode(D) === 'headshot' && !!A.headshot;
   const contact = (x, y, w, o) => {
     const col = INK, html = [], lh = o.lh, lw = Math.min(lh*4.3, o.stack ? w : w*.46);
-    const logo = (lx, ly) => OHL.logo(D, 'light', `left:${lx}pt;top:${ly}pt;width:${lw}pt;height:${lh}pt;justify-content:${o.al && !o.stack ? 'flex-end' : 'flex-start'}`);
+    const logo = (lx, ly, lw2, lh2, jc) => OHL.logo(D, 'light', `left:${lx}pt;top:${ly}pt;width:${lw2 || lw}pt;height:${lh2 || lh}pt;justify-content:${jc || (o.al && !o.stack ? 'flex-end' : 'flex-start')}`);
     if(o.mode === 'logo'){ html.push(logo(x, y)); return {h: lh, html: html.join(''), w: lw}; }
     const hs = hsOn && !o.noHs ? Math.round(o.ns*2.7) : 0, gap = 9;
     const al = o.al && !o.stack;   // the footer: the agent on the left, the brokerage on the right (owner review r2, standing rule 5)
@@ -83,8 +83,13 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
     const th = yy - y;
     if(hs) html.unshift(`<div class="abs" data-agent-pic="1" style="left:${lx0}pt;top:${y}pt;width:${hs}pt;height:${Math.max(hs, th)}pt;border-radius:${hs*.16}pt;overflow:hidden"><img src="${esc(A.headshot)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`);
     const h = Math.max(th, hs, lh);
-    html.push(logo(al ? x + w - lw : x, o.stack ? y + h + 6 : y + (h - lh)/2));
-    return {h: o.stack ? h + 6 + lh : h, html: html.join('')};
+    if(o.stack){   // owner 11/8 (FXS-09 socials review, carried): the logo under the agent's lines is centered under them and grows to fill its space
+      const tbw = Math.max(nm.w || 0, showD ? ds.w || 0 : 0, ph.w || 0), lh2 = o.lgH || lh, lw2 = Math.min(lh2*4.3, Math.max(tbw, lw));
+      html.push(logo(tx + Math.max(0, (tbw - lw2)/2), y + h + 6, lw2, lh2, 'center'));
+      return {h: h + 6 + lh2, html: html.join('')};
+    }
+    html.push(logo(al ? x + w - lw : x, y + (h - lh)/2));
+    return {h, html: html.join('')};
   };
 
   // ---------- the street: light number, heavy caps name; the suffix drops first, then a long street runs two lines ----------
@@ -171,8 +176,9 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
       const hs = Math.max(F.body*2.15, 24)*kk;
       const h1 = T({slot: 'sold.head', text: sl.head, css: `font-weight:700;color:var(--fx-on-ink);text-wrap:balance`, x, y: yy, w, max: hs, min: F.body, lines: 2, lh: 1.1, small: 1}); out.push(h1.html); yy += h1.h + 4;
       if(sl.line && !o.noLine){ const l2 = T({slot: 'sold.line', text: sl.line, css: `font-weight:600;color:var(--fx-on-ink)`, x, y: yy, w, max: Math.max(F.body*1.5, 18)*Math.min(k, 1.2), min: F.body, lines: 2, lh: 1.2}); out.push(l2.html); yy += l2.h; }
-      if(side){ const fs2 = Math.max(F.body*1.1, 14)*kk, fp = factLines(w, fs2, 2); yy += 8*kk;
-        const f2 = T({slot: 'facts', text: factsLine(w, fs2), parts: fp, lines: fp.length, css: `font-weight:600;color:${SOFT}`, x, y: yy, w, max: fs2, min: F.body, lh: 1.2}); out.push(f2.html); yy += f2.h; }
+      if(side){ const fs2 = Math.max(F.body*1.1, 14)*kk; yy += 8*kk;   // owner 11/7, FXS-09 socials review 11/8 carried: a Just Sold card lists no house features; the seller ask instead
+        const ask = sl.line && !o.noLine ? 'Your home could be next.' : 'Your home could be next. Call or text me.';
+        const f2 = T({slot: 'sold.ask', text: ask, css: `font-weight:600;color:${SOFT}`, x, y: yy, w, max: fs2, min: F.body, lines: 2, lh: 1.2}); out.push(f2.html); yy += f2.h; }
       return {h: yy - y, html: out.join(''), right: w};
     }
     if(kind === 'js'){
@@ -480,6 +486,7 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
     let ly = m + sh + 12;
     if(kind === 'oh'){ const a2 = addr(AX, ly, cw, F.ev*1.05, F.ev, INK); mid.push(a2.html); ly += a2.h; if(plH){ const p2 = T({slot: 'place', text: OHL.place(L).toUpperCase(), css: caps(500, 1.2, TK.textDark), x: AX + 1, y: ly, w: cw, max: F.small*1.1, min: F.small, lh: 1.2, small: 1}); mid.push(p2.html); ly += p2.h; } }
     const refY = kind === 'oh' ? ly : m + sh;
+    if(!cOpt.mode){ const free = H - refY - cc.h - 2*Math.max(GS, m*.7); if(free > 3){ cOpt.lgH = cOpt.lh + Math.min(free, cOpt.lh*1.1); cc = contact(AX, 0, cw, cOpt); } }   // the logo takes the spare height under the agent
     mid.push(contact(AX, refY + (H - refY - cc.h)/2, cw, cOpt).html);
   };
 

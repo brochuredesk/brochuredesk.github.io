@@ -91,7 +91,7 @@ FXP.start(['400 20pt "Great Vibes"', '500 20pt Oswald', '600 20pt Oswald', '700 
 
   // ---------- the blocks: each returns {h, html} at (x, y, w) in px ----------
   // the Just Listed / Just Sold lockup: one size on every format (124 px at 1080, scaled with the width), never shrunk; the photo or the facts give way instead
-  const LOCK_PX = 124*Math.min(SC, HP/1350), LOCK_WORD = kind === 'js' ? 'Just Sold' : 'Just Listed', LOCK_W = FXP.width(LOCK_WORD, `font-family:'Pinyon Script';font-size:${p(LOCK_PX)}pt`)/K + 12*SC;
+  const LOCK_PX = 124*Math.min(SC, HP/1350*(kind === 'js' && (shape === 'wide' || shape === 'gbp') ? 1.3 : 1)),   /* owner 11/8 (FXS-09 p5, carried): "Just Sold" well over the agent's name on the side pieces too */ LOCK_WORD = kind === 'js' ? 'Just Sold' : 'Just Listed', LOCK_W = FXP.width(LOCK_WORD, `font-family:'Pinyon Script';font-size:${p(LOCK_PX)}pt`)/K + 12*SC;
   let lockPt = 0;
   const bStatus = (x, y, w, k) => { if(BRK === 'no-lockup') return {h: 10, html: ''}; const pt = p(LOCK_PX)*(BRK === 'shrink-lockup' ? .8 : 1); lockPt = pt; const lcss = `font-family:Oswald;font-weight:600;letter-spacing:${(pt*.04).toFixed(2)}pt;text-transform:uppercase;font-size:${pt}pt`;
     const one = FXP.width(LOCK_WORD, lcss) <= p(w), words = LOCK_WORD.toUpperCase().split(' '), nl = one ? 1 : 2, lh = pt*1.02;
@@ -159,7 +159,8 @@ FXP.start(['400 20pt "Great Vibes"', '500 20pt Oswald', '600 20pt Oswald', '700 
   // the badge as a block (side pieces): the same dark circle as the post's
   const bBadge = (x, y, w, k, minD) => { if(BRK === 'no-header') return {h: 10, html: ''}; const AP = FXS.addrParts(D), wN = Math.max(...[AP.num, AP.name.toUpperCase()].filter(Boolean).map(t => FXS.width(t, `font-family:Oswald;font-weight:500;letter-spacing:.7pt;font-size:${F.ev}pt`))), need = Math.ceil(wN/.8/K), d = Math.min(w, Math.max(need, (minD || 200)*SC, Math.min(w, 280*SC*k)));
     const r = FXS.badge(D, p(x + w/2), p(y + d/2), p(d), {dark: true, minSmall: F.small}); let html = r.html, h = d;
-    if(r.noHood && !(kind === 'oh' && shape === 'wide')){ const hood = String(FXS.hood(L) || RAW.city || L.city).toUpperCase(), ln = capsLn('hood.line', hood, x, y + d + 6*SC, w, 30*SC, 3.4, 'var(--fx-ink)', 'center'); html += ln.html; h += 6*SC + ln.h; }
+    // owner review 11/8 (FXS-40 p125): the place sits further down from the circle, and its type grows with the column
+    if(r.noHood && !(kind === 'oh' && shape === 'wide')){ const hg = 24*SC, hood = String(FXS.hood(L) || RAW.city || L.city).toUpperCase(), ln = capsLn('hood.line', hood, x, y + d + hg, w, 30*SC*Math.max(1, Math.min(k, 1.25)), 3.4, 'var(--fx-ink)', 'center'); html += ln.html; h += hg + ln.h; }
     return {h, html}; };
   // the top block of every full-width piece: the whole house at 81% width, the pale blue column with the icon facts, the dark badge over the photo's lower edge
   const topBlock = (id, o) => { o = o || {};
@@ -245,18 +246,22 @@ FXP.start(['400 20pt "Great Vibes"', '500 20pt Oswald', '600 20pt Oswald', '700 
     if(sq || (shape === 'gbp' && kind === 'oh')){ const sh = Math.min(470*SC, agH - 150*SC - gp), rs = roomsAll().slice(0, 2); if(sh >= 130*SC && rs.length === 2){ const g2 = 10*SC, rw2 = (hw - g2)/2; rs.forEach((id, i) => front.push(pic(id, p(i*(rw2 + g2)), p(agTop), p(rw2), p(sh)))); agTop += sh + gp; agH = zm - agTop; } }
     back.push(rect(p(hw), 0, p(WP - hw), p(HP), 'background:var(--fx-blue)')); front.push(heroBlock(0, 0, hw, hh));
     // the agent: name, REALTOR(R), phone and the logo, in the left column under the house
-    const drawAgent = agTop => { const outp = []; const lw = hw - 2*m + m*.5, lx = m*.8, need = FXP.width(A.phone || '', `font:700 ${Math.max(F.body, sq ? p(50*SC) : 0)}pt Montserrat;letter-spacing:.3pt`)/K + 12*SC;
-      const stackLogo = shape === 'wide' || lw*.7 < need, logoW = stackLogo ? Math.min(lw*.6, 300*SC) : lw*.3,   // wide (11/8): the logo under the agent, about 2x
-      nW = stackLogo ? lw : lw - logoW - 16*SC;
+    const ctr = kind === 'oh' && sq;   // owner 11/9 (FXS-40 OH square p14): name, phone and logo centered side to side in the white box
+    const drawAgent = agTop => { const outp = []; const lw = hw - 2*m + m*.5, lx = ctr ? (hw - lw)/2 : m*.8, need = FXP.width(A.phone || '', `font:700 ${Math.max(F.body, sq ? p(50*SC) : 0)}pt Montserrat;letter-spacing:.3pt`)/K + 12*SC;
+      const stackLogo = shape === 'wide' || (shape === 'gbp' && kind !== 'jl') || lw*.7 < need, logoW = stackLogo ? Math.min(lw*.6, 300*SC) : lw*.3,   // wide (11/8): the logo under the agent, about 2x
+      nW = stackLogo ? lw : lw - logoW - 16*SC, AL = ctr && stackLogo ? {align: 'center'} : {};
       let s = 1, nm, ph, hgt, lgH = 0, dsgLast = null, fitOK = false;
       for(const useD of [true, false]){ if(fitOK) break; s = 1;   // REALTOR(R) under the name where it fits; dropped only when the block can't fit with it (Open House pieces)
       for(; s >= .45; s -= .05){ const psz = Math.min(sq ? 58 : 70, agH*(stackLogo ? .22 : .27))*SC*s, nsz = Math.min(Math.min(sq ? 62 : 96, agH*(stackLogo ? .28 : .38))*SC*s, Math.max(psz, sq ? 50*SC : 0)*1.22);
-        nm = tp({slot: 'agent.name', text: A.name || '', css: "font-family:Montserrat;font-weight:600;letter-spacing:0;color:var(--fx-ink)", x: lx, y: agTop, w: nW, max: nsz*.78, min: F.body, lines: 1, lh: 1.05});
-        const dsg = (useD && (A.nar || /realtor/i.test(A.designation || ''))) ? capsLn('agent.desig', 'REALTOR®', lx + 1, agTop + nm.h/K + 3*SC, nW, 24*SC, 3.2, GOLD) : null, dH = dsg ? dsg.h/K + 6*SC : 0;   // owner 11/7: the plain name sets on one short line; REALTOR(R) under it, as on every other piece
-        ph = tp({slot: 'agent.phone', text: A.phone || '', css: "font-family:Montserrat;font-weight:700;letter-spacing:.3pt;color:var(--fx-ink)", x: lx, y: agTop + nm.h/K + 2*SC + dH, w: nW, max: Math.max(psz, sq ? 50*SC : 0), min: F.body, ...(sq ? {minPx: 50*SC} : {}), lh: 1.05});
-        dsgLast = dsg; hgt = nm.h/K + 2*SC + dH + ph.h/K; lgH = stackLogo ? Math.min(80*SC, agH - hgt - 14*SC) : 0; if(hgt + (stackLogo ? lgH + 8*SC : 0) <= agH - 6*SC && (!stackLogo || lgH >= (shape === 'wide' ? 72 : 40)*SC)){ fitOK = true; break; } } }
+        nm = tp({slot: 'agent.name', text: A.name || '', css: "font-family:Montserrat;font-weight:600;letter-spacing:0;color:var(--fx-ink)", x: lx, y: agTop, w: nW, max: nsz*.78, min: F.body, lines: 1, lh: 1.05, ...AL});
+        const dsg = (useD && (A.nar || /realtor/i.test(A.designation || ''))) ? capsLn('agent.desig', 'REALTOR®', lx + 1, agTop + nm.h/K + 3*SC, nW, 24*SC, 3.2, GOLD, AL.align) : null, dH = dsg ? dsg.h/K + 6*SC : 0;   // owner 11/7: the plain name sets on one short line; REALTOR(R) under it, as on every other piece
+        ph = tp({slot: 'agent.phone', text: A.phone || '', css: "font-family:Montserrat;font-weight:700;letter-spacing:.3pt;color:var(--fx-ink)", x: lx, y: agTop + nm.h/K + 2*SC + dH, w: nW, max: Math.max(psz, sq ? 50*SC : 0), min: F.body, ...(sq ? {minPx: 50*SC} : {}), lh: 1.05, ...AL});
+        dsgLast = dsg; hgt = nm.h/K + 2*SC + dH + ph.h/K; lgH = stackLogo ? Math.min((kind === 'jl' ? 80 : 150)*SC, agH - hgt - 14*SC) : 0;   /* owner 11/8 (FXS-09 p6/p7, carried): the logo under the agent grows to fill its space */ if(hgt + (stackLogo ? lgH + 8*SC : 0) <= agH - 6*SC && (!stackLogo || lgH >= (shape === 'wide' ? 72 : 40)*SC)){ fitOK = true; break; } } }
       outp.push(nm.html, ph.html); if(dsgLast) outp.push(dsgLast.html);
-      if(stackLogo) outp.push(OHL.logo(D, 'light', `left:${p(lx)}pt;top:${p(agTop + hgt + 8*SC)}pt;width:${p(logoW)}pt;height:${p(Math.max(lgH, 30*SC))}pt;justify-content:flex-start`));
+      // owner 11/8 (FXS-09 p6/p7, carried): the logo under the agent sits centered under the agent's lines and fills the room under them
+      const linesW = Math.max(nm.w, ph.w)/K, mid = AL.align ? hw/2 : lx + linesW/2, half = Math.min(linesW/2, lx + lw - mid);
+      if(stackLogo && kind === 'jl') outp.push(OHL.logo(D, 'light', `left:${p(lx)}pt;top:${p(agTop + hgt + 8*SC)}pt;width:${p(logoW)}pt;height:${p(Math.max(lgH, 30*SC))}pt;justify-content:flex-start`));   // owner 11/9: Just Listed keeps its approved logo place
+      else if(stackLogo) outp.push(OHL.logo(D, 'light', `left:${p(mid - half)}pt;top:${p(agTop + hgt + 8*SC)}pt;width:${p(2*half)}pt;height:${p(Math.max(lgH, 30*SC))}pt;justify-content:center`));
       else { outp.push(rect(p(lx + nW + 8*SC), p(agTop + 4), .75, p(Math.max(10, hgt - 8*SC)), 'background:var(--fx-rule)'));
         outp.push(OHL.logo(D, 'light', `left:${p(lx + lw - logoW)}pt;top:${p(agTop)}pt;width:${p(logoW)}pt;height:${p(Math.min(Math.max(hgt, 70*SC), agH - 6*SC))}pt;justify-content:flex-end`)); }
       return {outp, hgt, blockH: stackLogo ? hgt + 8*SC + Math.max(lgH, 30*SC) : Math.max(hgt, 70*SC)}; };
@@ -284,8 +289,9 @@ FXP.start(['400 20pt "Great Vibes"', '500 20pt Oswald', '600 20pt Oswald', '700 
       else { f.push(wrap(y => bStatus(x, y, cw, k)));
         f.push(wrap(y => bBadge(x, y, cw, k)));
         if(kind === 'jl' && (shape === 'wide' || shape === 'gbp')) f.push(wrap(y => { const it = FXS.statItems(L).slice(0, 3), np = Math.max(16, p(44*SC)); return {h: 3*np*1.35/K + 10*SC, html: it.map((t, i) => `<div class="abs" style="left:${p(x)}pt;top:${p(y) + i*np*1.35}pt;width:${p(cw)}pt;height:${np*1.3}pt;display:flex;align-items:baseline;white-space:nowrap" data-slot="fact.${i}" data-lines="1">${FXS.statHtml(t, np, Math.max(F.body, np*.45), 1)}</div>`).join('')}; }));
-        else if(kind === 'jl') f.push(wrap(y => { const it = FXS.statItems(L).slice(0, 3).map(short), rh = Math.max(52*SC*Math.min(k, 1), Math.max(16, p(46*SC*Math.min(k, 1)), F.body)*1.5/K); let h = '';
-          it.forEach((s, i) => { h += hair(x, y + i*rh, cw) + `<div class="abs" style="left:${p(x)}pt;top:${p(y + i*rh + rh*.14)}pt;width:${p(cw)}pt;height:${p(rh*.7)}pt;display:flex;align-items:baseline;white-space:nowrap" data-slot="fact.${i}" data-lines="1">${FXS.statHtml(s, Math.max(16, p(46*SC*Math.min(k, 1))), F.body, 1.2)}</div>`; });
+        // owner review 11/8 (FXS-40 p125): the table's type grows with the column (up to 1.25x) so it fills the room under the place
+        else if(kind === 'jl') f.push(wrap(y => { const kt = Math.min(k, 1.25), it = FXS.statItems(L).slice(0, 3).map(short), rh = Math.max(52*SC*kt, Math.max(16, p(46*SC*kt), F.body)*1.5/K); let h = '';
+          it.forEach((s, i) => { h += hair(x, y + i*rh, cw) + `<div class="abs" style="left:${p(x)}pt;top:${p(y + i*rh + rh*.14)}pt;width:${p(cw)}pt;height:${p(rh*.7)}pt;display:flex;align-items:baseline;white-space:nowrap" data-slot="fact.${i}" data-lines="1">${FXS.statHtml(s, Math.max(16, p(46*SC*kt)), Math.max(F.body, p(20*SC*kt)), 1.2)}</div>`; });
           h += hair(x, y + it.length*rh, cw); return {h: it.length*rh, html: h}; }));
         else f.push(wrap(y => { const o1 = {slot: 'sold.head', text: FXP.soldLine(D).head, css: "font-family:Oswald;font-weight:700;color:var(--fx-ink)", x, y, w: cw, max: 50*SC*k, min: F.body, lines: 1, lh: 1.1}, r1 = tp(o1);   // one line where it fits; else two balanced lines
           const r = r1.ok ? r1 : tp(Object.assign({}, o1, {css: o1.css + ';text-wrap:balance', lines: 2})); return {h: r.h/K, html: r.html}; }));

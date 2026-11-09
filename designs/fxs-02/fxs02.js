@@ -128,10 +128,12 @@
     const settle = (el, T) => {   // T lines: the best set, else the nearest and a report
       const lead = el.dataset.lead || '', b = pfN(el, T);
       if(b){ el.innerHTML = html(lead, b.pick); delete el.dataset.diag; }
-      else el.innerHTML = html(lead, el.__near ? el.__near.pick : JSON.parse(el.dataset.s).map(x => [].concat(x)[0]));
+      else if(el.__near) el.innerHTML = html(lead, el.__near.pick);
+      else { const S = JSON.parse(el.dataset.s).map(x => [].concat(x)[0]), pick = [S[0]]; el.innerHTML = html(lead, pick);   // nothing fills: the sentences that fit in T lines, never more (the caption-line-short check reports it)
+        for(const t of S.slice(1)){ el.innerHTML = html(lead, pick.concat(t)); if(SW.lines(el).n > T) break; pick.push(t); } el.innerHTML = html(lead, pick); }
       el.dataset.lines = T; return !!b;
     };
-    rest.forEach(el => {
+    const fitRest = el => {
       // data-try="5,4,3": the line counts this box may take (most lines first); the first that the whole sentences fill (last line 3/4 full) wins
       const tries = (el.dataset.try || '').split(',').map(Number).filter(Boolean);
       if(tries.length){
@@ -141,28 +143,32 @@
         if(el.dataset.lh) el.style.height = (T * +el.dataset.lh) + 'pt';
         if(el.dataset.justify){ if(!el.dataset.h0) el.dataset.h0 = tries[0] * (+el.dataset.lh || 0) || ''; el.style.textAlign = 'justify'; }
       } else settle(el, +el.dataset.lines || 1);
-    });
-    // photo captions shrink to what their sentences honestly fill (never padded): the photo takes the room. The captions in one row share a line count when they can.
+    };
+    rest.filter(e => !e.dataset.linefill).forEach(fitRest);   // owner 11/8: the captions fit first, then the box bullets
+    // owner 11/8/2026 (standing rule, every design): the caption under a photo fills the space under it. It keeps the photo's full width (never narrowed);
+    // every line, set ragged, runs 80%+ of that width (the last line 90% when the sentences allow), then it is justified, so its right edge lines up under the photo.
+    // When the sentences cannot fill the space's lines at the set size, the type grows (up to 12%, same line count). Never a shorter caption, never empty space.
     const groups = new Map();
     caps.forEach(el => { const g = el.closest('.row') || el; (groups.get(g) || groups.set(g, []).get(g)).push(el); });
     groups.forEach(els => {
-      const max = Math.max(...els.map(e => +e.dataset.lines));
+      const max = Math.max(...els.map(e => +e.dataset.lines)), lh0 = +els[0].dataset.lh || LH, space = max * lh0;
+      const fs0 = els.map(e => parseFloat(getComputedStyle(e).fontSize) * 0.75);
+      els.forEach(e => { e.dataset.narrow = '0'; e.dataset.linefill = '0.8'; e.dataset.fill = '0.8'; e.dataset.lfill = '0.8'; e.style.textAlign = 'left'; });
+      const size1 = (e, i, k, T) => { const lh = space / T; e.style.fontSize = (fs0[i] * k) + 'pt'; e.style.lineHeight = lh + 'pt'; e.style.height = space + 'pt'; e.dataset.lh = lh; e.dataset.lines = T; };
+      const size = (k, T) => els.forEach((e, i) => size1(e, i, k, T));
+      const tries = [1, 1.015, 1.03, 1.045, 1.06, 1.075, 1.09, 1.105, 1.12].map(k => [max, k]);
       let chosen = null;
-      for(let T = max; T >= 2 && !chosen; T--) if(els.every(e => pfN(e, T))) chosen = T;
-      els.forEach(e => {
-        const lead = e.dataset.lead || '';
-        let T = chosen;
-        if(!T){   // no common count: this one alone, at the count it fills best (or comes closest to)
-          let bestNear = null;
-          for(let t = max; t >= 2 && !T; t--){ if(pfN(e, t)) T = t; else if(e.__near && (!bestNear || e.__near.fill > bestNear.fill)) bestNear = {t, fill: e.__near.fill}; }
-          if(!T) T = bestNear ? bestNear.t : 2;
-        }
-        settle(e, T);
+      for(const lf of ['0.8', '0.75', '0.7']){   // every line 80%+ ragged; only when no set does at any size, a line may run 75% / 70% ragged (justified, the gaps stay small)
+        els.forEach(e => { e.dataset.lfill = lf; });
+        for(const [T, k] of tries){ size(k, T); if(els.every(e => pfN(e, T))){ chosen = [T, k]; break; } }
+        if(chosen) break; }
+      if(chosen){ size(chosen[1], chosen[0]); els.forEach(e => settle(e, chosen[0])); }
+      else els.forEach((e, i) => {   // none fills together: each alone, at the size it fills (or comes closest) on, in the same line count
+        let best = null;
+        for(const [T, k] of tries){ size1(e, i, k, T); e.__near = null; if(pfN(e, T)){ best = {T, k, fill: 2}; break; } if(e.__near && (!best || e.__near.fill > best.fill)) best = {T, k, fill: e.__near.fill}; }
+        best = best || {T: max, k: 1}; size1(e, i, best.k, best.T); settle(e, best.T);
       });
-      const h = Math.max(...els.map(e => +e.dataset.lines));
-      els.forEach(e => { const lh = +e.dataset.lh || LH; e.style.height = (+e.dataset.lines * lh) + 'pt'; });
-      const lh0 = +els[0].dataset.lh || LH;
-      els.forEach(e => { e.parentElement.style.height = (CAPPAD + h * lh0) + 'pt'; });
+      els.forEach(e => { e.style.textAlign = 'justify'; e.parentElement.style.height = (CAPPAD + space) + 'pt'; });
     });
     return issues;
   };

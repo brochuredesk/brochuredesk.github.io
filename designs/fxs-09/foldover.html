@@ -180,7 +180,7 @@ window.brochureReady = (async function(){
     const w2 = (CW - GUT)/2; let wB = [w2, w2];
     [cs[3], cs[4]].forEach((c, k) => { const p = c && (D.photos || {})[c.photo]; if(!(p && p.box && p.w && p.h && (p.fullHouse || /^front/.test(c.photo)))) return;
       const ar = (p.box[2] - p.box[0])*p.w/((p.box[3] - p.box[1])*p.h);
-      r2 = Math.max(r2, Math.min(Math.ceil(w2/ar + capH + 2), tot - (2*(capH + 88) + GUT))); r1 = tot - r2;
+      r2 = Math.max(r2, Math.min(Math.ceil(w2/ar + capH + 2), tot - (2*(capH + 86) + GUT))); r1 = tot - r2;
       const hb = r2 - capH, wf = Math.min(w2, Math.floor(ar*hb) - 2); wB[k] = wf; wB[1 - k] = CW - GUT - wf; });
     const ch = (r1 - GUT)/2;
     const box = (c, slot, x, y, w, hh, extra) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hh - capH}pt">${SW.photo(D, c.photo, 'position:absolute;inset:0', slot)}</div>` + cap(c, slot, 3, '').replace('<div class="cap ', `<div class="cap " data-pos style="position:absolute;left:${x}pt;top:${y + hh - capH}pt;width:${w}pt;`).replace('style="position:absolute;left', 'style="position:absolute;left').replace(/style="height:[^"]*"/, '');
@@ -207,13 +207,13 @@ window.brochureReady = (async function(){
   function left(){
     const I = K.left || {}, box = I.box || {};
     let h = bandBg + hd(I.kicker, I.title, 'left', {x: C0}) + intro(I.intro, 'left.intro', INTRO_TOP, INTRO_L);
-    const boxH = 150, boxTop = 770 - boxH, y0 = INTRO_TOP + INTRO_L*INTRO_LH + 14;
+    const boxH = 154, boxTop = 770 - boxH, y0 = INTRO_TOP + INTRO_L*INTRO_LH + 14;
     h += photoBlock(I.photos || [], 'left', y0, boxTop - 12);
     // the kitchen box: outlined in copper, a heading and six items in three columns
     const items = (box.items || []).slice(0, 6), bx = X0 + 14, bw = CW - 28, colw = (bw - 2*16)/3;
     h += `<div class="abs inkbox" style="left:${X0}pt;top:${boxTop}pt;width:${CW}pt;height:${boxH}pt"></div>`;
     h += `<div class="abs" style="left:${bx}pt;top:${boxTop + 10}pt;width:${bw}pt;height:34pt"><div class="ib-k" data-slot="left.box.kicker" data-lines="1">${esc(String(box.kicker || '').toUpperCase())}</div><div class="ttl fit" style="font-size:17pt;line-height:22pt;height:22pt;color:var(--fx-ink)" data-slot="left.box.heading" data-lines="1">${FXS.lightBold(box.heading || '')}</div></div>`;
-    h += `<div class="abs" style="left:${bx}pt;top:${boxTop + 48}pt;width:${bw}pt;height:${boxH - 56}pt;display:grid;grid-template-columns:repeat(3,${colw}pt);grid-template-rows:repeat(2,1fr);column-gap:16pt;border-top:var(--fx-rule-w) solid var(--fx-copper)">${items.map((it, i) => `<div style="padding-top:5pt;min-height:0;overflow:hidden"><div class="ib-l" style="overflow:hidden" data-slot="left.box.l${i}" data-lines="1">${esc(it.l)}</div><div class="ib-t" style="width:${colw}pt;margin-top:1pt;overflow:hidden;height:25pt;font-size:9pt;line-height:12pt" data-slot="left.box.t${i}" data-lines="2" data-try="2" data-rows2="1" data-narrow="8" data-lh="12" ${sd(it.s)}></div></div>`).join('')}</div>`;
+    h += `<div class="abs" style="left:${bx}pt;top:${boxTop + 44}pt;width:${bw}pt;height:${boxH - 50}pt;display:grid;grid-template-columns:repeat(3,${colw}pt);grid-template-rows:repeat(2,1fr);column-gap:16pt;border-top:var(--fx-rule-w) solid var(--fx-copper)">${items.map((it, i) => `<div style="padding-top:4pt;min-height:0;overflow:hidden"><div class="ib-l" style="overflow:hidden" data-slot="left.box.l${i}" data-lines="1">${esc(it.l)}</div><div class="ib-t" style="width:${colw}pt;margin-top:1pt;overflow:hidden;height:37pt;font-size:9pt;line-height:12pt;text-align:left" data-slot="left.box.t${i}" data-lines="3" data-try="3" data-narrow="0" data-linefill="0.795" data-lastfill="0.9" data-minfill="0.9" data-justify="1" data-lh="12" ${sd(it.s)}></div></div>`).join('')}</div>`;
     return h;
   }
   function right(){

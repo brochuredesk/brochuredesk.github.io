@@ -79,17 +79,19 @@
       if(SW.rep5((lead ? lead + ' ' : '') + pick.join(' '))) return;
       if(/photo\d/.test(el.dataset.slot || '') && window.FXS && FXS.sharedNouns) for(let a = 0; a < pick.length; a++) for(let b = a + 1; b < pick.length; b++) if(FXS.sharedNouns(pick[a], pick[b]).length >= 2) return;   // a caption never says one noun pair twice
       if(el.dataset.justify && window.FXS && FXS.sameFact) for(let a = 0; a < pick.length; a++) for(let b = a + 1; b < pick.length; b++) if(FXS.sameFact(pick[a], pick[b])) return;   // a justified write-up never says one fact twice
+      { const face = el.closest('.page'), usedF = (!el.__ignoreFace && face && el.closest('.cap') && face.__used) || []; if(usedF.length && window.FXS && FXS.sameFact) for(const p of pick) if(usedF.some(u => FXS.sameFact(u, p))) return; }   // nor a fact already set on this face
       const est = (lead0 + pick.join(' ').length) / cpl;
-      if(est < T - 1.5 || est > T + 0.9) return;
+      if(est < T - 1.5 || est > T + (el.dataset.linefill ? 1.8 : 0.9)) return;
       el.innerHTML = html(lead, pick);
       const L = SW.lines(el);
       if(L.n === T + 1 && (!hi || L.fill < hi.fill)) hi = {fill: L.fill};
       if(L.n === T - 1 && (!lo || L.fill > lo.fill)) lo = {fill: L.fill};
       if(L.n !== T) return;
       if(!near || L.fill > near.fill) near = {pick, fill: L.fill};
-      if(L.fill < Math.max(0.76, +el.dataset.fill || 0)) return;   // data-fill: a write-up's own floor (0.9, owner 11/7-11/8)
+      if(L.fill < Math.max(0.76, +el.dataset.fill || 0)) return;
+      if(el.dataset.linefill && (L.min < +el.dataset.linefill || L.fill < +(el.dataset.lastfill || 0.795))) return;   // owner 11/8 (FXS-28 kitchen box): every line of a box bullet 80%+ of its column, last line lastfill   // data-fill: a write-up's own floor (0.9, owner 11/7-11/8)
       if(el.dataset.lfill && L.min < +el.dataset.lfill) return;   // a justified write-up: every line already 80%+ full set ragged, so justifying never opens wide gaps
-      const score = (L.fill >= 0.8 ? 1000 : 500) - pick.length * 10 + L.fill + (el.dataset.lfill ? 20*L.min : 0);   // the fewest, fullest sentences that fill the box; the last line well filled
+      const score = (L.fill >= (+el.dataset.minfill || 0.8) ? 1000 : 500) - pick.length * 10 + L.fill + (el.dataset.lfill ? 20*L.min : 0);   // the fewest, fullest sentences that fill the box; the last line well filled
       if(!best || score > best.score) best = {score, pick, fill: L.fill};
     };
     const walk = (m, i, acc) => {
@@ -97,7 +99,7 @@
       if(!(m >> i & 1)){ walk(m, i + 1, acc); return; }
       for(const alt of S[i]) walk(m, i + 1, acc.concat(alt));
     };
-    for(let m = 1; m < (1 << n); m += 2) walk(m, 0, []);   // the first sentence always stays: it carries the point of the box
+    const capEl = !!el.closest('.cap') && el.dataset.slot !== 'front.note'; /* the Just Sold note (beside the photo) keeps its opening line */ for(let m = capEl ? 2 : 1; m < (1 << n); m += capEl ? 1 : 2) walk(m, 0, []);   // a box's first sentence always stays; a caption may start with any of its true lines (owner 11/8 captions fill)   // the first sentence always stays: it carries the point of the box
     if(best) return best;
     el.dataset.diag = `best ${T} lines: ${near ? Math.round(near.fill*100) + '%' : 'none'}` + (hi ? `; ${T+1} lines min ${Math.round(hi.fill*100)}%` : '') + (lo ? `; ${T-1} lines max ${Math.round(lo.fill*100)}%` : '');
     el.__near = near;
@@ -114,7 +116,7 @@
   SW.pfN = pfN;
   // after the fill: a full-width justified write-up whose sentences end short of its box takes the smallest bigger type (0.25 pt steps, up to 1.25x) at which a set of
   // its sentences fills the box, every line 80%+ and the last 90%+ set ragged; then it is justified (owner 11/7 bigger type fills, 11/8 no blank space; as FXS-14 FO.grow)
-  SW.grow = () => document.querySelectorAll('[data-justify]').forEach(el => { if(!el.textContent.trim()) return;
+  SW.grow = () => document.querySelectorAll('[data-justify]:not([data-linefill])').forEach(el => { if(!el.textContent.trim()) return;
     const H = +el.dataset.h0 || parseFloat(el.style.height), cs = getComputedStyle(el), fs0 = parseFloat(cs.fontSize)*0.75, r = (parseFloat(cs.lineHeight)*0.75)/fs0 || 1.5;
     const keep = el.innerHTML; el.style.textAlign = 'left'; let best = null;
     for(let fs = fs0; fs <= fs0*1.25 + 0.01 && !best; fs += 0.25){ el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs*r) + 'pt';
@@ -125,16 +127,18 @@
     el.style.textAlign = 'justify'; });
   const LH = 12.5, CAPPAD = 5;
   SW.fill = () => {
+    document.querySelectorAll('[data-justify]').forEach(e => { e.style.textAlign = 'left'; });   // a second fill pass measures ragged lines
     const issues = [];
     document.querySelectorAll('[data-s]').forEach(e => { e.dataset.fixed = '1'; });
-    const caps = [...document.querySelectorAll('.cap .a[data-s]')], rest = [...document.querySelectorAll('[data-s]')].filter(e => !caps.includes(e));
+    const caps = [...document.querySelectorAll('.cap .a[data-s]')].filter(e => e.dataset.slot !== 'front.note'), rest = [...document.querySelectorAll('[data-s]')].filter(e => !caps.includes(e));
     const settle = (el, T) => {   // T lines: the best set, else the nearest and a report
       const lead = el.dataset.lead || '', b = pfN(el, T);
       if(b){ el.innerHTML = html(lead, b.pick); delete el.dataset.diag; }
       else el.innerHTML = html(lead, el.__near ? el.__near.pick : JSON.parse(el.dataset.s).map(x => [].concat(x)[0]));
+      { const face = el.closest('.page'); if(face) face.__used = (face.__used || []).concat(String(el.textContent).split(/(?<=[.!?])\s+/).filter(Boolean)); }
       el.dataset.lines = T; return !!b;
     };
-    rest.forEach(el => {
+    const fitRest = el => {
       // data-try="5,4,3": the line counts this box may take (most lines first); the first that the whole sentences fill (last line 3/4 full) wins
       const tries = (el.dataset.try || '').split(',').map(Number).filter(Boolean);
       if(tries.length){
@@ -143,29 +147,39 @@
         settle(el, T);
         if(el.dataset.lh) el.style.height = (T * +el.dataset.lh) + 'pt';
       } else settle(el, +el.dataset.lines || 1);
-    });
+    };
+    rest.forEach(fitRest);   // the box bullets (a thin pool in this set) fit first; the captions, with a bigger pool, then step around their facts
     SW.grow();
+    document.querySelectorAll('[data-justify]').forEach(e => { e.style.textAlign = 'justify'; });   // owner 11/8: fitted ragged, then justified
     // photo captions shrink to what their sentences honestly fill (never padded): the photo takes the room. The captions in one row share a line count when they can.
     const groups = new Map();
     caps.forEach(el => { const g = el.closest('.row') || el; (groups.get(g) || groups.set(g, []).get(g)).push(el); });
+    // owner 11/8/2026 (standing rule, every design): the caption under a photo fills the space under it. It keeps the photo's full width (never
+    // narrowed); every line, set ragged, runs 80%+ of that width (the last line 90% when the sentences allow), then it is justified so its right edge
+    // lines up under the photo. If whole sentences can't fill the space's lines at the set size, the type grows up to 12% (same lines). Never a shorter
+    // caption and never empty space under a photo.
     groups.forEach(els => {
-      const max = Math.max(...els.map(e => +e.dataset.lines));
-      let chosen = null;
-      for(let T = max; T >= 2 && !chosen; T--) if(els.every(e => pfN(e, T))) chosen = T;
-      els.forEach(e => {
-        const lead = e.dataset.lead || '';
-        let T = chosen;
-        if(!T){   // no common count: this one alone, at the count it fills best (or comes closest to)
-          let bestNear = null;
-          for(let t = max; t >= 2 && !T; t--){ if(pfN(e, t)) T = t; else if(e.__near && (!bestNear || e.__near.fill > bestNear.fill)) bestNear = {t, fill: e.__near.fill}; }
-          if(!T) T = bestNear ? bestNear.t : 2;
+      const max = Math.max(...els.map(e => +e.dataset.lines)), lh0 = +els[0].dataset.lh || LH, space = max * lh0;
+      const fs0 = els.map(e => parseFloat(getComputedStyle(e).fontSize) * 0.75 || 10);
+      els.forEach(e => { e.dataset.narrow = '0'; e.dataset.linefill = '0.8'; e.dataset.lastfill = '0.8'; e.dataset.minfill = '0.9'; e.style.textAlign = 'left'; });
+      const size = (k, T) => els.forEach((e, i) => { const lh = space / T; e.style.fontSize = (fs0[i] * k) + 'pt'; e.style.lineHeight = lh + 'pt'; e.style.height = space + 'pt'; e.dataset.lh = lh; e.dataset.lines = T; });
+      const tries = [1, 1.03, 1.06, 1.09, 1.12].map(k => [max, k]);
+      let chosen = null;   // a fact already on the page never repeats in a caption (same-fact-on-face)
+      for(const [T, k] of tries){ size(k, T); if(els.every(e => pfN(e, T))){ chosen = [T, k]; break; } }
+      if(chosen){ size(chosen[1], chosen[0]); els.forEach(e => settle(e, chosen[0])); }
+      else els.forEach(e => {   // none fills together: each alone at the size it fills (or comes closest) on; the caption-line-short check reports a miss
+        let best = null;
+        for(const [T, k] of tries){ size(k, T); e.__near = null; if(pfN(e, T)){ best = {T, k, fill: 2}; break; } if(e.__near && (!best || e.__near.fill > best.fill)) best = {T, k, fill: e.__near.fill, pick: e.__near.pick}; }
+        best = best || {T: max, k: 1};
+        size(best.k, best.T);
+        if(best.fill === 2 || best.pick){ e.__near = best.pick ? {pick: best.pick, fill: best.fill} : null; settle(e, best.T); }
+        else {   // nothing sets in the space: the whole sentences, in order, that fit (never an overflow)
+          const S = JSON.parse(e.dataset.s).map(x => [].concat(x)[0]), lead = e.dataset.lead || '', pick = [];
+          for(const x of S){ e.innerHTML = html(lead, pick.concat(x)); if(SW.lines(e).n <= best.T) pick.push(x); }
+          e.innerHTML = html(lead, pick.length ? pick : [S[0]]); e.dataset.lines = best.T;
         }
-        settle(e, T);
       });
-      const h = Math.max(...els.map(e => +e.dataset.lines));
-      els.forEach(e => { const lh = +e.dataset.lh || LH; e.style.height = (+e.dataset.lines * lh) + 'pt'; });
-      const lh0 = +els[0].dataset.lh || LH;
-      els.forEach(e => { e.parentElement.style.height = (CAPPAD + h * lh0) + 'pt'; });
+      els.forEach(e => { e.style.textAlign = 'justify'; e.parentElement.style.height = (CAPPAD + space) + 'pt'; });
     });
     return issues;
   };
@@ -418,11 +432,16 @@
   FXS.sd = sd;
   // a gold caption label from a lead: "Family room, 20' x 16'." -> FAMILY ROOM, then the size small
   FXS.leadLabel = lead => { const t = String(lead || '').replace(/\.$/, ''), i = t.indexOf(','); return i < 0 ? {name: t, size: ''} : {name: t.slice(0, i), size: t.slice(i + 1).trim()}; };
+  // owner 11/8/2026 (captions fill the space under their photo): a caption's sentences, then the listing's other true lines about the same room
+  // (companion.roomLines[photo].all), so the fitter has enough whole sentences to fill every line; at most 9, no fact twice
+  FXS.capPool = (D, c, extra) => { const own = [].concat(c.s || []), RL = (D.companion || {}).roomLines || {}, base = String(c.photo).replace(/\d+[a-z]?$/, ''), sib = /^(kitchen|dining|living|family|primary|game|deck|yard|patio|terrace|balcony|front|entry|pbath)$/.test(base) ? Object.keys(RL).filter(k => k !== c.photo && String(k).replace(/\d+[a-z]?$/, '') === base) : []   /* other views of the same room only; two bedrooms or baths are different rooms */, R = ((RL[c.photo] || {}).all || []).concat(...sib.map(k => (RL[k] || {}).all || []), extra || []), key = x => String([].concat(x)[0]).toLowerCase().replace(/[^a-z ]/g, '').slice(0, 24);
+    const STOP = /^(the|and|with|from|into|that|this|room|one|its|has|have|sits|runs|over|under|along|each|both|wall|walls)$/, cw = x => new Set(String(x).toLowerCase().match(/[a-z]{4,}/g) || []), near = (a, b) => { const A = cw(a); let k = 0; cw(b).forEach(w => { if(A.has(w) && !STOP.test(w)) k++; }); return k >= 2; };
+    const boxS = [].concat(...((((D.sw || {}).left || {}).box || {}).items || []).map(i => [].concat(...[].concat(i.s || []).map(x => [].concat(x))))), seen = new Set(own.map(key)), out = own.slice(); R.forEach(r => { if(out.length < 10 && !seen.has(key(r)) && !boxS.some(b => FXS.sameFact && FXS.sameFact(b, r)) && !out.some(o => [].concat(o).some(a => near(a, r) || (FXS.sameFact3 && FXS.sameFact3(a, r))))){ seen.add(key(r)); out.push(r); } }); return out; };
   // a captioned photo: photo, gold label (name, size small), a paragraph of whole sentences (fill pass picks them)
   FXS.captioned = (D, c, x, y, w, ph, lines, slot, o) => { o = o || {}; const L0 = FXS.leadLabel(c.lead), L = (()=>{ let n = L0.name; const wl = t => FXS.width(t.toUpperCase(), 'font-family:Montserrat;font-weight:600;font-size:9pt;letter-spacing:2pt'); if(wl(n) > w) n = n.split(/ and |, /)[0]; return {name: n, size: L0.size}; })(), lh = o.lh || 13.5, fs = o.fs || 10, showSize = L.size && FXS.width(L.name.toUpperCase(), 'font-family:Montserrat;font-weight:600;font-size:9pt;letter-spacing:2pt') + FXS.width(L.size, 'font-family:Montserrat;font-weight:500;font-size:9pt') + 12 <= w;
     return (o.photoRect ? FXS.box(D, c.photo, o.photoRect[0], o.photoRect[1], o.photoRect[2], o.photoRect[3], slot) : FXS.box(D, c.photo, x, y, w, ph, slot)) +
       `<div class="abs" style="left:${x}pt;top:${y + ph + 7}pt;width:${w}pt;white-space:nowrap"><div class="lbl" data-slot="${slot}.label" data-lines="1" style="max-width:${w}pt">${esc(L.name.toUpperCase())}</div>${showSize ? `<span style="font:500 9pt/12pt var(--fx-font);color:var(--fx-mute);margin-left:8pt;white-space:nowrap">${esc(L.size)}</span>` : ''}</div>` +
-      `<div class="abs cap"><div class="a" style="position:absolute;left:${x}pt;top:${y + ph + 25}pt;width:${w}pt;height:${lines*lh}pt;font-size:${fs}pt;line-height:${lh}pt" data-slot="${slot}" data-lh="${lh}" data-lines="${lines}" ${o.try ? `data-try="${o.try}"` : ''} data-narrow="${o.narrow == null ? 10 : o.narrow}" ${sd(c.s)}></div></div>`; };
+      `<div class="abs cap"><div class="a" style="position:absolute;left:${x}pt;top:${y + ph + 25}pt;width:${w}pt;height:${lines*lh}pt;font-size:${fs}pt;line-height:${lh}pt" data-slot="${slot}" data-lh="${lh}" data-lines="${lines}" ${o.try ? `data-try="${o.try}"` : ''} data-narrow="${o.narrow == null ? 10 : o.narrow}" ${sd(o.noPool ? c.s : FXS.capPool(D, c))}></div></div>`; };
 
   // ---------- the cover (also the flyer front) ----------
   FXS.cover = (D, o) => { o = o || {};
@@ -699,7 +718,7 @@
     const pool = (V2.flyerBack || []).filter(id => (D.photos || {})[id] && !front.includes(id));
     const levels = hasPlan ? ((D.plan || {}).levels || []).length : 0;
     let wide = false, PH = levels >= 3 ? 300 : 236;
-    if(hasPlan){ const t = FXS.planCard(D, X0, Y0, Math.round(CW*.6), PH); if(t.bottom - Y0 < 190 || (t.issues || []).some(i => /wont-fit|under-300/.test(i.kind))) wide = true; }   // a wide, short plan (one floor), or one that cannot set in the column, takes the full width   // a wide, short plan (one floor) takes the full width
+    if(hasPlan){ const t = FXS.planCard(D, X0, Y0, Math.round(CW*.6), PH); if(t.bottom - Y0 < 190 || (t.issues || []).some(i => /wont-fit|under-300/.test(i.kind)) || (D.plan.kind === 'color' && (D.plan.levels || []).length >= 4 && (D.plan.levels || []).every(L => L.kind === 'image'))) wide = true; }   // a listing's own four-floor plan takes the full width: in the column its floors stack 2 x 2 and their names run together (owner 11/8: listing plans, never redrawn)   // a wide, short plan (one floor), or one that cannot set in the column, takes the full width   // a wide, short plan (one floor) takes the full width
     const bottomOfCards = 664, rowsN = 6, rowH = 20, cardH = 36 + rowsN*rowH + 10, cardsTop = bottomOfCards - cardH, topEnd = cardsTop - 14;
     const chip = (id, x, y, hh, slot) => `<div class="abs" style="left:${x + 6}pt;top:${y + hh - 20}pt;background:var(--fx-paper);padding:2pt 6pt 1pt;white-space:nowrap">${FXS.label(FXS.labelFor(id).replace(/\.$/, ''), slot, 'text-decoration:none')}</div>`;
     let h = FXS.gutter(D, 30), y = Y0, k = 0;

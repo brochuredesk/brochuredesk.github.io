@@ -102,7 +102,7 @@
     const dupKey = pick => { const seen = new Set(); for(const s of pick){ const mine = new Set((String(s).toLowerCase().match(KEYN) || []).map(w => w === 'cabinets' ? 'cabinet' : w)); for(const w of mine){ if(seen.has(w)) return true; } mine.forEach(w => seen.add(w)); } return false; };
     const test = (pick, ix) => {
       const est = (lead0 + pick.join(' ').length) / cpl;
-      if(est < T - 1.5 || est > T + 0.9) return;
+      if(est < T - 1.5 || est > T + (el.dataset.linefill ? 1.8 : 0.9)) return;
       el.innerHTML = html(lead, pick);
       const L = SW.lines(el);
       if(L.n === T + 1 && (!hi || L.fill < hi.fill)) hi = {fill: L.fill};
@@ -111,6 +111,7 @@
       if(!near || L.fill > near.fill) near = {pick, fill: L.fill};
       if(el.dataset.reach){ const rg = document.createRange(); rg.selectNodeContents(el); const rr = Math.max(...[...rg.getClientRects()].filter(q => q.width > 1).map(q => q.right)); if(+el.dataset.w0 - (rr - el.getBoundingClientRect().left)*.75 > +el.dataset.reach) return; }   // data-reach: the longest line ends within this many pt of the box's full width
       if(L.fill < Math.max(0.76, +el.dataset.fill || 0)) return;   // data-fill: a write-up's own floor for its last line (0.9, owner 11/7-11/8)
+      if(el.dataset.linefill && (L.min < +el.dataset.linefill || L.fill < +(el.dataset.lastfill || 0.795))) return;   // owner 11/8: box bullets, every natural line 80%+ and the last line 90%+ (then justified)
       if(el.dataset.lfill && L.min < +el.dataset.lfill) return;   // a justified write-up: every line already 80%+ full set ragged, so justifying never opens wide gaps
       const rank = ((dupKey(pick) || SW.phraseRepeat(pick)) ? 3000 : 0) + (pick.some(s => SW.usedList.some(u => SW.sameFact(s, u))) ? 1500 : 0);   // a repeated phrase is the last resort, a sentence already used on the piece the next to last
       const score = (L.fill >= 0.8 ? 1000 : 500) - pick.length * 10 + L.fill - rank - (ix || []).reduce((a, b) => a + b, 0) * 0.25 + (el.dataset.lfill ? 20*L.min : 0);   // earlier sentences first: the pool is written most important first   // the fewest, fullest sentences that fill the box; the last line well filled
@@ -138,6 +139,7 @@
   SW.pfN = pfN;
   const LH = 12.5, CAPPAD = 5;
   SW.fill = () => {
+    document.querySelectorAll("[data-justify]").forEach(e => { e.style.textAlign = "left"; });   // a second fill pass measures ragged lines
     const issues = [];
     const caps = [...document.querySelectorAll('.cap .a[data-s]')], rest = [...document.querySelectorAll('[data-s]')].filter(e => !caps.includes(e));
     const settle = (el, T) => {   // T lines: the best set, else the nearest and a report
@@ -151,6 +153,10 @@
     const one = el => {
       // data-try="5,4,3": the line counts this box may take (most lines first); the first that the whole sentences fill (last line 3/4 full) wins
       const tries = (el.dataset.try || '').split(',').map(Number).filter(Boolean);
+      if(el.dataset.lastladder){   // owner 11/8: the last line reaches as far as the pool allows without repeating a phrase
+        const lad = el.dataset.lastladder.split(',').map(Number); let ok = false;
+        for(const lf of lad){ el.dataset.lastfill = lf; for(const t of tries){ const b = pfN(el, t); if(b && b.score > 0){ ok = true; break; } } if(ok) break; }
+      }
       if(tries.length){
         let T = tries.find(t => pfN(el, t));
         if(!T){ let bestT = tries[0], bf = -1; tries.forEach(t => { pfN(el, t); if(el.__near && el.__near.fill > bf){ bf = el.__near.fill; bestT = t; } }); T = bestT; }
@@ -160,15 +166,24 @@
     };
     SW.refill = one;   // refit one box (its data-try, width and type may have changed)
     rest.forEach(one);
+    document.querySelectorAll('[data-justify]').forEach(e => { e.style.textAlign = 'justify'; });   // owner 11/8 (write-ups every line 90%+, ideally justified): fitted ragged, then justified
     // photo captions shrink to what their sentences honestly fill (never padded): the photo takes the room. The captions in one row share a line count when they can.
     const groups = new Map();
-    caps.forEach(el => { const g = el.closest('.row') || el; (groups.get(g) || groups.set(g, []).get(g)).push(el); });
+    caps.forEach(el => { const g = el.dataset.row ? 'row:' + el.dataset.row : (el.closest('.row') || el); (groups.get(g) || groups.set(g, []).get(g)).push(el); });
+    // owner 11/8/2026 (standing rule, every design): a caption under a photo keeps the photo's full width (never narrowed); every line, set
+    // ragged, runs 80%+ of that width (the last line too), then the caption is justified so its right edge lines up under the photo. When the
+    // sentences can't fill the lines at the set size the type grows (up to +12%, same line count). Never shortened, never empty space under a photo.
     const fillGroup = els => {
       const max = Math.max(...els.map(e => +e.dataset.lines)), lo = els.some(e => e.dataset.exact || e.dataset.min) ? 3 : 2;
-      let chosen = null;
+      const base = els.map(e => { const cur = parseFloat(e.style.fontSize) || parseFloat(getComputedStyle(e).fontSize) * .75; return (e.dataset.grownTo && Math.abs(cur - +e.dataset.grownTo) < .01) ? +e.dataset.grownFrom : cur; });
+      els.forEach((e, i) => { e.dataset.narrow = '0'; e.dataset.linefill = '0.8'; e.dataset.lastfill = '0.8'; e.style.width = ''; delete e.dataset.w0; e.style.textAlign = 'left'; e.dataset.grownFrom = base[i]; });
+      const grow = k => els.forEach((e, i) => { e.style.fontSize = (base[i] * k) + 'pt'; e.dataset.grownTo = base[i] * k; delete e.dataset.w0; e.style.width = ''; });
       const ladder = els.some(e => e.dataset.reachMax) ? [els[0].dataset.reachMax || '9', '16', null] : [null];   // captions that must reach the photo's edge try the tight reach first, then relax
-      // round 3 (owner 11/7): inside captions try more lines first, then the tighter reach
-      if(els.some(e => e.dataset.min)){ for(let T = max; T >= lo && !chosen; T--) for(const rv of ladder){ els.forEach(e => { if(rv == null) delete e.dataset.reach; else e.dataset.reach = rv; }); if(els.every(e => pfN(e, T))){ chosen = T; break; } } } else { for(const rv of ladder){ els.forEach(e => { if(rv == null) delete e.dataset.reach; else e.dataset.reach = rv; }); for(let T = max; T >= lo && !chosen; T--) if(els.every(e => pfN(e, T))) chosen = T; if(chosen) break; } }
+      const choose = (T0, T1) => { for(const rv of ladder){ els.forEach(e => { if(rv == null) delete e.dataset.reach; else e.dataset.reach = rv; }); for(let T = T0; T >= T1; T--) if(els.every(e => pfN(e, T))) return T; } return null; };
+      let chosen = null;
+      for(const k of [1, 1.03, 1.06, 1.09, 1.12]){ grow(k); chosen = choose(max, max); if(chosen) break; }
+      if(!chosen){ grow(1); chosen = choose(max - 1, lo); }
+      if(!chosen) grow(1);
       els.forEach(e => {
         const lead = e.dataset.lead || '';
         let T = chosen;
@@ -177,7 +192,7 @@
           for(let t = max; t >= lo && !T; t--){ if(pfN(e, t)) T = t; else if(e.__near && (!bestNear || e.__near.fill > bestNear.fill)) bestNear = {t, fill: e.__near.fill}; }
           if(!T) T = bestNear ? bestNear.t : lo;
         }
-        settle(e, T);
+        settle(e, T); e.style.textAlign = 'justify';
       });
       const h = Math.max(...els.map(e => +e.dataset.lines));
       const slack = els.some(e => e.dataset.exact || e.dataset.slack) ? 3 : 0;   // inside captions get 3 pt of slack so a serif lead never clips a line
@@ -532,7 +547,7 @@
     h += FXS.statRow(FXS.statItems(L, true), X0, statY, CW, 'stat', {size: VS, lbl: 8, track: 2}).html;
     h += `<div class="bar" data-bar-for="front.summary" style="left:${X0}pt;top:${wuTop + 2}pt;height:${wuH - 4}pt"></div>`;
     const sd = c => `data-s='${esc(JSON.stringify([].concat(c || []))).replace(/'/g,'&#39;')}'`;
-    h += `<div class="abs body" data-slot="front.summary" data-lines="${nL}" data-try="${nL}" data-narrow="0" data-lh="${lh}" ${sd((summary || []).filter((t, i) => !i || !/car garage/i.test([].concat(t)[0])))} style="left:${X0 + 14}pt;top:${wuTop}pt;width:${CW - 14}pt;height:${wuH}pt;font-size:12.5pt;line-height:${lh}pt;color:var(--fx-ink)"></div>`;
+    h += `<div class="abs body" data-slot="front.summary" data-lines="${nL}" data-try="${nL}" data-narrow="0" data-linefill="0.8" data-lastfill="0.96" data-lastladder="0.96,0.92,0.88,0.84" data-justify="1" data-lh="${lh}" ${sd((summary || []).filter((t, i) => !i || !/car garage/i.test([].concat(t)[0])))} style="left:${X0 + 14}pt;top:${wuTop}pt;width:${CW - 14}pt;height:${wuH}pt;font-size:12.5pt;line-height:${lh}pt;color:var(--fx-ink)"></div>`;
     return h;
   };
 

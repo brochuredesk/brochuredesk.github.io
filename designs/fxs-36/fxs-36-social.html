@@ -143,9 +143,10 @@ FXP.start(['400 20pt "Oswald"', '400 20pt "Oswald"', '500 20pt "Oswald"', '600 2
   const bStrip = (x, y, w, h) => { const rs = roomsAll().slice(0, 3), g = 10*SC, pw = (w - g*(rs.length - 1))/rs.length; return {h, html: rs.map((id, i) => pic(id, p(x + i*(pw + g)), p(y), p(pw), p(h))).join('')}; };
 
   // ---------- the stack: blocks in order, spaced evenly in what the hero leaves; the content shrinks (k) until it fits ----------
-  const stack = (x, y0, w, avail, make, ks, strict) => {
+  const stack = (x, y0, w, avail, make, ks, strict, foot) => {
     for(const k of ks){ const bl = make(k); const sum = bl.reduce((t, b) => t + b.h, 0), n = bl.length - 1, gap = n ? (avail - sum)/n : 0;
-      if(gap >= 14*SC*Math.min(k, 1) || (!strict && k === ks[ks.length - 1])){ const g = n ? Math.max(gap, 0) : 0; let y = y0 + (n ? 0 : Math.max(0, (avail - sum)/2));   /* even gaps, no blank band above or below */ const out = [];
+      /* foot (Open House side pieces, owner review 11/8, socials before-after p1): the room under the last block matches the gaps, so the date block sits centered in its space */
+      if(gap >= 14*SC*Math.min(k, 1) || (!strict && k === ks[ks.length - 1])){ const ft = (typeof foot === 'function' ? foot() : foot), g = n ? Math.max(ft ? (avail - sum)/(n + 1) : gap, 0) : 0; let y = y0 + (n ? 0 : Math.max(0, (avail - sum)/2));   /* even gaps, no blank band above or below */ const out = [];
         bl.forEach(b => { out.push(b.mk ? b.mk(y).html : b.html.replace(/%Y%/g, y)); y += b.h + g; }); return out.join(''); } } return null; };
   const KS = [1, .94, .88, .82, .76, .7];
 
@@ -226,6 +227,7 @@ FXP.start(['400 20pt "Oswald"', '400 20pt "Oswald"', '500 20pt "Oswald"', '600 2
         mid.push(OHL.logo(D, 'dark', `left:${p(lx + lw - logoW)}pt;top:${p(agTop)}pt;width:${p(logoW)}pt;height:${p(Math.min(Math.max(hgt, 70*SC), agH - 6*SC))}pt;justify-content:flex-end`)); } }
     const x = hw + m, cw = WP - x - m;
     const short = s => s;   // the same words as every other piece (baths through _shared/baths.js: "2 Full Baths")
+    let labExtra = 0, labGrew = false, addr2 = kind === 'oh';
     const facs = k => { const f = [], wrap = fn => ({h: fn(0).h, mk: y => fn(y)});
       const addr = (y, mx) => { const r = tp({slot: 'address', text: addrT, css: "font-family:'Oswald';font-weight:500;letter-spacing:.7pt;text-transform:uppercase;color:var(--fx-ink)", x, y, w: cw, max: mx*SC*k, min: F.ev, lh: 1.08});
         const parts = placeT.split(' · '), pl = [], ph0 = Math.max(F.small, 0);
@@ -236,10 +238,22 @@ FXP.start(['400 20pt "Oswald"', '400 20pt "Oswald"', '500 20pt "Oswald"', '600 2
         if(fits){ html += one.html; h += one.h; }
         else { parts.forEach((pt2, i) => { const l = capsLn(i ? 'place' + i : 'place', pt2, x + 2, yy, cw, 28*SC, 1.2, '#fff'); html += l.html; yy += l.h; h += l.h; }); }
         return {h, html}; };
-      if(kind === 'oh'){ f.push(wrap(y => addr(y, 60)));
+      // owner review 11/8 (socials before-after p1, carried from FXS-28): the address bigger; on two lines (the number, then the street) when that sets it bigger
+      const addrOH = (y, mx) => { const ACSS = "font-family:'Oswald';font-weight:500;letter-spacing:.7pt;text-transform:uppercase;color:var(--fx-ink)", mm2 = addrT.match(/^(\S+)\s+(.+)$/), one = addr(y, mx);
+        if(!mm2 || !addr2) return one;
+        const t2 = tp({slot: 'address', text: addrT, parts: [mm2[1], mm2[2]], css: ACSS, x, y, w: cw*.97, max: mx*SC*k*1.5, min: F.ev, lines: 2, lh: 1.14});
+        if(t2.n !== 2 || t2.s <= tp({slot: 'address', text: addrT, css: ACSS, x, y, w: cw, max: mx*SC*k, min: F.ev, lh: 1.08}).s*1.12) return one;
+        const r = tp({slot: 'address', text: addrT, parts: [mm2[1], mm2[2]], css: ACSS, x, y, w: cw, max: t2.s/K, minPx: t2.s/K, lines: 2, lh: 1.14}), pad = r.s*.12;   /* Oswald's caps rise above the line box: the box gets the room */
+        return {h: (r.h + pad)/K + 2, html: r.html.replace(/height:([\d.]+)pt/, (m0, v) => `height:${(+v + pad).toFixed(2)}pt`)}; };
+      if(kind === 'oh'){ f.push(wrap(y => addrOH(y, 60)));
         f.push(wrap(y => { const out2 = []; let yy = y; const lines2 = OHL.labelLines(E.label.toUpperCase(), 2);
           const single = FXP.width(E.label.toUpperCase(), `font:500 ${F.ev}pt Montserrat;letter-spacing:2.6pt`) <= p(cw);
-          const lab = tp({slot: 'oh.label', text: E.label.toUpperCase(), parts: single ? null : lines2, css: caps(500, 2.6, '#fff') + ';text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:5pt', x, y: yy, w: cw, max: 46*SC*k, min: F.ev, lines: single ? 1 : 2, lh: 1.12}); out2.push(lab.html); yy += lab.h/K + 6*SC;
+          const labCss = caps(500, 2.6, '#fff') + ';text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:5pt';
+          let lab = tp({slot: 'oh.label', text: E.label.toUpperCase(), parts: single ? null : lines2, css: labCss, x, y: yy, w: cw, max: 46*SC*k, min: F.ev, lines: single ? 1 : 2, lh: 1.12});
+          // owner review 11/8 (FXS-36 p103): when the column has room left, "Public Open House" grows into it (one word a line) instead of leaving a blank gap above it
+          const words = E.label.toUpperCase().split(/\s+/);
+          labGrew = false; if(labExtra > 0 && words.length === 3){ const sPt = ((lab.h/K + labExtra)*K - 3.9)/(3*1.12), l3 = tp({slot: 'oh.label', text: E.label.toUpperCase(), parts: words, css: labCss, x, y: yy, w: cw, max: Math.min(sPt/K, 120*SC), min: F.ev, lines: 3, lh: 1.12}); if(l3.ok && l3.s > lab.s*1.08){ lab = l3; labGrew = true; } }
+          out2.push(lab.html); yy += lab.h/K + 6*SC;
           const wk = capsLn('oh.weekday', E.weekday, x + 1, yy, cw, 30*SC, 3.6, '#fff'); out2.push(wk.html); yy += wk.h + 2;
           const dt = tp({slot: 'oh.date', text: String(E.monthDay || E.long), css: `font-family:'Oswald';font-weight:500;letter-spacing:0;color:var(--fx-ink);${LN}`, x: x - 2, y: yy, w: cw + 2, max: 100*SC*k, min: F.ev*1.1, lh: 1.02}); out2.push(dt.html); yy += dt.h/K;
           if(E.time){ const ts = Math.max(dt.s*.6, F.ev); const tm = T({slot: 'oh.time', text: E.time, css: `font-family:'Oswald';font-weight:500;color:var(--fx-ink);${LN}`, x: p(x), y: p(yy), w: p(cw), max: ts, min: ts, lh: 1.05}); out2.push(tm.html); yy += tm.h/K; }
@@ -260,7 +274,15 @@ FXP.start(['400 20pt "Oswald"', '400 20pt "Oswald"', '500 20pt "Oswald"', '600 2
           f.push(wrap(y => { const sl = FXP.soldLine(D).line || 'Call or text me anytime.', r = tp({slot: 'sold.line', text: sl, css: `font-family:'Oswald';font-weight:600;color:${SOFT};text-wrap:balance`, x, y, w: WD ? cw : cw*.56, max: 44*SC*Math.min(k, 1.25), min: F.body, lines: WD ? 1 : 2, lh: 1.12}); return {h: r.h/K, html: r.html}; }));
           f.push(wrap(y => { let yy = y, o = ''; placeT.split(' \u00b7 ').forEach((s, i) => { const l = capsLn(i ? 'place' + i : 'place', s, x + 2, yy, cw, 30*SC*Math.min(Math.max(k, 1), 1.5), shape === 'wide' ? 2 : 1.4, '#fff'); o += l.html; yy += l.h + 4*SC; }); return {h: yy - y, html: o}; })); } }
       return f; };
-    mid.push(stack(x, m*.6, cw, zm - m*(WD ? 1 : .6), facs, [1.8, 1.65, 1.5, 1.4, 1.3, 1.2, 1.1, 1, .92, .84, .76, .68, .6, .54, .48]));
+    const KSs = [1.8, 1.65, 1.5, 1.4, 1.3, 1.2, 1.1, 1, .92, .84, .76, .68, .6, .54, .48], avS = zm - m*(WD ? 1 : .6);
+    if(kind === 'oh'){ for(const k of KSs){ const bl = facs(k), sum = bl.reduce((t, b) => t + b.h, 0), n = bl.length - 1, gap = n ? (avS - sum)/n : 0; if(gap >= 14*SC*Math.min(k, 1)){ labExtra = Math.max(0, (avS - sum) - n*28*SC); if(labExtra < 24*SC) labExtra = 0; break; } } }
+    // first pass: the two-line address, but only at a size (k) no smaller than the one-line address reaches, so the date never shrinks for it;
+    // otherwise the one-line address as before
+    const fitK = () => KSs.find(k => { const bl = facs(k), sum = bl.reduce((t, b) => t + b.h, 0), n = bl.length - 1; return (n ? (avS - sum)/n : 0) >= 14*SC*Math.min(k, 1); });
+    let colOH = null;
+    if(kind === 'oh'){ const le = labExtra; addr2 = false; labExtra = 0; const k1 = fitK(); addr2 = true; labExtra = le; colOH = stack(x, m*.6, cw, avS, facs, KSs.filter(k => k1 == null || k >= k1), true, () => !labGrew && !sq); }
+    if(!colOH){ addr2 = false; if(kind === 'oh'){ labExtra = 0; for(const k of KSs){ const bl = facs(k), sum = bl.reduce((t, b) => t + b.h, 0), n = bl.length - 1, gap = n ? (avS - sum)/n : 0; if(gap >= 14*SC*Math.min(k, 1)){ labExtra = Math.max(0, (avS - sum) - n*28*SC); if(labExtra < 24*SC) labExtra = 0; break; } } } }
+    mid.push(colOH || stack(x, m*.6, cw, avS, facs, KSs, undefined, () => kind === 'oh' && !labGrew && !sq));   /* the square's last block is the facts tiles: it keeps even gaps */   /* a label that grew into the room (approved p103) keeps it */
     if(WD) mid.push(band(zm + footH));
     // the foot: the perks
     if(WPK){ mid.push(`<div class="card" data-box="oh.box" style="left:${p(WPK.x)}pt;top:${p(WPK.y)}pt;width:${p(WPK.w)}pt;height:${p(WPK.h)}pt"></div>`);

@@ -106,8 +106,9 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
     let tmw = 0; if(E.time){ const tm = T({slot: 'oh.time', text: E.time, css: `font-weight:700;color:#fff`, x: x + px, y: yy, w: iw, max: Math.max(dt.s*.6, F.ev), min: F.ev, lh: 1.15}); out.push(tm.html); yy += tm.h; tmw = tm.w; }
     yy += o.bot == null ? 11 : o.bot;
     // o.center: the block of lines (still flush left with each other) sits centered on the band, so neither half of the band is left empty
-    if(o.center && lab.n === 1 && dt.n === 1){ const sl = Math.max(0, (iw - lab.w)/2), sb = Math.max(0, (iw - Math.max(wk.w, dt.w, tmw))/2), wrap = (h, d) => `<div style="position:absolute;left:${d}pt;top:0">${h}</div>`;
-      return {h: yy - y, html: wrap(out[0], sl) + wrap(out.slice(1).join(''), sb)}; }
+    // owner review 11/8 (FXS-24 p18): every line under "Public Open House" is centered on its own, not flush left as a block
+    if(o.center && lab.n === 1 && dt.n === 1){ const ws = [lab.w, wk.w, dt.w - 1, tmw], wrap = (h, d) => `<div style="position:absolute;left:${d}pt;top:0">${h}</div>`;
+      return {h: yy - y, html: out.map((h, i) => wrap(h, Math.max(0, (iw - ws[i])/2))).join('')}; }
     return {h: yy - y, html: out.join('')}; };
   const perksCard = (x, y, w) => { const items = [[E.refreshments, 'oh.refreshments', 700], [E.note, 'oh.note', 600]].filter(i => i[0]); if(!items.length) return {h: 0, html: ''};
     const px = 10, py = 7, rows = []; let yy = y + py;
@@ -119,7 +120,8 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
     const ad = T({slot: 'address', text: ADDR, css: caps(700, .1, 'var(--fx-ink)'), x, y: yy, w, max: o.max || F.ev*1.35, min: F.ev, lh: 1.15, align: o.align || 'left'}); out.push(ad.html); yy += ad.h + 2;
     const pl = T({slot: 'place', text: FXS.placeCaps(L), css: caps(600, .18, BLUE), x, y: yy, w, max: Math.max(F.small*1.15, 11), min: F.small, lh: 1.2, small: 1, align: o.align || 'left'}); out.push(pl.html); yy += pl.h;
     if(o.facts){ const sf = FXS.sellingRows(D, 9999, 8).map(r => r.l); let line = ''; for(const t of sf){ const c = line ? line + ' · ' + t : t; if(wdt(c, `${MONT};font-weight:600;font-size:${F.small}pt;letter-spacing:.06em`) <= w) line = c; else break; }
-      if(line){ yy += 4; const fl = T({slot: 'sellfacts', text: line, css: caps(600, .06, 'var(--fx-text)'), x, y: yy, w, max: F.small*1.1, min: F.small, lh: 1.2, small: 1, align: o.align || 'left'}); out.push(fl.html); yy += fl.h; } }
+      if(line){ const t0 = T({slot: 'x', text: line, css: caps(600, .06, 'var(--fx-text)'), x, y: 0, w, max: F.small*1.1, min: F.small, lh: 1.2, small: 1}); yy = o.factsY ? o.factsY(yy, t0.h) : yy + 4;
+        const fl = T({slot: 'sellfacts', text: line, css: caps(600, .06, 'var(--fx-text)'), x, y: yy, w, max: F.small*1.1, min: F.small, lh: 1.2, small: 1, align: o.align || 'left'}); out.push(fl.html); yy += fl.h; } }
     return {h: yy - y, html: out.join('')}; };
   // the strip of n rooms with their names (never the cover's rooms twice)
   const strip = (x, y, w, h, n, pick, lc) => { const ids = (pick || roomsAll().filter(i => !used.has(i))).slice(0, n); if(ids.length < 2) return {h: 0, html: ''};
@@ -233,7 +235,8 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
     if(info){ y -= gg - 3; front.push(rect(0, y, W, info.h, `background:${BLUE}`)); front.push(evBand(0, y, W, {dmax: sq ? 33 : 41.25, top: sq ? 7 : 10, bot: sq ? 8 : 11, center: !tall}).html); y += info.h + (ohClose ? 3 : gg);
       if(perks && perks.h){ front.push(perksCard(m, y, W - 2*m).html); y += perks.h + gg; } }
     else if(ab){
-      const a2 = addrBlock(m, y, W - 2*m, {facts: !js}); front.push(a2.html); y += a2.h + gg;
+      // owner review 11/8 (FXS-24 p1): with no room strip under it, the selling-facts line sits centered top to bottom between the address and the agent bar
+      const midFacts = !js && !stripH, a2 = addrBlock(m, y, W - 2*m, {facts: !js, factsY: midFacts ? (top, fh2) => top + Math.max(4, (H - fh - top - fh2)/2) : null}); front.push(a2.html); y += a2.h + gg;
       if(js){ const sl = FXP.soldLine(D); const h1 = T({slot: 'sold.head', text: sl.head, css: 'font-weight:700;color:var(--fx-ink)', x: m, y, w: W - 2*m, max: Math.max(F.body*1.6, 19), min: F.body, lines: 2, lh: 1.15}); front.push(h1.html); y += h1.h + 3;
         if(sl.line){ const l2 = T({slot: 'sold.line', text: sl.line, css: 'font-weight:500;color:var(--fx-text)', x: m, y, w: W - 2*m, max: Math.max(F.body*1.15, 13.5), min: F.body, lines: 2, lh: 1.25}); front.push(l2.html); y += l2.h; } y += gg; }
     }
@@ -341,14 +344,26 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
     const fhPre = js ? Math.round(Math.max(46, H*.15)) : Math.ceil(F.body*1.05*1.1 + F.body*1.15 + 24);
     if(!oh){ const hh0 = H - (top0 + gap) - fhPre - gap; if(hh0*1.5 < LW) LW = Math.max(150, Math.round(hh0*1.5)); }   // the photo shrinks to hold the whole house; the lockup does not
     const bw = W - LW, iw = bw - 2*px;
-    const col = []; let ry = top0 + (oh ? 16 : 4);
+    const col = []; let ry = top0 + (oh ? ((E.refreshments || E.note) ? 4 : 16) : 4);   /* with the perks the event starts close under the bar, then centers in what is left */
     if(oh){
-      const parts = FXP.width(E.label.toUpperCase(), `${MONT};${caps(700, .08, '#fff')};font-size:${F.ev}pt`) > iw ? OHL.labelLines(E.label.toUpperCase(), 2) : null;
-      const lab = T({slot: 'oh.label', text: E.label.toUpperCase(), parts, css: caps(700, .08, '#fff'), x: LW + px, y: ry, w: iw, max: F.ev, min: F.ev, lines: parts ? 2 : 1, lh: 1.08}); col.push(lab.html); ry += lab.h + 4;
-      const wk = T({slot: 'oh.weekday', text: E.weekday.toUpperCase(), css: caps(600, .22, SOFT), x: LW + px, y: ry, w: iw, max: F.body, min: F.body, lh: 1.1, small: 1}); col.push(wk.html); ry += wk.h + 1;
-      const dt = T({slot: 'oh.date', text: String(E.monthDay || E.long), css: 'font-weight:700;color:#fff', x: LW + px - 1, y: ry, w: iw + 1, max: 36, min: F.ev, lh: 1.05}); col.push(dt.html); ry += dt.h + 2;
-      if(E.time){ let tr = 0, tm; for(; tr >= -.05; tr -= .01){ tm = T({slot: 'oh.time', text: E.time, css: `font-weight:700;color:#fff;letter-spacing:${tr}em`, x: LW + px, y: ry, w: iw, max: Math.max(dt.s*.6, F.ev), min: F.ev, lh: 1.1}); if(tm.n === 1) break; } col.push(tm.html); ry += tm.h + 3; }
-      [[E.refreshments, 'oh.refreshments', 700], [E.note, 'oh.note', 500]].filter(i => i[0]).forEach(([t, slot, wt]) => { const r = T({slot, text: t, css: `font-weight:${wt};color:${SOFT}`, x: LW + px, y: ry, w: iw, max: F.body, min: F.body, lines: 2, lh: 1.05}); col.push(r.html); ry += r.h + 1; });
+      // owner 11/8 (FXS-09 socials p6/p7, carried): with the REALTOR(R) perks (no stats under them) the event grows to fill the blue column and sits centered top to bottom
+      const evCol = (g, y00) => { const col = []; let ry = y00, tmS = 99;
+      const parts = FXP.width(E.label.toUpperCase(), `${MONT};${caps(700, .08, '#fff')};font-size:${F.ev*g}pt`) > iw ? OHL.labelLines(E.label.toUpperCase(), 2) : null;
+      const lab = T({slot: 'oh.label', text: E.label.toUpperCase(), parts, css: caps(700, .08, '#fff'), x: LW + px, y: ry, w: iw, max: F.ev*g, min: F.ev, lines: parts ? 2 : 1, lh: 1.08}); col.push(lab.html); ry += lab.h + 4;
+      const wk = T({slot: 'oh.weekday', text: E.weekday.toUpperCase(), css: caps(600, .22, SOFT), x: LW + px, y: ry, w: iw, max: F.body*g, min: F.body, lh: 1.1, small: 1}); col.push(wk.html); ry += wk.h + 1;
+      const dt = T({slot: 'oh.date', text: String(E.monthDay || E.long), css: 'font-weight:700;color:#fff', x: LW + px - 1, y: ry, w: iw + 1, max: 36*g, min: F.ev, lh: 1.05}); col.push(dt.html); ry += dt.h + 2;
+      if(E.time){ let tm; const one = FXP.fitSize(E.time, `${MONT};font-weight:700`, iw, 99, F.ev*.5), tp2 = String(E.time).match(/^(.+? to)\s+(.+)$/);
+        if(one >= F.ev || !tp2){ tm = T({slot: 'oh.time', text: E.time, css: 'font-weight:700;color:#fff', x: LW + px, y: ry, w: iw, max: Math.max(F.ev, Math.min(dt.s*.6, one)), min: F.ev, lh: 1.1}); }
+        else tm = T({slot: 'oh.time', text: E.time, parts: [tp2[1], tp2[2]], css: 'font-weight:700;color:#fff', x: LW + px, y: ry, w: iw, max: Math.max(F.ev, dt.s*.7), min: F.ev, lines: 2, lh: 1.1});   /* "11:30 am to / 12:30 pm", never "pm" alone */
+        tmS = tm.s; col.push(tm.html); ry += tm.h + 3; }
+      [[E.refreshments, 'oh.refreshments', 700], [E.note, 'oh.note', 500]].filter(i => i[0]).forEach(([t, slot, wt]) => { const r = T({slot, text: t, css: `font-weight:${wt};color:${SOFT}`, x: LW + px, y: ry, w: iw, max: Math.max(F.body, Math.min(F.body*g, tmS*.8)), min: F.body, lines: 2, lh: 1.05}); col.push(r.html); ry += r.h + 1; });
+        return {col, ry}; };
+      const y00 = ry, perksIn = !!(E.refreshments || E.note), bottom = H - Math.max(16, H*.08);
+      let ev = evCol(1, y00);
+      if(perksIn){ for(let g = 1.9; g >= .84; g -= .04){ const e2 = evCol(g, y00); if(e2.ry <= bottom){ ev = e2; break; } }
+        ev.dy = Math.max(0, (bottom - ev.ry)/2); }
+      if(ev.dy) ev.col = ev.col.map(h => h.replace(/top:([\d.]+)pt/, (m0, v) => `top:${(+v + ev.dy).toFixed(2)}pt`));
+      col.push(...ev.col); ry = ev.ry + (ev.dy || 0);
       // the blue column under the event fills with the house's stats down to the logo (no empty blue)
       if(!(E.refreshments || E.note)){ const lim = H - Math.round(Math.min(34, (W - LW)/4.6)) - 16, np = Math.max(17, F.small*1.1), rh = np*1.25; ry += 6;
         FXS.statRows(L).slice(0, 4).forEach((r, i) => { if(ry + rh + 4 > lim) return; col.push(rect(LW + px, ry, iw, .75, 'background:var(--fx-rule-on)'));

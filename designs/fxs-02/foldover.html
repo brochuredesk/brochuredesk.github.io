@@ -90,10 +90,14 @@ window.brochureReady = (async function(){
   const COV = {hero: heroA, arch: (PL.cover || {}).arch, smalls: ((PL.cover || {}).smalls || []).slice()};
   // a photo's card: the house's own written card for it (with the room's size) when there is one, else its photo notes
   const ownCards = {}; [].concat((K.left||{}).photos || [], ...(((K.right||{}).rows) || []), (K.back||{}).photos || [], (K.back||{}).photosNoplan || []).forEach(c => { if(c && c.photo && !ownCards[c.photo]) ownCards[c.photo] = c; });
-  const cardFor = id => { const w = ownCards[id]; return w && (w.s || []).length > 2 ? w : spareCap(id) || w; };
+  // owner 11/8/2026 (captions under photos fill the photo's width): a hand-written card also gets the listing's other true lines about the same photo (roomLines[photo].all)
+  // as extra whole sentences for the fill pass; a line that shares two content words with one already in is the same fact and stays out
+  const richer = c => { if(!c) return c; const R = ((((D.companion||{}).roomLines||{})[c.photo]||{}).all) || [], out = (c.s || []).slice();
+    R.forEach(t => { if(out.length < 10 && !out.some(o => String([].concat(o)[0]).toLowerCase() === t.toLowerCase() || sameFact([].concat(o)[0], t))) out.push(t); }); return Object.assign({}, c, {s: clean5(out)}); };
+  const cardFor = id => { const w = ownCards[id]; return w && (w.s || []).length > 2 ? richer(w) : spareCap(id) || w; };
   const STRIP = (PL.strip || []).slice(0, 4);
   // marketing fix (11/7): the 1-story inside-left nook says the light once (the living-and-dining caption has it)
-  const leftCard = id => id === 'nook' && +L.stories === 1 ? Object.assign({}, cardFor(id), {lead: 'Breakfast nook.', s: ['Windows run along two walls, and the nook opens to the deck.']}) : cardFor(id);
+  const leftCard = id => id === 'nook' && +L.stories === 1 ? Object.assign({}, cardFor(id), {lead: 'Breakfast nook.', s: ['Windows run along two walls, and the nook opens to the deck.'].concat((((D.companion||{}).roomLines||{}).nook||{}).all || []).filter(t => !/^Windows run along two walls\.?$/.test(t) && !/pantry|backyard/.test(t))}) : cardFor(id);
   K.left = Object.assign({}, K.left, {photos: (PL.left || []).map(leftCard).filter(Boolean)});
   K.right = Object.assign({}, K.right, {rows: [(PL.right || []).map(cardFor).filter(Boolean)]});
   const bandBg = `<div class="bg-paper"></div><div class="bg-band"></div>`;

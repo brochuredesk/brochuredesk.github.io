@@ -84,8 +84,13 @@ FXP.start(['700 20pt "DM Sans"', '600 20pt "DM Sans"', '500 20pt "DM Sans"', '40
     const th = yy - y;
     if(hs) html.unshift(`<div class="abs" style="left:${lx0}pt;top:${y}pt;width:${hs}pt;height:${Math.max(hs, th)}pt;overflow:hidden"><img src="${esc(A.headshot)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`);
     const h = Math.max(th, hs, lh);
+    // owner 11/8 (FXS-09 socials p6/p7): a logo under the agent is centered under the agent's info and grows to fill the space below it
+    if(!beside && o.logoZone){ const Z = o.logoZone, LH = Math.max(lh, Math.min(Z*.62, w*.78/4.3)), LW = Math.min(w, LH*4.3);
+      const aw = Math.max(nm.w || 0, ph.w || 0, showD ? (ds.w || 0) : 0), acx = Math.min(x + w - LW/2, Math.max(x + LW/2, tx + aw/2));   // centered under the agent's lines, inside the column
+      html.push(OHL.logo(D, 'dark', `left:${acx - LW/2}pt;top:${y + Math.max(th, hs) + (Z - LH)/2}pt;width:${LW}pt;height:${LH}pt;justify-content:center`));
+      return {h: Math.max(th, hs) + Z, th: Math.max(th, hs), beside, html: html.join('')}; }
     html.push(logo(x + w - lw, beside ? y + (h - lh)/2 : y + h + 6, 'flex-end'));
-    return {h: beside ? h : h + 6 + lh, html: html.join('')};
+    return {h: beside ? h : h + 6 + lh, th: Math.max(th, hs), beside, html: html.join('')};
   };
 
   // ---------- the street: light number, heavy caps name; the suffix drops first, then a long street runs two lines ----------
@@ -575,11 +580,12 @@ FXP.start(['700 20pt "DM Sans"', '600 20pt "DM Sans"', '500 20pt "DM Sans"', '40
     const sz = Math.min(s, FXP.fitSize(words.join(' '), `${SERIF};font-weight:400;letter-spacing:-1pt`, w, s, F.ev*1.6));
     return {h: sz*1.08, s: sz, html: `<div class="abs" style="left:${x - 1}pt;top:${y}pt;width:${w + 1}pt;height:${sz*1.1}pt;${SERIF};font-weight:400;font-size:${sz}pt;line-height:${sz*1.05}pt;letter-spacing:-1pt;color:${TK.ink};white-space:nowrap;overflow:hidden" data-slot="moment" data-lines="1">${words[0]} <span style="font-style:italic;color:${TK.ink2}">${words[1]}</span></div>`}; };
   const placeLine = (x, y, w, s) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${s*1.25}pt;${SERIF};font-style:italic;font-size:${s}pt;line-height:${s*1.2}pt;color:${TK.ink2};white-space:nowrap" data-small="1" data-slot="place" data-lines="1">${esc([L.city, L.state || 'Texas'].join(', '))}</div>`;
-  const statRow = (x, y, w, S, o) => { o = o || {}; S = S*.62; const cw = w/STAT.length, ls = Math.max(F.small, 10); let html = '';
+  // a label never touches its cell's rules
+  const statRow = (x, y0, w, S, o) => { o = o || {}; S = S*.62; const cw = w/STAT.length, ls = Math.max(F.small, Math.min(Math.max(F.small, 10), ...STAT.map(([, l]) => FXP.fitSize(l.toUpperCase(), `${MONT};font-weight:500;letter-spacing:${STAT.length > 4 ? .4 : w < 300 ? 1 : 2}pt`, cw*.86, Math.max(F.small, 10), F.small)))), PD = 5, y = y0; let html = rect(x, y0 - PD, w, S*1.15 + ls*1.3 + 6 + 2*PD, `border:1.5pt solid #d98f52;box-sizing:border-box`);   // the box sits just outside the row: the row keeps its size   // owner 11/8 carry: the facts row ruled in copper like the photo frame
     STAT.forEach(([v, l], i) => { html += `<div class="abs" style="left:${x + i*cw}pt;top:${y}pt;width:${cw}pt;height:${S*1.15}pt;${SERIF};font-size:${S}pt;line-height:${S*1.1}pt;color:${TK.ink};text-align:center;white-space:nowrap;overflow:hidden" data-slot="figure-${i}" data-lines="1">${esc(v)}</div>`
       + `<div class="abs" style="left:${x + i*cw}pt;top:${y + S*1.15 + 2}pt;width:${cw}pt;height:${ls*1.3}pt;${MONT};font-weight:500;font-size:${ls}pt;letter-spacing:${STAT.length > 4 ? .4 : w < 300 ? 1 : 2}pt;text-transform:uppercase;color:${TK.text};text-align:center;white-space:nowrap" data-small="1" data-slot="figure-${i}-label" data-lines="1">${esc(l)}</div>`;
-      if(i) html += rect(x + i*cw, y + 3, .75, S*1.15 + ls*1.3 + 2, `background:${TK.rule}`); });
-    return {h: S*1.15 + ls*1.3 + 6, html}; };
+      if(i) html += rect(x + i*cw - .75, y0 - PD, 1.5, S*1.15 + ls*1.3 + 6 + 2*PD, `background:#d98f52`); });
+    return {h: S*1.15 + ls*1.3 + 6 + PD, html}; };
   // a paragraph beside its copper bar: whole sentences filling `lines` lines
   const barPara = (x, y, w, lines, size, texts, slot) => {
     const cls = 'bp' + String(size).replace('.', '_') + '_' + Math.round(w); if(!document.querySelector('style[data-c="' + cls + '"]')){ const st = document.createElement('style'); st.dataset.c = cls; st.textContent = `.${cls}{font-family:'DM Sans';font-weight:400;font-size:${size}pt;line-height:${size*1.4}pt}`; document.head.appendChild(st); }
@@ -589,6 +595,55 @@ FXP.start(['700 20pt "DM Sans"', '600 20pt "DM Sans"', '500 20pt "DM Sans"', '40
     const hh = r.n*size*1.4 + 1;
     return {h: hh, html: rect(x, y + 2, 2.5, hh - 4, `background:var(--fx-bar)`) + `<div class="abs ${cls}" style="left:${x + 12}pt;top:${y}pt;width:${r.w || (w - 12)}pt;height:${hh}pt;color:${TK.ink}" data-slot="listing.body" data-lines="${r.n}">${esc(r.text)}</div>`};
   };
+  // owner 11/8 (FXS-09 socials p1/p2): the facts sit in a large table ruled in the photo frame's copper, each figure and its label centered in its cell
+  const GOLD = '#d98f52';
+  const factTable = (x, y, w, h, cols, maxS) => {
+    const st = STAT.slice(0, 4), n = st.length; if(!n) return {h: 0, html: ''};
+    cols = Math.min(cols || 2, n); const rows = Math.ceil(n/cols), cw = w/cols, ch = h/rows, ls0 = Math.max(F.small, Math.min(cw*.075, ch*.13, 16));
+    const vcss = `${SERIF};font-weight:400;letter-spacing:-.5pt`, ls = Math.max(F.small, Math.min(ls0, ...st.map(([, l]) => FXP.fitSize(l.toUpperCase(), `${MONT};font-weight:500;letter-spacing:.8pt`, cw*.84, ls0, F.small))));
+    let S = Math.min(maxS || 999, ch*.5, ...st.map(([v]) => FXP.fitSize(v, vcss, cw*.8, ch*.5, F.body)));
+    let html = rect(x, y, w, h, `border:1.5pt solid ${GOLD};box-sizing:border-box`);
+    for(let c = 1; c < cols; c++) html += rect(x + c*cw - .75, y, 1.5, h, `background:${GOLD}`);
+    for(let r = 1; r < rows; r++) html += rect(x, y + r*ch - .75, w, 1.5, `background:${GOLD}`);
+    st.forEach(([v, l], i) => { const cx = x + (i % cols)*cw, cy = y + Math.floor(i/cols)*ch, gh = S*1.1 + 4 + ls*1.3, gy = cy + (ch - gh)/2;
+      html += `<div class="abs" style="left:${cx}pt;top:${gy}pt;width:${cw}pt;height:${S*1.1}pt;${vcss};font-size:${S}pt;line-height:${S*1.1}pt;color:${TK.ink};text-align:center;white-space:nowrap" data-slot="figure-${i}" data-lines="1">${esc(v)}</div>`
+        + `<div class="abs" style="left:${cx}pt;top:${gy + S*1.1 + 4}pt;width:${cw}pt;height:${ls*1.3}pt;${MONT};font-weight:500;font-size:${ls}pt;letter-spacing:.8pt;text-transform:uppercase;color:${TK.text};text-align:center;white-space:nowrap" data-small="1" data-slot="figure-${i}-label" data-lines="1">${esc(l)}</div>`; });
+    return {h, html};
+  };
+  // owner 11/8 (FXS-09 socials p3/p4; standing rule 11/7): a Just Sold card lists no house features: "Thinking about selling?" and the agent's
+  // own seller lines from the Just Sold postcard note (approved copy), set as large as the space allows
+  // every wording the note allows, longest first: runs of its sentences (from the first or the second), each sentence in any of its approved wordings
+  const sellerTexts = () => { const note = ((((D.sw || {}).pc || {}).js || {}).front || {}).note || {}, S = (note.s || []).map(t => [].concat(t).filter(Boolean)).filter(a => a.length);
+    if(!S.length) return [[FXP.soldLine(D).line || 'Call or text me anytime.']];
+    const out = []; for(let n = S.length; n >= 1; n--) for(let st = 0; st <= Math.min(1, S.length - n); st++){ let combos = [[]]; S.slice(st, st + n).forEach(alts => { combos = combos.flatMap(c => alts.map(a => c.concat([a]))); }); out.push(...combos.slice(0, 3).map(c => c.join(' '))); }
+    return out.map(t => [t]); };
+  const sellerCta = (x, y, w, h, align) => {
+    const sl = FXP.soldLine(D), all = sellerTexts(), hcss = `${SERIF};font-weight:400;letter-spacing:-.4pt;color:${TK.ink}`, bcss = `font-weight:400;color:${TK.ink};text-align:${align || 'left'};text-wrap:pretty`;
+    let best = null; const cand = []; let LLMIN = .78;
+    for(const pass of [0, 1, 2, 3, 4]){ if(pass){ if(cand.length) break; LLMIN = .75; } const BW = (w - 12)*(1 - Math.max(0, pass - 1)*.05);   // a narrow column with nothing that fits: a last line at least 75% full (the print check)
+    for(let n = 0; n < all.length; n++) for(let hs = Math.max(F.ev*2.4, 44); hs >= F.body*1.15; hs -= 2){   // the most seller lines that fill the space, each set as large as it fits
+      const bs = Math.max(F.body, Math.min(hs*.5, hs - 4)), txt = all[n][0];
+      const h1 = T({slot: 'sold.head', text: sl.head, css: hcss, x: x + 12, y, w: w - 12, max: hs, min: hs, lh: 1.08, lines: 2}), b = T({slot: 'sold.line', text: txt, css: bcss, x: x + 12, y, w: BW, max: bs, min: bs, lh: 1.3, lines: 12});
+      const tot = h1.h + 8 + b.h; if(h1.n > 2 || tot > h) continue;
+      if(h1.n === 2 && lineInfo(sl.head, `${MONT};${hcss};font-size:${hs}pt;line-height:${(hs*1.08).toFixed(2)}pt`, w - 12).fill < .75) continue;
+      const li = lineInfo(txt, `${MONT};${bcss};font-size:${bs}pt;line-height:${(bs*1.3).toFixed(2)}pt`, BW); if(li.n > 1 && li.fill < LLMIN) continue;   // the last line runs at least 3/4 full
+      cand.push({hs, bs, txt, h1h: h1.h, tot, fill: tot/h, bw: BW});
+      break; }
+    }
+    const meas = (txt, hs, bs, BW) => { const h1 = T({slot: 'sold.head', text: sl.head, css: hcss, x: x + 12, y, w: w - 12, max: hs, min: hs, lh: 1.08, lines: 2}), b = T({slot: 'sold.line', text: txt, css: bcss, x: x + 12, y, w: BW, max: bs, min: bs, lh: 1.3, lines: 12});
+      const li = lineInfo(txt, `${MONT};${bcss};font-size:${bs}pt;line-height:${(bs*1.3).toFixed(2)}pt`, BW), lh2 = h1.n === 2 ? lineInfo(sl.head, `${MONT};${hcss};font-size:${hs}pt;line-height:${(hs*1.08).toFixed(2)}pt`, w - 12).fill : 1;
+      return h1.n <= 2 && lh2 >= .75 && (li.n === 1 || li.fill >= LLMIN) && h1.h + 8 + b.h <= h ? {h1h: h1.h, tot: h1.h + 8 + b.h, fill: (h1.h + 8 + b.h)/h} : null; };
+    // each wording grows (a bigger body, then a bigger question) until it fills the space; the fullest wins, then the one with more to say
+    cand.sort((p, q) => q.txt.length - p.txt.length).slice(0, 14).forEach(c => {
+      for(let bs = c.bs + 1; bs <= c.hs*.8; bs += 1){ const r = meas(c.txt, c.hs, bs, c.bw); if(r) Object.assign(c, r, {bs}); }
+      for(let hs = c.hs + 1; hs <= Math.max(F.ev*2.4, 44); hs += 1){ const r = meas(c.txt, hs, c.bs, c.bw); if(r) Object.assign(c, r, {hs}); } });
+    { const good = cand.filter(c => c.fill >= .9); best = good.length ? good.sort((p, q) => q.txt.length - p.txt.length || q.hs - p.hs)[0] : cand.sort((p, q) => q.fill - p.fill)[0] || null; }
+    if(best){
+      const {hs, bs, txt, tot} = best, y0 = y + (h - tot)/2;
+      return {h, html: rect(x, y0 + 2, 2.5, tot - 4, 'background:var(--fx-bar)') + T({slot: 'sold.head', text: sl.head, css: hcss, x: x + 12, y: y0, w: w - 12, max: hs, min: hs, lh: 1.08, lines: 2}).html
+        + T({slot: 'sold.line', text: txt, css: bcss, x: x + 12, y: y0 + best.h1h + 8, w: best.bw, max: bs, min: bs, lh: 1.3, lines: 12}).html}; }
+    return {h: 0, html: ''};
+  };
   const fx09 = () => {
     const story = shape === 'story', m = Math.round(W*.05), w = W - 2*m, limit = story ? 676 : H - m*1.0, top = m*.8;
     const cOpt = Object.assign(cOptFor(), kind === 'oh' && !story ? {ns: Math.max(F.body*1.2, 15.5), ps: Math.max(F.body*1.0, 13.5), lh: Math.max(26, F.body*1.9)} : {ns: Math.max(F.body*1.35, 17), ps: Math.max(F.body*1.1, 14.5), lh: Math.max(30, F.body*2.2)});
@@ -596,12 +651,13 @@ FXP.start(['700 20pt "DM Sans"', '600 20pt "DM Sans"', '500 20pt "DM Sans"', '40
     const items = [[E.refreshments, 'oh.refreshments', 700], [E.note, 'oh.note', 500]].filter(i => i[0]);   // the REALTOR(R) perks are never dropped
     const addrMax = Math.max(F.ev*2.4, W*.108);
     // lvl 0 everything; 1 the Just Listed paragraph goes; 2 a tighter top; 3 the kicker row goes; 4 the hero takes a narrower frame
+    let BUMP = 1;   // the REALTOR(R) story's event block grows into spare height (bigger type, not wider gaps)
     const plan = (k, lvl) => {
       const tp = lvl >= 2 ? m*.45 : top, kr = kickerRow(m, tp, w, false), hd = kind === 'oh' ? {h: 0, html: ''} : headline(m, 0, w, kind === 'js' ? 1 : k);
       const ad = addr(m, 0, w, addrMax*k, Math.max(F.ev*1.2, 18), TK.ink, 'address'), ps = Math.max(F.small*1.25, Math.max(F.body*1.3, W*.052)*k);
       let blk = 0, mk = null;
       if(kind === 'oh'){
-        const ds = Math.max(F.ev*2.4, W*.102), ls = Math.max(F.ev*1.15, 17)*Math.min(k, 1);   // the date is about 110 px at 1080 and never shrinks: everything else gives way first
+        const ds = Math.max(F.ev*2.4, W*.102)*BUMP, ls = Math.max(F.ev*1.15, 17)*Math.min(k, 1)*BUMP;   // the date is about 110 px at 1080 and never shrinks: everything else gives way first
         const lab = T({slot: 'oh.label', text: E.label.toUpperCase(), css: caps(700, 2.2, TK.ink2), x: m, y: 0, w, max: ls*1.1, min: F.ev, lh: 1.1});
         const md = String(E.monthDay || E.long), dt = T({slot: 'oh.date', text: md, css: `${SERIF};font-weight:400;letter-spacing:-1pt;color:${TK.ink}`, x: m, y: 0, w, max: ds, min: ds*.92, lh: 1.02});
         const tmS = Math.max(F.ev, dt.s*.6), tm = E.time ? T({slot: 'oh.time', text: E.time, css: `${MONT};font-weight:700;color:${TK.ink}`, x: m, y: 0, w, max: tmS, min: F.ev, lh: 1.1}) : {h: 0};
@@ -633,10 +689,13 @@ FXP.start(['700 20pt "DM Sans"', '600 20pt "DM Sans"', '500 20pt "DM Sans"', '40
     };
     let P = null;
     outerL: for(const maxI of [5, 16]) for(const lvl of [0, 1, 2]) for(let i = 0; i <= maxI; i++){ const k = 1 - i*.04, c = plan(k, lvl), avail = limit - c.tp - c.total; if(avail >= heroMin || (maxI === 16 && lvl === 2 && i === 16)){ P = Object.assign(c, {avail}); break outerL; } }   // text at 80% or more first (dropping the paragraph, the top margin, the kicker, the hero width), only then smaller
+    if(story && kind === 'oh' && P.avail - Math.max(heroMin, Math.min(P.avail, w*.64)) <= 110){ const hh0 = Math.max(heroMin, Math.min(P.avail, w*.64)); for(const bp of [1.3, 1.22, 1.15, 1.08]){ BUMP = bp; const c2 = plan(P.k, P.lvl), av2 = limit - c2.tp - c2.total; if(av2 - hh0 >= 3*16){ P = Object.assign(c2, {avail: av2}); break; } BUMP = 1; } }
     let hh = Math.max(heroMin, Math.min(P.avail, w*.64)), hw = w, strip = 0;
+    if(story && kind === 'oh' && !(P.avail - hh > 110)){ const P0 = D.photos[hero] || {}, mm = P0.house, holdsH = (bw, bh) => { if(!mm || !P0.w || !P0.h) return false; const sc = Math.max(bw/P0.w, bh/P0.h), iw = P0.w*sc, ih = P0.h*sc; return (mm.right - mm.left)*iw <= bw - .5 && (mm.bottom - mm.top)*ih <= bh - .5; };
+      for(let t = Math.floor(Math.min(P.avail - 5*14, w*.9)); t > hh; t -= 2) if(holdsH(w, t)){ hh = t; break; } }   // the story takes the spare height in the photo first, as far as the whole house still fits the frame
     if(P.avail < heroMin){ hh = Math.max(120, Math.floor(P.avail)); hw = Math.max(w*.55, Math.floor(w*hh/heroMin)); }   // the last resort: a narrower frame for a tall house
     if(story && P.avail - hh > 110) strip = Math.min(P.avail - hh - 8, 150);
-    const rest = P.avail - hh - strip, gap = Math.min(Math.max(rest, 0)/5, 14);
+    const rest = P.avail - hh - strip, gap = story && kind === 'oh' && !strip ? Math.min(Math.max(rest, 0)/3, 60) : Math.min(Math.max(rest, 0)/5, 14);   // the REALTOR(R) story has no room strip: the spare height spreads over the three gaps it has
     let y = P.tp; front.push(P.kr.html); y += P.kr.h + 5;
     if(P.hd.h){ const hd2 = headline(m, y, w, kind === 'js' ? 1 : P.k); front.push(hd2.html); y += hd2.h + 2; }
     const ad = addr(m, y, w, addrMax*P.k, Math.max(F.ev*1.2, 18), TK.ink, 'address'); front.push(ad.html); y += ad.h + 1;
@@ -650,41 +709,58 @@ FXP.start(['700 20pt "DM Sans"', '600 20pt "DM Sans"', '500 20pt "DM Sans"', '40
   };
   // wide (1600 x 900) and gbp (1200 x 900): the hero with the agent under it at the left; kicker, address, numerals or the date at the right
   const fxSide = () => {
-    const m = Math.round(Math.min(H, W)*.05), lw = Math.round(W*(shape === 'wide' ? (kind === 'oh' ? .3 : kind === 'js' ? .52 : .52) : .5)), rx = lw + m*.8 + 6, rw = W - m - rx, lx = m, lwid = lw - m;
+    const m = Math.round(Math.min(H, W)*.05), lw = Math.round(W*(shape === 'wide' ? (kind === 'oh' ? .3 : kind === 'js' ? .45 : .52) : .5)), rx = lw + m*.8 + 6, rw = W - m - rx, lx = m, lwid = lw - m;
     const cOpt = Object.assign(cOptFor(), {ns: Math.max(F.body*1.05, 15), ps: Math.max(F.body*1.05, 14), lh: Math.max(24, F.body*1.5), stack: true}); if(hsOn) cOpt.noHs = true;
+    if(shape === 'gbp' || shape === 'wide'){ const g = shape === 'wide' ? 1.2 : kind === 'oh' ? 1.7 : 1.45; cOpt.ns *= g; cOpt.ps *= g; cOpt.lh *= g; }   // the agent block takes the height the photo cannot (the house sets the photo's size): bigger type, no gap
     const cc = contact(lx, 0, lwid, cOpt), items = [[E.refreshments, 'oh.refreshments', 700], [E.note, 'oh.note', 500]].filter(i => i[0]);
     const khd = kickerRow(m, m*.45, W - 2*m); front.push(khd.html); const y0 = m*.45 + khd.h + 2;
-    const heroMin = Math.ceil(minH(hero, lwid)) + 1, hhh = Math.max(heroMin, Math.min(H - y0 - m - cc.h - 10, lwid*.75));
-    const gapPx = 24*W/(D.piece.px ? D.piece.px[0] : 1600), ccY = Math.max(H - m*.8 - cc.h, y0 + hhh + gapPx + 2);   // the agent starts at least 24 px under the photo
-    let hhh2 = hhh, lw2 = lwid; if(ccY + cc.h > H - m*.5){ hhh2 = Math.max(60, Math.floor(H - m*.8 - cc.h - gapPx - 2 - y0)); lw2 = Math.max(lwid*.55, Math.floor(lwid*hhh2/Math.max(hhh, 1))); }   // a tall house takes a narrower frame rather than touch the agent
+    const heroMin = Math.ceil(minH(hero, lwid)) + 1; let hhh = Math.max(heroMin, Math.min(H - y0 - m - cc.h - 10, lwid*.75));
+    const gapPx = 24*W/(D.piece.px ? D.piece.px[0] : 1600);
+    { const P0 = D.photos[hero] || {}, mm = P0.house, holdsF = (bw, bh) => { if(!mm || !P0.w || !P0.h) return false; const sc = Math.max(bw/P0.w, bh/P0.h), iw = P0.w*sc, ih = P0.h*sc; return (mm.right - mm.left)*iw <= bw - .5 && (mm.bottom - mm.top)*ih <= bh - .5; };
+      for(let t = Math.floor(H - y0 - m*.8 - cc.h - gapPx - 2); t > hhh; t -= 2) if(holdsF(lwid, t)){ hhh = t; break; } }   // no blank gap under the photo: it takes the height up to the agent, as far as the whole house still fits the frame
+    const ccY = Math.max(H - m*.55 - cc.h, y0 + hhh + gapPx + 2);   // the agent starts at least 24 px under the photo
+    let hhh2 = hhh, lw2 = lwid; if(ccY + cc.h > H - m*.5){ hhh2 = Math.max(60, Math.floor(H - m*.55 - cc.h - gapPx - 2 - y0)); lw2 = Math.max(lwid*.55, Math.floor(lwid*hhh2/Math.max(hhh, 1))); }   // a tall house takes a narrower frame rather than touch the agent
     heroBox(lx, y0, lw2, hhh2);
-    mid.push(contact(lx, Math.max(H - m*.8 - cc.h, y0 + hhh2 + gapPx + 2), lwid, cOpt).html);
-    if(Math.max(H - m*.8 - cc.h, y0 + hhh2 + gapPx + 2) < y0 + hhh2 + gapPx) tiny.push({slot: 'agent', kind: 'agent-under-photo', detail: `the agent block is closer than 24 px under the photo on the ${shape}`});
-    const build = (k, lvl, extra) => { const o = []; let y = y0; const use = items, ex = extra || 0;
+    { const agY = Math.max(H - m*.55 - cc.h, y0 + hhh2 + gapPx + 2);
+      if(cc.beside) mid.push(contact(lx, agY, lwid, cOpt).html);
+      else { const ay = y0 + hhh2 + gapPx + 2, zone = Math.max(cOpt.lh + 12, H - m*.55 - ay - cc.th); mid.push(contact(lx, ay, lwid, Object.assign({}, cOpt, {logoZone: zone})).html); }   // owner 11/8: the agent right under the photo, the logo centered in the space under the agent
+      if(agY < y0 + hhh2 + gapPx) tiny.push({slot: 'agent', kind: 'agent-under-photo', detail: `the agent block is closer than 24 px under the photo on the ${shape}`}); }
+    const bottom = H - m*.85, DBG = [];
+    // the right column: the lockup and the address at the top; under them the facts table (Just Listed), the seller call (Just Sold) or the event, filling to the foot
+    const build = (k, fin, noPlace) => { const o = []; let y = y0;
       const ad0 = addr(rx, y, rw, Math.max(F.ev*2.2, 30)*k, Math.max(F.ev*1.1, 16), TK.ink, 'address');
-      if(kind !== 'oh'){ const hd = headline(rx, y, rw, 1, ad0.s*1.03); o.push(hd.html); y += hd.h + 2 + ex*.4; }   // the "Just Listed" / "Just Sold" lockup above the address
+      if(kind !== 'oh'){ const hd = headline(rx, y, rw, 1, kind === 'js' ? (shape === 'gbp' ? Math.max(ad0.s*1.03, F.ev*4) : Math.max(ad0.s*1.03, cOpt.ns*1.12*1.3)) : ad0.s*1.03); o.push(hd.html); y += hd.h + 2; }   // Just Sold: the lockup runs the column's width (always bigger than the agent, owner 11/7)   // the "Just Listed" / "Just Sold" lockup above the address
       const ad = addr(rx, y, rw, Math.max(F.ev*2.2, 30)*k, Math.max(F.ev*1.1, 16), TK.ink, 'address'); o.push(ad.html); y += ad.h + 1;
-      const psw = Math.max(F.small*1.2, F.body*.95); o.push(placeLine(rx, y, rw, psw)); y += psw*1.3 + 3 + ex*.6;
+      const psw = Math.max(F.small*1.2, F.body*.95); if(!noPlace){ o.push(placeLine(rx, y, rw, psw)); y += psw*1.3 + 3; }
+      const sp = (kind === 'oh' && items.length ? H - m*.3 : bottom) - y - (kind === 'oh' ? 4 : 10);   // the REALTOR(R) perks bar may run into the foot margin, as before
       if(kind === 'oh'){
-        const ds = Math.max(F.ev*2.2, 36)*k;
-        const lab = T({slot: 'oh.label', text: E.label.toUpperCase(), css: caps(700, 2, TK.ink2), x: rx, y, w: rw, max: Math.max(F.ev*1.05, 15)*k, min: F.ev, lh: 1.1, lines: 2});
-        o.push(lab.html); y += lab.h + 3;
-        const d2 = T({slot: 'oh.date', text: String(E.monthDay || E.long), css: `${SERIF};font-weight:400;letter-spacing:-1pt;color:${TK.ink}`, x: rx, y, w: rw, max: ds, min: F.ev*1.4, lh: 1.02}); o.push(d2.html); y += d2.h + 2;
-        if(E.time){ const tm = T({slot: 'oh.time', text: E.time, css: `${MONT};font-weight:700;color:${TK.ink}`, x: rx, y, w: rw, max: Math.max(F.ev, d2.s*.6), min: F.ev, lh: 1.1}); o.push(tm.html); y += tm.h + 4; }
-        if(use.length){ const bf = Math.max(F.body, 12), rows = use.map(([t, slot, wt]) => T({slot, text: t, css: `font-weight:${wt};color:${TK.onInk}`, x: rx + 8, y: 0, w: rw - 16, max: bf, min: F.body, lines: 2, lh: 1.2, align: 'center'})), bh = rows.reduce((a, r) => a + r.h + 2, 0) + 12;
-          o.push(rect(rx, y, rw, bh, `background:${TK.ink}`)); let py = y + 6; use.forEach(([t, slot, wt]) => { const r = T({slot, text: t, css: `font-weight:${wt};color:${TK.onInk}`, x: rx + 8, y: py, w: rw - 16, max: bf, min: F.body, lines: 2, lh: 1.2, align: 'center'}); o.push(r.html); py += r.h + 2; }); y += bh + 4; }
+        // owner 11/8 (p6/p7): the event (label, date, time) is centered top to bottom in its space; on the wide post also side to side
+        const al = shape === 'wide' ? 'center' : 'left';
+        const grp = (yy, dk) => { const g = []; let q = yy; const ds = Math.max(F.ev*2.2, 36)*dk;
+          const lab = T({slot: 'oh.label', text: E.label.toUpperCase(), css: caps(700, 2, TK.ink2), x: rx, y: q, w: rw, max: Math.max(F.ev*1.05, 15)*dk, min: F.ev, lh: 1.1, lines: 2, align: al}); g.push(lab.html); q += lab.h + 3;
+          const d2 = T({slot: 'oh.date', text: String(E.monthDay || E.long), css: `${SERIF};font-weight:400;letter-spacing:-1pt;color:${TK.ink}`, x: rx, y: q, w: rw, max: ds, min: F.ev*1.4, lh: 1.02, align: al}); g.push(d2.html); q += d2.h + 2;
+          if(E.time){ const tm = T({slot: 'oh.time', text: E.time, css: `${MONT};font-weight:700;color:${TK.ink}`, x: rx, y: q, w: rw, max: Math.max(F.ev, d2.s*.6), min: F.ev, lh: 1.1, align: al}); g.push(tm.html); q += tm.h; }
+          if(items.length){ q += 4; const bf = Math.max(F.body, 12), rows = items.map(([t, slot, wt]) => T({slot, text: t, css: `font-weight:${wt};color:${TK.onInk}`, x: rx + 8, y: 0, w: rw - 16, max: bf, min: F.body, lines: 2, lh: 1.2, align: 'center'})), bh = rows.reduce((a, r) => a + r.h + 2, 0) + 12;
+            g.push(rect(rx, q, rw, bh, `background:${TK.ink}`)); let py = q + 6; items.forEach(([t, slot, wt]) => { const r = T({slot, text: t, css: `font-weight:${wt};color:${TK.onInk}`, x: rx + 8, y: py, w: rw - 16, max: bf, min: F.body, lines: 2, lh: 1.2, align: 'center'}); g.push(r.html); py += r.h + 2; }); q += bh; }
+          return {g, h: q - yy}; };
+        if(grp(0, .5).h > sp){ DBG.push(`${Math.round(sp)}/${Math.round(grp(0, .5).h)}`); return {o, y: bottom + 99}; }
+        let lo = .5, hi = k*1.5; for(let it = 0; it < 9; it++){ const mdk = (lo + hi)/2; if(grp(0, mdk).h <= sp) lo = mdk; else hi = mdk; }   // the event as big as its space lets it be
+        const dk = lo, G = grp(0, dk);
+        o.push(...grp(y + (sp - G.h)/2 + 5, dk).g); y = bottom;
       } else {
-        const S = Math.max(F.body*1.05, Math.max(F.ev*1.3, 20)*k), cw = rw/2, ls = Math.max(F.small, 10), rowH = S*1.15 + ls*1.3 + 6;
-        STAT.slice(0, 4).forEach(([v, l], i) => { const sx = rx + (i % 2)*cw, sy = y + Math.floor(i/2)*rowH;
-          o.push(`<div class="abs" style="left:${sx}pt;top:${sy}pt;width:${cw - 4}pt;height:${S*1.15}pt;${SERIF};font-size:${S}pt;line-height:${S*1.1}pt;color:${TK.ink};white-space:nowrap" data-slot="figure-${i}" data-lines="1">${esc(v)}</div><div class="abs" style="left:${sx}pt;top:${sy + S*1.15}pt;width:${cw - 4}pt;height:${ls*1.3}pt;${MONT};font-weight:500;font-size:${ls}pt;letter-spacing:1.5pt;text-transform:uppercase;color:${TK.text};white-space:nowrap" data-small="1" data-slot="figure-${i}-label" data-lines="1">${esc(l)}</div>`); });
-        y += Math.ceil(STAT.length/2)*rowH + 4;
-        if(kind === 'js'){ const sl = FXP.soldLine(D), h1 = T({slot: 'sold.head', text: sl.head, css: `${SERIF};font-weight:400;color:${TK.ink}`, x: rx + 10, y, w: rw - 10, max: Math.max(F.ev*1.4, 20)*k, min: shape === 'gbp' ? F.body*.85 : F.body, lh: 1.1, lines: shape === 'gbp' ? 1 : 2}); o.push(rect(rx, y + 2, 2.5, h1.h - 4, 'background:var(--fx-bar)'), h1.html); y += h1.h + 4; }
+        const minH = kind === 'js' ? 150 : 2*(Math.max(F.ev*1.3, 20)*1.1 + 30);
+        if(sp < minH) return {o, y: bottom + 99};
+        if(kind === 'js'){ if(!fin) return {o, y: bottom, sp}; const sc = sellerCta(rx, y + 10, rw, sp); if(!sc.html) return {o, y: bottom + 99}; o.push(sc.html); }
+        else o.push(factTable(rx, y + 10, rw, sp, 2).html);
+        y = bottom;
       }
       return {o, y};
     };
-    let B = null; outerW: for(const lvl of [0]) for(let i = 0; i <= 14; i++){ const b = build(1 - i*.04, lvl); if(b.y <= H - m*1.1){ B = Object.assign(b, {k0: 1 - i*.04}); break outerW; } }
-    if(!B) B = Object.assign(build(.5, 0), {k0: .5});
-    { const spare = (H - m*1.1) - B.y; if(spare > 6) B = build(B.k0, 0, Math.min(spare*.92, 60)); }   // no empty navy at the foot of the column: the spare height opens up between the blocks
+    let B = null; for(let i = -4; i <= 14; i++){ const b = build(1 - i*.04, kind !== 'js'); if(b.y > bottom) continue; if(kind === 'js'){ const b2 = build(1 - i*.04, true); if(b2.y > bottom) continue; B = b2; } else B = b; break; }   // the biggest address that leaves the block its room
+    if(!B && kind === 'oh') for(let i = 0; i <= 14 && !B; i++){ const b = build(1 - i*.04, true, true); if(b.y <= bottom) B = b; }   // a long REALTOR(R) event: the city line gives way before the event
+    if(!B) B = build(.5);
+    if(kind === 'oh' && !B.o.join('').includes('data-slot="oh.date"')) tiny.push({slot: 'oh.date', kind: 'event-missing', detail: `the event does not fit on the ${shape}: ${DBG.slice(-3).join(' ')}`});
+    if(kind === 'js' && !B.o.join('').includes('data-slot="sold.line"')) tiny.push({slot: 'sold.line', kind: 'seller-call-missing', detail: `the seller lines do not fit on the ${shape}`});
     mid.push(B.o.join(''));
   };
 
@@ -701,8 +777,9 @@ FXP.start(['700 20pt "DM Sans"', '600 20pt "DM Sans"', '500 20pt "DM Sans"', '40
     const items = [[E.refreshments, 'oh.refreshments', 700], [E.note, 'oh.note', 500]].filter(i => i[0]);
     // the REALTOR(R) perks run full width on a cream bar under the hero and the column
     const bf2 = Math.max(F.body, 12), prow = items.map(([t, slot, wt]) => T({slot, text: t, css: `font-weight:${wt};color:${TK.onInk}`, x: m + 10, y: 0, w: w - 20, max: bf2, min: F.body, lines: 2, lh: 1.15, align: 'center'})), barH = items.length ? prow.reduce((a, r) => a + r.h + 2, 0) + 10 : 0;
+    // Just Listed starts its photo narrower (.54, owner 11/8 carry): the fact table takes a wider column
     const hy = adY + ad.h + psq*1.3 + 8, hh = limit - cH - 10 - hy - (barH ? barH + 8 : 0); const holds = (bw, bh) => { const P0 = D.photos[hero] || {}, mm = P0.house; if(!mm || !P0.w || !P0.h) return true; const sc = Math.max(bw/P0.w, bh/P0.h), iw = P0.w*sc, ih = P0.h*sc; return (mm.right - mm.left)*iw <= bw - .5 && (mm.bottom - mm.top)*ih <= bh - .5; };
-    let hw = Math.round(w*(kind === 'oh' ? .5 : kind === 'js' ? .56 : .62)); for(let t = hw; t <= w*.9; t += 2){ if(holds(t, hh)){ hw = Math.round(t); break; } }   // the house needs a frame this wide for this height
+    let hw = Math.round(w*(kind === 'oh' ? .5 : kind === 'js' ? .56 : .54)); for(let t = hw; t <= w*.9; t += 2){ if(holds(t, hh)){ hw = Math.round(t); break; } }   // the house needs a frame this wide for this height
     const cx = m + hw + 12, rw = w - hw - 12;
     heroBox(m, hy, hw, hh);
     const col = (k, lvl) => { const o = []; let y = hy;
@@ -714,18 +791,15 @@ FXP.start(['700 20pt "DM Sans"', '600 20pt "DM Sans"', '500 20pt "DM Sans"', '40
         const use = [];
         if(use.length){ const bf = Math.max(F.body, 12), rows = use.map(([t, slot, wt]) => T({slot, text: t, css: `font-weight:${wt};color:${TK.onInk}`, x: cx + 6, y: 0, w: rw - 12, max: bf, min: F.body, lines: 4, lh: 1.15, align: 'center'})), bh = rows.reduce((a, r) => a + r.h + 2, 0) + 10;
           o.push(rect(cx, y, rw, bh, `background:${TK.ink}`)); let py = y + 5; use.forEach(([t, slot, wt]) => { const r = T({slot, text: t, css: `font-weight:${wt};color:${TK.onInk}`, x: cx + 6, y: py, w: rw - 12, max: bf, min: F.body, lines: 4, lh: 1.15, align: 'center'}); o.push(r.html); py += r.h + 2; }); y += bh; }
-      } else {
-        const S = Math.max(F.body*1.2, Math.max(F.ev*1.5, W*.07)*k), ls = Math.max(F.small, 10), rowH = S*1.12 + 6;
-        STAT.slice(0, 4).forEach(([v, l], i) => { const sy = y + i*rowH;
-          o.push(`<div class="abs" style="left:${cx}pt;top:${sy}pt;width:${rw*.55}pt;height:${S*1.15}pt;${SERIF};font-size:${S}pt;line-height:${S*1.1}pt;color:${TK.ink};white-space:nowrap" data-slot="figure-${i}" data-lines="1">${esc(v)}</div><div class="abs" style="left:${cx}pt;top:${sy + S*.5}pt;width:${rw}pt;height:${ls*1.3}pt;${MONT};font-weight:500;font-size:${ls}pt;letter-spacing:1.5pt;text-transform:uppercase;color:${TK.text};text-align:right;white-space:nowrap" data-small="1" data-slot="figure-${i}-label" data-lines="1">${esc(l)}</div>`);
-          if(i) o.push(rect(cx, sy - 3, rw, .75, `background:${TK.rule}`)); });
-        y += STAT.slice(0, 4).length*rowH;
-        if(kind === 'js'){ const sl = FXP.soldLine(D), h1 = T({slot: 'sold.head', text: sl.head, css: `${SERIF};font-weight:400;color:${TK.ink}`, x: cx + 9, y: y + 4, w: rw - 9, max: Math.max(F.ev*1.2, 17)*k, min: F.body*.8, lh: 1.1, lines: 1}); o.push(rect(cx, y + 6, 2.5, h1.h - 4, 'background:var(--fx-bar)'), h1.html); y += h1.h + 8; }
+      } else {   // owner 11/8 carry: the facts in the copper-ruled table (Just Listed); a Just Sold card lists no features, the seller lines instead
+        if(kind === 'js'){ const sc = sellerCta(cx, y, rw, hh); if(!sc.html) tiny.push({slot: 'sold.line', kind: 'seller-call-missing', detail: 'the seller lines do not fit on the square'}); o.push(sc.html); } else o.push(factTable(cx, y, rw, hh, 2, Math.max(F.ev*1.5, W*.07)*k).html);
+        y += hh;
       }
       return {o, y: y - hy};
     };
-    let C = null; outerS: for(const lvl of [0, 1, 2]) for(let i = 0; i <= 10; i++){ const c = col(1 - i*.04, lvl); if(c.y <= hh){ C = c; break outerS; } }
+    let C = null; outerS: for(const lvl of [0, 1, 2]) for(let i = kind === 'oh' ? -12 : 0; i <= 10; i++){ const c = col(1 - i*.04, lvl); if(c.y <= hh){ C = c; break outerS; } }   // the Open House column: the biggest event that fits
     if(!C) C = col(.6, 2);
+    if(kind === 'oh' && C.y < hh){ const dy = (hh - C.y)/2; C.o = C.o.map(h => h.replace(/top:([\d.]+)pt/, (m0, v) => `top:${(+v + dy).toFixed(2)}pt`)); }   // owner 11/8 carry: the event centered top to bottom beside the photo
     mid.push(C.o.join(''));
     if(barH){ const by = hy + hh + 8; mid.push(rect(m, by, w, barH, `background:${TK.ink}`)); let py = by + 5; items.forEach(([t, slot, wt]) => { const r = T({slot, text: t, css: `font-weight:${wt};color:${TK.onInk}`, x: m + 10, y: py, w: w - 20, max: bf2, min: F.body, lines: 2, lh: 1.15, align: 'center'}); mid.push(r.html); py += r.h + 2; }); }
     mid.push(contact(m, limit - cH, w, cOpt).html);
@@ -795,7 +869,7 @@ FXP.start(['700 20pt "DM Sans"', '600 20pt "DM Sans"', '500 20pt "DM Sans"', '40
     const fr = full ? OHL.fitHero(D, id, w, ph, true) : {w, h: ph};
     front.push(pic(id, m, y, fr.w, fr.h)); y += fr.h + gap + Math.max(0, (avail - fr.h)/4);
     front.push(rect(m, y + 2, 2.5, pick.c.h - 4, 'background:var(--fx-bar)')); front.push(T({slot: 'caption', text: pick.txt, css: CAPCSS, x: m + 12, y, w: pick.w, max: cs, min: cs, lines: 3, lh: 1.2}).html); y += pick.c.h + gap;
-    if(ev.h){ mid.push(evBlock2(y).html); y += ev.h + gap; }
+    if(ev.h){ const sp2 = Math.max(0, (limit - cH) - (y + ev.h + gap)); y += sp2/2; mid.push(evBlock2(y).html); y += ev.h + gap; }   // owner 11/8 carry: the event centered top to bottom in its space
     mid.push(contact(m, Math.max(y, limit - cH), w, cOpt).html);
   };
   const fxClose = () => {
@@ -811,11 +885,11 @@ FXP.start(['700 20pt "DM Sans"', '600 20pt "DM Sans"', '500 20pt "DM Sans"', '40
     const desT = yy => T({slot: 'agent.desig', text: 'REALTOR®', css: caps(500, 4, TK.ink2), x: m, y: yy, w: w*.6, max: Math.max(F.small*1.25, 11), min: F.small, lh: 1.2, small: 1});
     const phT = yy => T({slot: 'agent.phone', text: A.phone || '', css: `${MONT};font-weight:700;color:${TK.textDark}`, x: m, y: yy, w: w*.7, max: PS, min: PS, lh: 1.15});
     const n0 = nameT(0), d0 = desT(0), p0 = phT(0), logoH = 32, adr = addr(m, 0, w, F.ev*1.3, F.ev, TK.ink), foot = n0.h + 2 + d0.h + 4 + p0.h;
-    const avail = limit - y - c0.h - adr.h - foot - 4*gap, ph = Math.floor(Math.min(avail, HERO_H));
-    heroBox(m, y, w, ph); y += ph + gap + Math.max(0, (avail - ph)/4);
-    front.push(rect(m, y + 2, 2.5, c0.h - 4, 'background:var(--fx-bar)')); front.push(cta(y, cs, ctaW).html); y += c0.h + gap;
-    front.push(addr(m, y, w, F.ev*1.3, F.ev, TK.ink).html); y += adr.h + gap;
-    front.push(rect(m, y - 3, w, .75, `background:${TK.rule}`)); y += 3;
+    const avail = limit - y - c0.h - adr.h - foot - 4*gap, ph = Math.floor(Math.min(avail, Math.max(HERO_H, w*.8))), sp = Math.max(0, (avail - ph)/4);   // the hero takes the spare height (more of the same photo), the rest spreads between the blocks
+    heroBox(m, y, w, ph); y += ph + gap + sp;
+    front.push(rect(m, y + 2, 2.5, c0.h - 4, 'background:var(--fx-bar)')); front.push(cta(y, cs, ctaW).html); y += c0.h + gap + sp;
+    front.push(addr(m, y, w, F.ev*1.3, F.ev, TK.ink).html); y += adr.h + gap + sp;
+    front.push(rect(m, y - 3, w, .75, `background:${TK.rule}`)); y += 3 + sp;
     mid.push(nameT(y).html); mid.push(desT(y + n0.h + 2).html); mid.push(phT(y + n0.h + 2 + d0.h + 4).html);
     mid.push(OHL.logo(D, 'dark', `left:${m + w - 150}pt;top:${y + n0.h*.4}pt;width:150pt;height:${logoH}pt;justify-content:flex-end`));
   };
@@ -824,16 +898,17 @@ FXP.start(['700 20pt "DM Sans"', '600 20pt "DM Sans"', '500 20pt "DM Sans"', '40
     const cOpt = Object.assign(cOptFor(), {ns: Math.max(F.body*1.35, 17), ps: Math.max(F.body*1.1, 14.5), lh: Math.max(30, F.body*2.2)}), cH = Math.max(contact(0, 0, w, cOpt).h, cOpt.lh);
     let y = slideFrame(m, w, top);
     const note = ((((D.sw || {}).pc || {}).js || {}).front || {}).note || {}, s0 = [].concat((note.s || [])[0] || ''), first = String(s0[0] || `I just helped sell this ${L.neighborhood} home.`).replace(/\s*,.*$/, '.').replace(/\.?$/, '.');
-    const line = `${first} Your home could be next. Call or text me.`;   // the agent's own area and type, then the ask
-    const lab = T({slot: 'sold.label', text: 'JUST SOLD', css: caps(700, 4, TK.ink2), x: m + 12, y: 0, w, max: Math.max(F.ev*1.2, 18), min: F.ev, lh: 1.1});
+    const line = `${first} Your home could be next. Call or text me.`;
+    const JSS = Math.max(F.ev*2.4, 40);   // owner 11/8 (p5): "Just Sold" bigger, the loudest words on the slide   // the agent's own area and type, then the ask
+    const lab = T({slot: 'sold.label', text: 'JUST SOLD', css: caps(700, 5, TK.ink2), x: m + 12, y: 0, w: w - 12, max: JSS, min: F.ev, lh: 1.05});
     const sbase = `${SERIF};font-weight:400;color:${TK.ink}`, sizes = [0, 1, 2, 3, 4, 5, 6].map(i => Math.max(F.body*1.55, 17) - i*.9).filter(s => s >= F.body*1.15);
     const sbl = bal([line], sbase, 'sold.line', m + 12, w - 12, sizes, 1.2, .8, false, 3) || {txt: line, w: w - 12, sz: Math.max(F.body*1.2, 15)};
     const body = yy => T({slot: 'sold.line', text: sbl.txt, css: sbase, x: m + 12, y: yy, w: sbl.w, max: sbl.sz, min: sbl.sz, lines: 4, lh: 1.2});
     const b0 = body(0), ad0 = addr(m + 12, 0, w - 12, F.ev*1.35, F.ev, TK.ink, 'address');
-    const avail = limit - y - lab.h - 2 - b0.h - 4 - ad0.h - cH - 5*gap, ph = Math.floor(Math.min(avail, w*1.1));
+    const avail = limit - y - lab.h - 2 - b0.h - 4 - ad0.h - cH - 3*gap, ph = Math.floor(Math.min(avail, w*1.1));   // three gaps are drawn, so the photo takes the rest of the height
     front.push(pic(id, m, y, w, ph)); y += ph + gap + Math.max(0, (avail - ph)/4);
     front.push(rect(m, y + 2, 2.5, lab.h + 2 + b0.h - 4, 'background:var(--fx-bar)'));
-    front.push(T({slot: 'sold.label', text: 'JUST SOLD', css: caps(700, 4, TK.ink2), x: m + 12, y, w, max: Math.max(F.ev*1.2, 18), min: F.ev, lh: 1.1}).html); y += lab.h + 2;
+    front.push(T({slot: 'sold.label', text: 'JUST SOLD', css: caps(700, 5, TK.ink2), x: m + 12, y, w: w - 12, max: JSS, min: F.ev, lh: 1.05}).html); y += lab.h + 2;
     front.push(body(y).html); y += b0.h + 4;
     front.push(addr(m + 12, y, w - 12, F.ev*1.35, F.ev, TK.ink, 'address').html); y += ad0.h + gap;
     mid.push(contact(m, Math.max(y, limit - cH), w, cOpt).html);

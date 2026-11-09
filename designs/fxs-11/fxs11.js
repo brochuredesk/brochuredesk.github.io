@@ -108,6 +108,10 @@
   };
   SW.pfN = pfN;   // SW.grow re-picks a write-up's sentences at a bigger size
   const LH = 12.5, CAPPAD = 5;
+  // owner 11/8/2026: a caption's own sentences, then the listing's other true lines about the same photo (companion.roomLines[photo].all), at most 9, no fact twice
+  SW.capPool = (D, c) => { const own = [].concat(c.s || c.a || []), R = ((((D || {}).companion || {}).roomLines || {})[c.photo] || {}).all || [], key = x => String([].concat(x)[0]).toLowerCase().replace(/[^a-z ]/g, '').slice(0, 24);
+    const STOP = /^(the|and|with|from|into|that|this|room|one|its|has|have|sits|runs|over|under|along|each|both)$/, cw = x => new Set(String(x).toLowerCase().match(/[a-z]{4,}/g) || []), near = (a, b) => { const A = cw(a); let k = 0; cw(b).forEach(w => { if(A.has(w) && !STOP.test(w)) k++; }); return k >= 2; };
+    const seen = new Set(own.map(key)), out = own.slice(); R.forEach(r => { if(out.length < 11 && !seen.has(key(r)) && !out.some(o => [].concat(o).some(a => near(a, r)))){ seen.add(key(r)); out.push(r); } }); return out; };
   SW.fill = () => {
     const issues = []; USED.clear();
     const caps = [...document.querySelectorAll('.cap .a[data-s]')], rest = [...document.querySelectorAll('[data-s]')].filter(e => !caps.includes(e));
@@ -117,7 +121,7 @@
       else { const pk = el.__near ? el.__near.pick : JSON.parse(el.dataset.s).map(x => [].concat(x)[0]); el.innerHTML = html(lead, pk); pk.forEach(t => USED.add(nrm(t))); }
       el.dataset.lines = T; if(el.dataset.justify && b) el.style.textAlign = 'justify'; return !!b;
     };
-    rest.forEach(el => {
+    const fitRest = el => {
       // data-try="5,4,3": the line counts this box may take (most lines first); the first that the whole sentences fill (last line 3/4 full) wins
       const tries = (el.dataset.try || '').split(',').map(Number).filter(Boolean);
       if(tries.length){
@@ -126,28 +130,34 @@
         settle(el, T);
         if(el.dataset.lh) el.style.height = (T * +el.dataset.lh) + 'pt';
       } else settle(el, +el.dataset.lines || 1);
-    });
-    // photo captions shrink to what their sentences honestly fill (never padded): the photo takes the room. The captions in one row share a line count when they can.
+    };
+    rest.forEach(fitRest);
+    // the captions in one row share a line count and size
     const groups = new Map();
     caps.forEach(el => { const g = el.closest('.row') || el; (groups.get(g) || groups.set(g, []).get(g)).push(el); });
+    // owner 11/8/2026 (standing rule, every design): the caption under a photo keeps the photo's full width (never narrowed); every line, set ragged,
+    // runs 80%+ of it (the last line too), then it is justified so its right edge lines up under the photo. When whole sentences can't fill the
+    // space's lines at the set size, the type grows (up to 12%, same line count). Never a shorter caption, never empty space under a photo.
     groups.forEach(els => {
-      const max = Math.max(...els.map(e => +e.dataset.lines));
+      const max = Math.max(...els.map(e => +e.dataset.lines)), lh0 = +els[0].dataset.lh || LH;
+      const fs0 = els.map(e => parseFloat(getComputedStyle(e).fontSize) * .75), lhs = els.map(e => +e.dataset.lh || LH);
+      els.forEach(e => { const ph = e.closest('.item') && e.closest('.item').querySelector('.ph'), pw = +e.dataset.pw || (ph ? ph.getBoundingClientRect().width * .75 : 0), bw = e.getBoundingClientRect().width * .75, f = Math.min(.97, Math.max(.8, pw && bw ? .8 * pw / bw : .8));   // every line 80%+ of the PHOTO's width (a column indented from its photo needs a fuller share of its own box)
+        e.dataset.narrow = '0'; e.dataset.fill = f; e.dataset.lfill = f; e.style.textAlign = 'left'; });
+      const size = k => els.forEach((e, i) => { e.style.fontSize = fs0[i] * k + 'pt'; });
+      const ks = [1, 1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1, 1.11, 1.12, 0.98, 0.96];   // up to 12% bigger; a last resort (0.98, 0.96) only when no larger size fills
       let chosen = null;
-      for(let T = max; T >= 2 && !chosen; T--) if(els.every(e => pfN(e, T))) chosen = T;
-      els.forEach(e => {
-        const lead = e.dataset.lead || '';
-        let T = chosen;
-        if(!T){   // no common count: this one alone, at the count it fills best (or comes closest to)
-          let bestNear = null;
-          for(let t = max; t >= 2 && !T; t--){ if(pfN(e, t)) T = t; else if(e.__near && (!bestNear || e.__near.fill > bestNear.fill)) bestNear = {t, fill: e.__near.fill}; }
-          if(!T) T = bestNear ? bestNear.t : 2;
-        }
-        settle(e, T);
-      });
-      const h = Math.max(...els.map(e => +e.dataset.lines));
-      els.forEach(e => { const lh = +e.dataset.lh || LH; e.style.height = (+e.dataset.lines * lh) + 'pt'; });
-      const lh0 = +els[0].dataset.lh || LH;
-      els.forEach(e => { e.parentElement.style.height = (CAPPAD + h * lh0) + 'pt'; });
+      for(const T of [max]){ for(const k of ks){ size(k); if(els.every(e => pfN(e, T))){ chosen = [T, k]; break; } } if(chosen) break; }
+      if(chosen){ size(chosen[1]); els.forEach(e => settle(e, chosen[0])); }
+      else els.forEach((e, i) => {   // no common size fills: each takes the size at which its own sentences do (caption-line-short reports any that still can't)
+        let best = null; const T = max;
+        for(const k of ks){ e.style.fontSize = fs0[i] * k + 'pt'; e.__near = null; if(pfN(e, T)){ best = {k, fill: 2}; break; } if(e.__near && (!best || e.__near.fill > best.fill)) best = {k, fill: e.__near.fill, pick: e.__near.pick}; }
+        if(best){ e.style.fontSize = fs0[i] * best.k + 'pt'; e.__near = best.pick ? {pick: best.pick, fill: best.fill} : null; settle(e, T); }
+        else {   // nothing sets in the space: the whole sentences, in order, that fit (never an overflow)
+          e.style.fontSize = fs0[i] + 'pt'; const S = JSON.parse(e.dataset.s).map(x => [].concat(x)[0]), lead = e.dataset.lead || '', pick = [];
+          for(const x of S){ e.innerHTML = html(lead, pick.concat(x)); if(SW.lines(e).n <= T) pick.push(x); }
+          e.innerHTML = html(lead, pick.length ? pick : [S[0]]); e.dataset.lines = T; } });
+      els.forEach((e, i) => { e.style.textAlign = 'justify'; e.style.height = (max * lhs[i]) + 'pt'; });
+      els.forEach(e => { e.parentElement.style.height = (CAPPAD + max * lh0) + 'pt'; });
     });
     SW.grow();
     return issues;

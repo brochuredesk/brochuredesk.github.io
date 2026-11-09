@@ -55,7 +55,7 @@ window.brochureReady = (async function(){
   const issues = [];
   const logo = (cls, src, area, maxh, style) => `<div class="logo ${cls}" data-area="${area}" data-maxh="${maxh}" style="${style||''}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="word" data-slot="broker.name" data-lines="1">${esc(b.brokerage||'')}</span>`}</div>`;
   const CL = big ? 13.5 : 12.5, CF = big ? 'font-size:10.9pt;line-height:13.5pt;' : '';   // the 6x11 sets its type up from the 6x9 (11 pt against 9.5), not the same size with more room
-  const cap = (c, slot, lines, extra) => `<div class="cap" style="height:${5 + lines*CL}pt;${extra||''}"><div class="a" data-slot="${slot}" data-narrow="30" data-nstep="3" data-lh="${CL}" data-lines="${lines}" data-lead="${esc(c.lead||'')}" data-s='${esc(JSON.stringify([].concat(c.s||[]))).replace(/'/g,'&#39;')}' style="height:${lines*CL}pt;${CF}"></div></div>`;
+  const cap = (c, slot, lines, extra) => `<div class="cap" style="height:${5 + lines*CL}pt;${extra||''}"><div class="a" data-slot="${slot}" data-narrow="30" data-nstep="3" data-lh="${CL}" data-lines="${lines}" data-lead="${esc(c.lead||'')}" data-s='${esc(JSON.stringify(FXS.capPool(D, c))).replace(/'/g,'&#39;')}' style="height:${lines*CL}pt;${CF}"></div></div>`;
   let h = '';
 
   if(front){
@@ -65,12 +65,13 @@ window.brochureReady = (async function(){
     const F = K.front || {}, SS = big ? 38 : 34, M = 24;
     const draws = list => { const w = x => /gated|roof|pergola|deck|park|garage|island|stone|corner|pool/i.test([].concat(x)[0]) ? 0 : 1; return (list || []).map((x, i) => [w(x), i, x]).sort((p, q) => p[0] - q[0] || p[1] - q[1]).map(t => t[2]); };
     const capC = sold ? {lead: '', s: (F.note || {}).s || (F.cap || {}).s} : (F.caption ? {lead: F.caption.lead, s: [].concat(F.caption.s, ((F.cap || {}).s || []).filter(x => !F.caption.s.some(c => [].concat(c).some(a => SW.sameFact(a, [].concat(x)[0]) || /stone/i.test(a) && /stone/i.test([].concat(x)[0])))))}   /* owner 11/7: the front's own facts too, so the write-up can fill (never one fact twice) */ : {lead: 'Front.', s: draws((F.about || {}).s || (F.cap || {}).s)});
+    if(!sold && capC && !capC.photo && F.cap && F.cap.photo) capC.photo = F.cap.photo;   // owner 11/8: the front caption also draws on the listing's lines about its photo
     const norm = x => String(x).toLowerCase().replace(/[^a-z0-9 ]/g, '').slice(0, 40), allAlts = list => [].concat(...(list || []).map(x => [].concat(x)));
     const backSet = new Set([].concat(allAlts(((K.back || {}).about || {}).s), ...((K.back || {}).photos || []).map(c => allAlts(c.s)), allAlts((K.back || {}).steps6), allAlts((K.back || {}).steps)).map(norm));
     if(capC.s){ const kept = capC.s.filter(x => ![].concat(x).some(a => backSet.has(norm(a)))); if(kept.length >= 2) capC.s = kept; }
     const roomIds = [...new Set([].concat(((D.sw||{}).back||{}).photos||[], ((D.sw||{}).left||{}).photos||[]).map(c => c.photo))].filter(id => (D.photos||{})[id] && !(D.photos[id]||{}).fullHouse && id !== F.cap.photo).slice(0, 2);
-    const capS = (c, slot, lines, extra) => `<div class="cap" style="height:${5 + lines*CL}pt;${extra||''}"><div class="a" data-slot="${slot}" data-narrow="30" data-nstep="3" data-lh="${CL}" data-lines="${lines}" data-lead="${esc(c.lead||'')}" data-s='${esc(JSON.stringify([].concat(c.s||[]))).replace(/'/g,'&#39;')}' style="height:${lines*CL}pt;${CF}"></div></div>`;
-    const capJ = (c, slot, lines, fs, lh, extra) => `<div class="cap capj" style="height:${5 + lines*lh}pt;${extra||''}"><div class="a" data-slot="${slot}" data-narrow="0" data-minfill="0.9" data-lh="${lh}" data-lines="${lines}" data-lead="${esc(c.lead||'')}" data-s='${esc(JSON.stringify([].concat(c.s||[])))}' style="font-size:${fs}pt;line-height:${lh}pt;text-align:justify"></div></div>`;
+    const capS = (c, slot, lines, extra) => `<div class="cap" style="height:${5 + lines*CL}pt;${extra||''}"><div class="a" data-slot="${slot}" data-narrow="30" data-nstep="3" data-lh="${CL}" data-lines="${lines}" data-lead="${esc(c.lead||'')}" data-s='${esc(JSON.stringify(FXS.capPool(D, c))).replace(/'/g,'&#39;')}' style="height:${lines*CL}pt;${CF}"></div></div>`;
+    const capJ = (c, slot, lines, fs, lh, extra) => `<div class="cap capj" style="height:${5 + lines*lh}pt;${extra||''}"><div class="a" data-slot="${slot}" data-narrow="0" data-minfill="0.9" data-lh="${lh}" data-lines="${lines}" data-lead="${esc(c.lead||'')}" data-s='${esc(JSON.stringify(typeof sold !== 'undefined' && sold ? [].concat(c.s||[]) : FXS.capPool(D, c))).replace(/'/g,'&#39;')}' style="font-size:${fs}pt;line-height:${lh}pt;text-align:justify"></div></div>`;
     const foot = 368, capLines = 3;
     if(!sold){
       h += FXS.header(L, {x: -9, y: -9, w: W + 18, h: 63, tx: 0, tw: W, vy: 0, vh: 54, max: big ? 24 : 21, min: 13, pad: 40});

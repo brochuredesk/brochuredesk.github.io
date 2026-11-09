@@ -235,7 +235,8 @@ FXP.start(['400 20pt "Pinyon Script"', '400 20pt "Cormorant Garamond"', '500 20p
         ph = tp({slot: 'agent.phone', text: A.phone || '', css: "font-family:Montserrat;font-weight:600;letter-spacing:.4pt;color:var(--fx-ink)", x: lx, y: agTop + nm.h/K + 2*SC, w: nW, max: psz, min: F.body, lh: 1.05});
         hgt = nm.h/K + 2*SC + ph.h/K; lgH = stackLogo ? Math.min(80*SC, agH - hgt - 14*SC) : 0; if(hgt + (stackLogo ? lgH + 8*SC : 0) <= agH - 6*SC && (!stackLogo || lgH >= 40*SC)) break; }
       mid.push(nm.html, ph.html);
-      if(stackLogo) mid.push(OHL.logo(D, 'dark', `left:${p(lx)}pt;top:${p(agTop + hgt + 8*SC)}pt;width:${p(logoW)}pt;height:${p(Math.max(lgH, 30*SC))}pt;justify-content:flex-start`));
+      if(stackLogo){ const tbw = Math.max(nm.w || 0, ph.w || 0)/K, lw3 = Math.min(logoW, Math.max(tbw, 1));   // owner 11/8 (FXS-09 socials review, carried): the logo under the agent's lines is centered under them
+        mid.push(OHL.logo(D, 'dark', `left:${p(lx + Math.max(0, (tbw - lw3)/2))}pt;top:${p(agTop + hgt + 8*SC)}pt;width:${p(lw3)}pt;height:${p(Math.max(lgH, 30*SC))}pt;justify-content:center`)); }
       else { mid.push(rect(p(lx + nW + 8*SC), p(agTop + 4), .75, p(Math.max(10, hgt - 8*SC)), 'background:var(--fx-rule)'));
         mid.push(OHL.logo(D, 'dark', `left:${p(lx + lw - logoW)}pt;top:${p(agTop)}pt;width:${p(logoW)}pt;height:${p(Math.min(Math.max(hgt, 70*SC), agH - 6*SC))}pt;justify-content:flex-end`)); } }
     const x = hw + m, cw = WP - x - m;
@@ -274,7 +275,10 @@ FXP.start(['400 20pt "Pinyon Script"', '400 20pt "Cormorant Garamond"', '500 20p
       let ph3 = Math.min(Math.round(slack - 26*SC), Math.round(pw3*1.4));
       const rs3 = roomsAll().slice(leftRooms, leftRooms + 2);
       if(ph3 >= 130*SC && rs3.length === 2){ const py3 = zm - ph3; rs3.forEach((id, i) => front.push(pic(id, p(x + i*(pw3 + g3)), p(py3), p(pw3), p(ph3))));
-        mid.push(stack(x, m*.6, cw, py3 - 20*SC - m*.6, facs, [1.5, 1.4, 1.3, 1.2, 1.1, 1, .92, .84, .76, .68, .6], false, 44)); }
+        // owner 11/8 (FXS-09 socials review, carried): the Open House event sits centered top to bottom between the rule under the address and the rooms
+        let ohs = null; if(kind === 'oh' && sq && !items.length) for(const k of [1.5, 1.4, 1.3, 1.2, 1.1, 1, .92, .84, .76, .68, .6]){ const bl = facs(k); if(bl.length !== 2) break; const sum = bl[0].h + bl[1].h, y0 = m*.6, g = (py3 - y0 - sum)/1.5;
+          if(g >= 26*SC){ const o = [bl[0].mk(y0).html]; if(RULED) o.push(hair(x, y0 + bl[0].h + g/2, cw)); o.push(bl[1].mk(y0 + bl[0].h + g).html); ohs = o.join(''); break; } }
+        mid.push(ohs || stack(x, m*.6, cw, py3 - 20*SC - m*.6, facs, [1.5, 1.4, 1.3, 1.2, 1.1, 1, .92, .84, .76, .68, .6], false, 44)); }
       else mid.push(stack(x, m*.6, cw, zm - m*.6, facs, [1.5, 1.4, 1.3, 1.2, 1.1, 1, .92, .84, .76, .68, .6], false, 44)); }
     // the foot: the perks
     if(perkH){ const y = zm + gp*.4; front.push(goldRule(0, y - gp*.6, WP, 3*SC)); mid.push(`<div class="card" data-box="oh.box" style="left:${p(m)}pt;top:${p(y)}pt;width:${p(w)}pt;height:${p(perkH)}pt"></div>`);

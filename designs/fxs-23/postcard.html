@@ -58,7 +58,7 @@ window.brochureReady = (async function(){
   const issues = [];
   const logo = (cls, src, area, maxh, style) => `<div class="logo ${cls}" data-area="${area}" data-maxh="${maxh}" style="${style||''}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="word" data-slot="broker.name" data-lines="1">${esc(b.brokerage||'')}</span>`}</div>`;
   const CL = big ? 13.5 : 12.5, CF = big ? 'font-size:10.9pt;line-height:13.5pt;' : '';   // the 6x11 sets its type up from the 6x9 (11 pt against 9.5), not the same size with more room
-  const cap = (c, slot, lines, extra) => `<div class="cap" style="height:${5 + lines*CL}pt;${extra||''}"><div class="a" data-slot="${slot}" data-narrow="30" data-nstep="3" data-lh="${CL}" data-lines="${lines}" data-lead="${esc(c.lead||'')}" data-s='${esc(JSON.stringify([].concat(c.s||[]))).replace(/'/g,'&#39;')}' style="height:${lines*CL}pt;${CF}"></div></div>`;
+  const cap = (c, slot, lines, extra) => `<div class="cap" style="height:${5 + lines*CL}pt;${extra||''}"><div class="a" data-slot="${slot}" data-narrow="30" data-nstep="3" data-lh="${CL}" data-lines="${lines}" data-lead="${esc(c.lead||'')}" data-s='${esc(JSON.stringify(FXS.capPool(D, c))).replace(/'/g,'&#39;')}' style="height:${lines*CL}pt;${CF}"></div></div>`;
   let h = '';
   // owner 11/8: the J of a script "Just" headline shows in full. The swash runs left of the type's origin and below its line: measure the ink, pad the left, fit the
   // size to the width that is left and make the box tall enough for the descender.

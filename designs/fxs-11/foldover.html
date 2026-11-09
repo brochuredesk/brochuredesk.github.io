@@ -55,7 +55,7 @@ window.brochureReady = (async function(){
   // caption: bold lead + whole sentences (the fill pass picks which)
   const cap = (c, slot, lines, cls) => {
     c = c || {}; const lh = /\bbig\b/.test(cls||'') ? 13.5 : LH;
-    return `<div class="cap ${cls||''}" style="height:${CAPPAD + lines*lh}pt"><div class="a" data-slot="${slot}" data-lh="${lh}" data-lines="${lines}" ${sd(c.s || c.a)} data-lead="${esc(c.lead||'')}" style="height:${lines*lh}pt"></div></div>`;
+    return `<div class="cap ${cls||''}" style="height:${CAPPAD + lines*lh}pt"><div class="a" data-slot="${slot}" data-lh="${lh}" data-lines="${lines}" ${sd(SW.capPool(D, c))} data-lead="${esc(c.lead||'')}" style="height:${lines*lh}pt"></div></div>`;
   };
   const item = (c, slot, lines, grow, o) => { o = o || {}; if(isHouse(c.photo)) o = Object.assign({}, o, {arch: false});
     /* a whole-house photo is never cut by the arch */ return `<div class="item" style="flex:${grow||1} 1 0">${SW.photo(D, c.photo, '', slot).replace('class="ph"', `class="ph${o.arch ? ' arch' : ''}"`)}${cap(c, slot, lines, o.cls)}</div>`; };
@@ -70,7 +70,7 @@ window.brochureReady = (async function(){
   function cover(){ const av = [...placed].concat([].concat(((K.left||{}).photos||[]).map(c => c.photo), [].concat(...(((K.right||{}).rows)||[])).map(c => c.photo), ((K.back||{}).photos||[]).map(c => c.photo), ((K.back||{}).photosNoplan||[]).map(c => c.photo))); return FXS.front(D, {F: K.front || {}, intro: (K.front || {}).summary, avoid: av}); }
 
   // a captioned photo column down an outer edge (square photos 6 pt apart, running to the page edge; captions under each, inside the margin)
-  const colItem = (c, slot, lines, grow, left) => `<div class="item" style="flex:${grow || 1} 1 0">${SW.photo(D, c.photo, '', slot)}<div style="padding:0 ${left ? '12pt 0 36pt' : '36pt 0 12pt'}">${cap(c, slot, lines, 'big')}</div></div>`;
+  const colItem = (c, slot, lines, grow, left) => `<div class="item" style="flex:${grow || 1} 1 0">${SW.photo(D, c.photo, '', slot)}<div style="padding:0 ${left ? '12pt 0 36pt' : '12pt 0 12pt'}">${cap(c, slot, lines, 'big')}</div></div>`;
   const colWrap = (x, w, top, bot, inner) => `<div class="abs row" style="left:${x}pt;top:${top}pt;width:${w}pt;height:${bot - top}pt;flex-direction:column;gap:6pt">${inner}</div>`;
   const titleBlock = (kicker, title, slotp, x, w, y) => { const tcss = 'font-family:Montserrat;font-weight:700', tsz = FXS.fitSize(String(title), tcss, w, 21, 15), one = FXS.width(String(title), `${tcss};font-size:${tsz}pt`) <= w;   // one line when the title fits at 15 pt or more, else two balanced lines
     return `<div class="abs lbl" style="left:${x}pt;top:${y}pt;width:${w}pt;height:12pt" data-slot="${slotp}.kicker" data-lines="1">${esc(String(kicker).toUpperCase())}</div>

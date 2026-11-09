@@ -63,7 +63,7 @@ window.brochureReady = (async function(){
     // owner 11/7 (no blank space): a lone room photo never leaves half its row empty: another unused room of the listing joins it (never one the inside right shows)
     if(cards.length === 1){ const more = FXS.pick(D, FXS.cards(D, []).filter(c => !rightKeys.has(rkey(c.photo)) && c.photo !== heroC.photo && c.photo !== cards[0].photo), 1, {avoid: avoidIds.concat(cards0.map(c => c.photo)), exactAvoid: true, noHouse: true, indoor: true}); if(more.length) cards.push(more[0]); }
     // header sits between the hero's gold rule and the captioned rooms; the row photos grow to meet the header (owner 11/7: no empty band)
-    const heroH = 226, hd = FXS.pageHead('', I.title || '', I.intro, 'left', 3, heroH + 16, {w: 410});
+    const heroH = 226, hd = FXS.pageHead('', I.title || '', I.intro, 'left', 4, heroH + 16, {w: CW, tw: 410, fill: true, wrap: {cx: 512, cy: heroH, r: 62}})   /* owner 11/8: the intro under the hero photo fills its column, every line 80%+; owner 11/9 (kitchen box full bullets p4): longer, wraps around the floor circle, runs the full width below it down to the photos */;
     const nC = cards.length === 1 ? 1 : Math.max(2, cards.length), pw = (CW - (nC - 1)*gap)/nC, capBlock = 7 + 12 + 6 + 3*13, ph = Math.max(nC < 3 ? 90 : 86, Math.min(nC === 1 ? 190 : 170, Math.floor(cy - 14 - capBlock - (hd.bottom + 18)))),   /* owner 11/7: a lone room photo runs the full width, never half an empty row */ py = cy - 14 - capBlock - ph;
     let h = FXS.box(D, heroC.photo, -9, -9, 630, heroH + 9, 'left.hero') + FXS.titleBadge(I.kicker || '', 512, heroH, 124, 'left.badge') + hd.html;
     const slack = py - hd.bottom - 10;
@@ -74,7 +74,7 @@ window.brochureReady = (async function(){
     const items = (box.items || []).slice(0, 6), gy = cy + 14 + 12 + 8 + hs*1.2 + 10, colw = (CW - 44 - 2*20)/BCOLS;
     items.forEach((it, i) => { const r = Math.floor(i/BCOLS), c = i%BCOLS, x = X0 + 22 + c*(colw + 20), y = gy + r*pitch;
       h += `<div class="abs" style="left:${x}pt;top:${y + 2}pt;font-size:6pt;line-height:9pt;color:var(--fx-accent)">●</div>`;
-      h += `<div class="abs" style="left:${x + 14}pt;top:${y}pt;width:${colw - 14}pt;height:${3*13}pt;font:300 10pt/13pt var(--fx-font);color:var(--fx-text);overflow:hidden" data-slot="left.box.t${i}" data-lines="3" data-try="3" data-narrow="8" data-lh="13" ${FXS.sd(it.s)}></div>`; });
+      h += `<div class="abs" style="left:${x + 14}pt;top:${y}pt;width:${colw - 14}pt;height:${3*13}pt;font:300 10pt/13pt var(--fx-font);color:var(--fx-text);overflow:hidden;text-align:left" data-slot="left.box.t${i}" data-lines="3" data-try="3" data-narrow="0" data-linefill="0.795" data-lastfill="0.895" data-minfill="0.9" data-justify data-lh="13" ${FXS.sd(it.s)}></div>`; });
     return h;
   };
   // ================= INSIDE RIGHT: script title and intro, three rows of captioned photos on one two-column split =================

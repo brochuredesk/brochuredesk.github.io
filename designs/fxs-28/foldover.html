@@ -52,7 +52,8 @@ window.brochureReady = (async function(){
   const left = (avoid) => {
     const I = K.left || {}, box = I.box || {};
     const hs = FXS.fitSize(String(box.heading || '').toUpperCase(), "font-family:Oswald;font-weight:600;letter-spacing:1.2pt", CW - 44, 22, 16), pitch = 3*13 + 8.64;
-    const cardH = 12 + 13 + 6 + hs*1.25 + 8 + 3*pitch + 6, cy = PB - cardH;
+    const BCOLS = 3, BROWS = 2;
+    const cardH = 12 + 13 + 6 + hs*1.25 + 8 + BROWS*pitch + 6, cy = PB - cardH;
     // never a room that is on the inside right (or the cover): the same room under another number counts ("game" and "game3", "pbath" and "pbath2")
     const rkey = id => String(id).replace(/\d+[a-z]?$/, ''), avoidIds = usedCover.concat(rightIds, avoid || []), rightKeys = new Set(rightIds.map(rkey));
     const topicKitchen = /kitchen/i.test(box.kicker || ''), pool = FXS.cards(D, I.photos || []).filter(c => !rightKeys.has(rkey(c.photo))).filter(c => !(topicKitchen && /^(kitchen|bar|nook|pantry)/.test(c.photo)));   // a kitchen box never sits beside kitchen captions   // a kitchen feature box never sits beside kitchen captions
@@ -70,10 +71,10 @@ window.brochureReady = (async function(){
     h += `<div class="card" style="left:${X0}pt;top:${cy}pt;width:${CW}pt;height:${cardH}pt"></div>`;
     h += `<div class="abs lbl onspine" style="left:${X0 + 22}pt;top:${cy + 12}pt" data-slot="left.box.kicker" data-lines="1">${esc(String(box.kicker || '').toUpperCase())}</div>`;
     h += `<div class="abs" style="left:${X0 + 22}pt;top:${cy + 12 + 13 + 6}pt;width:${CW - 44}pt;height:${hs*1.25}pt;font:600 ${hs}pt/${hs*1.25}pt var(--fx-display);letter-spacing:1.2pt;color:#fff;white-space:nowrap;overflow:hidden" data-slot="left.box.heading" data-lines="1">${esc(String(box.heading || '').toUpperCase())}</div>`;
-    const items = (box.items || []).slice(0, 6), gy = cy + 12 + 13 + 6 + hs*1.25 + 8, colw = (CW - 44 - 26)/2;
-    items.forEach((it, i) => { const r = Math.floor(i/2), c = i%2, x = X0 + 22 + c*(colw + 26), y = gy + r*pitch;
+    const items = (box.items || []).slice(0, 6), gy = cy + 12 + 13 + 6 + hs*1.25 + 8, colw = (CW - 44 - 2*20)/BCOLS;   // owner 11/7-11/8: three columns of two rows, so every row runs the same three full lines (as FXS-40, approved; box-row-short check)
+    items.forEach((it, i) => { const r = Math.floor(i/BCOLS), c = i%BCOLS, x = X0 + 22 + c*(colw + 20), y = gy + r*pitch;
       h += `<div class="abs" style="left:${x}pt;top:${y + 4}pt;width:4pt;height:4pt;background:var(--fx-on-spine)"></div>`;
-      h += `<div class="abs" style="left:${x + 12}pt;top:${y}pt;width:${colw - 12}pt;height:${3*13}pt;font:400 10pt/13pt var(--fx-font);color:var(--fx-on-spine);overflow:hidden" data-slot="left.box.t${i}" data-lines="3" data-try="3,2" data-narrow="8" data-lh="13" ${FXS.sd(it.s)}></div>`; });
+      h += `<div class="abs" style="left:${x + 12}pt;top:${y}pt;width:${colw - 12}pt;height:${3*13}pt;font:400 10pt/13pt var(--fx-font);color:var(--fx-on-spine);overflow:hidden;text-align:left" data-slot="left.box.t${i}" data-lines="3" data-try="3" data-narrow="0" data-linefill="0.795" data-lastfill="0.895" data-minfill="0.9" data-justify data-lh="13" ${FXS.sd(it.s)}></div>`; });
     return h;
   };
   // ================= INSIDE RIGHT: the spine, kicker / title / intro, three rows of captioned photos on one two-column split =================

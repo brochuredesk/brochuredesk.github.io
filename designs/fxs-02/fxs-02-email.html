@@ -120,8 +120,14 @@ FXP.start(['700 20pt "Montserrat"', '600 20pt "Montserrat"', '500 20pt "Montserr
   h.push(pic(hero, AX, y, fr.w, fr.h)); y += fr.h + 26;
   const shown = facts.map(f => f[2]);
   const WX = BAND + 12;   // owner review r1 (11/2): the write-up starts just right of the gray bar, not over it
-  const wu = OHL.writeup(D2, 'wu', RR - WX, 22, 9, [], {narrow: true});
-  if(wu.text){ const ww = wu.w || (RR - WX); h.push(`<div class="abs wu" style="left:${WX}pt;top:${y}pt;width:${ww}pt;height:${wu.n*22 + 2}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`); y += wu.n*22 + 2 + 28; }
+  // owner 11/8/2026 (captions and write-ups under a photo fill the space under it): the write-up is set justified at the full width it has; every line must run 80%+ of the photo's width above it,
+  // so the set of sentences is the one (of 9 down to 4 lines) whose last line reaches furthest; the type steps up to +12% when none reaches 94% of the box
+  let wu = null; { const bw = RR - WX, need = Math.min(.97, .81*fr.w/bw);
+    for(const k of [1, 1.02, 1.04, 1.06, 1.08, 1.1, 1.12]){ if(wu && wu.fill >= need) break; const css = 'wu' + (k === 1 ? '' : ' k' + String(k).replace('.', '_'));
+      if(k !== 1 && !document.getElementById('kst' + k)){ const st = document.createElement('style'); st.id = 'kst' + k; st.textContent = `.wu.k${String(k).replace('.', '_')}{font-size:${15*k}pt}`; document.head.appendChild(st); }
+      for(let n = 9; n >= 4; n--){ const t = OHL.writeup(D2, css, bw, 22, n, [], {narrow: false}); if(t.text && (!wu || t.fill > wu.fill || (wu.k !== k && wu.fill < need && t.fill > wu.fill))){ wu = Object.assign(t, {k, css}); } } } }
+  wu = wu || {text: '', n: 0, fill: 0};
+  if(wu.text){ const ww = wu.w || (RR - WX); h.push(`<div class="abs ${wu.css || 'wu'}" style="text-align:justify;left:${WX}pt;top:${y}pt;width:${ww}pt;height:${wu.n*22 + 2}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`); y += wu.n*22 + 2 + 28; }
 
   // ---- two more rooms, one arched
   // the bottom pair: two different rooms, neither the arch's room (the kitchen and the primary first)

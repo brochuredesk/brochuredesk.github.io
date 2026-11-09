@@ -69,7 +69,7 @@ window.brochureReady = (async function(){
   const issues = [];
   const logo = (cls, src, area, maxh, style) => `<div class="logo ${cls}" data-area="${area}" data-maxh="${maxh}" style="${style||''}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="word" data-slot="broker.name" data-lines="1">${esc(b.brokerage||'')}</span>`}</div>`;
   const CL = big ? 13.5 : 12.5, CF = big ? 'font-size:10.8pt;line-height:13.5pt;' : '';   // the 6x11 sets its type up from the 6x9 (11 pt against 9.5), not the same size with more room
-  const cap = (c, slot, lines, extra) => `<div class="cap" style="height:${5 + lines*CL}pt;${extra||''}"><div class="a" data-slot="${slot}" data-narrow="30" data-nstep="3" data-lh="${CL}" data-lines="${lines}" data-lead="${esc(c.lead||'')}" data-s='${esc(JSON.stringify([].concat(c.s||[]))).replace(/'/g,'&#39;')}' style="height:${lines*CL}pt;${CF}"></div></div>`;
+  const cap = (c, slot, lines, extra) => `<div class="cap" style="height:${5 + lines*CL}pt;${extra||''}"><div class="a" data-slot="${slot}" ${/^back\.photo/.test(slot) ? 'data-row="back"' : ''} data-narrow="30" data-nstep="3" data-lh="${CL}" data-lines="${lines}" data-lead="${esc(c.lead||'')}" data-s='${esc(JSON.stringify([].concat(c.s||[]))).replace(/'/g,'&#39;')}' style="height:${lines*CL}pt;${CF}"></div></div>`;
   let h = '';
 
   if(front){
@@ -113,12 +113,12 @@ window.brochureReady = (async function(){
       const nsz = FXS.fitSize(A.name || '', "font-family:'DM Serif Display'", bw, big ? 31 : 27, 18), phs = big ? 22 : 19.5, agH = nsz*1.2 + 4 + 11 + 10 + phs*1.3 + 10 + 2*15, ctaTop = lgY - 62, agTop = Math.min(ay + (lgY - 12 - ay - agH)/2 + 4, ctaTop - 11 - agH);   /* the web line ends at least 0.15 in above "Thinking about selling?" */
       h += `<div class="abs agentline" style="left:${M}pt;top:${agTop}pt;width:${bw}pt"><div class="n" style="font-size:${nsz}pt;line-height:${nsz*1.2}pt" data-slot="agent.name" data-lines="1">${esc(A.name||'')}</div><div class="d" data-slot="agent.desig" data-lines="1" data-fine="1" style="margin-top:4pt">REALTOR®</div><div class="p" style="font-size:${phs}pt;line-height:${phs*1.3}pt;margin-top:10pt" data-slot="agent.phone" data-lines="1">${esc(A.phone||'')}</div><div class="e" style="margin-top:10pt;font-size:${big ? 11.5 : 10}pt;line-height:15pt" data-slot="agent.email" data-lines="1">${esc(A.email||'')}</div><div class="e" style="font-size:${big ? 11.5 : 10}pt;line-height:15pt" data-slot="agent.web" data-lines="1">${esc(A.website || A.web || '')}</div></div>`;
       h += `<div class="abs ttl ital" style="left:${M}pt;top:${lgY - 62}pt;width:${bw}pt;height:50pt;font-size:${big ? 21 : 19}pt;line-height:${big ? 24 : 22}pt;color:var(--fx-ink2);white-space:normal" data-slot="front.cta" data-lines="2">Thinking about<br>selling?</div>`;
-      h += FXS.logo(D, M, lgY, bw, lgH, 'flex-start', true);
+      h += FXS.logo(D, M, lgY, bw, lgH, 'center', true);   // owner 11/8 carry: a logo under the agent's lines is centered under them
       h += kick(bx0, rw, 'SOLD', [L.neighborhood, L.city].filter(Boolean).join(' · ').toUpperCase());
       const st = FXS.street(L.address, rw, big ? 40 : 34), ay2 = M + 24;
       h += `<div class="abs ttl" style="left:${bx0}pt;top:${ay2}pt;width:${rw}pt;height:${st.s*1.12}pt;font-size:${st.s}pt;line-height:${st.s*1.12}pt" data-slot="front.address" data-lines="1">${esc(st.lines.join(' '))}</div>`;
       let ty = ay2 + st.s*1.12 + 2;
-      const bt = BD.bathsText(L), fs = [L.beds ? `${L.beds} bedroom${L.beds == 1 ? '' : 's'}` : '', L.baths ? bt.main.toLowerCase() : '', L.sqft ? `${Number(L.sqft).toLocaleString('en-US')} sq ft` : ''].filter(Boolean).join('  ·  ').toUpperCase();
+      const fs = 'Your home could be next  ·  Call or text me'.toUpperCase();   // owner 11/7, repeated 11/8: a Just Sold card lists no house features; the seller ask instead (the approved slide-2 wording)
       h += `<div class="kick" style="left:${bx0}pt;top:${ty}pt;width:${rw}pt;height:12pt;color:var(--fx-text);letter-spacing:2pt;font-weight:500" data-slot="front.facts" data-lines="1">${esc(fs)}</div>`;
       ty += 20;
       const capLines = 3, capH = 5 + capLines*CLF, phBot = H - M - capH - 6;

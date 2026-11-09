@@ -125,7 +125,7 @@ window.brochureReady = (async function(){
     h += `<div class="hr" style="left:${X0 + 22}pt;top:${gy - 4}pt;width:${CW - 44}pt"></div>`;
     items.forEach((it, i) => { const r = Math.floor(i/2), c = i%2, x = X0 + 22 + c*(colw + 26), y = gy + 4 + r*pitch;
       h += `<div class="abs" style="left:${x}pt;top:${y + 5}pt;width:4pt;height:4pt;border-radius:50%;background:var(--fx-accent)"></div>`;
-      h += `<div class="abs" style="left:${x + 14}pt;top:${y}pt;width:${colw - 14}pt;height:${3*13}pt;font:400 10pt/13pt var(--fx-font);color:var(--fx-ink);overflow:hidden" data-slot="left.box.t${i}" data-lines="3" data-try="3,2" data-narrow="8" data-lh="13" ${FXS.sd(it.s)}></div>`; });
+      h += `<div class="abs" style="left:${x + 14}pt;top:${y}pt;width:${colw - 14}pt;height:${3*13}pt;font:400 10pt/13pt var(--fx-font);color:var(--fx-ink);overflow:hidden;text-align:left" data-slot="left.box.t${i}" data-lines="3" data-try="3,2" data-narrow="0" data-linefill="0.795" data-lastfill="0.9" data-minfill="0.9" data-justify data-lh="13" ${FXS.sd(it.s)}></div>`; });
     // the photo strip along the bottom: three more rooms of the house, each with only its room name; no room twice on the spread
     const strip = plan.strip.slice();
     const sy = noCards ? py + Math.floor((SHfull - SHh)/2) : BOT - SHh - 20;
@@ -176,7 +176,7 @@ window.brochureReady = (async function(){
     // the kitchen caption runs exactly under the kitchen photo; the stacked pair gets its own caption under it, on the same lines
     const sx = X0 + wH + gap, stackLead = vl.stackLead || st.map(id => FXS.labelFor(id).replace(/\.$/, '')).join(' and ');
     h += `<div class="row" data-grow="${LN}">` + FXS.captioned(D, hc, X0, y0, wH, HA, LN, 'left.photo0', {narrow: 2, fs: 10, lh: 13.5}) +
-      capLbl(stackLead, sx, y0 + HA + 7, wS, 'left.stackcap.label') + capTxt(vl.stackCap || [], sx, y0 + HA + 25, wS, LN, 'left.stackcap');
+      capLbl(stackLead, sx, y0 + HA + 7, wS, 'left.stackcap.label') + capTxt(st.reduce((acc, id) => FXS.capPool(D, {photo: id, s: acc}), vl.stackCap || []), sx, y0 + HA + 25, wS, LN, 'left.stackcap');
     st.forEach((id, i) => { const yy = y0 + i*(sH + gap); h += FXS.box(D, id, sx, yy, wS, sH, 'left.photo' + (i + 1)) + `<div class="abs" style="left:${sx + 6}pt;top:${yy + sH - 20}pt;background:var(--fx-paper);padding:2pt 6pt 1pt;white-space:nowrap">${FXS.label(FXS.labelFor(id).replace(/\.$/, ''), 'left.photo' + (i + 1) + '.label', 'text-decoration:none')}</div>`; });
     h += '</div>';
     // the kitchen box, moved down to the bottom margin; every label in it underlined the same way (the underline is never clipped)
@@ -189,7 +189,7 @@ window.brochureReady = (async function(){
     h += `<div class="hr" style="left:${X0 + 20}pt;top:${gy - 4}pt;width:${CW - 40}pt"></div>`;
     items.forEach((it, i) => { const x = X0 + 20 + (i % 2)*(colw + 30), y = gy + 4 + Math.floor(i/2)*rowH;
       h += `<div class="abs" style="left:${x}pt;top:${y}pt">${FXS.label(it.l || '', 'left.box.l' + i, U)}</div>`;
-      h += `<div class="abs" style="left:${x}pt;top:${y + 18}pt;width:${colw}pt;height:${nl*13}pt;font:400 10pt/13pt var(--fx-font);color:var(--fx-ink);overflow:hidden" data-slot="left.box.t${i}" data-lines="${nl}" data-try="${nl}" data-narrow="6" data-nstep="3" data-lh="13" ${FXS.sd(it.s)}></div>`; });
+      h += `<div class="abs" style="left:${x}pt;top:${y + 18}pt;width:${colw}pt;height:${nl*13}pt;font:400 10pt/13pt var(--fx-font);color:var(--fx-ink);overflow:hidden;text-align:left" data-slot="left.box.t${i}" data-lines="${nl}" data-try="${nl}" data-narrow="0" data-linefill="0.795" data-lastfill="0.9" data-minfill="0.9" data-justify data-lh="13" ${FXS.sd(it.s)}></div>`; });
     return h;
   };
   // owner FXS-13 r4: the write-up under the heading runs three or four lines; every caption runs almost to its photo's right edge (narrow: 2)
