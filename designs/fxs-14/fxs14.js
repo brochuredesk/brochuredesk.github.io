@@ -105,19 +105,20 @@
   const PLACED = new Map();   // face -> [{el, s}]: the sentences already set, so no block says the same fact again
   const faceOf = el => el.closest('.panel, .sheet') || document.body;
   const isCap = el => !!el.dataset.lead || !!el.closest('.cap');
-  const banned = (el, a) => isCap(el) && (PLACED.get(faceOf(el)) || []).some(p => p.el !== el && (p.box ? p.s === a : SW.sameFact(p.s, a)));   // photo captions only: no two captions on a face say one fact
+  const banned = (el, a) => isCap(el) && (PLACED.get(faceOf(el)) || []).some(p => p.el !== el && (p.box ? p.s === a : SW.sameFact(p.s, a)));   // a box's facts too (the caption-repeats-box check, 11/8)   // photo captions only: no two captions on a face say one fact
   const pickFor = (el, T) => {
     // each sentence is a string, or a list of ways to say the same fact at different lengths (only one is ever used)
     let S = JSON.parse(el.dataset.s).map(x => [].concat(x)); const S0 = S; const FS = factSet(el); S = S.map(alts => alts.filter(a => !banned(el, a) && !hasSize(a) && !SW.FILLER.test(a) && !SW.roomBan(el.dataset.lead || el.dataset.room, a) && !factsOf(a).some(x => FS.has(x)))).filter(alts => alts.length); if(!S.length) S = S0;
-    const lead = el.dataset.lead || '', n = Math.min(S.length, 12);
-    let best = null, near = null, hi = null, lo = null;
+    const lead = el.dataset.lead || '', n = Math.min(S.length, +el.dataset.pool || 12);   // data-pool: a long write-up may draw on more sentences (FXS-14 3- and 4-story flyer backs)
+    let best = null, near = null, hi = null, lo = null, tries = 0;
     const full = S.map(a => a[0]);
     el.innerHTML = html(lead, full); const A = SW.lines(el), allLen = (lead ? lead.length + 1 : 0) + full.join(' ').length, cpl = allLen / Math.max(.5, A.n - 1 + A.fill);
     const lead0 = lead ? lead.length + 1 : 0;
     const test = pick => {
-      if(SW.rep5((lead ? lead + ' ' : '') + pick.join(' ')) || SW.sameFactIn(pick.join(' '))) return;
-      const est = (lead0 + pick.join(' ').length) / cpl;
+      const est = (lead0 + pick.join(' ').length) / cpl;   // the cheap length test first (same result, far faster on big pools)
       if(est < T - 1.5 || est > T + 0.9) return;
+      if(SW.rep5((lead ? lead + ' ' : '') + pick.join(' ')) || SW.sameFactIn(pick.join(' '))) return;
+      if(++tries > SW.PICK_BUDGET && best) return;   // and a hard stop when nothing fills (keeps a page under the renderer's 30 s)   // a big pool: once a set fills the box, stop laying out more after the budget (keeps a page under the renderer's 30 s)
       el.innerHTML = html(lead, pick);
       const L = SW.lines(el);
       if(L.n === T + 1 && (!hi || L.fill < hi.fill)) hi = {fill: L.fill};
@@ -130,8 +131,10 @@
       const score = (L.fill >= 0.8 ? 1000 : 500) - pick.length * 10 + L.fill + (el.dataset.lfill ? 20*L.min : 0);   // the fewest, fullest sentences that fill the box; the last line well filled
       if(!best || score > best.score) best = {score, pick, fill: L.fill};
     };
+    let leaves = 0, stop = false;
     const walk = (m, i, acc) => {
-      if(i === n){ test(acc); return; }
+      if(stop) return;
+      if(i === n){ if(++leaves > 3000000) stop = true; test(acc); return; }   // a big pool: a hard cap on sets looked at, so a page stays under the renderer's 30 s
       if(!(m >> i & 1)){ walk(m, i + 1, acc); return; }
       for(const alt of S[i]) walk(m, i + 1, acc.concat(alt));
     };
@@ -145,11 +148,15 @@
   // Same as pickFor, and when the box's whole sentences cannot fill T lines at its width, the box narrows (6 pt steps, up to data-narrow steps, 8 by default;
   // text is left aligned, so a slightly shorter line is invisible) until a set of whole sentences does. Returns null (width restored) when none does.
   const pfN = (el, T) => {
+    if(el.__pfMemo && el.__pfMemo.key === T + '|' + el.style.fontSize + '|' + el.style.width){ const m = el.__pfMemo; el.__pfMemo = null; return m.b; }   // settle right after the same search (SW.fill): reuse it
+    const r = pfN0(el, T); el.__pfMemo = {key: T + '|' + el.style.fontSize + '|' + el.style.width, b: r}; return r; };
+  const pfN0 = (el, T) => {
     if(el.dataset.w0 == null) el.dataset.w0 = el.getBoundingClientRect().width*.75;
     const base = +el.dataset.w0, maxK = el.dataset.narrow != null ? +el.dataset.narrow : 8;
     for(let k = 0; k <= maxK; k++){ el.style.width = (base - k*(+el.dataset.nstep || 6)) + 'pt'; const b = pickFor(el, T); if(b) return b; }
-    el.style.width = base + 'pt'; return pickFor(el, T);
+    el.style.width = base + 'pt'; return maxK === 0 ? null : pickFor(el, T);   // no narrowing allowed: the one search already ran
   };
+  SW.PICK_BUDGET = 1500;
   SW.pfN = pfN;   // FO.grow re-picks a write-up's sentences at a bigger size (fxs14-fo.js)
   const LH = 12.5, CAPPAD = 5;
   SW.resetFill = () => { PLACED.clear(); FACTS.clear(); };
@@ -158,7 +165,7 @@
     document.querySelectorAll('[data-s]').forEach(e => { e.dataset.fixed = '1'; });
     const caps = [...document.querySelectorAll('.cap .a[data-s]')], rest = [...document.querySelectorAll('[data-s]')].filter(e => !caps.includes(e));
     const settle = (el, T) => {   // T lines: the best set, else the nearest and a report
-      const lead = el.dataset.lead || '', b = pfN(el, T);
+      const lead = el.dataset.lead || '', b = pfN(el, T); el.__pfMemo = null;
       if(b){ el.innerHTML = html(lead, b.pick); delete el.dataset.diag; factsOf(b.pick.join(' ')).forEach(x => factSet(el).add(x));
       { const pl = PLACED.get(faceOf(el)) || []; pl.push(...b.pick.map(s => ({el, s, box: !isCap(el)}))); PLACED.set(faceOf(el), pl); } }   // every filled block (the boxes too) counts: a photo caption never repeats a fact the face already says
       else el.innerHTML = html(lead, el.__near ? el.__near.pick : JSON.parse(el.dataset.s).map(x => [].concat(x)[0]));
@@ -180,7 +187,7 @@
     { const T = new Map(); rest.forEach(el => { const m = /^(.*\.box)\.t\d+$/.exec(el.dataset.slot || ''); if(m && el.dataset.try) (T.get(m[1]) || T.set(m[1], []).get(m[1])).push(el); });
       T.forEach(rows => { if(rows.length < 2) return; const most = Math.max(...rows.map(e => SW.lines(e).n));
         rows.filter(e => SW.lines(e).n < most).forEach(e => { const n0 = e.dataset.narrow, s0 = e.dataset.nstep;
-          e.dataset.nstep = 2; e.dataset.narrow = Math.round((+e.dataset.w0 || 0) * 0.45 / 2);   // the row may narrow to 55% of its column (ragged right, so a narrower row still reads as part of the grid)
+          e.dataset.nstep = 2; e.dataset.narrow = e.dataset.j3 ? 0 : Math.round((+e.dataset.w0 || 0) * 0.45 / 2);   // a full-width write-up (FO.prep3) never narrows   // the row may narrow to 55% of its column (ragged right, so a narrower row still reads as part of the grid)
           if(pfN(e, most)){ settle(e, most); if(e.dataset.lh) e.style.height = (most * +e.dataset.lh) + 'pt'; }
           else { e.dataset.narrow = n0; if(s0 == null) delete e.dataset.nstep; else e.dataset.nstep = s0; settle(e, +e.dataset.lines); } }); }); }
     // photo captions shrink to what their sentences honestly fill (never padded): the photo takes the room. The captions in one row share a line count when they can.
@@ -548,9 +555,9 @@
 
   // ---------- the plan card (IvoryPlan) at (x, y, w): returns {html, bottom, issues} ----------
   FXS.planCard = (D, x, y, w, maxH) => {
-    const iw = w - 28.8, planRot = (() => { const r0 = IvoryPlan.draw(D.plan, {x: x + 14.4, y: 0, w: iw, h: 250}, {allowRotate: false}); return (r0.issues || []).some(i => /label-wont-fit/.test(i.kind)); })();
-    const fit = mh => { for(let hh = mh; hh >= 130; hh -= 6){ const big = IvoryPlan.draw(D.plan, {x: x + 14.4, y: 0, w: iw, h: hh}, {allowRotate: planRot}); if(!(big.issues || []).some(i => i.kind === 'plan-under-300ppi')) return Math.min(hh, Math.ceil(big.usedH || hh) + 6); } return 200; };
-    const ph = fit(maxH), r = IvoryPlan.draw(D.plan, {x: x + 14.4, y: y + 8, w: iw, h: ph - 4}, {allowRotate: planRot});
+    const iw = w - 28.8, A = D.plan.turn && D.plan.kind === 'color' ? 270 : undefined, planRot = D.plan.turn || (() => { const r0 = IvoryPlan.draw(D.plan, {x: x + 14.4, y: 0, w: iw, h: 250}, {allowRotate: false}); return (r0.issues || []).some(i => /label-wont-fit/.test(i.kind)); })();
+    const fit = mh => { for(let hh = mh; hh >= 130; hh -= 6){ const big = IvoryPlan.draw(D.plan, {x: x + 14.4, y: 0, w: iw, h: hh}, {allowRotate: planRot, angle: A}); if(!(big.issues || []).some(i => i.kind === 'plan-under-300ppi')) return Math.min(hh, Math.ceil(big.usedH || hh) + 6); } return 200; };
+    const ph = fit(maxH), r = IvoryPlan.draw(D.plan, {x: x + 14.4, y: y + 8, w: iw, h: ph - 4}, {allowRotate: planRot, angle: A});
     const zs = IvoryPlan.zonesOf(D.plan);
     const leg = Object.entries(IvoryPlan.ZONES).filter(([k]) => zs.includes(k)).map(([k, z]) => `<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, var(--fx-paper))"></i>${z.label}</span>`);
     if(zs.includes('outdoor')) leg.push(`<span><i style="background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--accent) 35%, var(--fx-paper)) 0 .6pt, var(--fx-paper) .6pt 2.8pt)"></i>Outdoor</span>`);

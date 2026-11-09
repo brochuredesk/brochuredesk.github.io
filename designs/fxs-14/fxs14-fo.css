@@ -1,0 +1,38 @@
+/* fxs-14 fold-over and flyer, round 7 rethink (11/7): a white base with ONE taupe accent block per panel; bright photos on white overlap it.
+   Default type is ink on white; anything inside a .tp wrapper reads white on taupe (the same variables flip). Lengths are pt. */
+body.v2{--fx-on:#2b2b2b;--fx-soft:#4a4a4a;--fx-rule:#cfc7bd}
+.tp{--fx-on:#ffffff;--fx-soft:#f4efe9;--fx-rule:rgba(255,255,255,.6);--fx-mute:#f4efe9}
+.taupeb{position:absolute;background:var(--fx-taupe)}
+body.v2 .lbl{text-decoration:none;font:600 9pt/12pt var(--fx-font);letter-spacing:2.2pt;color:var(--fx-on)}
+body.v2 .cap .a{color:var(--fx-soft);font-weight:300}
+body.v2 .cap .a b{font-weight:600;color:var(--fx-on)}
+body.v2 .wu,body.v2 .body{color:var(--fx-soft);font-weight:300}
+.fo-kick{font:600 8.5pt/12pt var(--fx-font);letter-spacing:3.2pt;text-transform:uppercase;color:var(--fx-mute);white-space:nowrap}
+.tp .fo-kick{color:#f4efe9}
+.fo-title{font:600 12.5pt/17.5pt var(--fx-font);letter-spacing:2.6pt;text-transform:uppercase;color:var(--fx-on);overflow:hidden}
+.fo-sub{font:400 italic 11.5pt/15pt var(--fx-serif);color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.fo-fact{position:absolute;display:flex;flex-direction:column;align-items:flex-start;gap:5pt;white-space:nowrap;height:38pt}
+.fo-fact.inline{flex-direction:row;align-items:baseline;gap:9pt}
+.fo-fact .n{font:400 24pt/1 var(--fx-serif);color:var(--fx-ink)}
+.fo-fact .l{font:600 8.5pt/1 var(--fx-font);letter-spacing:2.4pt;text-transform:uppercase;color:var(--fx-mute)}
+.fo-near{position:absolute;box-sizing:border-box;display:flex;align-items:center;gap:10pt;white-space:nowrap;overflow:hidden;border-bottom:.5pt solid var(--fx-rule)}
+.fo-near .in{display:flex;align-items:baseline;gap:8pt;white-space:nowrap}
+.fo-near .d{font:400 14pt/1 var(--fx-serif);color:var(--fx-on)}
+.fo-near .p{font:600 8pt/1 var(--fx-font);letter-spacing:1pt;text-transform:uppercase;color:var(--fx-soft)}
+body.v2 .bul{font:300 10pt/14pt var(--fx-font);border-bottom:.5pt solid var(--fx-rule);color:var(--fx-soft)}
+body.v2 .bul:before{background:var(--fx-taupe)}
+.tp .bul:before{background:#fff}
+.fo-li-l{font:600 8pt/11pt var(--fx-font);letter-spacing:1.8pt;text-transform:uppercase;color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.fo-acard{position:absolute;background:#fff;overflow:hidden;box-shadow:0 0 0 .6pt #e3ddd5}
+.fo-acard .n{font:400 17pt/20pt var(--fx-serif);color:#2b2b2b;white-space:nowrap;overflow:hidden}
+.fo-acard .d{font:600 7.6pt/10pt var(--fx-font);letter-spacing:2.6pt;color:#7a6d61;white-space:nowrap}
+.fo-acard .p{font:700 14pt/18pt var(--fx-font);color:#2b2b2b;white-space:nowrap}
+.fo-acard .e{font:400 8.6pt/12pt var(--fx-font);color:#4a4a4a;white-space:nowrap;overflow:hidden}
+
+.fo-addr{font-family:'Libre Baskerville',Georgia,serif;font-weight:700;letter-spacing:1.5pt;color:#fff;white-space:nowrap;overflow:hidden}
+.fo-acard .d{font-size:8pt}
+
+.plan-disclosure{font-size:8pt!important;line-height:10pt!important}
+
+/* round 3 (owner 11/7): bigger kickers on the backs' taupe band */
+.tp .fo-kick[data-slot^="back."]{font-size:9.5pt}

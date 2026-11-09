@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · fxs-14 two-sided flyer</title>
+<link rel="stylesheet" href="fxs14.css">
+<link rel="stylesheet" href="fxs14-fo.css">
+<script src="fxs14.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script src="../engine/agentcard.js"></script>
+<script src="fxs14-fo.js"></script>
+<!--
+  fxs-14 · two-sided 8.5 x 11 flyer, round 7 rethink (trim 612 x 792 pt). FRONT: the fold-over front (no agent, no brokerage). BACK: the plan (or the deck) on a white card,
+  The house, a three-photo row, the two lists on the taupe, nearby, and the agent card at the bottom right (brokerage only here).
+-->
+</head>
+<body class="v2" data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const P = D.piece || {}, issues = [];
+  document.body.dataset.mode = D.mode || 'email';
+  await SW.setup(D);
+  let h = '';
+  if(P.side === 'back'){ const r = FO.back(D, {flyer: true}); h = r.html; issues.push(...r.issues); }
+  else h = FO.front(D, {});
+  const f = SW.frame(D, 612, 792, h);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  FO.prep3();
+  SW.fill();
+  FO.grow();
+  FO.just3();
+  FO.span();
+  SW.fitLogos();
+  issues.push(...SW.focus(D));
+  document.querySelectorAll('.ph[data-zoom]').forEach(el => { const [z, fx, fy] = el.dataset.zoom.split(',').map(Number), im = el.querySelector('img'); if(!im) return; im.style.cssText = `position:absolute;max-width:none;width:${z*100}%;height:${z*100}%;left:${-(z - 1)*fx*100}%;top:${-(z - 1)*fy*100}%;object-fit:cover`; });
+  { const ids = [...document.querySelectorAll('.ph[data-photo]')].map(e => e.dataset.photo), hero = (((D.companion || {}).flyer || {}).front || {}).hero || (K0(D).front || {}).hero || 'front';
+    SW.spaceRepeats(D, P.side === 'back' ? ids.concat(hero) : ids).forEach(([sp, ps]) => issues.push({slot: 'flyer.' + sp, kind: 'space-twice-on-flyer', detail: `${sp}: ${ps.join(' and ')} show one physical space twice`})); }
+  function K0(d){ return d.sw || {}; }
+  window.brochureCheck = () => SW.check(D, (window.planIssues || []).concat(issues, FXS.backTextBox(), FO.overlapCheck(), FO.factsCheck(), FO.fill3Check()));
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>

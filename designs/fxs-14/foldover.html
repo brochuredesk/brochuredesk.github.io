@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · fxs-14 fold-over</title>
+<link rel="stylesheet" href="fxs14.css">
+<link rel="stylesheet" href="fxs14-fo.css">
+<script src="fxs14.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script src="../engine/agentcard.js"></script>
+<script src="fxs14-fo.js"></script>
+<!--
+  BrochureDesk · fxs-14 · 11 x 17 fold-over, round 7 rethink (11/7/2026; docs/briefs/fxs-14-rethink-11-07.md): a white base with ONE taupe block per panel,
+  bright photos that overlap it, spaced-caps Montserrat headings, the big script only for the address. 0.125 in bleed, 0.5 in clear of the fold.
+    FRONT  the whole house, taupe rising from the foot with the script address, the neighborhood, the facts and the write-up. No agent, no brokerage.
+    LEFT   the living level: hero over the taupe corner, three captioned rooms, the kitchen as a ruled list.
+    RIGHT  bedrooms and baths: a 2 x 2 of horizontals, the intro on the taupe foot.
+    BACK   the plan (or the deck) on a white card, The house, the two lists on the taupe, nearby, the agent card (back only).
+  Modes: proof = four panel pages 8.75 x 11.25 in; print = two spreads 17.25 x 11.25 in, each half clipped at the fold.
+-->
+</head>
+<body class="v2">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const mode = D.mode || 'proof', K = D.sw || {}, issues = [];
+  await SW.setup(D);
+  const photoIds = html => [...String(html).matchAll(/data-photo="([^"]+)"/g)].map(m => m[1]);
+  if(SW.resetFill) SW.resetFill();
+  const pF = FO.front(D, {intro: (K.front || {}).summary, lines: 4}), pL = FO.left(D), pR = FO.right(D), bk = FO.back(D, {}); issues.push(...bk.issues);
+  const panels = {front: pF, back: bk.html, left: pL, right: pR};
+  const panel = h => `<div class="panel"><div class="bg-paper"></div>${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.back)}</div><div class="half r">${panel(panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.left)}</div><div class="half r">${panel(panels.right)}</div></div>`;
+  } else for(const id of ['front','back','left','right']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  FO.prep3();
+  SW.fill();
+  FO.grow();
+  FO.just3();
+  FO.rightFit();
+  FO.rightCapFit();
+  FO.leftFit();
+  SW.fitLogos();
+  { const rep = SW.spaceRepeats(D, ['front', 'back', 'left', 'right'].flatMap(k => photoIds(panels[k]))); rep.forEach(([sp, ps]) => issues.push({slot: 'foldover.' + sp, kind: 'space-twice-in-foldover', detail: `${sp}: ${ps.join(' and ')} show one physical space twice`})); }
+  { const seenP = new Map(); for(const k of ['front', 'back', 'left', 'right']) photoIds(panels[k]).forEach(id => { if(seenP.has(id) && seenP.get(id) !== k) issues.push({slot: k + '.' + id, kind: 'photo-twice-in-foldover', detail: `${id} is on the ${seenP.get(id)} and on the ${k}`}); else seenP.set(id, k); }); }
+  issues.push(...SW.focus(D));
+  // a tile cropped tighter than its photo: data-zoom="z,fx,fy" (the crop shows 1/z of the photo, anchored at the focus fractions)
+  document.querySelectorAll('.ph[data-zoom]').forEach(el => { const [z, fx, fy] = el.dataset.zoom.split(',').map(Number), im = el.querySelector('img'); if(!im) return;
+    im.style.cssText = `position:absolute;max-width:none;width:${z*100}%;height:${z*100}%;left:${-(z - 1)*fx*100}%;top:${-(z - 1)*fy*100}%;object-fit:cover`; });
+  window.brochureCheck = () => SW.check(D, (window.planIssues || []).concat(issues, FXS.backTextBox(), FO.overlapCheck(), FO.factsCheck(), FO.fill3Check(), FXS.leftBoxCheck()));
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>
