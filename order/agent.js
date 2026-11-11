@@ -19,6 +19,9 @@
   // without a recorded recipe offers the download instead
   const UPLOAD_RUNNER = 'https://upload.brochuredesk.com';
   // same ids and names as config/printers.json in the code repo
+  // printers that can't print to the edge of the paper: the brochure's edge-to-edge design gets a white border there (owner 11/11/2026)
+  const NO_BLEED = {'fedex-office': 'FedEx Office'};
+  const noBleedNote = id => NO_BLEED[id] ? `<b>${NO_BLEED[id]} can't print to the edge of the paper.</b> Your brochure is designed to run right to the edges, so ${NO_BLEED[id]} prints it with a thin white border (about 1/4 inch) all the way around. For edge-to-edge printing, pick another printer.` : '';
   const PRINTERS = [['vistaprint', 'Vistaprint'], ['fedex-office', 'FedEx Office'], ['uprinting', 'UPrinting'], ['gotprint', 'GotPrint'],
     ['next-day-flyers', 'Next Day Flyers'], ['printplace', 'PrintPlace'], ['smartpress', 'Smartpress'], ['overnight-prints', 'Overnight Prints'],
     ['psprint', 'PsPrint'], ['wise-pelican', 'Wise Pelican'], ['xpress-docs', 'Xpress Docs']];
@@ -2146,8 +2149,11 @@
         <option value="other"${last && last.id === 'other' ? ' selected' : ''}>Other</option></select>
       <div id="prOtherBox"${last && last.id === 'other' ? '' : ' hidden'}><label class="fine" for="prOther">Printer's name</label>
         <input id="prOther" list="prList" autocomplete="off" value="${esc(last && last.id === 'other' ? last.name : '')}"><datalist id="prList">${PRINTERS.map(([, n]) => `<option value="${n}">`).join('')}</datalist></div>
+      <p class="warn" id="prBleed" role="status"></p>
       <p class="err" id="prErr"></p>`, [['Continue', 'go'], ['Cancel', 'cancel', 'line']], false, () => {
-        $('#prSel').onchange = () => { $('#prOtherBox').hidden = $('#prSel').value !== 'other'; if(!$('#prOtherBox').hidden) $('#prOther').focus(); };
+        const bleed = () => { $('#prBleed').innerHTML = noBleedNote($('#prSel').value); };
+        bleed();
+        $('#prSel').onchange = () => { $('#prOtherBox').hidden = $('#prSel').value !== 'other'; if(!$('#prOtherBox').hidden) $('#prOther').focus(); bleed(); };
       });
     if(v !== 'go') return null;
     let id = $('#prSel').value, name = id === 'other' ? $('#prOther').value.trim() : PRINTERS.find(p => p[0] === id)[1];
