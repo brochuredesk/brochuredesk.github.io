@@ -244,6 +244,13 @@
     $('#orders').innerHTML = past.length ? past.map(p => row(p, 'past')).join('') : '<p class="empty">No orders in the last 60 days.</p>';
     $$('[data-open]').forEach(b => b.onclick = () => { const p = list.find(x => x.id === b.dataset.open); openPackage(p); });
     await soldHome(list);
+    // Your details (owner 11/13/2026: no welcome form; the agent fills these in when they like)
+    const named = profile && profile.display_name;
+    $('#detailsLine').textContent = named ? `${profile.display_name}${profile.cell ? ' · ' + profile.cell : ''}${profile.preferred_email ? ' · ' + profile.preferred_email : ''}`
+      : 'Add your name, email, cell and headshot. Until you do, your proofs show sample contact details and print files wait for them.';
+    $('#detailsOpen').textContent = named ? 'Edit my details' : 'Add my details';
+    $('#detailsOpen').hidden = !(me && window.Account);
+    $('#detailsOpen').onclick = () => Account.intake();
     if(window.Account) Account.home();
   }
 

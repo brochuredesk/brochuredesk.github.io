@@ -49,12 +49,13 @@
   </div>
 </section>
 
-<!-- First sign-in: welcome intake (TREC license, headshot, name, email, cell; draft wording) -->
+<!-- Your details: name, email, cell, headshot for the pieces (from Agent home; optional; no license check, owner 11/13/2026) -->
 <section class="view" id="vWelcome" hidden>
+  <p><button type="button" class="link" data-go="home">Back to Agent home</button></p>
   <div class="card narrow">
-    <h1>Welcome to BrochureDesk</h1>
-    <p class="lede">A few details and you're ready for your first listing. Everything here goes on your pieces, and you can change it any time.</p>
-    <form id="trecForm" class="stack">
+    <h1>Your details</h1>
+    <p class="lede">These go on your pieces. You can change them any time.</p>
+    <form id="trecForm" class="stack" hidden>
       <label>Texas real estate license number<input name="license" inputmode="numeric" autocomplete="off" required placeholder="0612345"></label>
       <button class="btn line" type="submit">Look it up</button>
       <p class="fine">We check it against TREC's public license records and fill in your name and sponsoring broker.</p>
@@ -62,7 +63,7 @@
     </form>
     <p class="found" id="trecFound" hidden></p>
     <form id="welcomeForm" class="stack">
-      <div id="welcomeStep2" hidden>
+      <div id="welcomeStep2">
         <h2>Your headshot</h2>
         <p class="fine">Optional. Drag to place it, and zoom to frame your face.</p>
         <input type="file" id="hsFile" accept="image/jpeg,image/png,image/webp">
@@ -72,7 +73,7 @@
         <label>Display name<input name="display" autocomplete="name" maxlength="80"></label>
         <label>Email for your pieces<input type="email" name="email" autocomplete="email"></label>
         <label>Cell<input type="tel" name="cell" autocomplete="tel" maxlength="30"></label>
-        <button class="btn" type="submit">Save and paste my first listing link</button>
+        <button class="btn" type="submit">Save</button>
         <p class="err" id="welcomeErr" role="alert"></p>
       </div>
     </form>
@@ -93,6 +94,11 @@
     <div class="card wide">
       <h2>Pick up where you left off</h2>
       <div id="pickup" class="pickup"></div>
+    </div>
+    <div class="card">
+      <h2>Your details</h2>
+      <p id="detailsLine">Your name, email, cell and headshot, as they go on your pieces.</p>
+      <button class="btn line" type="button" id="detailsOpen">Edit my details</button>
     </div>
     <div class="card">
       <h2>Your Just Sold wording</h2>
@@ -367,9 +373,9 @@
 <script src="/designs/shared/master-fit.js?v=9"></script>
 <script src="preview-tools.js?v=9"></script>
 <script src="/order/upload-panel.js?v=1"></script>
-<script src="account.js?v=1"></script>
+<script src="account.js?v=2"></script>
 <script src="proof-editor.js?v=2"></script>
-<script src="agent.js?v=53"></script>
+<script src="agent.js?v=54"></script>
 <script src="/order/help-bot.js?v=1" defer></script>
 </body>
 </html>

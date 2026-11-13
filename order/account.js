@@ -99,7 +99,7 @@
     f.display.oninput = () => { f.display.dataset.auto = ''; };
     f.email.value = p.preferred_email || me.email || '';
     f.cell.value = p.cell || '';
-    $('#welcomeStep2').hidden = !trec;
+    $('#welcomeStep2').hidden = false;   // no license check first (owner 11/13/2026)
     trecLine();
     $('#trecForm').onsubmit = async e => {
       e.preventDefault();
@@ -131,7 +131,6 @@
     }
     f.onsubmit = async e => {
       e.preventDefault(); $('#welcomeErr').textContent = '';
-      if(!trec){ $('#welcomeErr').textContent = 'Check your license number first.'; return; }
       if(!f.display.value.trim()){ $('#welcomeErr').textContent = 'Add the name you want on your pieces.'; return; }
       if(!EMAIL.test(f.email.value.trim())){ $('#welcomeErr').textContent = 'Check the email address.'; return; }
       f.querySelector('button[type=submit]').disabled = true;
@@ -145,13 +144,13 @@
       const row = {user_id: me.id, display_name: f.display.value.trim().slice(0, 80), greeting_name: f.display.value.trim().split(/\s+/)[0],
         preferred_email: f.email.value.trim(), cell: f.cell.value.trim().slice(0, 30), headshot, welcomed_at: new Date().toISOString()};
       const kit = Object.assign({}, (C.profile() || {}).brand_kit || {});
-      if(trec.broker && !kit.sponsoringBroker) kit.sponsoringBroker = trec.broker;
+      if(trec && trec.broker && !kit.sponsoringBroker) kit.sponsoringBroker = trec.broker;
       row.brand_kit = kit;
       const {error} = await C.sb.from('agent_profiles').upsert(row);
       f.querySelector('button[type=submit]').disabled = false;
       if(error){ $('#welcomeErr').textContent = "We couldn't save that. Try again in a minute."; console.warn(error); return; }
       C.setProfile(Object.assign({}, C.profile() || {}, row, {trec}));
-      C.openStart(true);
+      C.openHome();
     };
   }
   function trecLine(){
