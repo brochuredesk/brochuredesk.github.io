@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Ivory two-sided flyer</title>
+<link rel="stylesheet" href="ivory.css">
+<script src="ivory.js"></script>
+<script src="plan.js"></script>
+<script src="../engine/baths.js"></script>
+<!--
+  Ivory design · optional two-sided 8.5 x 11 listing flyer (trim 612 x 792 pt). Built from the approved design canvas
+  (docs/design/two-sided-flyers/canvas: SF-IVORY front, SF-IVORY back, SF-IVORY back with floor plan; approved by the
+  owner 10/28/2026, Review 3). data.piece.side = "front" | "back". The back is the floor-plan version when the listing has
+  a plan (Ivory.version(D).plan) and the photos version when it has none, the way Ivory's fold-over chooses.
+
+  Rules (product.md, "Two-sided 8.5x11 flyer rules", 10/28/2026): one brokerage logo per side (front: the logo beside the
+  address and an agent-only card; back: the shared Right panel card carries it); the front shows the whole house; backs
+  carry as much real detail as fits and no blank space; no listing price, no QR code, no photo numbers, no "virtually
+  staged"; no "new listing" header (the back's headline is the writer's own line about the house).
+
+  FRONT   Landscape whole-house photo (a portrait photo of the house takes the tall layout: photo down the left, the
+          words down the right), neighborhood line, the address big with the logo, a rule, the fact row, the write-up,
+          three captioned rooms, then the shared agent card (headshot or stripe, no brokerage panel).
+  BACK    Header (kicker, headline, address and place), rule. With a plan: the plan panel (legend, note) with a column
+          of two features, then four captioned rooms, two text blocks, the card. Without: two features with photos,
+          four captioned rooms, a labeled row of three, two text blocks, the card. Photos soak up the slack, so no gap.
+
+  Data (all optional; anything missing is built from the fold-over copy and the photo tags, and a box that can't be filled
+  comes back to the writer as an "underfilled" check):
+    companion.flyer = {
+      headline: "New from the foundation up.",                 back header, 1 line
+      desc:  [sentence, ...],                                    front write-up, 3 or 4 lines (the template keeps the sentences that fill it)
+      front: {hero: id, photos: [id x3], kicker: "East End · Houston, Texas"},
+      photos: {photoId: {title: "An all new kitchen", sentences: [..]}},   caption pools; the template picks what fills each box
+      plan:   {kicker, features: [id x2], grid: [id x4], rowLabel},        back with a plan
+      noplan: {kicker, features: [id x2], grid: [id x4], rowLabel, row: [id x3]},
+      left:  {label: "What's new" | "Outside", text: [sentence, ...]},   back text block, left (also allowed inside plan / noplan)
+      right: {label: "Location", text: [sentence, ...]},               back text block, right (same)
+      fineprint: "..."}
+  Print setting: "margin" 18 pt, like every other 8.5 x 11 piece (the Open House flyers): a white border around the ivory
+  field so any printer can run it; the hero photo sits at the field edge. Email mode runs the field edge to edge.
+-->
+<style>
+  .fl-kick{font:600 9pt/1 var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+  .fl-addr{font-family:var(--font-display);font-weight:400;color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.2pt}
+  .fl-head{font:400 24pt/30pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden}
+  .fl-place{font:600 9pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-align:right}
+  .fl-facts{display:flex;justify-content:space-between;font:700 11.25pt/14pt var(--font-body);letter-spacing:.4pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+  .fl-facts2{display:grid;grid-template-columns:1fr 1fr;row-gap:5pt;column-gap:12pt;font:700 11.25pt/14pt var(--font-body);letter-spacing:.4pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+  .fl-desc{text-align:justify;font:400 12pt/17.25pt var(--font-body);color:var(--muted);overflow:hidden}
+  .fl-desc-t{text-align:justify;font:400 13.5pt/20pt var(--font-body);color:var(--muted);overflow:hidden}
+  .fl-ct{font:700 9.75pt/12.75pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
+  .fl-cb{text-align:justify;font:400 9.4pt/12.4pt var(--font-body);color:var(--muted);overflow:hidden}
+  .fl-ft{font:400 15pt/19.5pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden}
+  .fl-fb{text-align:justify;font:400 10.5pt/14.25pt var(--font-body);color:var(--muted);overflow:hidden}
+  .fl-rt{font:400 12.75pt/16.5pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden}
+  .fl-rb{text-align:justify;font:400 9.75pt/13.1pt var(--font-body);color:var(--muted);overflow:hidden}
+  .fl-sec{font:600 9.75pt/1 var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden;
+          text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:3pt}
+  .fl-sb{text-align:justify;font:400 11.25pt/15pt var(--font-body);color:var(--muted);overflow:hidden}
+  .fl-lab{font:600 9pt/9pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+  .fl-hair{position:absolute;height:.75pt;background:var(--line)}
+  .fl-panel{position:absolute;background:transparent;border:.75pt solid var(--line)}
+  .fl-pfacts{text-align:center;font:600 8.25pt/10pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
+  .fl-legend{display:flex;justify-content:center;gap:18pt;font:600 8pt/10pt var(--font-body);color:var(--ink);white-space:nowrap}
+  .fl-legend i{display:inline-block;width:9pt;height:9pt;margin-right:4pt;vertical-align:-1.5pt;border:.6pt solid rgba(0,0,0,.4)}
+  .fl-note{text-align:center;font:400 6.5pt/8pt var(--font-body);color:var(--muted);white-space:nowrap;overflow:hidden}
+  .fl-fine{font:400 6.5pt/8pt var(--font-body);color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+Ivory.whenFonts(function(){
+  const D = Ivory.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML='<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
+  const esc = Ivory.esc, b = D.brand||{}, L = D.listing, A = D.agent||{}, CP = D.companion||{}, K = D.copy||{}, FL = CP.flyer||{};
+  document.body.dataset.mode = D.mode||'email';
+  Ivory.applyBrand(b);
+  const P = D.photos||{}, front = D.piece.side !== 'back', V = Ivory.version(D);
+  const inset = ((D.mode||'email')==='print' && D.piece.print==='margin') ? (D.piece.margin||18) : 0;
+  const ROWMIN = .93;                           // every other line 88%+ so the justified gaps stay even (a block that still gaps wide past 1.7x is set ragged below)
+  const LASTMIN = .9;                           // every write-up's last line runs 90%+ (owner 11/8), set justified
+  const SW = 612, X0 = 27, CW = SW - 2*X0;       // text column
+
+  // ---------- measuring ----------
+  const ms = document.createElement('div'); ms.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:normal;overflow:visible';
+  document.body.appendChild(ms);
+  const measure = (text, w, font) => {
+    ms.style.width = w + 'pt'; ms.style.font = font; ms.textContent = text;
+    const rg = document.createRange(); rg.selectNodeContents(ms);
+    const rows = []; [...rg.getClientRects()].filter(r => r.width > .5).forEach(r => { const row = rows.find(x => Math.abs(x.top - r.top) < 3); if(row) row.right = Math.max(row.right, r.right); else rows.push({top: r.top, right: r.right}); });
+    const box = ms.getBoundingClientRect(), last = rows.length ? rows[rows.length-1] : null;
+    const mn = rows.length > 1 && box.width ? Math.min(...rows.slice(0, -1).map(r => Math.min(1, (r.right - box.left)/box.width))) : 1;   // the shortest full line: set justified, it must not gap wide
+    return {lines: rows.length, last: last && box.width ? Math.min(1, (last.right - box.left)/box.width) : 0, min: mn};
+  };
+  // room sizes in feet only, inches dropped and never rounded: 18' x 12' (owner, Round 4, 11/1/2026)
+  const feetOnly = t => String(t).replace(/(\d+)(?:\.\d+)?(?:'\s?\d+(?:\.\d+)?"?)?'?\s*x\s*(\d+)(?:\.\d+)?(?:'\s?\d+(?:\.\d+)?"?)?'?/g, "$1' x $2'");
+  const sentences = s => (Array.isArray(s) ? s : feetOnly(String(s||'')).match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || []).map(x => feetOnly(x).trim()).filter(Boolean);
+  // ordered subsets of the sentences, the earliest sentences first, then more of them (never more than 5 sentences, 9 considered)
+  const subsets = arr => { const n = Math.min(arr.length, 9), out = [];
+    for(let m = 1; m < (1 << n); m++){ const pick = []; for(let i = 0; i < n; i++) if(m & (1 << i)) pick.push(arr[i]); if(pick.length <= 5) out.push({m, pick}); }
+    return out.sort((a, c) => (a.m & -a.m) - (c.m & -c.m) || c.pick.length - a.pick.length || a.m - c.m); };
+  // nothing is said twice inside one caption: a word of 3+ letters (content words; plurals count as the same word) may not come back
+  const STOP = new Set('the and with for from into that this are has its off out but not all any was per you can'.split(' '));
+  const dupWords = t => { const seen = new Set(); for(const w0 of (String(t).toLowerCase().match(/[a-z]{3,}/g) || [])){ const w = w0.length > 3 ? w0.replace(/s$/, '') : w0; if(STOP.has(w)) continue; if(seen.has(w)) return true; seen.add(w); } return false; };
+  const mcache = new Map();
+  const measureC = (t, w, font) => { const k = t + '|' + w + '|' + font; let r = mcache.get(k); if(!r){ r = measure(t, w, font); mcache.set(k, r); } return r; };
+  const sizeK = (font, k) => font.replace(/(\d*\.?\d+)px\//, (m, v) => (parseFloat(v)*k).toFixed(3) + 'px/');
+  const sizePt = font => parseFloat(font.match(/(\d*\.?\d+)px\//)[1])*.75;
+  const KS = [1, 1.03, 1.06, 1.09, 1.12];          // raising the type up to about 12% is allowed (owner 11/8); shorter text never is
+  const fitOne = (sents, w, font, n, tier) => {
+    for(const {pick} of subsets(sents)){ const t = pick.join(' '); if(dupWords(t)) continue; const r = measureC(t, w, font);
+      if(r.lines === n && r.last >= LASTMIN && r.min >= (tier === true ? ROWMIN : tier)) return {text: t, lines: n, last: r.last, min: r.min}; }
+    return null;
+  };
+  // a row of captions: one line count and one type size for all, every line full (last 90%+); the fullest lines first (93%+ so the
+  // justified gaps stay even), then 90%, 86%, never under 82% (a block that still gaps past 1.7x is set ragged, lines still 80%+)
+  const fitRow = (items, w, font, lo, hi) => {
+    const sn = items.map(sentences);
+    for(const tier of [true, .9, .86, .82])
+      for(let n = hi; n >= lo; n--){
+        for(const k of KS){
+          const fk = sizeK(font, k), rs = sn.map(x => x.length ? fitOne(x, w, fk, n, tier) : null);
+          if(rs.every(Boolean)) return rs.map(r => Object.assign(r, {k}));
+        }
+        // no one size fits them all: each caption takes its own size (same line count, up to 12% larger)
+        const per = sn.map(x => { if(!x.length) return null; for(const k of KS){ const r = fitOne(x, w, sizeK(font, k), n, tier); if(r) return Object.assign(r, {k}); } return null; });
+        if(per.every(Boolean)) return per;
+      }
+    return sn.map(x => { const t = x.join(' '), r = measure(t, w, font); return {text: t, lines: r.lines, last: r.last, k: 1}; });   // nothing fills: the whole pool (the checks name it)
+  };
+  const fitBox = (src, w, font, lo, hi) => fitRow([src], w, font, lo, hi)[0];
+  const fontOf = cls => { const e = document.createElement('div'); e.className = cls; e.style.cssText = 'position:absolute;visibility:hidden'; document.body.appendChild(e);
+    const cs = getComputedStyle(e), f = `${cs.fontWeight} ${cs.fontSize}/${cs.lineHeight} ${cs.fontFamily}`; e.remove(); return f; };
+
+  // ---------- photos ----------
+  const ids = Ivory.photoOrder(D);
+  const house = id => Ivory.fullHouse(D, id);
+  const boxPos = (id, w, h) => {
+    const p = P[id] || {}, bx = p.box; if(!bx || !(p.w && p.h)) return null;
+    const a = p.w/p.h, AR = w/h, vx = AR >= a ? 1 : AR/a, vy = AR >= a ? a/AR : 1;
+    const axis = (lo, hi, v) => { if(v >= 0.999) return 50; const s = Math.min(Math.max((lo+hi)/2 - v/2, 0), 1 - v); return s/(1 - v)*100; };
+    return {pos: `${axis(bx[0], bx[2], vx).toFixed(1)}% ${axis(bx[1], bx[3], vy).toFixed(1)}%`, fits: bx[2]-bx[0] <= vx + .005 && bx[3]-bx[1] <= vy + .005};
+  };
+  const ph = (id, x, y, w, h, isHero) => {
+    const bp = isHero ? boxPos(id, w, h) : null;
+    let html = Ivory.photo(D, '', id, `left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt`);
+    if(bp) html = html.replace('class="photo ', `data-box="${bp.fits ? 1 : 0}" class="photo `).replace(/(<img [^>]*style=")[^"]*"/, `$1object-position:${bp.pos}"`);
+    return html;
+  };
+  // the cover: a whole-house photo that fits a landscape frame, else a portrait whole-house photo (the tall layout)
+  const heroW0 = SW - 2*inset, heroH0 = 376 - inset;
+  const fitsLand = id => { const p = P[id] || {}; const bp = boxPos(id, heroW0, heroH0); if(bp) return bp.fits; return !(p.w && p.h) || 1 - (p.w/p.h)/(heroW0/heroH0) <= 0.25; };
+  const order0 = [FL.front && FL.front.hero, ...(CP.flyerPhotos || []), ...ids].filter((x, i, a) => x && Ivory.src(D, x) && a.indexOf(x) === i);
+  let hero = order0.find(id => house(id) && fitsLand(id)), tall = false;
+  if(!hero){ hero = order0.find(id => house(id) && P[id] && P[id].w && P[id].h >= P[id].w*0.95); tall = !!hero; }
+  if(!hero) hero = order0.find(id => fitsLand(id)) || order0[0];
+
+  // ---------- room roles and the photo plan ----------
+  const nameOf = id => String(((P[id]||{}).tags||'').split(',')[0]).toLowerCase().trim();
+  const roleOf = id => { const n = nameOf(id);
+    if(house(id) || /exterior|street view|front courtyard|front walk|aerial|skyline/.test(n)) return 'ext';
+    if(/^primary bedroom/.test(n)) return 'primary';
+    if(/primary bath|^primary shower|^shower|freestanding|soaking/.test(n)) return 'pbath';
+    if(/^primary closet|^closet/.test(n)) return 'closet';
+    if(/living|family room|great room|media/.test(n)) return 'living';
+    if(/^kitchen/.test(n)) return 'kitchen';
+    if(/dining|breakfast|nook|bar$|^bar|dry bar/.test(n)) return 'eat';
+    if(/bedroom/.test(n)) return 'bed';
+    if(/bath|powder/.test(n)) return 'bath';
+    if(/patio|yard|terrace|balcony|deck|outdoor|pool|rooftop|garage|side yard/.test(n)) return 'out';
+    return 'other'; };
+  const pool = ids.filter(id => id !== hero && !house(id) && roleOf(id) !== 'ext');
+  const used = new Set([hero]);
+  const take = (...roles) => { for(const r of roles){ const id = pool.find(i => !used.has(i) && roleOf(i) === r); if(id){ used.add(id); return id; } } return null; };
+  const takeAny = () => { const id = pool.find(i => !used.has(i)); if(id) used.add(id); return id || null; };
+  const fromWriter = (arr, n) => (arr && arr.length) ? arr.filter(i => Ivory.src(D, i)).slice(0, n) : [];
+  // a side's photos: the writer's picks first, then one per role list in order, then whatever is left
+  const pick = (writer, n, ...roleLists) => { const out = fromWriter(writer, n); out.forEach(i => used.add(i));
+    for(const roles of roleLists){ if(out.length >= n) break; const id = take(...roles); if(id) out.push(id); }
+    while(out.length < n){ const id = takeAny(); if(!id) break; out.push(id); }
+    return out.slice(0, n); };
+
+  // ---------- caption text ----------
+  const flyerPh = FL.photos || {};
+  const allCopy = []; Object.values(K).forEach(v => { if(v && typeof v === 'object'){ ['features','tiles'].forEach(k => (v[k]||[]).forEach(f => allCopy.push(f))); if(v.feature) allCopy.push(v.feature); } });
+  const cap1 = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+  const titleOf = id => (flyerPh[id] && flyerPh[id].title) || (allCopy.find(f => f.photo === id) || {}).title || Ivory.caption(D, id).name;
+  const poolOf = id => { const out = [];
+    const add = s => sentences(s).forEach(x => { if(!out.some(o => o.toLowerCase() === x.toLowerCase())) out.push(x); });
+    if(flyerPh[id] && (flyerPh[id].sentences || flyerPh[id].body)){ add(flyerPh[id].sentences || flyerPh[id].body); return out; }   // the writer's own pool wins outright
+    const f = allCopy.find(f => f.photo === id); if(f){ add(f.body || ''); if(f.caption) add(f.caption); }
+    if(CP.photoNotes && CP.photoNotes[id]) add(CP.photoNotes[id]);
+    if(!out.length){ const c = Ivory.caption(D, id); if(c.detail) add(cap1(c.detail) + '.'); }
+    return out; };
+
+  const place = Ivory.place(L), cityLine = [L.neighborhood, place].filter(Boolean).join(' · ');
+  const bathsT = BD.baths(L);
+  const facts = [];
+  if(L.beds) facts.push(`${L.beds} Bedroom${L.beds == 1 ? '' : 's'}`);
+  if(L.baths || L.halfBaths) facts.push(bathsT.main);
+  if(bathsT.half) facts.push(bathsT.half);
+  if(L.sqft) facts.push(`${Number(L.sqft).toLocaleString('en-US')} Sq Ft`);
+  // the fourth line is the stories; a fifth (lot size, else year built) joins when the listing has one, else the four grow to fill
+  const yb = L.yearBuilt || L.year_built, lot = L.lotSize || L.lot_size;
+  if(L.stories) facts.push(`${L.stories} ${L.stories == 1 ? 'Story' : 'Stories'}`);
+  if(lot) facts.push(String(lot)); else if(yb) facts.push(`Built in ${yb}`);
+  else if(!L.stories && L.stories !== 0) {}
+
+  const fine = FL.fineprint || CP.fineprint || 'Information deemed reliable but not guaranteed.';
+  const cardHTML = (box, opts) => {
+    const hs = Ivory.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
+    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), b, Object.assign({bottomGap: 0.5, grow: 0}, opts));
+  };
+  const T = (cls, slot, x, y, w, lines, ht, text, extra, fine) => `<div class="abs ${cls}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${ht}pt;${extra||''}" data-slot="${slot}" data-lines="${lines}"${fine ? ' data-fine="1"' : ''}>${esc(text)}</div>`;
+  const TF = (cls, slot, x, y, w, r, lh, id) => `<div class="abs ${cls}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${r.lines*lh}pt${r.k > 1 ? `;font-size:${(sizePt(FNT[cls])*r.k).toFixed(2)}pt` : ''}" data-slot="${slot}" data-lines="${r.lines}" data-fill="${r.lines}" data-fixed="1" data-capfit-skip="1"${id ? ` data-for="${esc(id)}"` : ''}>${esc(r.text)}</div>`;
+  const rule = y => `<div class="rule" style="left:${inset}pt;width:${SW - 2*inset}pt;top:${y}pt"></div>`;
+  const hair = (x, y, w) => `<div class="fl-hair" style="left:${x}pt;top:${y}pt;width:${w}pt"></div>`;
+  const F = {fd: fontOf('fl-desc'), fdt: fontOf('fl-desc-t'), cb: fontOf('fl-cb'), fb: fontOf('fl-fb'), rb: fontOf('fl-rb'), sb: fontOf('fl-sb')};
+  const FNT = {'fl-desc': F.fd, 'fl-desc-t': F.fdt, 'fl-cb': F.cb, 'fl-fb': F.fb, 'fl-rb': F.rb, 'fl-sb': F.sb};
+  let h = '';
+
+  if(front){
+    // ================= FRONT =================
+    const trio = pick(FL.front && FL.front.photos, 3, ['living'], ['kitchen'], ['primary']);
+    const desc0 = FL.desc || (K.insideTop && K.insideTop.intro) || '';
+    const kicker = (FL.front && FL.front.kicker) || cityLine;
+    const capW = 177, gapX = (CW - 3*capW)/2;
+    const capR = fitRow(trio.map(poolOf), capW, F.cb, 3, 4);
+    const capLines = Math.max(...capR.map(r => r.lines), 2), capH = 12.75 + capLines*12.4;
+    // no contact block and no broker logo on the front (owner 11/10): the page runs to the fine print
+    const FINE_Y = 760, BOTC = FINE_Y - 12;
+    let PHH = 100;
+    const capY = BOTC - capH, phY0 = capY - 6 - PHH;
+    let phY = phY0;
+    const trioHTML = py => trio.map((id, i) => { const x = X0 + i*(capW + gapX);
+      return ph(id, x, py, capW, PHH) + T('fl-ct', `front.cap${i}.name`, x, py + PHH + 6, capW, 1, 12.75, titleOf(id))
+        + TF('fl-cb', `front.cap${i}.detail`, x, py + PHH + 6 + 12.75, capW, capR[i], 12.4, id); }).join('');
+    if(!tall){
+      const descR = fitBox(desc0, CW, F.fd, 3, 4), descH = descR.lines*17.25;
+      // the cover soaks up the slack up to 410 pt; what is left makes the three room photos taller (up to 150 pt)
+      const need = 12 + descH + 120;
+      let hb = phY - need;
+      if(hb > 410){ PHH = Math.min(150, PHH + (hb - 410)); phY = capY - 6 - PHH; hb = phY - need; }
+      hb = Math.max(330, Math.min(410, hb));
+      h += ph(hero, inset, inset, SW - 2*inset, hb - inset, true);
+      h += T('fl-kick', 'front.kicker', X0, hb + 16, 420, 1, 9, kicker);
+      h += T('fl-addr', 'address', X0 - 1, hb + 27, CW, 1, 52, L.address, 'font-size:44pt;line-height:52pt');   // the logo's room goes to the address
+      h += rule(hb + 88);
+      h += `<div class="abs fl-facts" style="left:${X0}pt;top:${hb + 98}pt;width:${CW}pt;height:14pt" data-slot="front.facts" data-lines="1">${facts.map(f => `<span>${f}</span>`).join('')}</div>`;
+      h += TF('fl-desc', 'front.about', X0, hb + 120, CW, descR, 17.25);
+      h += trioHTML(phY);
+    } else {
+      // tall layout: the portrait cover down the left, the words down the right
+      const heroPW = 262, rx = 306, rw = SW - X0 - rx, hb2 = phY - 12;
+      const addrLines = Math.min(3, measure(L.address, rw - 8, '400 30pt/35pt var(--font-display)').lines || 1);
+      h += ph(hero, inset, inset, heroPW - inset, hb2 - inset, true);
+      let y = 27;
+      h += T('fl-kick', 'front.kicker', rx, y, rw, 1, 9, kicker);
+      y += 15;
+      h += `<div class="abs fl-addr" style="left:${rx - 1}pt;top:${y}pt;width:${rw}pt;height:${addrLines*35 + 4}pt;white-space:normal;font-size:30pt;line-height:35pt" data-slot="address" data-lines="${addrLines}">${esc(L.address)}</div>`;
+      y += addrLines*35 + 8;
+      h += `<div class="rule" style="left:${rx}pt;width:${rw + X0 - 0}pt;top:${y}pt"></div>`; y += 12;
+      const fr = Math.ceil(facts.length/2);
+      h += `<div class="abs fl-facts2" style="left:${rx}pt;top:${y}pt;width:${rw}pt;height:${fr*19 - 5}pt" data-slot="front.facts" data-lines="${fr}">${facts.map(f => `<span>${f}</span>`).join('')}</div>`;
+      y += fr*19 + 8;
+      const room = hb2 - y, mx = Math.floor(room/20);
+      const dr = fitBox(desc0, rw, F.fdt, Math.max(3, mx - 2), Math.max(3, mx));
+      h += TF('fl-desc-t', 'front.about', rx, y + Math.max(0, (room - dr.lines*20)/2), rw, dr, 20);
+      h += trioHTML(phY);
+    }
+    h += T('fl-fine', 'front.fineprint', X0, FINE_Y, CW, 1, 8, fine, '', true);
+  } else {
+    // ================= BACK =================
+    const plan = V.plan, BK = FL[plan ? 'plan' : 'noplan'] || {};
+    const kicker = BK.kicker || (plan ? 'Floor plan + rooms' : 'Inside the house');
+    const headline = FL.headline || (K.insideTop && K.insideTop.title) || '';
+    h += T('fl-kick', 'back.kicker', X0, 27, 220, 1, 9, kicker);
+    h += T('fl-head', 'back.headline', X0 - 1, 40.5, 400, 1, 30, headline);
+    h += T('fl-place', 'back.address', SW - X0 - 330, 25.5, 330, 1, 12, `${L.address} · ${place}`);
+    h += rule(78);
+    const CARD_H = 62, CARD_Y = 752 - CARD_H;       // the short contact block (owner 11/10): full width, less tall
+    h += hair(X0, CARD_Y - 10, CW);
+    h += cardHTML([X0, CARD_Y, CW, CARD_H], {layout: 'panel', size: 'short', s: {inlineLabel: true}});
+    h += T('fl-fine', 'back.fineprint', X0, 760, CW, 1, 8, fine, '', true);
+    const BOT = CARD_Y - 18;                         // the content ends here
+    const left = BK.left || FL.left || {label: 'Outside', text: (K.back && K.back.feature && K.back.feature.body) || ''};
+    const right = BK.right || FL.right || {label: (K.back && K.back.locationTitle) || 'Location', text: (K.back && K.back.locationBody) || ''};
+    const hw = (CW - 12)/2;                          // the two text blocks
+    const blocks = (y, lr, rr) => [[left, lr, X0, 'left'], [right, rr, X0 + hw + 12, 'right']].map(([blk, r, x, nm]) =>
+      T('fl-sec', `back.${nm}.label`, x, y, hw, 1, 10, blk.label) + TF('fl-sb', `back.${nm}.text`, x, y + 9.75 + 8, hw, r, 15)).join('');
+
+    if(!plan){
+      // ---- the photos version ----
+      const feat = pick(BK.features, 2, ['living'], ['kitchen']);
+      const grid = pick(BK.grid, 4, ['eat'], ['eat'], ['eat', 'other'], ['other', 'out']);
+      const row = pick(BK.row, 3, ['primary'], ['bed'], ['pbath', 'bath']);
+      const fw = (CW - 12)/2, gw = (CW - 3*12)/4, rw3 = (CW - 2*12)/3;
+      // the captions take as many lines as keep every photo a real photo (never a strip): 5, then 4, then 3 lines
+      let fr, gr, rr, lr, rrr, fl, gl, rl, tl, sh, fH, gH, rH;
+      for(const cap of [5, 4, 3]){
+        fr = fitRow(feat.map(poolOf), fw, F.fb, 3, cap); gr = fitRow(grid.map(poolOf), gw, F.cb, 3, Math.min(cap, 4)); rr = fitRow(row.map(poolOf), rw3, F.rb, 3, Math.min(cap, 4));
+        [lr, rrr] = fitRow([left.text, right.text], hw, F.sb, 3, cap);
+        fl = Math.max(...fr.map(r => r.lines), 3); gl = Math.max(...gr.map(r => r.lines), 3); rl = Math.max(...rr.map(r => r.lines), 3); tl = Math.max(lr.lines, rrr.lines);
+        const fixed = (8 + 22.5 + fl*14.25 + 12) + (6 + 12.75 + gl*12.4 + 12) + (12 + 9 + 8) + (6 + 19.5 + rl*13.1 + 14) + (9.75 + 8 + tl*15);
+        sh = Math.max(0, BOT - 91.5 - fixed); fH = Math.min(170, sh*.4); gH = Math.min(112, sh*.27); rH = Math.min(124, sh*.33);
+        if(fH >= 95 && gH >= 62 && rH >= 78) break;
+      }
+      let y = 91.5;
+      feat.forEach((id, i) => { const x = X0 + i*(fw + 12);
+        h += ph(id, x, y, fw, fH);
+        h += T('fl-ft', `back.feature${i}.title`, x, y + fH + 8, fw, 1, 19.5, titleOf(id));
+        h += TF('fl-fb', `back.feature${i}.body`, x, y + fH + 8 + 22.5, fw, fr[i], 14.25, id); });
+      y += fH + 8 + 22.5 + fl*14.25 + 12;
+      grid.forEach((id, i) => { const x = X0 + i*(gw + 12);
+        h += ph(id, x, y, gw, gH);
+        h += T('fl-ct', `back.grid${i}.name`, x, y + gH + 6, gw, 1, 12.75, titleOf(id));
+        h += TF('fl-cb', `back.grid${i}.detail`, x, y + gH + 6 + 12.75, gw, gr[i], 12.4, id); });
+      y += gH + 6 + 12.75 + gl*12.4 + 12;
+      h += hair(X0, y, CW); y += 12;
+      h += T('fl-lab', 'back.rowlabel', X0, y, CW, 1, 9, BK.rowLabel || 'Bedrooms + baths'); y += 9 + 8;
+      row.forEach((id, i) => { const x = X0 + i*(rw3 + 12);
+        h += ph(id, x, y, rw3, rH);
+        h += T('fl-rt', `back.row${i}.name`, x, y + rH + 6, rw3, 1, 16.5, titleOf(id));
+        h += TF('fl-rb', `back.row${i}.detail`, x, y + rH + 6 + 19.5, rw3, rr[i], 13.1, id); });
+      y += rH + 6 + 19.5 + rl*13.1 + 14;
+      h += hair(X0, y - 7, CW);
+      h += blocks(y, lr, rrr);
+      document.body.dataset.end = (y + 9.75 + 8 + tl*15).toFixed(1);
+    } else {
+      // ---- the floor plan version ----
+      const feat = pick(BK.features, 2, ['living'], ['kitchen']);
+      const grid = pick(BK.grid, 4, ['primary'], ['bed'], ['pbath', 'bath'], ['out'], ['other', 'eat']);
+      const gw = (CW - 3*12)/4;
+      const gr = fitRow(grid.map(poolOf), gw, F.cb, 3, 5), gl = Math.max(...gr.map(r => r.lines), 2);
+      const [lr, rrr] = fitRow([left.text, right.text], hw, F.sb, 3, 5), tl = Math.max(lr.lines, rrr.lines);
+      const PY = 91.5;
+      // the plan panel takes the height the rooms below leave it; when the plan's labels won't fit at that height the
+      // photos below give up height a step at a time (never under 48 pt) before the plan is ever drawn smaller
+      const below = g => 12 + 12 + 9 + 8 + g + 6 + 12.75 + gl*12.4 + 14 + 9.75 + 8 + tl*15;
+      const planImg = (D.plan.levels||[]).some(l => l.kind === 'image');   // a listing's own plan image runs the full width
+      const tiers = [{w: 333, col: true}, {w: CW, col: false}].filter(t => planImg ? !t.col : (t.col ? feat.length === 2 : true));
+      const zs = IvoryPlan.zonesOf(D.plan), hasLeg = zs.length > 0;
+      let PH, gH, pk, inner;
+      for(const g of [96, 80, 68, 60, 54, 48]){
+        PH = Math.max(262, Math.min(370, BOT - PY - below(g)));
+        gH = Math.max(48, Math.min(125, BOT - PY - PH - below(0)));
+        inner = {x: X0 + 12, y: PY + 12, h: PH - (hasLeg ? 66 : 48)};
+        const runs = tiers.map(t => Object.assign({t}, IvoryPlan.draw(D.plan, {x: inner.x, y: inner.y, w: t.w - 24, h: inner.h}, {allowRotate: true})));
+        const best = Math.max(...runs.map(r => r.issues.length ? 0 : r.scale));
+        pk = (planImg ? runs.filter(r => !r.issues.length).sort((p, q) => q.scale - p.scale)[0] : runs.find(r => !r.issues.length && r.scale >= Math.min(best*0.92, 5.5))) || runs.find(r => !r.issues.length) || runs[runs.length-1];   // a listing's own image takes the widest tier
+        if(!pk.issues.length && (!planImg || pk.usedW >= (pk.t.w - 24)*0.94 || g === 48)) break;
+      }
+      const gh = pk.usedH, blk = gh + 8 + 10 + (hasLeg ? 6 + 10 : 0) + 6 + 8;
+      // a listing's own plan image keeps the panel as tall as its drawing needs (plus a little air); the rest of the height goes to the room photos
+      if(planImg){ gH = Math.max(48, Math.min(130, BOT - PY - (blk + 20) - below(0))); PH = BOT - PY - gH - below(0); }
+      const by0 = PY + Math.max(8, (PH - blk)/2);
+      pk = Object.assign({t: pk.t}, IvoryPlan.draw(D.plan, {x: inner.x, y: by0, w: pk.t.w - 24, h: gh + 0.5}, {allowRotate: true, rotate: !!pk.rotated, angle: pk.angle}));
+      window.planIssues = pk.issues;
+      document.body.dataset.plan = JSON.stringify({PH, gH, scale: +(pk.scale||0).toFixed(2), tier: pk.t.w, issues: pk.issues.length});
+      h += `<div class="fl-panel" style="left:${X0}pt;top:${PY}pt;width:${pk.t.w}pt;height:${PH}pt"></div>`;
+      h += `<div class="panel" style="position:absolute;left:0;top:0;width:${SW}pt;height:792pt">${pk.html}</div>`;
+      const lvl = (D.plan.levels||[]).filter(l => !l.roof).length;
+      const fl2 = [L.beds ? `${L.beds} beds` : '', (L.baths || L.halfBaths) ? bathsT.main.replace(/<[^>]*>/g, '').toLowerCase().replace(/½/, '½') + (bathsT.half ? ' · ' + bathsT.half.toLowerCase() : '') : '',
+                   L.sqft ? `${Number(L.sqft).toLocaleString('en-US')} sq ft` : '', lvl > 1 ? `${lvl} levels` : ''].filter(Boolean);
+      const front2 = pk.front ? (pk.front === 'left' ? 'Front of the home on the left' : pk.rotated ? 'Front of the home at the bottom' : '') : (pk.rotated ? 'Plan turned on its side' : '');
+      const ly = by0 + gh + 8;
+      h += `<div class="abs fl-pfacts" style="left:${X0}pt;top:${ly}pt;width:${pk.t.w}pt;height:10pt" data-slot="back.planfacts" data-lines="1">${esc(fl2.join(' · '))}</div>`;
+      const leg = Object.entries(IvoryPlan.ZONES).filter(([k]) => zs.includes(k))
+        .map(([k, z]) => `<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, var(--paper))"></i>${z.label}</span>`);
+      if(zs.includes('outdoor')) leg.push(`<span><i style="background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--accent) 35%, var(--paper)) 0 .6pt, var(--paper) .6pt 2.8pt)"></i>Outdoor</span>`);
+      h += `<div class="abs fl-legend" style="left:${X0}pt;top:${ly + 16}pt;width:${pk.t.w}pt;height:10pt">${leg.join('')}</div>`;
+      const note = (D.plan.source || 'Floor plan redrawn for this flyer.') + ' Room sizes are approximate.' + (front2 ? ' ' + front2 + '.' : '') + (pk.mixedScale ? ' Floors are drawn at different scales.' : '') + (pk.detachedSmaller ? ' The garage box is drawn at a smaller scale.' : '');
+      h += `<div class="abs fl-note" style="left:${X0}pt;top:${ly + (hasLeg ? 32 : 16)}pt;width:${pk.t.w}pt;height:8pt" data-slot="back.disclosure0" data-lines="1" data-fine="1">${esc(note)}</div>`;
+      if(pk.t.col){
+        const cx = X0 + 333 + 18, cw = SW - X0 - cx, fr = fitRow(feat.map(poolOf), cw, F.fb, 3, 6), fl = Math.max(...fr.map(r => r.lines));
+        const textH = (19.5 + 3 + fl*14.25)*2 + 12, phH = Math.max(60, Math.min(200, PH - textH - 8));
+        let y = PY;
+        h += ph(feat[0], cx, y, cw, phH); y += phH + 8;
+        feat.forEach((id, i) => {
+          h += T('fl-ft', `back.feature${i}.title`, cx, y, cw, 1, 19.5, titleOf(id), 'font-size:14.25pt');
+          h += TF('fl-fb', `back.feature${i}.body`, cx, y + 22.5, cw, fr[i], 14.25, id);
+          y += 22.5 + fr[i].lines*14.25 + 12; });
+      }
+      let y = PY + PH + 12;
+      h += hair(X0, y, CW); y += 12;
+      h += T('fl-lab', 'back.rowlabel', X0, y, CW, 1, 9, BK.rowLabel || 'Bedrooms, baths + outside'); y += 9 + 8;
+      grid.forEach((id, i) => { const x = X0 + i*(gw + 12);
+        h += ph(id, x, y, gw, gH);
+        h += T('fl-ct', `back.grid${i}.name`, x, y + gH + 6, gw, 1, 12.75, titleOf(id));
+        h += TF('fl-cb', `back.grid${i}.detail`, x, y + gH + 6 + 12.75, gw, gr[i], 12.4, id); });
+      y += gH + 6 + 12.75 + gl*12.4 + 14;
+      h += hair(X0, y - 7, CW);
+      h += blocks(y, lr, rrr);
+      document.body.dataset.end = (y + 9.75 + 8 + tl*15).toFixed(1);
+    }
+  }
+
+  window.__flyer = {poolOf, titleOf, fitOne, fitRow, fitBox, measure, F, sentences, subsets};
+  const f = Ivory.frame(D, 612, 792, h);
+  document.getElementById('pages').innerHTML = f.html;
+  Ivory.shapeLogos();
+  document.querySelectorAll('.plan-room span').forEach(e => { e.textContent = feetOnly(e.textContent); });
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  document.body.dataset.layout = front ? (tall ? 'front-tall' : 'front') : (V.plan ? 'back-plan' : 'back-photos');
+  // a long address comes down to its floor (24 pt) on one line
+  document.querySelectorAll('.fl-addr').forEach(el => { if(el.style.whiteSpace === 'normal') return; let s = parseFloat(getComputedStyle(el).fontSize)*72/96;
+    while(el.scrollWidth > el.clientWidth + 0.5 && s > 24){ s -= 0.5; el.style.fontSize = s + 'pt'; } });
+  // a justified block whose widest word gap passes 1.7x a normal space is set ragged instead (never spread words)
+  document.querySelectorAll('.fl-desc, .fl-desc-t, .fl-cb, .fl-fb, .fl-rb, .fl-sb').forEach(el => {
+    const cs = getComputedStyle(el), cv = document.createElement('canvas').getContext('2d'); cv.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const normal = cv.measureText(' ').width, rg = document.createRange(), byTop = {};
+    const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for(let n = tw.nextNode(); n; n = tw.nextNode()) for(let i = 0; i < n.textContent.length; i++){ if(n.textContent[i] !== ' ') continue; rg.setStart(n, i); rg.setEnd(n, i + 1); const q = rg.getBoundingClientRect(); if(q.width > 0) (byTop[Math.round(q.top)] = byTop[Math.round(q.top)] || []).push(q.width); }
+    const tops = Object.keys(byTop).map(Number).sort((a, b) => a - b).slice(0, -1);
+    const worst = Math.max(0, ...tops.map(t => Math.max(...byTop[t])));
+    if(normal && worst/normal > 1.7) el.style.textAlign = 'left';
+  });
+  const cardIssues = Ivory.layoutCards();
+  { const blk = document.getElementById('offblk'), cc = document.querySelector('.cc[data-contactcard]');
+    if(blk && cc){ const k = 96/72, bb = blk.getBoundingClientRect(), rows = {name: '.cc-name', desig: '.cc-desig', phone: '.cc-phone'};
+      let desigY = null;
+      blk.querySelectorAll('.ol').forEach(el => { const t = cc.querySelector(rows[el.dataset.at]); if(!t) return;
+        const r = t.getBoundingClientRect(), mid = (r.top + r.bottom)/2 - bb.top;
+        el.style.position = 'absolute'; el.style.left = '0'; el.style.top = (mid/k - el.offsetHeight/k/2 - 0) * 1 + 'pt'; el.style.top = ((mid - el.offsetHeight/2)/ (bb.height/blk.offsetHeight) / k) + 'pt'; }); } }
+  // every box filled: the last line of every paragraph at least 3/4 of the width; a row of captions runs the same lines
+  const fillIssues = () => { const out = [];
+    const byRow = {}; document.querySelectorAll('[data-fill]').forEach(el => { const m = el.dataset.slot.match(/^(front\.cap|back\.grid|back\.row|back\.feature)\d\.(detail|body)$/); if(m) (byRow[m[1]] = byRow[m[1]] || []).push(+el.dataset.fill); });
+    Object.entries(byRow).forEach(([k, v]) => { if(new Set(v).size > 1) out.push({slot: k, kind: 'caption-rows-differ', lines: v.join(','), detail: 'captions in a row run the same number of lines'}); });
+    return out; };
+  window.brochureCheck = () => Ivory.check(cardIssues.concat(window.planIssues||[], (!front && V.plan) ? IvoryPlan.check() : [], fillIssues()));
+});
+</script>
+</body>
+</html>
