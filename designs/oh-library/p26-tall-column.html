@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · Tall Column</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<!--
+  Tall Column (from reference P26). Trim 612 x 792 pt. Public or REALTOR(R).
+  The owner wants a flyer built around this one. Tall condensed lettering makes the event and the date a column of their
+  own at left, on a pale tint of the agent's main color: the brokerage logo, the event wording, the month and day very
+  large, the time, then the address and facts with line icons, and the agent. A clean vertical gallery at right: the
+  house and three rooms.
+  Event box (10/30): what's served and the notes in a white box with a main-color line in the column, 12 pt.
+  Type: Asap Condensed (headline, date), Barlow (details).
+-->
+<style>
+  .sheet{background:#fff;color:var(--ink)}
+  .col{position:absolute;left:0;top:0;width:272pt;height:792pt}
+  .hl{font:700 66pt/62pt 'Asap Condensed';text-transform:uppercase;white-space:nowrap;overflow:hidden;color:var(--main-on-paper)}
+  .md{font:700 60pt/62pt 'Asap Condensed';text-transform:uppercase;white-space:nowrap;overflow:hidden;color:var(--main-on-paper)}
+  .wd{font:600 11pt/14pt Barlow;letter-spacing:3pt;text-transform:uppercase;white-space:nowrap}
+  .time{font:600 22pt/27pt Barlow;white-space:nowrap;overflow:hidden}
+  .hr{position:absolute;height:2pt;background:var(--main-on-paper)}
+  .row{position:absolute;display:flex;align-items:center;gap:10pt}
+  .row .ic{width:28pt;height:28pt;border-radius:50%;background:var(--main);color:var(--on-main);display:flex;align-items:center;justify-content:center;flex:none}
+  .row span{font:600 11pt/14pt Barlow;text-transform:uppercase;letter-spacing:.4pt;white-space:nowrap;overflow:hidden}
+  .cc-stripe{display:none}
+  .evb{font:500 13pt/17pt Barlow;color:var(--ink)}
+  .evb.b{font-weight:700}
+  .addr{font:700 28pt/30pt 'Asap Condensed';color:var(--main-on-paper)}
+  .plc{font:600 12pt/16pt Barlow;letter-spacing:1pt;text-transform:uppercase;color:var(--ink);white-space:nowrap}
+  .wu{font:400 10.5pt/14.5pt Barlow}
+  .oh-agent-name{font-family:'Asap Condensed';font-weight:700}
+  .oh-agent{font-family:Barlow}
+  .fine{font:400 6.6pt/8pt Barlow;white-space:nowrap;opacity:.6}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['700 10pt "Asap Condensed"', '600 10pt Barlow', '500 10pt Barlow', '400 10pt Barlow'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {}, k = OHL.colors(D);
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id)).slice(0, 3);
+  const X = 30, CW = 272 - 2*X;
+  let h = `<div class="col" style="background:${OHL.mix(k.main, '#ffffff', .9)}"></div>`;
+  const lines = OHL.labelLines(E.label);
+  lines.forEach((t, i) => h += `<div class="abs hl" style="left:${X-2}pt;top:${38 + i*62}pt;width:${CW+4}pt;height:66pt" data-slot="oh.label" data-lines="1">${esc(t)}</div>`);
+  let y = 38 + lines.length*62 - 26;
+  const y0 = y;
+  if(E.weekday){ h += `<div class="abs wd" style="left:${X}pt;top:${y}pt;width:${CW}pt;height:14pt" data-slot="oh.weekday" data-lines="1">${esc(E.weekday)}</div>`; y += 16; }
+  h += `<div class="abs md" style="left:${X}pt;top:${y}pt;width:${CW}pt;height:62pt" data-fit="60,30" data-slot="oh.date" data-lines="1">${esc(E.weekday ? E.monthShort + ' ' + E.day : E.long)}</div>`; y += 62;
+  if(E.time){ h += `<div class="abs time" style="left:${X}pt;top:${y}pt;width:${CW}pt;height:27pt" data-fit="22,18" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`; y += 32; }
+  h += `<div class="hr" style="left:${X}pt;top:${y + 4}pt;width:${CW}pt"></div>`; y += 20;
+  // under the rule (owner 10/27/2026): the full address on its own, larger; the three facts with icons; then a short
+  // write-up that fills the column down to the agent card
+  const an = Ivory.linesNeeded('addr', L.address, CW, 30);
+  h += `<div class="abs addr" style="left:${X}pt;top:${y - 2}pt;width:${CW}pt;height:${an*30+2}pt" data-slot="address" data-lines="${an}">${esc(L.address)}</div>`; y += an*30 + 1;
+  h += `<div class="abs plc" style="left:${X}pt;top:${y}pt;width:${CW}pt;height:16pt" data-slot="place" data-lines="1">${esc(OHL.place(L))}</div>`; y += 26;
+  const rows = OHL.factCells(L).filter(c => c[0] !== 'pin').map((c, i) => [c[0], c[1] + ' ' + c[2], 'fact.' + i]);
+  rows.forEach(([ic, t, slot]) => { h += `<div class="row" style="left:${X}pt;top:${y}pt;width:${CW}pt;height:30pt"><div class="ic">${OHL.icon(ic, 15)}</div><span data-slot="${slot}" data-lines="1">${esc(t)}</span></div>`; y += 31; });
+  const ev = Ivory.eventBox([[E.refreshments,'oh.refreshments','evb b'],[E.note,'oh.note','evb']], X, y + 2, CW, 17, 3,
+    {bg:'#fff', line:'var(--main-on-paper)', lineW:1.2, padY:11, padX:12, scale:((D.openHouse||{}).box||{}).w});
+  h += ev.html; y += ev.h + (ev.h ? 14 : 0);
+  // the write-up (owner 10/30 late evening): longer, bigger type, stretched side to side to match the box above it (full
+  // column width, no narrowing). The type steps up while the writer's sentences still fill the room and the last line
+  // reaches 3/4; the longest text that fits wins, and at equal length the bigger type.
+  // owner 10/31 voice review (P26 round 2): no band across the page; the write-up sits under the fact list (and the white
+  // box when there is one) on the bullets' left edge and width, and the gallery stays one group of four. The type may
+  // step up to 16 pt so a short write-up fills the column instead of leaving a gap.
+  const wuEnd = 630;
+  let wu = {text: '', n: 0, fill: 0, lh: 14.5, cls: 'wu'};
+  for(let sz = 11; sz <= 16; sz += .25){
+    const cn = 'wus' + Math.round(sz*100), lh = Math.round(sz*1.38*4)/4;
+    if(!document.getElementById(cn)){ const st = document.createElement('style'); st.id = cn; st.textContent = `.${cn}{font:400 ${sz}pt Barlow;line-height:${lh}pt}`; document.head.appendChild(st); }
+    const r = OHL.writeup(D, cn, CW, lh, Math.floor((wuEnd - y)/lh));
+    if(r.text && r.fill >= .75 && r.n && (!wu.text || r.text.length > wu.text.length || (r.text.length === wu.text.length && sz > wu.sz))) wu = Object.assign(r, {lh, cls: cn, sz});
+  }
+  // any room left over is split above and below the write-up so no gap opens at one end of the column
+  if(wu.text && wu.n) y += Math.max(0, (wuEnd - y - wu.n*wu.lh)/2);
+  if(wu.text && wu.n){ h += `<div class="abs ${wu.cls}" style="left:${X}pt;top:${y}pt;width:${CW}pt;height:${wu.n*wu.lh+3}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`; y += wu.n*wu.lh + 6; }
+  const issues = y > 636 ? [{slot:'oh.note', kind:'overflow', detail:'the column is too full'}] : [];
+  // agent at the column's foot (no second logo)
+  h += OHL.contact(D, {x:X, y:640, w:CW, h:84, logo:false, nameSize:18});
+  h += `<div class="abs" style="left:${X}pt;top:728pt;width:${CW}pt;height:.9pt;background:var(--main-on-paper);opacity:.5"></div>`;
+  h += OHL.logo(D, 'light', `left:${X}pt;top:734pt;width:${CW}pt;height:40pt;justify-content:flex-start`);
+  h += `<div class="abs fine" style="left:${X}pt;top:778pt;width:540pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  // gallery
+  const gx = 272 + 10, gw = 612 - gx - 10, G = 10;
+  const fr = OHL.fitHero(D, hero, gw, Math.round(gw/1.5));
+  h += OHL.photo(D, hero, `left:${gx + (gw - fr.w)/2}pt;top:10pt;width:${fr.w}pt;height:${fr.h}pt`);
+  const gy = 10 + fr.h + G, rh = (772 - gy - (rooms.length - 1)*G)/rooms.length;
+  rooms.forEach((id, i) => h += OHL.photo(D, id, `left:${gx}pt;top:${gy + i*(rh + G)}pt;width:${gw}pt;height:${rh}pt`));
+  const f = OHL.frame(D, h);
+  f.issues = issues;
+  // the headline grows only as far as the date block allows: a short label ("OPEN / HOUSE") fit at 66 pt ran its last
+  // line into the weekday (11/13/2026; the approved "PUBLIC / OPEN HOUSE" fits smaller and is unchanged)
+  f.after = () => {
+    const hl = [...document.querySelectorAll('.hl')], below = document.querySelector('.wd, .md');
+    let max = 66, r = OHL.stack(hl, max, 36, 38, 0.94);
+    while(below && r.bottom > parseFloat(below.style.top) - 2 && max > 36){ max -= 1; r = OHL.stack(hl, max, 36, 38, 0.94); }
+    return r;
+  };
+  return f;
+});
+</script>
+</body>
+</html>
