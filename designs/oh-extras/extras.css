@@ -1,0 +1,101 @@
+/* Open House extras: the sign-in sheet (8.5 x 11) and the broker feedback card (5.5 x 8.5, two up on a letter sheet).
+   Brief: docs/briefs/open-house-extras-build.md. Every extra wears its set's look ("extras style"): the set's palette,
+   type pairing and signature details, set on the page by .set-<id>. Lengths are pt (1/72 in). Type 8 pt and up
+   (fine print 6 pt). Rows stay light enough to write on with any pen. */
+
+@font-face{font-family:'Playfair Display';font-weight:400;src:url(../../fonts/playfair-display-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Figtree';font-weight:400;src:url(../../fonts/figtree-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Figtree';font-weight:600;src:url(../../fonts/figtree-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Figtree';font-weight:700;src:url(../../fonts/figtree-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Asap Condensed';font-weight:500;src:url(../../fonts/pool/asap-condensed-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Asap Condensed';font-weight:600;src:url(../../fonts/pool/asap-condensed-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Asap Condensed';font-weight:700;src:url(../../fonts/pool/asap-condensed-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:400;src:url(../../fonts/pool/source-sans-3-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:600;src:url(../../fonts/pool/source-sans-3-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Source Sans 3';font-weight:700;src:url(../../fonts/pool/source-sans-3-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Manrope';font-weight:500;src:url(../../fonts/pool/manrope-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Manrope';font-weight:600;src:url(../../fonts/pool/manrope-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Manrope';font-weight:700;src:url(../../fonts/pool/manrope-latin-700-normal.woff2) format('woff2')}
+
+/* extras styles: the set's three brand colors, type pairing and line color */
+.set-ivory{      /* Ivory: ivory field, Playfair over Figtree, the agent's color in labels, rules and bands */
+  --paper:#f3f0ea; --ink:#262626; --muted:#5c5c5c; --accent:#1f4e5f; --accent2:#b08a3e; --line:rgba(0,0,0,.16);
+  --tint:rgba(31,78,95,.035); --on:#ffffff; --on-soft:rgba(255,255,255,.82);
+  --font-display:'Playfair Display',Georgia,serif; --font-body:'Figtree',Helvetica,Arial,sans-serif;
+  --cc-paper:transparent;
+}
+.set-atlas{      /* Atlas: warm paper, deep green, a red signal color for kickers and map marks, condensed headings */
+  --paper:#f1eee6; --ink:#1f3a32; --muted:#5a6560; --accent:#1f3a32; --signal:#b4442b; --land:#e3dfd3; --line:rgba(31,58,50,.26);
+  --tint:rgba(31,58,50,.03); --on:#ffffff; --on-soft:rgba(255,255,255,.85);
+  --font-display:'Asap Condensed','Oswald',Helvetica,Arial,sans-serif; --font-body:'Source Sans 3',Helvetica,Arial,sans-serif;
+  --cc-paper:transparent;
+}
+.set-swatchbook{ /* Swatchbook: the brand color is the field, white boxes inside, gold labels, Manrope over Source Sans */
+  --paper:#ffffff; --ink:#1e2c4a; --muted:#5b6578; --accent:#1e2c4a; --navy:#1e2c4a; --gold:#d4ae5a; --gold-ink:#8a6a22;
+  --line:rgba(30,44,74,.2); --tint:rgba(30,44,74,.03); --on:#ffffff; --on-soft:#e7ebf3; --line-on:rgba(255,255,255,.32);
+  --font-display:'Manrope',Helvetica,Arial,sans-serif; --font-body:'Source Sans 3',Helvetica,Arial,sans-serif;
+  --cc-paper:transparent;
+}
+
+/* the black-and-white version (owner 11/1/2026): white field, black ink, grays for rules and tints, gray logo */
+body.bw{--paper:#fff; --ink:#111; --muted:#4a4a4a; --accent:#111; --accent2:#111; --signal:#111; --navy:#111; --gold:#111; --gold-ink:#111;
+  --land:#fff; --line:rgba(0,0,0,.34); --tint:rgba(0,0,0,.025); --on:#111; --on-soft:#4a4a4a; --line-on:rgba(0,0,0,.34)}
+body.bw img{filter:grayscale(1) contrast(1.15)}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:var(--font-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased}
+img{display:block}
+@page{margin:0}
+.page{position:relative;overflow:hidden;background:#fff;break-after:page}
+.page:last-child{break-after:auto}
+.trim{position:absolute;overflow:visible}
+.abs{position:absolute}
+.nowrap{white-space:nowrap;overflow:hidden}
+.flood{position:absolute}
+.photo{position:absolute;overflow:hidden;background:#ddd}
+.photo img{position:absolute;max-width:none}
+
+/* shared type pieces */
+.kicker{font:600 9pt/1 var(--font-body);letter-spacing:1.6pt;text-transform:uppercase;white-space:nowrap}
+.collab{font:700 8pt/1 var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;white-space:nowrap;color:var(--accent)}
+.disp{font-family:var(--font-display);font-weight:400;white-space:nowrap;overflow:hidden}
+.fine{font-size:6pt;line-height:7.5pt;color:var(--muted);white-space:nowrap;overflow:hidden}
+
+/* writing rows */
+.rowband{position:absolute}
+.vrule{position:absolute;width:0;border-left:.5pt solid var(--line)}
+.hrule{position:absolute;height:0;border-top:.5pt solid var(--line)}
+.wline{position:absolute;height:0;border-top:.6pt solid var(--line)}
+.num{position:absolute;text-align:center;white-space:nowrap}
+.yn{position:absolute;display:flex;gap:6pt;align-items:center}
+.yn span{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font:700 8pt/1 var(--font-body)}
+
+/* rating dots and pills (feedback card) */
+.dots{position:absolute;display:flex;justify-content:space-between;align-items:center}
+.dot{display:flex;align-items:center;justify-content:center;border-radius:50%;font:700 9pt/1 var(--font-body)}
+.pill{display:inline-flex;align-items:center;justify-content:center;font:700 8.5pt/1 var(--font-body);letter-spacing:1.2pt;text-transform:uppercase}
+
+/* the cut line on the two-up home sheet */
+.cut{position:absolute;left:0;right:0;height:0;border-top:.6pt dashed #9a9a9a}
+
+/* the light grayscale house photo on black-and-white pieces (owner 11/1/2026: black-and-white public sign-in sheets get a
+   light grayscale photo so the page isn't bare without the date and time); light so it prints soft and saves toner */
+body.bw .photo.light{background:#fff}
+body.bw .photo.light img{filter:grayscale(1) contrast(.82) brightness(1.12);opacity:.5}
+
+/* the Open House library flyers' extras (owner 11/2/2026): fonts the flyers use, and each look's type pairing. The colors come
+   from the agent's brand kit (looks.js X.themes), so a sheet follows its flyer when the brand changes. */
+@font-face{font-family:'Tenor Sans';font-weight:400;src:url(../../fonts/pool/tenor-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Jost';font-weight:400;src:url(../../fonts/pool/jost-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Jost';font-weight:500;src:url(../../fonts/pool/jost-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Jost';font-weight:600;src:url(../../fonts/pool/jost-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Spectral';font-weight:400;src:url(../../fonts/pool/spectral-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Spectral';font-weight:500;src:url(../../fonts/pool/spectral-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'DM Serif Display';font-weight:400;src:url(../../fonts/pool/dm-serif-display-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Outfit';font-weight:400;src:url(../../fonts/pool/outfit-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Outfit';font-weight:500;src:url(../../fonts/pool/outfit-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Outfit';font-weight:600;src:url(../../fonts/pool/outfit-latin-600-normal.woff2) format('woff2')}
+.set-b01{--font-display:'Tenor Sans','Jost',sans-serif; --font-body:'Jost',Helvetica,Arial,sans-serif; --font-serif:'Spectral',Georgia,serif; --cc-paper:transparent}
+.set-b16{--font-display:'DM Serif Display',Georgia,serif; --font-body:'Manrope',Helvetica,Arial,sans-serif; --font-serif:'DM Serif Display',Georgia,serif; --cc-paper:transparent}
+.set-p17{--font-display:'Asap Condensed','Oswald',Helvetica,sans-serif; --font-body:'Outfit',Helvetica,Arial,sans-serif; --font-serif:'Asap Condensed',Helvetica,sans-serif; --cc-paper:transparent}

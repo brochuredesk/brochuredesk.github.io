@@ -1099,7 +1099,14 @@
   // here; a click opens it full size in a new tab (an image download comes with the server renderer, as in the library).
   const looksOf = id => looksCache[id] || (looksCache[id] = fetch(`/designs/${id}/looks.json`).then(r => r.ok ? r.json() : {}).catch(() => ({})));
   const looksCache = {};
-  let PLACES = null;
+  let PLACES = null, OHX = null;
+  const ohxSpec = () => OHX || (OHX = fetch('/designs/oh-extras/pieces.json').then(r => r.ok ? r.json() : {}).catch(() => ({})));
+  // the extras' photo slot is "front": the package's front exterior (else its first photo)
+  const ohxFront = () => { const i = Math.max(0, pkg.photos.findIndex(ph => ph.role === 'front')); return 'p' + i; };
+  // the extras read the event as {kind, date, start, end} and the house photo as photos.front
+  const ohxData = (base, x) => { if(!x.look.ohx) return Object.assign({}, base, x.look);
+    const o = x.look.ohx, P = Object.assign({}, base.photos); if(P[o.front]) P.front = P[o.front]; else if(!P.front) P.front = Object.values(base.photos)[0];
+    return Object.assign({}, base, {photos: P, openHouse: o.openHouse}); };
   async function extraParts(id){
     const S = await spec(id), X = S.extras || {}, lk = await looksOf(id), out = [];
     PLACES = PLACES || await fetch('/designs/engine/social-places.json').then(r => r.json()).catch(() => ({shapes: {post: [1080, 1350]}}));
@@ -1117,6 +1124,18 @@
         out.push({group: 'Open House socials', label: `Open House, ${shape}`, look: {emailLook: social},
           piece: Object.assign({}, ohP, {id: `${ohP.id}-oh-${shape}`, of: ohP.id, kind: 'oh-social', file: ohP.socialFile || 'email.html'}, sh(shape))});
     }
+    // the sign-in sheet and broker feedback card that match the package's Open House flyer (approved cards only,
+    // /designs/oh-extras/pieces.json; owner's yes 11/13/2026): the set's own, or the library flyer picked on the proof
+    // (a pick only counts when it's this design's own flyer or a library pick, as the proof decides)
+    const ohPick = pkg.ohFlyer && (pkg.ohFlyer.library || pkg.ohFlyer.design === id) ? pkg.ohFlyer : null;
+    if(ohP || ohPick){
+      const OX = await ohxSpec(), f = ohPick || {}, ohDesign = f.design || id;
+      const cards = (OX.pieces || []).filter(p => p.flyer ? (p.flyer === f.piece || p.flyer === f.design) : p.design === ohDesign);
+      const front = ohxFront(), ev = pkg.openHouse && pkg.openHouse.date ? pkg.openHouse : null;
+      for(const p of cards) out.push({group: p.kind === 'signin' ? 'Open House sign-in sheet' : 'Broker feedback card', dir: 'oh-extras',
+        label: (p.kind === 'signin' ? 'Sign-in sheet' : 'Feedback card') + (p.bw ? ', black and white' : ''),
+        look: {ohx: {front, openHouse: ev}}, piece: p});
+    }
     for(const z of ['6x11', '6x9']) for(const side of ['front', 'back']){
       const p = S.pieces.find(x => x.id === `just-sold-${z}-${side}`);
       if(p) out.push({group: 'Just Sold postcard', label: `Just Sold ${z.replace('x', ' x ')}, ${side}`, look: {}, piece: p});
@@ -1129,23 +1148,25 @@
     box.hidden = !all.length;
     if(!all.length){ box.innerHTML = ''; return; }
     // on the page: the post of each social set, the email and the 6 x 11 Just Sold card; every size opens from the list
-    const shown = all.filter(x => !/socials$/.test(x.group) || x.piece.shape === 'post').filter(x => !/^Just Sold 6 x 9/.test(x.label));
+    const shown = all.filter(x => !/socials$/.test(x.group) || x.piece.shape === 'post').filter(x => !/^Just Sold 6 x 9/.test(x.label)).filter(x => !x.piece.bw);
     const groups = [...new Set(all.map(x => x.group))];
-    box.innerHTML = `<h3>More for this listing</h3><p class="fine">Your socials, Open House email and Just Sold postcard in this design${pkg.copy[id] ? '' : ' (rough draft text until you finalize)'}.</p>
+    box.innerHTML = `<h3>More for this listing</h3><p class="fine">Your socials, Open House email${all.some(x => x.dir === 'oh-extras') ? ', sign-in sheet, feedback card' : ''} and Just Sold postcard in this design${pkg.copy[id] ? '' : ' (rough draft text until you finalize)'}.</p>
       <div class="minis xminis"></div>
       <label class="fine">Open full size <select class="xopen"><option value="">Pick one</option>${groups.map(g => `<optgroup label="${esc(g)}">${all.map((x, i) => x.group === g ? `<option value="${i}">${esc(x.label)}</option>` : '').join('')}</optgroup>`).join('')}</select></label>`;
     const base = await dataFor(id, !!pkg.copy[id]);
     // one look per frame: draw each tile on its own
     const minis = box.querySelector('.xminis');
     minis.innerHTML = shown.map(() => '<div class="xone"></div>').join('');
-    shown.forEach((x, i) => drawParts(minis.children[i], id, [{piece: x.piece, label: x.label}], Object.assign({}, base, x.look))
+    shown.forEach((x, i) => drawParts(minis.children[i], x.dir || id, [{piece: x.piece, label: x.label}], ohxData(base, x))
       .then(() => { const c = minis.children[i].querySelector('figcaption'); if(c) c.textContent = x.label; }));
     box.querySelector('.xopen').onchange = async e => { const x = all[+e.target.value]; e.target.value = ''; if(x) openExtra(id, x, base); };
   }
   async function openExtra(id, x, base){
-    const print = /^just-sold-/.test(x.piece.id);
-    const data = Object.assign({}, base, x.look, {mode: print ? 'print' : 'email', piece: x.piece});
-    let html = srcdoc(id, await tpl(id, x.piece.file), data, null, true);
+    const print = /^just-sold-/.test(x.piece.id) || x.dir === 'oh-extras';
+    // a sign-in sheet or feedback card opens as its print-at-home file (white margin; the printer file comes with the order)
+    const data = Object.assign(ohxData(base, x), {mode: print && !x.dir ? 'print' : 'email', piece: x.piece});
+    const dir = x.dir || id;
+    let html = srcdoc(dir, await tpl(dir, x.piece.file), data, null, true);
     html = html.split('"/designs/').join(`"${location.origin}/designs/`);   // a new tab has no base of its own
     const url = URL.createObjectURL(new Blob([html], {type: 'text/html'}));
     await ask(`<h2>${esc(x.label)}</h2><p><a class="btn" href="${url}" target="_blank" rel="noopener">Open it in a new tab</a></p>
