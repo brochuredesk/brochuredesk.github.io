@@ -76,12 +76,13 @@ FXP.start(['500 20pt "Bodoni Moda"', '600 20pt "Bodoni Moda"', '400 20pt "Cormor
     const fl = !o.stack && o.flip;   // owner 11/10 (FX 02/11/13 socials p23-p37): the standard social footer, everything agent on the left, the broker logo on the right
     const lx0 = o.stack || fl ? x : x + lw + 16;
     const tx = lx0 + (hs ? hs + gap : 0), tw = (fl ? x + w - lw - 16 : x + w) - tx;
-    const nm = T({slot: 'agent.name', text: A.name || '', css: `font-family:'Cormorant Garamond';font-weight:600;letter-spacing:0;color:${col}`, x: tx, y, w: tw, max: o.ns, min: F.body, lh: 1.12});
+    const AL = o.center ? {align: 'center'} : {};   // owner 11/11 (FXS-13 Just Sold wide/Google re-review): the agent lines centered across the photos above, the logo centered under them
+    const nm = T(Object.assign({slot: 'agent.name', text: A.name || '', css: `font-family:'Cormorant Garamond';font-weight:600;letter-spacing:0;color:${col}`, x: tx, y, w: tw, max: o.ns, min: F.body, lh: 1.12}, AL));
     let yy = y + nm.h;
-    const ds = T({slot: 'agent.desig', text: 'REALTOR®', css: caps(500, 3, TK.text), x: tx, y: yy + 1, w: tw, max: F.small, min: F.small, lh: 1.2, small: 1});
+    const ds = T(Object.assign({slot: 'agent.desig', text: 'REALTOR®', css: caps(500, 3, TK.text), x: tx, y: yy + 1, w: tw, max: F.small, min: F.small, lh: 1.2, small: 1}, AL));
     const showD = !!(A.nar || /realtor/i.test(A.designation || ''));
     if(showD) yy += 1 + ds.h;
-    const ph = T({slot: 'agent.phone', text: A.phone || '', css: `font-weight:500;color:var(--fx-text-dark)`, x: tx, y: yy + 2, w: tw, max: o.ps, min: F.body, lh: 1.15});
+    const ph = T(Object.assign({slot: 'agent.phone', text: A.phone || '', css: `font-weight:500;color:var(--fx-text-dark)`, x: tx, y: yy + 2, w: tw, max: o.ps, min: F.body, lh: 1.15}, AL));
     yy += 2 + ph.h;
     html.push(nm.html, showD ? ds.html : '', ph.html);
     const th = yy - y;
@@ -89,7 +90,7 @@ FXP.start(['500 20pt "Bodoni Moda"', '600 20pt "Bodoni Moda"', '400 20pt "Cormor
     const h = Math.max(th, hs, lh);
     if(o.stack){   // owner 11/8 (FXS-09 socials review, carried): the logo under the agent's lines is centered under them and grows to fill its space
       const tbw = Math.max(nm.w || 0, showD ? ds.w || 0 : 0, ph.w || 0), lh2 = o.lgH || lh, lw2 = Math.min(lh2*4.3, Math.max(tbw, lw));
-      html.push(logo(tx + Math.max(0, (tbw - lw2)/2), y + h + 6, lw2, lh2, 'center'));
+      html.push(logo(o.center ? tx + Math.max(0, (tw - lw2)/2) : tx + Math.max(0, (tbw - lw2)/2), y + h + 6, lw2, lh2, 'center'));
       return {h: h + 6 + lh2, html: html.join('')};
     }
     html.push(fl ? logo(x + w - lw, y + (h - lh)/2, lw, lh, 'flex-end') : logo(x, y + (h - lh)/2));
@@ -160,7 +161,11 @@ FXP.start(['500 20pt "Bodoni Moda"', '600 20pt "Bodoni Moda"', '400 20pt "Cormor
     if(kind === 'js'){
       const sl = FXP.soldLine(D), KC = shape === 'slide' ? 1.3 : 2.4, KL = shape === 'slide' ? 1.2 : 2.0;   // the cards' seller ask grows with the room the card has (owner 11/7: no blank space); the slides keep theirs
       const hs = Math.max(F.body*1.6, 18)*Math.min(k, KC);
-      const h1 = T({slot: 'sold.head', text: sl.head, css: `font-family:'Cormorant Garamond';font-weight:700;color:var(--fx-ink)`, x, y: yy, w, max: hs*1.15*(o.askK || 1), min: F.body, lines: 2, lh: 1.12, noStub: !!o.askK});
+      const hcss = `font-family:'Cormorant Garamond';font-weight:700;color:var(--fx-ink)`, hmax = hs*1.15*(o.askK || 1);
+      let hp = null;   // owner 11/11 (wide re-review): a two-line ask breaks with the most words on its last line ("Thinking / about selling?"), never a short last line
+      if(o.headParts && FXP.width(sl.head, `${MONT};${hcss};font-size:${hmax}pt`) > w){ const wd = sl.head.split(' '), c0 = `${MONT};${hcss};font-size:${hmax}pt`; for(let i = 1; i < wd.length; i++){ const p1 = wd.slice(0, i).join(' '), p2 = wd.slice(i).join(' '); if(FXP.width(p1, c0) <= FXP.width(p2, c0)){ hp = [p1, p2]; break; } } }   // the size comes from hfit below
+      const hfit = hp ? Math.min(...hp.map(t => hmax*w/FXP.width(t, `${MONT};${hcss};font-size:${hmax}pt`))) : hmax*w/Math.max(1, FXP.width(sl.head, `${MONT};${hcss};font-size:${hmax}pt`));
+      const h1 = T({slot: 'sold.head', text: sl.head, parts: hp, css: hcss, x, y: yy, w, max: o.headParts ? Math.min(hmax, .86*hfit) : hmax, min: F.body, lines: 2, lh: 1.12, noStub: !!o.askK});   // under the width-filling size the 11/10 re-review card used
       out.push(h1.html); yy += h1.h + 3;
       if(sl.line && !o.noLine){ const l2 = T({slot: 'sold.line', text: sl.line, css: `font-family:'Cormorant Garamond';font-weight:600;color:${SOFT}`, x, y: yy, w, max: Math.min(Math.max(F.body*1.25, 15)*Math.min(k, KL)*(o.askK || 1), o.askK ? Math.max(F.body, (h1.s || 99)*.8) : 999), min: F.body, lines: 2, lh: 1.2}); out.push(l2.html); yy += l2.h; }
       yy += 9*Math.min(k, 1.3);
@@ -268,7 +273,7 @@ if(rowW() <= w){
 
   // ---------- common pieces ----------
   const margin = Math.round(W*.04);
-  const P38 = false;   // owner 11/10 p38 (Just Sold wide: street line off, ask larger, agent centered; carried to Google) waits for its re-review (FXS-13 Just Sold wide before-after (11-10)); true once approved
+  const P38 = true, ASKW = 1.25;   // approved by the owner 11/13 (FXS-13 Just Sold wide before-after (11-11), all four story counts; renders soc-r3)   // owner 11/10 p38 (Just Sold wide: street line off, ask larger, agent centered; carried to Google) waits for its re-review (FXS-13 Just Sold wide before-after (11-10)); true once approved
   const cOptFor = k => Object.assign(kind === 'js' ? {ns: Math.max(F.body*2.0, 24), ps: Math.max(F.body*1.6, 20), lh: Math.max(36, F.body*2.6)} : {ns: Math.max(F.body*1.5, 19), ps: Math.max(F.body*1.25, 16), lh: Math.max(34, F.body*2.4)}, {flip: shape !== 'slide'});
   const bandAll = () => { const ln = H - 2*margin - 20, cy = margin + ln/2 + 6; back.unshift(FXS.vAddress(((SW.data().listing || {}).address) || L.address, AX*.52, cy, ln, Math.max(Math.min(AX*.44, 26), F.ev), F.ev), `<div class="vrule" style="left:${AX*.46}pt;top:${Math.min(H - margin - 44, cy + ln/2 - 30)}pt;height:0pt"></div>`); };
 
@@ -482,9 +487,13 @@ if(rowW() <= w){
     if(H - 2*m - below < 100 && plH){ plH = 0; below = cc.h + 10 + ad.h + 6; }
     if(H - 2*m - below < 100){ cOpt.mode = 'logo'; cc = contact(AX, 0, cw, cOpt); below = cc.h + 10 + (ad.h ? ad.h + 6 : 0); }
     const topH = m + (kind === 'oh' ? 0 : 0);
+    const J38 = P38 && kind === 'js', JW = J38 && wide;   // owner 11/11 (wide re-review): JUST SOLD at its 11/10 size, the seller ask larger than 11/10 but under the 11/10 re-review's; Google keeps the re-reviewed sizes
+    let kOld = 1;   // the 11/10 card's fit (street line on, ask at 1x): its JUST SOLD size
+    if(JW) for(let k = 2.2; k >= .4; k -= .05){ const mo = moment(tx, 0, tw, {stack: true, max: F.ev*2.1*k, color: TK.ink}), inf = info(tx, mo.h + 10*k, tw, k, {lvl: 2, wl: 0, noLine: k < .95}); if(mo.h + 10*k + inf.h <= H - 2*8 - 36){ kOld = k; break; } }
+    if(J38) cOpt.center = true;
     let hd = {h: 0, html: ''};
     const words = (k) => {
-      if(kind !== 'oh'){ const mo = moment(tx, 0, tw, {stack: true, max: F.ev*2.1*(P38 && kind === 'js' ? Math.min(k, 1.25) : k), color: TK.ink}); const nl = k < .95 && !(P38 && kind === 'js'), jo = P38 && kind === 'js' ? {noStreet: true, askK: 1.5} : {}, inf = info(tx, mo.h + 10*k, tw, k, Object.assign({lvl: 2, wl: 0, noLine: nl}, jo)); return {h: mo.h + 10*k + inf.h, mk: yy => moment(tx, yy, tw, {stack: true, max: F.ev*2.1*(P38 && kind === 'js' ? Math.min(k, 1.25) : k), color: TK.ink}).html + info(tx, yy + mo.h + 10*k, tw, k, Object.assign({lvl: 2, wl: 0, noLine: nl}, jo)).html}; }
+      if(kind !== 'oh'){ const mmax = F.ev*2.1*(JW ? kOld : J38 ? Math.min(k, 1.25) : k), mo = moment(tx, 0, tw, {stack: true, max: mmax, color: TK.ink}); const nl = k < .95 && !J38, jo = J38 ? {noStreet: true, askK: JW ? ASKW : 1.5, headParts: JW} : {}, inf = info(tx, mo.h + 10*k, tw, k, Object.assign({lvl: 2, wl: 0, noLine: nl}, jo)); return {h: mo.h + 10*k + inf.h, mk: yy => moment(tx, yy, tw, {stack: true, max: mmax, color: TK.ink}).html + info(tx, yy + mo.h + 10*k, tw, k, Object.assign({lvl: 2, wl: 0, noLine: nl}, jo)).html}; }
       const inf = info(tx, 0, tw, k, {lvl: lvlW, smallWk: true, tight: true, merged: !!vm, noSplit: !!vm}); return {h: inf.h, mk: yy => info(tx, yy, tw, k, {lvl: lvlW, smallWk: true, tight: true, merged: !!vm, noSplit: !!vm}).html};
     };
     let best = null;
