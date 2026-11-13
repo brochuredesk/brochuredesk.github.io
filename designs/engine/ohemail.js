@@ -652,7 +652,7 @@
       const html = [], ink = o.ink, acc = o.accent || ink;
       const logo = (lx, ly, lw, lh) => `<div class="abs sc-logo" style="left:${lx}pt;top:${ly}pt;width:${lw}pt;height:${lh}pt;color:${ink}">${OHL.logo(D, o.dark ? 'dark' : 'light', '')}</div>`;
       if(o.name === false || !A.name){
-        const lh = r2(Math.max(FB*1.8, 24*f)*Math.min(k, 1.2)), lw = Math.min(w, lh*4.2);
+        const lh0 = r2(Math.max(FB*1.8, 24*f)*Math.min(k, 1.2)), lh = o.logoH ? Math.max(lh0, Math.min(o.logoH, w/4.2)) : lh0, lw = Math.min(w, lh*4.2);
         return {h: lh, html: [logo(x + (w - lw)/2, y, lw, lh)], ok: true};
       }
       const labT = A.phoneLabel || 'Call / Text';
@@ -840,7 +840,10 @@
           pick = {o, k, pw, fm};
         }
       }
-      if(!pick){ const pw = Math.round((X1 - X0)*.6); pick = {o: {lines: [], name: false, facts: false}, k: 1, pw, fm: frameFor(pw)}; }
+      if(!pick){   // nothing fits: the widest house the event column can still hold (the Open House label never drops), the band over the photo's foot
+        const bare = {lines: [], name: false, facts: false}; let fb = .6;
+        for(let fr = .72; fr >= .3; fr -= .02){ if(parts(Math.round((X1 - X0)*fr), KMIN, bare).e.ok){ fb = fr; break; } }
+        const pw = Math.round((X1 - X0)*fb); pick = {o: bare, k: 1, pw, fm: frameFor(pw)}; }
       const {o, k, pw, fm} = pick, P = parts(pw, k, o), P0 = parts(pw, KMIN, o), top = Math.min(fm.h, H - Math.min(P.band, P0.ok ? P0.band : P.band));   // the house takes the height first; the band's type fills what's left
       const fh = fm.full ? H : top;
       if(hb){ const nat = fh*pAR, vis = pw/nat, cx = (hb.left + hb.right)/2, lft = Math.max(0, Math.min(1 - vis, cx - vis/2)); if(vis < 1) HP.focusX = Math.round(lft/(1 - vis)*1000)/10; }
@@ -895,12 +898,15 @@
       let kE = k; for(let t = Math.max(k, 1.45); t > k; t -= .025){ const e = eventB(lx + pad, 0, lW - 2*pad, t, {lines: o.lines, box: false, maxLines: 3}); if(e.ok && e.h <= band - 1.6*pad - (frame ? 8 + 4*f : 0)){ kE = t; break; } }
       // under a frame the lines spread between the photo and the frame's line (8 pt in from the bottom edge)
       const fin = frame ? 8 + 4*f : 0;
-      h.push(...eventB(lx + pad, bandY, lW - 2*pad, kE, {lines: o.lines, box: false, maxLines: 3, fillH: band - fin, spread: true}).html.slice(1));
-      const fcOn = o.facts && c.fc.ok, spare = band - (c.right - 14*f), g = spare/(fcOn ? 4 : 3);
+      h.push(...eventB(lx + pad, bandY, lW - 2*pad, kE, {lines: o.lines, box: false, maxLines: 3, fillH: band - fin - (L.squareFill ? .05*W : 0), spread: true}).html.slice(1));
+      // a logo with no agent line beside it fills the free space (owner 11/8, logo-adrift): it grows by half the spare height, up to its width
+      const SQF = !!L.squareFill, logoOnly = SQF && (o.name === false || !A.name), ins = SQF ? .05*W : 0;
+      const cc = logoOnly ? cardB(rx, 0, rw, k, Object.assign({name: o.name, stack: true, logoH: c.c.h + (band - (c.right - 14*f) - ins)*.5}, cardLook)) : c.c;
+      const fcOn = o.facts && c.fc.ok, spare = band - ins - (c.right - 14*f) - (logoOnly ? cc.h - c.c.h : 0), g = spare/(fcOn ? 4 : 3);
       let y = bandY + g;
       h.push(...addrB(rx, y, rw, k, {dateS: c.e.dateS, ink: pageInk, muted}).html); y += c.a.h + g*(fcOn ? .6 : 1);
       if(fcOn){ h.push(...factsB(rx, y, rw, k, {ink: factInk}).html); y += c.fc.h + g*1.4; }
-      h.push(...cardB(rx, y, rw, k, Object.assign({name: o.name, stack: true, center: !!OE.squareCardCenter}, cardLook)).html);
+      h.push(...cardB(rx, y, rw, k, Object.assign({name: o.name, stack: true, center: !!OE.squareCardCenter, logoH: logoOnly ? cc.h : 0}, cardLook)).html);
     } else {
       // post, pin, story: one column
       const story = shape === 'story', TOP = story ? 94 : 0, BOT = story ? H - 94 : H;
