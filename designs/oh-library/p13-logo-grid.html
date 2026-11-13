@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · Logo Grid</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<!--
+  Logo Grid (from reference P13). Trim 612 x 792 pt. Public or REALTOR(R).
+  The owner: instead of the price, put the broker's logo. A large house photo in a white mat, an inset room photo overlapping
+  its corner, the agent's headshot when there is one, and the brokerage logo in a ruled box where the price was. A band
+  of the main color at the foot: the event wording with the weekday big, the address, and the date and time at right.
+  Type: Red Hat Display.
+  Event box 10/30: white box beside the agent card in the band.
+-->
+<style>
+  .sheet{background:var(--paper);color:var(--ink)}
+  .mat{position:absolute;background:#fff;box-shadow:0 2pt 8pt rgba(0,0,0,.18)}
+  .band{position:absolute;left:0;width:612pt;background:var(--main);color:var(--on-main)}
+  .band~.on{color:var(--on-main)}
+  .lab{font:700 22pt/26pt 'Red Hat Display';letter-spacing:4pt;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+  .wd{font:700 66pt/70pt 'Red Hat Display';letter-spacing:3pt;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+  .ohl{font:700 34pt/40pt 'Red Hat Display';letter-spacing:5pt;text-transform:uppercase;white-space:nowrap;overflow:hidden;color:var(--main-on-paper)}
+  .bul{font:600 13pt/17pt 'Red Hat Display';text-align:center;white-space:nowrap;overflow:hidden;color:var(--ink)}
+  .brule{position:absolute;height:1pt;background:var(--main-on-paper);opacity:.45}
+  .addr{font:700 22.5pt/27pt 'Red Hat Display';white-space:nowrap;overflow:hidden}
+  .md{font:500 30pt/34pt 'Red Hat Display';white-space:nowrap;overflow:hidden}
+  .time{font:500 23pt/28pt 'Red Hat Display';white-space:nowrap;overflow:hidden}
+  .vr{position:absolute;width:1pt;background:currentColor;opacity:.6}
+  .evb{font:600 12pt/16pt 'Red Hat Display';color:var(--ink);text-align:center}
+  .evb.b{font-weight:700}
+  .oh-agent-name{font-family:'Red Hat Display';font-weight:700}
+  .oh-agent{font-family:'Red Hat Display'}
+  .fine{font:500 6.6pt/8pt 'Red Hat Display';white-space:nowrap;opacity:.6}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['700 10pt "Red Hat Display"', '500 10pt "Red Hat Display"'], D => {
+  const esc = Ivory.esc, L = D.listing, A = D.agent || {}, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id));
+  let h = '';
+  // the logo box where the price was
+  // the logo floats on the flyer's background, no box or frame (owner 10/27/2026)
+  // "Open House" at the very top, big (owner 10/28/2026), the logo to its right
+  h += `<div class="abs ohl" style="left:36pt;top:50pt;width:350pt;height:40pt" data-fit="34,20" data-slot="oh.label" data-lines="1">${esc(E.label)}</div>`;
+  // the house in a white mat, a room overlapping its lower right corner
+  const fr = OHL.fitHero(D, hero, 380, 270);
+  h += `<div class="mat" style="left:30pt;top:118pt;width:${fr.w + 16}pt;height:${fr.h + 16}pt"></div>`;
+  h += OHL.photo(D, hero, `left:38pt;top:126pt;width:${fr.w}pt;height:${fr.h}pt`);
+  // 3-4 feature bullets right of the main photo, centered in the space above the inset room
+  const bx = 38 + fr.w + 24, bw = 612 - 30 - bx, bt0 = 118, bb0 = 290 - 14;
+  const six = OHL.factSix(L), bl = six.filter(([ic]) => ic !== 'lot' && ic !== 'stories').slice(0, 4);
+  // lot size beats "one story" (The owner 10/30): the lot fills a short list first, "One story" only last and only if still short
+  ['lot', 'stories'].forEach(k => { if(bl.length < 4) six.filter(([ic]) => ic === k).forEach(c => bl.push(c)); });
+  const bsp = 40, bh0 = (bl.length - 1)*bsp + 17, by0 = bt0 + (bb0 - bt0 - bh0)/2;
+  bl.forEach(([ic, t], i) => {
+    h += `<div class="abs bul" style="left:${bx}pt;top:${by0 + i*bsp}pt;width:${bw}pt;height:17pt" data-fit="13,10" data-slot="fact.${i}" data-lines="1">${esc(t)}</div>`;
+    if(i) h += `<div class="brule" style="left:${bx + bw/2 - 18}pt;top:${by0 + i*bsp - 12}pt;width:36pt"></div>`;
+  });
+  // the brokerage logo centered above the listed items, same height as before (owner 10/28/2026)
+  h += OHL.logo(D, 'light', `left:${bx + bw/2 - 75}pt;top:40pt;width:150pt;height:54pt;justify-content:center`);
+  // a room overlaps the house (the agent's headshot, when shown, is in the agent card)
+  const iw = 196, ih = 150, ix = 386, iy = 290;
+  h += `<div class="mat" style="left:${ix - 8}pt;top:${iy - 8}pt;width:${iw + 16}pt;height:${ih + 16}pt"></div>`;
+  h += OHL.photo(D, rooms[0], `left:${ix}pt;top:${iy}pt;width:${iw}pt;height:${ih}pt`);
+  // a row of rooms under
+  // the event box (white, like the mats; the owner 10/30) sits beside the agent card in the band
+  const evLines = [[E.refreshments,'oh.refreshments','evb b'],[E.note,'oh.note','evb']];
+  const evOpt = {bg:'#fff', radius:2, scale:((D.openHouse||{}).box||{}).w, anchor:1, padX:12, padY:8};
+  const ev = Ivory.eventBox(evLines, 300, 0, 276, 16, 3, evOpt);
+  const rowH = Math.max(62, ev.h);
+  const gy = 458, gw = (552 - 20)/3, gh = 118 - Math.max(0, rowH - 62);
+  rooms.slice(1, 4).forEach((id, i) => h += OHL.photo(D, id, `left:${30 + i*(gw+10)}pt;top:${gy}pt;width:${gw}pt;height:${gh}pt`));
+  // the band
+  const bt = gy + gh + 16, bh = 792 - bt;
+  h += `<div class="band" style="top:${bt}pt;height:${bh}pt"></div>`;
+  let y = bt + 10;
+  h += `<div class="abs on wd" style="left:34pt;top:${y+2}pt;width:340pt;height:70pt" data-fit="66,26" data-slot="oh.weekday" data-lines="1">${esc(E.weekday || '')}</div>`;
+  h += `<div class="abs on addr" style="left:36pt;top:${y+75}pt;width:540pt;height:28pt" data-fit="22.5,12" data-slot="address" data-lines="1">${esc([L.address, OHL.place(L)].filter(Boolean).join(', '))}</div>`;
+  h += `<div class="vr on" style="left:384pt;top:${y+6}pt;height:64pt"></div>`;
+  h += `<div class="abs on md" style="left:400pt;top:${y+6}pt;width:180pt;height:34pt" data-fit="30,18" data-slot="oh.date" data-lines="1">${esc(E.weekday ? E.monthDay : E.long)}</div>`;
+  if(E.time) h += `<div class="abs on time" style="left:400pt;top:${y+46}pt;width:180pt;height:28pt" data-fit="23,18" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
+  y += 106;
+  if(ev.h) h += Ivory.eventBox(evLines, 300, y, 276, 16, 3, evOpt).html;
+  // the agent card (the logo is up top)
+  h += OHL.contact(D, {x:36, y:y + (rowH - 62)/2, w:ev.h ? 256 : 540, h:62, logo:false, color:'var(--on-main)', nameSize:ev.h ? 16 : 18, nameFont:"'Red Hat Display'", nameWeight:700, bodyFont:"'Red Hat Display'"});
+  y += rowH + 2;
+  const issues = y > 776 ? [{slot:'oh.note', kind:'overflow', detail:'the band runs off the page'}] : [];
+  h += `<div class="abs on fine" style="left:36pt;top:778pt;width:540pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  const f = OHL.frame(D, h);
+  f.issues = issues;
+  return f;
+});
+</script>
+</body>
+</html>

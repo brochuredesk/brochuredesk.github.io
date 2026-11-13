@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · Civic Diagonal</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<!--
+  Civic Diagonal (from reference P45). Trim 612 x 792 pt. Public or REALTOR(R).
+  The owner: another cool angled design, perfect for the right house. A white text field with widely spaced event wording
+  and the facts meets a dark brand panel holding the brokerage logo in white; below, two photos with their tops cut on
+  one shared diagonal, a white gap running between them. The house photo takes the diagonal only when its house box
+  proves the cut crosses sky; otherwise its top stays square. Date, time and address large at the foot.
+  Event box (10/30): what's served and the notes in a light box with a thin dark line under the date and address, 12 pt.
+  Type: Jost.
+-->
+<style>
+  .sheet{background:#fff;color:var(--ink)}
+  .hl{font:400 56pt/60pt Jost;letter-spacing:3pt;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+  .facts{font:500 10pt/13pt Jost;letter-spacing:3pt;text-transform:uppercase;white-space:nowrap;overflow:hidden;color:var(--main-on-paper)}
+  .date{font:600 28pt/34pt Jost;white-space:nowrap;overflow:hidden}
+  .time{font:500 22pt/28pt Jost;white-space:nowrap;overflow:hidden;color:var(--main-on-paper)}
+  .addr{font:500 19pt/24pt Jost;letter-spacing:1.2pt;text-transform:uppercase;text-align:right;text-wrap:balance}
+  .plc{font:500 13pt/18pt Jost;letter-spacing:2pt;text-transform:uppercase;text-align:right;white-space:nowrap;overflow:hidden}
+  .f6{position:absolute;display:flex;align-items:center;gap:7pt;font:500 14.5pt/18pt Jost;white-space:nowrap;overflow:hidden}
+  .f6 span:first-child{color:var(--main-on-paper);flex:none}
+  .pw{font:400 13pt/18.25pt Jost;color:var(--ink);text-align:justify}
+  .evb{font:500 12pt/16pt Jost;color:var(--ink);text-align:center}
+  .evb.b{font-weight:600}
+  .oh-agent-name{font-family:Jost;font-weight:600}
+  .oh-agent{font-family:Jost}
+  .fine{font:400 6.6pt/8pt Jost;white-space:nowrap;opacity:.6}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['400 10pt Jost', '500 10pt Jost', '600 10pt Jost'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'angled');
+  const room = OHL.photos(D).find(id => id !== hero && /patio|yard|living/i.test(D.photos[id].tags||'')) || OHL.photos(D).find(id => id !== hero && !Ivory.fullHouse(D, id));
+  const P = 4/3;
+  // the dark panel (top right) with its lower edge on the diagonal
+  const DX = 330, DBOT = 190, slope = 0.15;   // the diagonal falls 0.32 pt per pt from right to left
+  let h = `<svg class="abs" style="left:0;top:0;width:612pt;height:${DBOT + 60}pt" viewBox="0 0 816 ${(DBOT + 60)*P}"><polygon points="${DX*P},0 816,0 816,${DBOT*P} ${DX*P},${(DBOT + (612 - DX)*slope)*P}" fill="var(--dark)"/></svg>`;
+  h += OHL.logo(D, 'knockout', `left:${DX + 30}pt;top:40pt;width:${612 - DX - 60}pt;height:70pt;justify-content:center`);
+  // text field
+  // the headline, facts and paragraph sit a little higher so the paragraph can start level with the room photo's
+  // top-left point (owner 10/28/2026)
+  const lines = OHL.labelLines(E.label), HT = 26, ROW = 30, HM = 30;   // HM: the headline and the facts sit centered between the flyer's left edge and the dark panel (owner 10/30 late evening)
+  lines.forEach((t, i) => h += `<div class="abs hl" style="left:${HM}pt;top:${HT + i*54}pt;width:${DX - 2*HM}pt;height:64pt" data-slot="oh.label" data-lines="1">${esc(t)}</div>`);
+  // the headline's fitted size, measured first so the facts and the write-up start right under it
+  const tm = document.createElement('div'); tm.className = 'hl'; tm.style.cssText = `position:absolute;left:-9999pt;top:0;width:${DX - 2*HM}pt;height:60pt;visibility:hidden`;
+  tm.textContent = lines.reduce((a, t) => t.length > a.length ? t : a, ''); document.body.appendChild(tm);
+  const hs = Math.min(OHL.fit(tm, 58, 22), 58); tm.remove();
+  const fy = HT + (lines.length - 1)*hs*1.06 + hs*1.1 + 16;
+  // under the headline the six MLS facts with icons, two columns, big enough to read easily (owner 10/27/2026)
+  // 10/30: lot size is in the list; "One story" only last, and only when fewer than five stronger facts exist
+  const all6 = OHL.factSix(L), six = all6.filter(c => c[0] !== 'stories'), cw6 = (DX - 2*HM)/2;
+  if(six.length < 5) all6.filter(c => c[0] === 'stories').forEach(c => six.push(c));
+  six.forEach(([ic, t], i) => h += `<div class="f6" style="left:${HM}pt;top:${fy + Math.floor(i/2)*ROW}pt;width:${cw6}pt;height:24pt;margin-left:${i % 2 ? cw6 + 8 : 0}pt"><span>${OHL.icon(ic, 19)}</span><span data-slot="fact.${i}" data-lines="1" data-fit="14.5,11">${esc(t)}</span></div>`);
+  const sixEnd = fy + Math.ceil(six.length/2)*ROW;
+  // photos: left = the house, right = a room. Both tops follow one line parallel to the panel's edge, a white gap
+  // below it; the line falls toward the left: y(x) = DBOT + (612 - x)*slope + gap
+  const mkEv = yy => Ivory.eventBox([[E.refreshments,'oh.refreshments','evb b'],[E.note,'oh.note','evb']], 34, yy, 544, 16, 3,
+    {bg:'color-mix(in srgb, var(--dark) 6%, #fff)', line:'var(--dark)', lineW:1, padY:8, padX:16, scale:((D.openHouse||{}).box||{}).w});
+  const evN = mkEv(0).h;
+  const foot = 604 - evN, gap = 12, yl = x => DBOT + (612 - x)*slope + gap;
+  const lw = DX - 30 - gap/2, rx = DX - 30 + gap/2, rw = 612 - rx;
+  const rTop = yl(612), rH = foot - rTop;
+  h += OHL.maskedPhoto(D, room, `left:${rx}pt;top:${rTop}pt;width:${rw}pt;height:${rH}pt`, [[0, (yl(rx) - rTop)/rH], [1, 0], [1, 1], [0, 1]]);
+  const lTop = yl(lw), lH = foot - lTop, poly = [[0, (yl(0) - lTop)/lH], [1, 0], [1, 1], [0, 1]];
+  const ok = OHL.polyFits(D, hero, lw, lH, poly);
+  h += ok ? OHL.maskedPhoto(D, hero, `left:0;top:${lTop}pt;width:${lw}pt;height:${lH}pt`, poly)
+          : (() => { const fr = OHL.fitHero(D, hero, lw, lH, true); return OHL.photo(D, hero, `left:${(lw - fr.w)/2}pt;top:${foot - fr.h}pt;width:${fr.w}pt;height:${fr.h}pt`); })();
+  // the foot: date and time left, address right
+  let y = foot + 16;
+  h += `<div class="abs date" style="left:34pt;top:${y}pt;width:330pt;height:34pt" data-fit="28,22" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
+  if(E.time) h += `<div class="abs time" style="left:34pt;top:${y + 34}pt;width:330pt;height:28pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
+  // the address (owner 10/30 late evening): "Street" is already dropped; the street number and name on one line (two if
+  // they need it), the city line smaller than the street
+  const an = Ivory.linesNeeded('addr', L.address, 238, 24), pl = OHL.place(L);
+  h += `<div class="abs addr" style="left:340pt;top:${y + 4}pt;width:238pt;height:${an*24 + 2}pt" data-slot="address" data-lines="${an}">${esc(L.address)}</div>`;
+  if(pl) h += `<div class="abs plc" style="left:340pt;top:${y + 4 + an*24 + 2}pt;width:238pt;height:18pt" data-slot="place" data-lines="1">${esc(pl)}</div>`;
+  y += Math.max(66, an*24 + 2 + (pl ? 20 : 0));
+  const ev = mkEv(y);
+  h += ev.html; y += ev.h;
+  const cy = Math.max(704, y + 10);
+  const photoTop = ok ? yl(0) : foot - OHL.fitHero(D, hero, lw, lH, true).h;
+  // a paragraph under the six facts fills the blank field (owner 10/28/2026), the writer's own sentences. It starts level
+  // with the room photo's angled top-left point and ends above the house photo; its left gap is half the facts' (18 pt),
+  // its right edge stays on the house photo's right edge; larger type, justified. A sentence that repeats one of the six
+  // facts above it is left out (owner 10/28/2026: a write-up never repeats facts shown on the piece).
+  // owner 10/30 late evening: the write-up fills the white space (about six lines, bigger type), its top level with the top
+  // point of the room photo on the right (where its angled edge meets its left side), its right edge on the house photo's
+  // right edge. The type steps up while the writer's sentences still fill the room and the last line reaches 3/4.
+  const PL = HM/2, pw = lw - PL, py = Math.max(sixEnd + 2, yl(rx) - 3);
+  const photoTopMin = ok ? yl(lw) : photoTop, avail = photoTopMin - 10 - py;
+  let wu = {text: '', n: 0, fill: 0}, PLH = 18.25, psz = 13;
+  for(let sz = 12; sz <= 17.01; sz += .25){
+    const cn = 'pws' + Math.round(sz*100), lh = Math.round(sz*1.42*4)/4;
+    if(!document.getElementById(cn)){ const st = document.createElement('style'); st.id = cn; st.textContent = `.${cn}{font:400 ${sz}pt Jost;line-height:${lh}pt;text-align:justify}`; document.head.appendChild(st); }
+    const r = OHL.writeup(D, cn, pw, lh, Math.floor(avail/lh), six.map(f => f[1]));
+    if(r.text && r.n && r.fill >= .75 && (!wu.text || r.text.length > wu.text.length || (r.text.length === wu.text.length && r.n*lh > wu.n*PLH))){ wu = r; PLH = lh; psz = sz; }
+  }
+  // owner 10/31 (P45 round 2): when the writer's flyer sentences leave a line or more of white space under the write-up
+  // (the public open, nothing in the box), the write-up takes more of the writer's own sentences about this house, at the
+  // same type size: the master description (the postcard pool), the flyer body, then the brochure's room and location
+  // write-ups. A brochure sentence is used only when it reads on its own (eight words or more, a verb, not opening on a
+  // pronoun or on part of a room that needs its heading, like "The closet"), never one that says mostly what one already
+  // in says, never a repeat of the facts above it. A write-up that already fills its room is left exactly as it was.
+  const maxL = Math.floor(avail/PLH);
+  if(wu.text && wu.n < maxL){
+    const C2 = D.companion || {}, K = D.copy || {}, more = [];
+    const words = t => new Set(t.toLowerCase().match(/[a-z]{4,}/g) || []);
+    const near = (a, b) => { const A = words(a), B = words(b); let k = 0; A.forEach(w => B.has(w) && k++); return k/Math.max(1, Math.min(A.size, B.size)) >= .5; };
+    const split = t => String(t || '').trim().split(/(?<=[.!?])\s+(?=[A-Z0-9"“])/).map(x => x.trim()).filter(x => /[.!?]$/.test(x));
+    const alone = x => x.split(/\s+/).length >= 8 && /\b(is|are|was|has|have|sits?|sit|joins?|opens?|runs?|leads?|adds?|holds?|faces?|looks?|keeps?|gets?|leaves?|lines?|wraps?|covers?|shades?)\b/i.test(x)
+      && !/^(it|its|this|that|these|those|they|their|there)\b/i.test(x) && !/^the (closet|windows?|ceiling|floors?|walls?|door|shower|tub|vanity|sink|counters?)\b/i.test(x);
+    const add = (t, whole) => split(t).forEach(x => { if((!whole || alone(x)) && !more.some(y => y === x || near(x, y))) more.push(x); });
+    ((C2.postcard || {}).master || []).forEach(t => add(t)); add((C2.listing || {}).body);
+    const it = K.insideTop || {}, ib = K.insideBottom || {}, bk = K.back || {};
+    [it.intro, ...(it.features || []).map(f => f.body), ...(ib.features || []).map(f => f.body), (bk.feature || {}).body].forEach(t => add(t, true));
+    const nIn = more.length; add(bk.locationBody, true);
+    const atEnd = new Set(more.slice(nIn));   // the neighborhood: only after the house
+    // the write-up as it was stays whole, first; the added sentences follow it in pool order
+    // the type may move up to a point up or a point and a half down, never under 12 pt (the same quarter-point steps as above) so the write-up
+    // fills every line and the last still reaches 3/4; filling every line wins, then the size closest to the one above
+    const shown = six.map(f => f[1]), base = wu.text, n0 = wu.n;
+    const extra = more.filter(x => !base.includes(x) && !near(x, base) && !(window.FactRepeat && FactRepeat.repeats(x, shown).length)).slice(0, 8);
+    // each added sentence goes in right after the write-up's own sentence it shares the most words with (a kitchen detail
+    // follows the kitchen sentence), else after the house; the neighborhood always last
+    const bs = split(base), arrangements = [];
+    const spot = x => { if(atEnd.has(x)) return bs.length; const W = words(x); let at = bs.length - 1, top = 0;
+      bs.forEach((b, k) => { let n = 0; words(b).forEach(w => W.has(w) && n++); if(n > top){ top = n; at = k; } }); return at; };
+    const at = extra.map(spot);
+    for(let mask = 1; mask < (1 << extra.length); mask++){
+      const slots = bs.map(x => [x]).concat([[]]);
+      extra.forEach((x, k) => { if(mask & (1 << k)) slots[at[k]].push(x); });
+      arrangements.push(slots.flat().join(' '));
+    }
+    let best = null;
+    for(const sz of [0, -.25, .25, -.5, .5, -.75, .75, -1, 1, -1.25, -1.5].map(d => psz + d).filter(z => z >= 12)){
+      const cls = 'pws' + Math.round(sz*100); if(!document.getElementById(cls)) continue;
+      const lh = Math.round(sz*1.42*4)/4, mL = Math.floor(avail/lh);
+      for(const text of arrangements){
+        const m = OHL.measure(cls, text, pw, lh);
+        if(m.n > mL || m.fill < .75 || m.n <= n0) continue;
+        const score = (mL - m.n === 0 ? 10000 : 0) - Math.abs(sz - psz)*1000 + m.n*10 + m.fill;
+        if(!best || score > best.score) best = {text, n: m.n, fill: m.fill, sz, lh, score};
+      }
+    }
+    if(best){ wu = best; psz = best.sz; PLH = best.lh; }
+  }
+  if(wu.text) h += `<div class="abs pw" style="left:${PL}pt;top:${py}pt;width:${pw}pt;height:${wu.n*PLH + 2}pt;font-size:${psz}pt;line-height:${PLH}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`;
+  const issues = sixEnd > photoTop - 6 ? [{slot:'fact.0', kind:'overflow', detail:'the facts run into the photo'}] : cy > 708 ? [{slot:'oh.note', kind:'overflow', detail:'the foot is too full'}] : [];
+  h += OHL.contact(D, {x:34, y:Math.min(cy, 708), w:544, h:60, logo:false, nameSize:16, phoneSize:12.5, lineSize:9});
+  h += `<div class="abs fine" style="left:34pt;top:779pt;width:544pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  const f = OHL.frame(D, h);
+  f.issues = issues;
+  f.after = () => {
+    const els = [...document.querySelectorAll('.hl')];
+    OHL.stack(els, 58, 22, 26, 1.06);
+    // every headline line is spread to the same width (the shorter REALTOR(R) line fills the space beside it, owner 10/30),
+    // and the headline and the facts are centered between the flyer's left edge and the dark panel (owner 10/30 late evening)
+    els.forEach(el => {
+      const t = el.textContent, sp = document.createElement('span'); sp.style.cssText = 'display:inline-block;letter-spacing:0'; sp.textContent = t;
+      el.textContent = ''; el.appendChild(sp); el.style.overflow = 'visible';
+      const T = el.clientWidth*.95, w0 = sp.getBoundingClientRect().width, n = [...t].length;
+      el.textContent = t; el.style.overflow = 'hidden';
+      if(n > 1){
+        const ls = Math.min(12, Math.max(1, ((T - w0)/n)*72/96));
+        // the spacing after the last letter is trailing space: pad the left by the same amount so the letters center
+        el.style.letterSpacing = ls + 'pt'; el.style.textAlign = 'center'; el.style.boxSizing = 'border-box'; el.style.paddingLeft = ls + 'pt';
+      }
+    });
+    const sheet = document.querySelector('.sheet'), sr = sheet.getBoundingClientRect(), sc = sr.width/sheet.offsetWidth;
+    const f6 = [...document.querySelectorAll('.f6')];
+    if(f6.length){
+      let l = 1e9, r = -1e9;
+      f6.forEach(e => [...e.children].forEach(c => { const q = c.getBoundingClientRect(); if(!q.width) return; l = Math.min(l, (q.left - sr.left)/sc*.75); r = Math.max(r, (q.right - sr.left)/sc*.75); }));
+      const shift = (DX - (l + r))/2;
+      f6.forEach(e => { e.style.left = (parseFloat(e.style.left) + shift) + 'pt'; });
+    }
+  };
+  return f;
+});
+</script>
+</body>
+</html>

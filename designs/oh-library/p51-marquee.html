@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · Marquee</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<!--
+  Marquee (P51, working name; new design, 11/01/2026). Trim 612 x 792 pt. Public.
+  A poster-scale top: the event wording in tall condensed capitals, two lines as big as they will go, on a block of
+  the agent's main color; the date stands in a dark panel at its right like a calendar leaf (weekday, month, the day
+  as a huge numeral, the time under a rule). The whole house runs edge to edge beneath, and an accent line crosses
+  the seam. Below it, the street in tall capitals with the city line (the owner's bigger "Houston, TX") and the
+  writer's paragraph, and two rooms at the right. No beds/baths line anywhere. No price. Agent and logo at the foot.
+  Public: no refreshments, no notes.
+  The owner 11/01: below the house the page is the top-left block's color (the agent's main color) down to the foot,
+  agent card included; the event wording sits centered top to bottom in its block; with a white box (REALTOR(R)
+  versions) the street still gets a two-line write-up under it.
+  Type: Anton (event wording, street, day numeral), Work Sans (everything else).
+-->
+<style>
+  @font-face{font-family:'Anton';src:url(../../fonts/pool/anton-latin-400-normal.woff2);font-weight:400}
+  @font-face{font-family:'Work Sans';src:url(../../fonts/pool/work-sans-latin-400-normal.woff2);font-weight:400}
+  @font-face{font-family:'Work Sans';src:url(../../fonts/pool/work-sans-latin-500-normal.woff2);font-weight:500}
+  @font-face{font-family:'Work Sans';src:url(../../fonts/pool/work-sans-latin-600-normal.woff2);font-weight:600}
+  @font-face{font-family:'Work Sans';src:url(../../fonts/pool/work-sans-latin-700-normal.woff2);font-weight:700}
+  .sheet{background:var(--main);color:var(--on-main)}
+  .blk{position:absolute}
+  .hl{font:400 112pt/112pt Anton;text-transform:uppercase;white-space:nowrap;overflow:hidden;color:var(--on-main);letter-spacing:1pt}
+  .kk{font:700 11pt/14pt 'Work Sans';letter-spacing:4pt;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden;color:var(--accent-on-dark)}
+  .mo{font:600 17pt/21pt 'Work Sans';letter-spacing:5pt;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden;color:var(--on-dark)}
+  .dy{font:400 104pt/104pt Anton;text-align:center;white-space:nowrap;overflow:hidden;color:var(--accent-on-dark)}
+  .tm{font:600 20pt/24pt 'Work Sans';text-align:center;white-space:nowrap;overflow:hidden;color:var(--on-dark)}
+  .addr{font:400 36pt/42pt Anton;text-transform:uppercase;letter-spacing:.5pt;white-space:nowrap;overflow:hidden;color:var(--on-main)}
+  .plc{font:700 17pt/22pt 'Work Sans';letter-spacing:2.6pt;text-transform:uppercase;white-space:nowrap;overflow:hidden;color:var(--accent-on-main)}
+  .evb{font:500 13.5pt/17pt 'Work Sans';text-align:center;color:#1b1b1b}
+  .evb.b{font-weight:700}
+  .wu{font:400 11pt/15.5pt 'Work Sans';color:var(--on-main)}
+  .hl .reg{font-size:.42em;position:relative;top:-.95em;letter-spacing:0}
+  .rule{position:absolute;background:var(--accent)}
+  .rule.om{background:var(--accent-on-main)}
+  .oh-agent-name{font-family:'Work Sans';font-weight:700}
+  .oh-agent{font-family:'Work Sans'}
+  .fine{font:400 6.6pt/8pt 'Work Sans';white-space:nowrap;opacity:.7;color:var(--on-main)}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['400 10pt Anton', '400 10pt "Work Sans"', '500 10pt "Work Sans"', '600 10pt "Work Sans"', '700 10pt "Work Sans"'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {};
+  const k = OHL.colors(D), E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id)).slice(0, 2);
+  // what the agent typed (refreshments and notes, only when there is some): a white box across the page; the top block
+  // gives up height for it and the write-up steps aside. With none (public, or nothing entered) the page keeps its full top.
+  const X = 36, W = 540, PX = 372, bottom = 692;
+  const evOpts = {bg:'#fff', line:'var(--accent)', lineW:1.2, padX:14, padY:9, scale:((D.openHouse||{}).box||{}).w};
+  const evBox = yy => Ivory.eventBox([[E.refreshments,'oh.refreshments','evb b'],[E.note,'oh.note','evb']], X, yy, W, 17, 3, evOpts);
+  const evH = evBox(0).h, cp = evH > 0;
+  const need = 42 + 25 + 6 + 10 + 2*15.5 + 4 + 10 + evH, avail = 692 - (226 + 308 + 16);   // street and city lines, a full-width two-line write-up, the gaps and the box, against the room under the house
+  const TOP = cp ? Math.max(186, 226 - Math.max(0, need - avail)) : 226;   // the main-color block is 0..TOP; the dark date panel starts at PX
+  let h = '';
+  h += `<div class="blk" style="left:0;top:0;width:612pt;height:${TOP}pt;background:var(--main)"></div>`;
+  h += `<div class="blk" style="left:${PX}pt;top:0;width:${612-PX}pt;height:${TOP}pt;background:var(--dark)"></div>`;
+  // the event wording: two lines of tall capitals, as big as the block allows (OHL.stack, in f.after)
+  const lines = OHL.labelLines(E.label, 2);
+  lines.forEach((t, i) => h += `<div class="abs hl" style="left:${X}pt;top:${24 + i*100}pt;width:${PX - X - 16}pt;height:170pt" data-slot="oh.label" data-lines="1">${esc(t).replace('®', '<span class="reg">®</span>')}</div>`);
+  // the date panel
+  const pw = 612 - PX, pcx = PX + 16, pcw = pw - 32;
+  const P = cp && TOP < 220 ? {wk:14, mo:33, dy:50, dyH:90, dyMax:84, rl:146, tm:156} : {wk:22, mo:42, dy:62, dyH:112, dyMax:104, rl:178, tm:190};
+  h += `<div class="abs kk" style="left:${pcx}pt;top:${P.wk}pt;width:${pcw}pt;height:16pt" data-slot="oh.weekday" data-lines="1">${esc(E.weekday)}</div>`;
+  h += `<div class="abs mo" style="left:${pcx}pt;top:${P.mo}pt;width:${pcw}pt;height:22pt" data-fit="17,12" data-slot="oh.month" data-lines="1">${esc(E.month)}</div>`;
+  h += `<div class="abs dy" style="left:${pcx}pt;top:${P.dy}pt;width:${pcw}pt;height:${P.dyH}pt" data-fit="${P.dyMax},60" data-slot="oh.day" data-lines="1">${esc(E.day)}</div>`;
+  h += `<div class="rule" style="left:${pcx + 40}pt;top:${P.rl}pt;width:${pcw - 80}pt;height:1.6pt"></div>`;
+  if(E.time) h += `<div class="abs tm" style="left:${pcx}pt;top:${P.tm}pt;width:${pcw}pt;height:24pt" data-fit="20,18" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
+  // the whole house, edge to edge; an accent line on the seam
+  const fr = OHL.fitHero(D, hero, 612, 308);
+  h += `<div class="blk" style="left:0;top:${TOP}pt;width:612pt;height:${fr.h}pt;background:var(--dark);opacity:.9"></div>`;
+  h += OHL.photo(D, hero, `left:${(612 - fr.w)/2}pt;top:${TOP}pt;width:${fr.w}pt;height:${fr.h}pt`);
+  h += `<div class="rule" style="left:0;top:${TOP}pt;width:612pt;height:3pt"></div>`;
+  let y = TOP + fr.h + 16;
+  const ry = y, lw = 304;
+  // street and the city line (the owner's bigger "Houston, TX"), then the paragraph
+  h += `<div class="abs addr" style="left:${X}pt;top:${y}pt;width:${lw}pt;height:42pt" data-fit="36,22" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
+  y += 42;
+  h += `<div class="abs plc" style="left:${X}pt;top:${y}pt;width:${lw}pt;height:22pt" data-fit="17,11" data-slot="place" data-lines="1">${esc(OHL.place(L))}</div>`;
+  y += 25;
+  let rh = bottom - ry;
+  if(cp){
+    // the rooms take the height of the street and city lines; under them a two-line write-up runs the full width
+    // (the owner 11/01), then the white box
+    const lh = 15.5, wuTop = bottom - evH - 10 - 2*lh - 4;
+    rh = wuTop - 10 - ry;
+    h += evBox(bottom - evH).html;
+    const wu = OHL.writeup(D, 'wu', W, lh, 2, [], {narrow: true});
+    if(wu.text) h += `<div class="abs wu" style="left:${X}pt;top:${wuTop}pt;width:${wu.w || W}pt;height:${wu.n*lh + 2}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`;
+  } else {
+    h += `<div class="rule om" style="left:${X}pt;top:${y}pt;width:44pt;height:2pt"></div>`;
+    y += 9;
+    const lh = 15.5, fit = Math.floor((bottom - y)/lh), wu = OHL.writeup(D, 'wu', lw, lh, Math.max(fit, 1), [], {narrow: true});
+    if(wu.text) h += `<div class="abs wu" style="left:${X}pt;top:${y}pt;width:${wu.w || lw}pt;height:${wu.n*lh + 2}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`;
+  }
+  // two rooms at the right, side by side
+  const rx = 360, gw = (X + W - rx - 8)/2;
+  rooms.forEach((id, i) => h += OHL.photo(D, id, `left:${rx + i*(gw + 8)}pt;top:${ry}pt;width:${gw}pt;height:${rh}pt`));
+  h += `<div class="rule om" style="left:${X}pt;top:${bottom + 4}pt;width:${W}pt;height:.8pt;opacity:.5"></div>`;
+  h += OHL.contact(D, {x:X, y:704, w:W, h:62, tone:OHL.toneOn(k.main), nameSize:18, phoneSize:13, lineSize:9.5, logoW:180, logoH:50, color:'var(--on-main)'});
+  h += `<div class="abs fine" style="left:${X}pt;top:778pt;width:${W}pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  const f = OHL.frame(D, h);
+  f.issues = cp && rh < 60 ? [{slot:'oh.note', kind:'overflow', detail:'the event box leaves no room for the street'}] : [];
+  // the wording as big as it fits, then centered top to bottom in its block by the ink of the capitals (not the line box)
+  f.after = () => {
+    const els = [...document.querySelectorAll('.hl')], k2 = .93;
+    const s = OHL.stack(els, TOP < 220 ? 88 : 98, 50, 0, k2).size;
+    const cx = document.createElement('canvas').getContext('2d'); cx.font = `400 ${s}px Anton`;
+    const m = cx.measureText('H'), base = (s*1.05 - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent))/2 + m.fontBoundingBoxAscent;
+    const inkTop = base - m.actualBoundingBoxAscent, inkH = (els.length - 1)*s*k2 + m.actualBoundingBoxAscent;
+    const top = (TOP - inkH)/2 - inkTop;
+    els.forEach((el, i) => el.style.top = (top + i*s*k2) + 'pt');
+  };
+  return f;
+});
+</script>
+</body>
+</html>

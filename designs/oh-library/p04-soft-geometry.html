@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · Soft Geometry</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<!--
+  Soft Geometry (from reference P04), in the agent's and brokerage's colors as the owner asked. Trim 612 x 792 pt.
+  Public or REALTOR(R). The dark brand color holds the event wording large at top; the house sits below at its own
+  shape. Under it, angled blocks (never over the photo): a pale block with the date and time and a "hosted by" agent
+  card, an accent wedge at right with the address, and the logo on the dark foot.
+  Type: Urbanist.
+  Event box 10/30: white, thin main line, soft corners, under the date and time.
+-->
+<style>
+  .sheet{background:var(--dark);color:var(--on-dark)}
+  .eyebrow{font:600 10pt/13pt Urbanist;letter-spacing:3.5pt;text-transform:uppercase;white-space:nowrap;opacity:.9}
+  .hl{font:700 58pt/58pt Urbanist;letter-spacing:-1pt;white-space:nowrap;overflow:hidden}
+  .burst{position:absolute;color:var(--accent-on-dark)}
+  .pale{position:absolute;background:var(--paper);color:var(--ink)}
+  .date{font:700 28pt/34pt Urbanist;white-space:nowrap;overflow:hidden}
+  .time{font:600 19pt/23pt Urbanist;white-space:nowrap;overflow:hidden;color:var(--main-on-paper)}
+  .evb{font:600 var(--evs,12pt)/var(--evl,16pt) Urbanist;color:var(--ink)}
+  .evb.b{font-weight:700}
+  .host{font:700 8.6pt/11pt Urbanist;letter-spacing:2pt;text-transform:uppercase;color:var(--main-on-paper);white-space:nowrap}
+  .wedge{position:absolute;background:var(--accent);color:var(--on-accent)}
+  .addr{font:700 19pt/23pt Urbanist;text-align:right}
+  .wu{font:500 11pt/14pt Urbanist;white-space:nowrap;color:var(--ink)}
+  .place{font:600 9pt/12pt Urbanist;letter-spacing:1.6pt;text-transform:uppercase;text-align:right;white-space:nowrap;overflow:hidden}
+  .oh-agent-name{font-family:Urbanist;font-weight:700}
+  .oh-agent{font-family:Urbanist}
+  .fine{font:500 6.6pt/8pt Urbanist;white-space:nowrap;opacity:.65}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['700 10pt Urbanist', '600 10pt Urbanist', '500 10pt Urbanist'], D => {
+  const esc = Ivory.esc, L = D.listing, A = D.agent || {}, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  let h = '';
+  // event on the dark field, a small accent burst beside it
+  h += `<div class="abs eyebrow" style="left:40pt;top:36pt;width:400pt;height:13pt">You're invited to an</div>`;
+  const lines = OHL.labelLines(E.label);
+  lines.forEach((t, i) => h += `<div class="abs hl" style="left:38pt;top:${54 + i*58}pt;width:440pt;height:62pt" data-slot="oh.label" data-lines="1">${esc(t)}</div>`);
+  const rays = [...Array(16)].map((_, i) => { const a = i*Math.PI/8; return `<line x1="${30+9*Math.cos(a)}" y1="${30+9*Math.sin(a)}" x2="${30+27*Math.cos(a)}" y2="${30+27*Math.sin(a)}"/>`; }).join('');
+  const hb = 54 + lines.length*58 + 14;
+  h += `<svg class="burst" style="left:462pt;top:${hb/2 - 60}pt;width:120pt;height:120pt" viewBox="0 0 60 60"><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round">${rays}</g></svg>`;
+  // the house
+  const fr = OHL.fitHero(D, hero, 612, 300), py = hb;
+  h += OHL.photo(D, hero, `left:${(612 - fr.w)/2}pt;top:${py}pt;width:${fr.w}pt;height:${fr.h}pt`);
+  // angled blocks under the photo
+  const by = py + fr.h, bh = 690 - by;
+  const P = 4/3;
+  h += `<svg class="abs" style="left:0;top:${by}pt;width:612pt;height:${bh}pt" viewBox="0 0 816 ${bh*P}" preserveAspectRatio="none">
+    <polygon points="0,0 ${430*P},0 ${380*P},${bh*P} 0,${bh*P}" fill="var(--paper)"/>
+    <polygon points="${440*P},0 816,0 816,${bh*P} ${392*P},${bh*P}" fill="var(--accent)"/></svg>`;
+  let y = by + 18;
+  h += `<div class="abs pale" style="left:0;top:0;width:0;height:0"></div>`;
+  h += `<div class="abs date" style="left:40pt;top:${y}pt;width:330pt;height:34pt;color:var(--ink)" data-fit="28,20" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
+  if(E.time) h += `<div class="abs time" style="left:40pt;top:${y+34}pt;width:330pt;height:23pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
+  y += 64;
+  // the event box (white, a thin line in the main color, soft corners; the owner 10/30) under the date and time
+  // the owner 10/30 evening: the white box fills all the space down to the agent info (the pale block's foot). The type grows
+  // (up to 15.5 pt) as far as the room allows, and the box takes the rest as padding.
+  const evOpts = {bg:'#fff', line:'var(--main-on-paper)', lineW:1, radius:9, scale:((D.openHouse||{}).box||{}).w, anchor:0, padX:13, padY:9};
+  const evLines = [[E.refreshments,'oh.refreshments','evb b'],[E.note,'oh.note','evb']];
+  const evTarget = 690 - 16 - (y - 2);
+  let ev = Ivory.eventBox(evLines, 40, y - 2, 316, 16, 3, evOpts);
+  if(ev.h){
+    const root = document.documentElement;
+    for(let sz = 15.5; sz >= 12; sz -= .5){
+      root.style.setProperty('--evs', sz + 'pt'); root.style.setProperty('--evl', (sz*1.35) + 'pt');
+      ev = Ivory.eventBox(evLines, 40, y - 2, 316, sz*1.35, 4, evOpts);
+      if(ev.h <= evTarget) break;
+    }
+    if(ev.h < evTarget) ev = Ivory.eventBox(evLines, 40, y - 2, 316, parseFloat(root.style.getPropertyValue('--evl')), 4, Object.assign({}, evOpts, {padY: 9 + (evTarget - ev.h)/2}));
+  }
+  h += ev.html; y += ev.h + (ev.h ? 6 : 2);
+  const issues = y > 690 - 6 ? [{slot:'oh.note', kind:'overflow', detail:'the event lines run off the pale block'}] : [];
+  // address block centered top to bottom in the accent wedge (kept clear of the dark diagonal)
+  const aw = 124, ax = 452;
+  const an = Ivory.linesNeeded('addr', L.address, aw, 23);
+  const facts = Ivory.facts(L).map(t => t.replace(' square feet', ' sq ft'));
+  const blockH = an*23 + 4 + 14 + 8 + facts.length*14;
+  let ay = by + (bh - blockH)/2;
+  h += `<div class="abs addr" style="left:${ax}pt;top:${ay}pt;width:${aw}pt;height:${an*23+3}pt;color:var(--on-accent)" data-slot="address" data-lines="${an}">${esc(L.address)}</div>`;
+  ay += an*23 + 4;
+  h += `<div class="abs place" style="left:${ax}pt;top:${ay}pt;width:${aw}pt;height:12pt;color:var(--on-accent)" data-slot="place" data-lines="1">${esc(OHL.place(L))}</div>`;
+  ay += 22;
+  facts.forEach((t, i) => h += `<div class="abs place" style="left:${ax}pt;top:${ay + i*14}pt;width:${aw}pt;height:13pt;color:var(--on-accent);letter-spacing:.8pt" data-slot="fact.${i}" data-lines="1">${esc(t)}</div>`);
+  // write-up under the day and time: each line stops short of the diagonal edge, so the lines step shorter
+  {
+    const lh = 14, maxL = Math.floor((690 - 8 - y)/lh);
+    const ctx = document.createElement('canvas').getContext('2d'); ctx.font = `500 ${11*4/3}px Urbanist`;
+    const tw = t => ctx.measureText(t).width*3/4;
+    let sc = 1;   // the column narrows a little when that is what brings the last line to 3/4
+    const lineW = i => (430 - 50*((y + (i+1)*lh - by)/bh) - 22 - 40)*sc;
+    const wrap = text => {
+      const words = text.split(/\s+/), out = []; let cur = '';
+      for(const w of words){
+        const t = cur ? cur + ' ' + w : w;
+        if(tw(t) <= lineW(out.length) || !cur) cur = t; else { out.push(cur); cur = w; }
+      }
+      out.push(cur);
+      return out;
+    };
+    const master = ((C.postcard || {}).master || []).length ? C.postcard.master : String((C.listing || {}).body || '').trim().split(/(?<=[.!?])\s+(?=[A-Z0-9"“])/);   // the flyer body's own sentences when there is no postcard pool
+    const pool = master.map(t => String(t).trim()).filter(Boolean);
+    let best = null;
+    for(const s2 of [1, .97, .94, .91, .88, .85, .82, .8]){
+      sc = s2; best = null;
+    const k = Math.min(pool.length, 10);
+      for(let mask = 1; mask < (1 << k) && maxL >= 1; mask += 2){
+        const text = pool.filter((_, i) => i < k && mask & (1 << i)).join(' '), ls = wrap(text);
+        if(ls.length > maxL) continue;
+        const fill = tw(ls[ls.length-1])/lineW(ls.length-1);
+        const score = (fill >= .75 && fill <= 1 ? 1000 : 0) + ls.length*100 + fill*10;
+        if(!best || score > best.score) best = {ls, score};
+      }
+      if(best && best.score >= 1000) break;
+    }
+    if(best) h += `<div class="abs wu" style="left:40pt;top:${y}pt;width:${lineW(0)+10}pt;height:${best.ls.length*lh+2}pt" data-slot="oh.writeup" data-lines="${best.ls.length}">${best.ls.map(esc).join('<br>')}</div>`;
+  }
+  // foot: the agent card with the logo on the dark field
+  h += OHL.contact(D, {x:40, y:700, w:536, h:62, tone:'dark', nameSize:18, logoW:180, logoH:50, nameFont:'Urbanist', nameWeight:700, bodyFont:'Urbanist'});
+  h += `<div class="abs fine" style="left:40pt;top:776pt;width:536pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  const f = OHL.frame(D, h);
+  f.issues = issues;
+  f.after = () => OHL.stack([...document.querySelectorAll('.hl')], 58, 32, 54, 1.0);
+  return f;
+});
+</script>
+</body>
+</html>

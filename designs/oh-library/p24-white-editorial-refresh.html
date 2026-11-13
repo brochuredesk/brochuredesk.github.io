@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · White Editorial (refreshments)</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<!--
+  White Editorial, refreshments version (10/31/2026; from reference P24). Trim 612 x 792 pt. REALTOR(R) / broker opens.
+  Same serif headline, address, facts line, photo, date and ruled footer as White Editorial. Under the date the page
+  splits in two columns: the writer's paragraph (14 pt) at left and the refreshments in a white box at right with a thin
+  accent rule: the matching food photo across the top at real size, then "Refreshments", the type in serif, the agent's
+  words (14 pt) and "Good to know" with the note. Nothing entered: the base design's own layout (note box under the date,
+  full-width paragraph).
+  The owner: clean, neat and simple. A property-magazine page on white: the event wording and the address in serif, a fine
+  facts line, one large photo with white space doing the work, the date and time as a large serif line, the writer's
+  paragraph, and a ruled footer in three parts (brokerage logo, agent, phone and web). No price.
+  Event box (10/30): what's served and the notes in a light gray box with a thin accent line under the date, 12 pt.
+  Type: Newsreader (headline, date), Hanken Grotesk (details).
+-->
+<style>
+  .sheet{background:#fff;color:var(--ink)}
+  .hl{font:500 30pt/36pt Newsreader;text-transform:uppercase;letter-spacing:2pt;white-space:nowrap;overflow:hidden}
+  .addr{font:400 18pt/24pt Newsreader;white-space:nowrap;overflow:hidden}
+  .facts{font:600 9pt/12pt 'Hanken Grotesk';letter-spacing:1.6pt;text-transform:uppercase;white-space:nowrap;overflow:hidden;color:var(--main-on-paper)}
+  .date{font:500 30pt/36pt Newsreader;white-space:nowrap;overflow:hidden}
+  .time{font:600 18pt/23pt 'Hanken Grotesk';white-space:nowrap;overflow:hidden;color:var(--main-on-paper)}
+  .body{font:400 13pt/18.5pt 'Hanken Grotesk'}
+  .evb{font:500 12pt/16pt 'Hanken Grotesk';text-align:center;color:var(--ink)}
+  .evb.b{font-weight:700}
+  .rk{font:600 8.6pt/11pt 'Hanken Grotesk';letter-spacing:2pt;text-transform:uppercase;color:var(--main-on-paper);white-space:nowrap}
+  .rt{font:500 22pt/26pt Newsreader;color:var(--ink);white-space:nowrap;overflow:hidden}
+  .rx{font:600 14pt/18pt 'Hanken Grotesk';color:var(--ink)}
+  .gn{font:400 12pt/15.5pt 'Hanken Grotesk';color:var(--ink)}
+  .b2{font:400 14pt/20pt 'Hanken Grotesk'}
+  .hr{position:absolute;left:54pt;width:504pt;height:.8pt;background:var(--ink);opacity:.35}
+  .vr{position:absolute;width:.8pt;background:var(--ink);opacity:.35}
+  .cell{font:400 10pt/14pt 'Hanken Grotesk';white-space:nowrap;overflow:hidden}
+  .cell b{font:600 12.5pt/16pt Newsreader;display:block}
+  .fine{font:400 6.6pt/8pt 'Hanken Grotesk';white-space:nowrap;opacity:.6}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['500 10pt Newsreader', '400 10pt Newsreader', '600 10pt Newsreader', '400 10pt "Hanken Grotesk"', '600 10pt "Hanken Grotesk"'], D => {
+  const esc = Ivory.esc, L = D.listing, A = D.agent || {}, B = D.brand || {}, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  const X = 54, W = 504;
+  let h = '';
+  let y = 48;
+  h += `<div class="abs hl" style="left:${X}pt;top:${y}pt;width:${W}pt;height:36pt" data-fit="30,20" data-slot="oh.label" data-lines="1">${esc(E.label)}</div>`; y += 40;
+  h += `<div class="abs addr" style="left:${X}pt;top:${y}pt;width:${W}pt;height:24pt" data-slot="address" data-lines="1">${esc([L.address, OHL.place(L)].filter(Boolean).join(', '))}</div>`; y += 28;
+  h += `<div class="abs facts" style="left:${X}pt;top:${y}pt;width:${W}pt;height:12pt" data-slot="oh.facts" data-lines="1">${esc([...Ivory.facts(L)].filter(Boolean).join('  |  '))}</div>`; y += 22;
+  // the photo, then right under it the date and time, then the write-up, larger and as long as the room allows,
+  // then the contact card (owner 10/27/2026)
+  const mkEv = yy => Ivory.eventBox([[E.note,'oh.note','evb']], X, yy, W, 16, 3,
+    {bg:'#fff', line:'var(--main-on-paper)', lineW:.8, padY:9, padX:16, scale:((D.openHouse||{}).box||{}).w});
+  const food = Object.keys(D.photos||{}).find(id => /^food\b/i.test(D.photos[id].tags||''));
+  const footer = 694, R = E.hasRefresh;
+  if(!R){
+    const evH0 = mkEv(0).h;
+    const below = 18 + 36 + 26 + 10 + (evH0 ? evH0 + 6 : 0);
+    const fr = OHL.fitHero(D, hero, W, Math.min(footer - 16 - below - 4*18.5 - 10 - y, 360));
+    h += OHL.photo(D, hero, `left:${X + (W - fr.w)/2}pt;top:${y}pt;width:${fr.w}pt;height:${fr.h}pt`);
+    y += fr.h + 18;
+    const wu = OHL.writeup(D, 'body', W, 18.5, Math.floor((footer - 14 - (y + 44 + (evH0 ? evH0 + 12 : 0)))/18.5)), body = wu.text, bn = body ? wu.n : 0;
+    h += `<div class="abs date" style="left:${X}pt;top:${y}pt;width:${W - 190}pt;height:36pt" data-fit="30,22" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
+    if(E.time) h += `<div class="abs time" style="left:${X + W - 190}pt;top:${y + 8}pt;width:190pt;height:23pt;text-align:right" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
+    y += 44;
+    const ev = mkEv(y);
+    h += ev.html; y += ev.h + (ev.h ? 12 : 0);
+    if(bn){ h += `<div class="abs body" style="left:${X}pt;top:${y}pt;width:${W}pt;height:${bn*18.5+4}pt" data-slot="listing.body" data-lines="${bn}">${esc(body)}</div>`; y += bn*18.5 + 4; }
+  } else {
+    // two columns under the date: write-up (left), white refreshments box with the food photo on top (right)
+    const bw = 250, cw = W - bw - 22, bx = X + W - bw;
+    const fp = food ? (D.photos[food] || {}) : null, tall = fp && fp.h > fp.w;
+    const pad = 9;
+    // the note ("Good to know") sits under the write-up at left, so the white box stays short and the photo big
+    const nT = E.refreshText ? Ivory.linesNeeded('rx', E.refreshText, bw - 2*pad - 6, 18) : 0, nN = E.note ? Ivory.linesNeeded('gn', E.note, cw, 15.5) : 0;
+    const inner = 12 + (E.refreshTitle ? 28 : 0) + (nT ? nT*18 + 4 : 0), noteH = E.note ? 12 + 13 + nN*15.5 : 0;
+    // the food photo's height flexes (96 to 132 pt) so the write-up and the box end together
+    let fh = 0, rbH, wu0 = null;
+    if(food){
+      let best = null;
+      for(let f = 132; f >= 96; f -= 4){
+        const rb = pad + f + 11 + inner + pad, w = OHL.writeup(D, 'b2', cw, 20, Math.floor((rb - noteH)/20), null, {narrow: true});
+        const gap = rb - noteH - ((w.text ? w.n : 0)*20 + 4);
+        if(!best || Math.abs(gap) < Math.abs(best.gap) - 3) best = {f, rb, gap};
+      }
+      fh = best.f; rbH = best.rb;
+    } else rbH = pad + inner + pad;
+    const heroH = Math.min(360, footer - 16 - (y + 18 + 44 + rbH + 2));
+    const fr = OHL.fitHero(D, hero, W, heroH);
+    h += OHL.photo(D, hero, `left:${X + (W - fr.w)/2}pt;top:${y}pt;width:${fr.w}pt;height:${heroH}pt`);
+    y += heroH + 18;
+    h += `<div class="abs date" style="left:${X}pt;top:${y}pt;width:${W - 190}pt;height:36pt" data-fit="30,22" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
+    if(E.time) h += `<div class="abs time" style="left:${X + W - 190}pt;top:${y + 8}pt;width:190pt;height:23pt;text-align:right" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
+    y += 44;
+    const wu = OHL.writeup(D, 'b2', cw, 20, Math.floor((rbH - noteH)/20), null, {narrow: true}), bn = wu.text ? wu.n : 0, ww = wu.w || cw;
+    h += `<div class="abs" data-box="oh.box" style="left:${bx}pt;top:${y}pt;width:${bw}pt;height:${rbH}pt;background:#fff;border:.8pt solid var(--main-on-paper);border-top:2.4pt solid var(--main-on-paper);box-sizing:border-box"></div>`;
+    let ty = y + pad + 2;
+    if(food){ h += OHL.photo(D, food, `left:${bx + pad}pt;top:${ty}pt;width:${bw - 2*pad}pt;height:${fh}pt`); ty += fh + 11; }
+    const tx = bx + pad + 3, tw = bw - 2*pad - 6;
+    h += `<div class="abs rk" style="left:${tx}pt;top:${ty}pt;width:${tw}pt;height:11pt">Refreshments</div>`; ty += 12;
+    if(E.refreshTitle){ h += `<div class="abs rt" style="left:${tx}pt;top:${ty}pt;width:${tw}pt;height:26pt" data-slot="oh.refreshTitle" data-lines="1">${esc(E.refreshTitle)}</div>`; ty += 28; }
+    if(nT){ h += `<div class="abs rx" style="left:${tx}pt;top:${ty}pt;width:${tw}pt;height:${nT*18+2}pt" data-slot="oh.refreshments" data-lines="${nT}">${esc(E.refreshText)}</div>`; ty += nT*18 + 4; }
+    if(E.note){ const ny = y + rbH - nN*15.5 - 2 - 13;
+      h += `<div class="abs" style="left:${X}pt;top:${ny - 8}pt;width:${cw}pt;height:.8pt;background:var(--main-on-paper);opacity:.5"></div>`;
+      h += `<div class="abs rk" style="left:${X}pt;top:${ny}pt;width:${cw}pt;height:11pt">Good to know</div>`;
+      h += `<div class="abs gn" style="left:${X}pt;top:${ny + 13}pt;width:${cw}pt;height:${nN*15.5+2}pt" data-slot="oh.note" data-lines="${nN}">${esc(E.note)}</div>`; }
+    if(bn) h += `<div class="abs b2" style="left:${X + (cw - ww)/2}pt;top:${y}pt;width:${ww}pt;height:${bn*20+4}pt" data-slot="listing.body" data-lines="${bn}">${esc(wu.text)}</div>`;
+    h += `<div class="vr" style="left:${X + cw + 11}pt;top:${y}pt;height:${rbH}pt"></div>`;
+    y += rbH;
+  }
+  const issues = y > footer - 6 ? [{slot:'oh.note', kind:'overflow', detail:'the copy runs into the footer'}] : [];
+  // ruled footer in three parts
+  h += `<div class="hr" style="top:${footer}pt"></div><div class="hr" style="top:${footer + 64}pt"></div>`;
+  h += OHL.contact(D, {x:X, y:footer + 2, w:W, h:60, tone:'light', nameSize:18, logoW:176, logoH:46, nameFont:'Newsreader', nameWeight:600, bodyFont:"'Hanken Grotesk'"});
+  h += `<div class="abs fine" style="left:${X}pt;top:${footer + 72}pt;width:${W}pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  const f = OHL.frame(D, h.replace(/([^\s<>"]+) · /g, '<span style="white-space:nowrap">$1 ·</span> '));   // a "·" never starts a line
+  f.issues = issues;
+  return f;
+});
+</script>
+</body>
+</html>

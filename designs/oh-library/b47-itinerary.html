@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · Itinerary</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<!--
+  Itinerary (B47, working name; new design, 11/01/2026). Trim 612 x 792 pt. REALTOR(R) / broker opens, no refreshments.
+  Laid out like a trip itinerary for the agents who will visit: the whole house edge to edge at the top, then two
+  columns. At the left a title bar of the agent's main color carries the event wording, and under it a ruled table
+  (small spaced labels at the left, the values large at the right of one vertical hairline): WHEN, TIME, WHERE (the
+  street large, then the city line, the owner's bigger "Houston, TX"), and the writer's paragraph under THE HOME. At
+  the right a column of three rooms bleeds off the edge. No beds/baths line. No price. The agent and the logo at the foot.
+  What the agent typed (a word on what's served and the notes, with the REALTOR(R) wording's co-op line) sits in a white
+  box with a thin accent edge at the foot of the table, 13.5 pt; the paragraph takes what room is left.
+  Type: Playfair Display (values, street), Montserrat (event wording, labels, details).
+  Background (the owner 11/01): no ivory. By default a much lighter shade of the title bar's color, so it follows
+  whatever main color the agent picks; openHouse.paper (the agent's own background pick for this flyer) wins.
+  Itinerary only for now; the owner decides the other flyers one by one.
+-->
+<style>
+  @font-face{font-family:'Playfair Display';src:url(../../fonts/pool/playfair-display-latin-400-normal.woff2);font-weight:400}
+  @font-face{font-family:'Playfair Display';src:url(../../fonts/pool/playfair-display-latin-500-normal.woff2);font-weight:500}
+  @font-face{font-family:'Playfair Display';src:url(../../fonts/pool/playfair-display-latin-600-normal.woff2);font-weight:600}
+  @font-face{font-family:'Playfair Display';src:url(../../fonts/pool/playfair-display-latin-700-normal.woff2);font-weight:700}
+  @font-face{font-family:'Montserrat';src:url(../../fonts/pool/montserrat-latin-400-normal.woff2);font-weight:400}
+  @font-face{font-family:'Montserrat';src:url(../../fonts/pool/montserrat-latin-500-normal.woff2);font-weight:500}
+  @font-face{font-family:'Montserrat';src:url(../../fonts/pool/montserrat-latin-600-normal.woff2);font-weight:600}
+  @font-face{font-family:'Montserrat';src:url(../../fonts/pool/montserrat-latin-700-normal.woff2);font-weight:700}
+  @font-face{font-family:'Montserrat';src:url(../../fonts/pool/montserrat-latin-800-normal.woff2);font-weight:800}
+  .sheet{background:var(--paper);color:var(--ink)}
+  .blk{position:absolute}
+  .hl{font:800 31pt/33pt Montserrat;letter-spacing:1.4pt;text-transform:uppercase;white-space:nowrap;overflow:hidden;color:var(--on-main)}
+  .lab{font:700 9pt/12pt Montserrat;letter-spacing:3.2pt;text-transform:uppercase;white-space:nowrap;color:var(--main-on-paper)}
+  .val{font:600 26pt/32pt 'Playfair Display';white-space:nowrap;overflow:hidden;color:var(--ink)}
+  .tim{font:500 24pt/30pt 'Playfair Display';white-space:nowrap;overflow:hidden;color:var(--ink)}
+  .adr{font:700 26pt/38pt 'Playfair Display';white-space:nowrap;overflow:hidden;color:var(--main-on-paper)}
+  .plc{font:700 15pt/20pt Montserrat;letter-spacing:2.6pt;text-transform:uppercase;white-space:nowrap;overflow:hidden;color:var(--ink)}
+  .wu{font:400 11pt/15.5pt Montserrat;color:var(--ink)}
+  .evb{font:500 13.5pt/18pt Montserrat;text-align:center;color:#1b1b1b}
+  .evb.b{font-weight:700}
+  .hair{position:absolute;background:var(--ink);opacity:.22}
+  .oh-agent-name{font-family:'Playfair Display';font-weight:700}
+  .oh-agent{font-family:Montserrat}
+  .fine{font:400 6.6pt/8pt Montserrat;white-space:nowrap;opacity:.6}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['800 10pt Montserrat', '700 10pt Montserrat', '500 10pt Montserrat', '400 10pt Montserrat', '600 10pt "Playfair Display"', '500 10pt "Playfair Display"', '700 10pt "Playfair Display"'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  // the background: a light tint of the main color (or the agent's own pick), and the text colors that read on it
+  const k = OHL.colors(D), paper = (D.openHouse || {}).paper || OHL.mix(k.main, '#ffffff', .86), rs = document.documentElement.style;
+  rs.setProperty('--paper', paper); rs.setProperty('--on-paper', OHL.on(paper));
+  rs.setProperty('--accent-on-paper', OHL.readable(k.accent, paper)); rs.setProperty('--main-on-paper', OHL.readable(k.main, paper));
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id)).slice(0, 3);
+  const X = 36, CX = 112, CW = 408 - CX, RX = 424, bottom = 692;
+  let h = '';
+  // the whole house, edge to edge
+  const fr = OHL.fitHero(D, hero, 612, 308);
+  h += `<div class="blk" style="left:0;top:0;width:612pt;height:${fr.h}pt;background:var(--dark)"></div>`;
+  h += OHL.photo(D, hero, `left:${(612 - fr.w)/2}pt;top:0;width:${fr.w}pt;height:${fr.h}pt`);
+  const Z = fr.h + 6;   // the two columns start here
+  // right: the rooms, bleeding off the edge
+  const n = Math.max(rooms.length, 1), gap = 6, rh = (bottom - Z - gap*(n - 1))/n;
+  rooms.forEach((id, i) => h += OHL.photo(D, id, `left:${RX}pt;top:${Z + i*(rh + gap)}pt;width:${612 - RX}pt;height:${rh}pt`));
+  // left: the title bar of the main color, from the page edge
+  const TH = 82;
+  h += `<div class="blk" style="left:0;top:${Z}pt;width:${RX - 6}pt;height:${TH}pt;background:var(--main)"></div>`;
+  h += `<div class="blk" style="left:0;top:${Z}pt;width:${RX - 6}pt;height:3pt;background:var(--accent)"></div>`;
+  const lines = OHL.labelLines(E.label, 2);
+  lines.forEach((t, i) => h += `<div class="abs hl" style="left:${X}pt;top:${Z + 12 + i*31}pt;width:${RX - 6 - X - 14}pt;height:60pt" data-slot="oh.label" data-lines="1">${esc(t)}</div>`);
+  // the ruled table
+  let y = Z + TH + 8;
+  const rowTop = y;
+  const row = (lab, html, hh) => {
+    let r = `<div class="abs lab" style="left:${X}pt;top:${y + 8}pt;width:${CX - X - 8}pt;height:12pt">${lab}</div>` + html;
+    y += hh; r += `<div class="hair" style="left:${X}pt;top:${y}pt;width:${408 - X}pt;height:.7pt"></div>`;
+    return r;
+  };
+  h += row('When', `<div class="abs val" style="left:${CX + 10}pt;top:${y + 2}pt;width:${CW - 10}pt;height:34pt" data-fit="26,18" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`, 42);
+  if(E.time) h += row('Time', `<div class="abs tim" style="left:${CX + 10}pt;top:${y + 2}pt;width:${CW - 10}pt;height:32pt" data-fit="24,18" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`, 40);
+  h += row('Where', `<div class="abs adr" style="left:${CX + 10}pt;top:${y + 2}pt;width:${CW - 10}pt;height:40pt" data-fit="26,18" data-slot="address" data-lines="1">${esc(L.address)}</div>` +
+    `<div class="abs plc" style="left:${CX + 10}pt;top:${y + 42}pt;width:${CW - 10}pt;height:22pt" data-fit="15,10" data-slot="place" data-lines="1">${esc(OHL.place(L))}</div>`, 70);
+  // what was typed, in a white box; the paragraph under THE HOME takes the rest
+  const evOpts = {bg:'#fff', line:'var(--accent)', lineW:1.2, padX:12, padY:8, scale:((D.openHouse||{}).box||{}).w};
+  const ev = Ivory.eventBox([[E.refreshments,'oh.refreshments','evb b'],[E.note,'oh.note','evb']], X, y + 10, 408 - X, 18, 3, evOpts);
+  const evSpace = ev.h ? ev.h + 18 : 0;
+  const room = bottom - y - evSpace - 4, lh = 15.5, fit = Math.floor((room - 12)/lh);
+  let wuN = 0;
+  if(fit >= 2){
+    const wu = OHL.writeup(D, 'wu', CW - 10, lh, fit, [], {narrow: true});
+    if(wu.text){
+      wuN = wu.n;
+      const bh = wu.n*lh + 6;
+      const yy = y + (ev.h ? 6 : Math.max(0, (room - bh)/2 - 2));   // with nothing else below it, centered in what is left
+      h += `<div class="abs lab" style="left:${X}pt;top:${yy + 8}pt;width:${CX - X - 8}pt;height:12pt">The home</div>`;
+      h += `<div class="abs wu" style="left:${CX + 10}pt;top:${yy + 6}pt;width:${wu.w || CW - 10}pt;height:${wu.n*lh + 2}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`;
+    }
+  }
+  if(ev.h){
+    if(wuN) h += Ivory.eventBox([[E.refreshments,'oh.refreshments','evb b'],[E.note,'oh.note','evb']], X, bottom - ev.h - 2, 408 - X, 18, 3, evOpts).html;
+    else {   // no room for the paragraph: the white box takes the whole space under the table, its words centered in it
+      const top = y + 10, avail = bottom - 2 - top;
+      h += Ivory.eventBox([[E.refreshments,'oh.refreshments','evb b'],[E.note,'oh.note','evb']], X, top, 408 - X, 18, 3, Object.assign({}, evOpts, {padY: 8 + Math.max(0, (avail - ev.h)/2)})).html;
+    }
+  }
+  // the vertical hairline between the labels and the values
+  h += `<div class="hair" style="left:${CX}pt;top:${rowTop}pt;width:.7pt;height:${y - rowTop + (wuN ? Math.min(room, wuN*lh + 20) : 0)}pt"></div>`;
+  h += `<div class="hair" style="left:${X}pt;top:${bottom + 4}pt;width:${612 - 2*X}pt;height:.7pt"></div>`;
+  h += OHL.contact(D, {x:X, y:704, w:612 - 2*X, h:62, tone:'light', nameSize:18, phoneSize:13, lineSize:9.5, logoW:180, logoH:50});
+  h += `<div class="abs fine" style="left:${X}pt;top:778pt;width:${612 - 2*X}pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  const f = OHL.frame(D, h);
+  f.issues = room < 20 ? [{slot:'oh.note', kind:'overflow', detail:'the event box leaves no room'}] : [];
+  f.after = () => { const d = document.querySelector('[data-slot="oh.date"]'), a = document.querySelector('[data-slot="address"]'); if(d && a){ const ds = parseFloat(getComputedStyle(d).fontSize)*72/96, as = parseFloat(getComputedStyle(a).fontSize)*72/96; if(as > ds - 2) OHL.fit(a, ds - 2, 14); } OHL.stack([...document.querySelectorAll('.hl')], 31, 20, Z + 12, 1); };
+  return f;
+});
+</script>
+</body>
+</html>

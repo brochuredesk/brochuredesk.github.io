@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · Arrow with Refreshments</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<!--
+  Arrow, refreshments version (10/31/2026; base b46a-arrow.html). Trim 612 x 792 pt. REALTOR(R) / broker opens with refreshments;
+  with none entered (or on a public open) it falls back to the base layout (event box left, interior photo right).
+  Refreshments version: the white box under the date and time keeps the agent's words (Refreshments tag, 14 pt text, a
+  "Good to know" note) and its height runs down to the foot of the column; the food photo takes the right column's lower half,
+  where the base has an interior photo, with the same accent outline offset behind it as the arrow, and runs down to the
+  box's foot. The refreshment type is a third headline line in the accent color ("LUNCHEON") under "OPEN HOUSE".
+  Base notes follow.
+  Arrow (from reference B46, version A). Trim 612 x 792 pt. REALTOR(R) or public.
+  The owner liked this as a unique concept and asked for a couple of versions. The page is the brand's dark color; the house
+  sits in a five-sided shape pointing right, with the same shape drawn again in the accent color just behind it, and
+  a narrow tab of the main color down the left edge carries the neighborhood. The shape is used only when the house
+  box proves the point misses the house; otherwise the photo keeps square corners. Event on the left under the photo,
+  address, facts and the writer's paragraph on the right.
+  Event box (the owner 10/30): what's served and the notes sit in a white box under the date and time (12 pt, accent edge);
+  the photo gives up a little height to make the room.
+  Type: Jost throughout.
+-->
+<style>
+  .sheet{background:var(--dark);color:var(--on-dark)}
+  .tab{position:absolute;left:0;top:0;width:30pt;height:792pt;background:var(--main)}
+  .tabt{position:absolute;left:15pt;top:396pt;width:700pt;height:14pt;margin-left:-350pt;margin-top:-7pt;transform:rotate(-90deg);font:600 13pt/16pt Jost;letter-spacing:4.5pt;text-transform:uppercase;text-align:center;white-space:nowrap;color:var(--on-main)}
+  .hl{font:600 36pt/38pt Jost;letter-spacing:1.5pt;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+  .date{font:500 28pt/34pt Jost;white-space:nowrap;overflow:hidden}
+  .time{font:600 19pt/24pt Jost;letter-spacing:1pt;text-transform:uppercase;white-space:nowrap;overflow:hidden;color:var(--accent-on-dark)}
+  .evb{font:500 14pt/19pt Jost;color:#1b1b1b}
+  .evb.b{font-weight:600}
+  .addr{font:600 19pt/26pt Jost}
+  .place{font:600 15pt/20pt Jost;letter-spacing:2.2pt;text-transform:uppercase;white-space:nowrap;overflow:hidden;color:var(--accent-on-dark)}
+  .facts{font:500 12.5pt/16pt Jost;white-space:nowrap;overflow:hidden}
+  .body{font:400 11pt/15.5pt Jost;opacity:.9}
+  .vr{position:absolute;width:.8pt;background:var(--on-dark);opacity:.3}
+  .hr{position:absolute;left:54pt;width:522pt;height:.8pt;background:var(--on-dark);opacity:.3}
+  .oh-agent-name{font-family:Jost;font-weight:600}
+  .oh-agent{font-family:Jost}
+  .rk{font:600 9pt/12pt Jost;letter-spacing:3pt;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+  .rx{font:500 14pt/19pt Jost;color:#1b1b1b}
+  .rx.b{font-weight:600}
+  .rx.d{font-size:22pt;line-height:28pt}
+  .rx.a{font-size:19pt;line-height:25pt}
+  .rx.c{font-size:17pt;line-height:22pt}
+  .rt{font:600 40pt/46pt Jost;text-transform:uppercase;letter-spacing:1pt;color:#1b1b1b;white-space:nowrap;overflow:hidden}
+  .nx{font:400 13pt/18pt Jost;color:#1b1b1b}
+  .hl2{font:600 20pt/24pt Jost;letter-spacing:5pt;text-transform:uppercase;white-space:nowrap;overflow:hidden;color:var(--accent-on-dark)}
+  .fine{font:400 6.6pt/8pt Jost;white-space:nowrap;opacity:.6}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['600 10pt Jost', '500 10pt Jost', '400 10pt Jost'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  const food = Object.keys(D.photos||{}).find(id => /^food\b/i.test(D.photos[id].tags||''));
+  const RF = E.hasRefresh && !!food;   // refreshments version: food photo in the right column; else the base layout
+  // the room photos (right column, and the left column when the page has space to fill)
+  const rm = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id) && !/exterior|yard|lawn|aerial|street/i.test((D.photos[id]||{}).tags||''));
+  const rid = rm.find(id => /kitchen|living|family|great/i.test(D.photos[id].tags||'')) || rm[0];
+  const left2 = rm.filter(id => id !== rid)[0];
+  const tagC = OHL.contrast(D.brand && D.brand.colors ? OHL.colors(D).accent : '#000', '#ffffff') >= 3 ? OHL.colors(D).accent : OHL.colors(D).dark;
+  let h = '';
+  h += `<div class="tab"></div><div class="tabt" data-slot="place.tab" data-lines="1">${esc(OHL.place(L))}</div>`;
+  // the house in an arrow, its accent echo just behind
+  const fx = 54, fy = 40, fw = 540, fh = OHL.minFrameH(D, hero, 540, 360);
+  const arrow = [[0,0],[.9,0],[1,.5],[.9,1],[0,1],[.1,.5]];   // a shallow point and a notched tail, both clear of most front shots
+  const shaped = OHL.polyFits(D, hero, fw, fh, arrow);
+  if(shaped){
+    const pts = arrow.map(([x,y]) => `${(fx + 12 + x*fw)*4/3},${(fy + 12 + y*fh)*4/3}`).join(' ');
+    h += `<svg class="abs" style="left:0;top:0;width:612pt;height:${fy+fh+16}pt" viewBox="0 0 816 ${(fy+fh+16)*4/3}"><polygon points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2"/></svg>`;
+    h += OHL.maskedPhoto(D, hero, `left:${fx}pt;top:${fy}pt;width:${fw}pt;height:${fh}pt`, arrow);
+  } else h += OHL.photo(D, hero, `left:${fx}pt;top:${fy}pt;width:${fw}pt;height:${fh}pt`);
+
+  // event left
+  let y = fy + fh + 22;   // moved up (the owner 10/30 evening)
+  const mid0 = h.length;
+  const top0 = y, lines = OHL.labelLines(E.label);
+  lines.forEach((t, i) => h += `<div class="abs hl" style="left:54pt;top:${y + i*38}pt;width:262pt;height:40pt" data-slot="oh.label" data-lines="1">${esc(t)}</div>`);
+  const RT = RF && E.refreshTitle && E.refreshText;
+  if(RT) h += `<div class="abs hl2" style="left:54pt;top:${y + lines.length*38 + 1}pt;width:262pt;height:26pt" data-slot="oh.refreshType" data-lines="1">${esc(E.refreshTitle)}</div>`;
+  y += lines.length*38 + (RT ? 30 : 0) + 14;
+  h += `<div class="abs date" style="left:54pt;top:${y}pt;width:262pt;height:34pt" data-fit="28,20" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
+  y += 36;
+  if(E.time){ h += `<div class="abs time" style="left:54pt;top:${y}pt;width:262pt;height:24pt" data-fit="19,18" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`; y += 30; }
+  const cy0 = 704, room = 704 - 18 - (y + 6);
+  let ev;
+  if(RF){
+    // white box, its own box: tag, the agent's words (or the type), the note; as tall as the column allows
+    const bw = 262, tx = 54 + 16, tw = bw - 32;
+    let parts = [];
+    for(const [cls, lh] of [['rx b d', 28], ['rx b a', 25], ['rx b c', 22], ['rx b', 19]]){
+      parts = [['rk', 'Refreshments' + (E.refreshTitle && E.refreshText ? '  ·  ' + E.refreshTitle : ''), 14, 1, null]];
+      if(E.refreshText){ const n = Ivory.linesNeeded(cls, E.refreshText, tw, lh); parts.push([cls, E.refreshText, n*lh, n, 'oh.refreshments']); }
+      else if(E.refreshTitle) parts.push(['rt', E.refreshTitle, 46, 1, 'oh.refreshTitle', 8]);
+      if(E.note){ parts.push(['rk', 'Good to know', 18, 1, null, 8]); const n = Ivory.linesNeeded('nx', E.note, tw, 18); parts.push(['nx', E.note, n*18, n, 'oh.note']); }
+      if(parts.reduce((a, p) => a + p[2] + (p[5] || 0), 0) + 40 <= room) break;
+    }
+    const ph0 = parts.reduce((a, p) => a + p[2] + (p[5] || 0), 0), BH = Math.min(room, Math.max(ph0 + 36, 176));
+    let hh = `<div class="abs" data-box="oh.box" style="left:54pt;top:${y + 6}pt;width:${bw}pt;height:${BH}pt;background:#fff;border:1.2pt solid var(--accent);box-sizing:border-box"></div>`;
+    let ty = y + 6 + (BH - ph0)/2;
+    parts.forEach(([c, t, hgt, n, slot, gap]) => { ty += gap || 0;
+      hh += `<div class="abs ${c}" style="left:${tx}pt;top:${ty}pt;width:${tw}pt;height:${hgt + (/^rx|^nx/.test(c) ? 3 : 0)}pt;${c === 'rk' ? 'color:' + tagC + ';' : ''}${/^rx|^nx/.test(c) ? 'white-space:normal;' : ''}"${slot ? ` data-slot="${slot}" data-lines="${n}"` : ''}${c === 'rt' ? ' data-fit="40,20"' : ''}>${esc(t)}</div>`; ty += hgt; });
+    ev = {html: hh, h: BH, over: ph0 + 36 > room};
+  } else {
+  // a bigger box, so an agent has room to type more: 14 pt type and at least 150 pt tall when the page has the room;
+  // a tall house (two stories) leaves less, so the type steps down to 12 pt and the box to what fits
+  const mk = big => Ivory.eventBox([[E.refreshments,'oh.refreshments','evb b'],[E.note,'oh.note','evb']], 54, y + 6, 262, big ? 19 : 16, big ? 4 : 3,
+    {bg:'#fff', line:'var(--accent)', lineW:1.2, padX:big ? 14 : 12, padY:big ? 12 : 10, scale:((D.openHouse||{}).box||{}).w, anchor:0, extraStyle: big ? '' : 'font-size:12pt;line-height:16pt'});
+  ev = mk(true);
+  if(ev.h > room) ev = mk(false);
+  const minH = left2 ? 0 : Math.min(150, room);   // a second room photo can fill under a short box, so the box stays its natural size
+  if(ev.h && ev.h < minH){ ev.html = ev.html.replace(`height:${ev.h}pt`, `height:${minH}pt`); ev.h = minH; }
+  }
+  // only a note entered (a short box): when a second room photo exists it fills the left column under the box; otherwise the box grows
+  const spare = !RF && ev.h && (cy0 - 18) - (y + 6 + ev.h + 6) >= 96;
+  if(spare && !left2){ const nh = cy0 - 18 - (y + 6); ev.html = ev.html.replace(`height:${ev.h}pt`, `height:${nh}pt`); ev.h = nh; }
+  h += ev.html; y += ev.h + (ev.h ? 6 : 0);
+  // address, facts, the writer's paragraph right
+  const rx = 344, rw = 232;
+  let ry = top0 + 2;
+  const an = Ivory.linesNeeded('addr', L.address, rw, 26);
+  h += `<div class="abs addr" style="left:${rx}pt;top:${ry}pt;width:${rw}pt;height:${an*26+4}pt" data-slot="address" data-lines="${an}">${esc(L.address)}</div>`;
+  ry += an*26 + 4;
+  h += `<div class="abs place" style="left:${rx}pt;top:${ry}pt;width:${rw}pt;height:20pt" data-fit="15,10" data-slot="place" data-lines="1">${esc(OHL.place(L))}</div>`;
+  ry += 25;
+  h += `<div class="abs facts" style="left:${rx}pt;top:${ry}pt;width:${rw}pt;height:16pt" data-slot="oh.facts" data-lines="1">${esc(Ivory.factsShort(L).replace(/  \/  /g, '  ·  '))}</div>`;
+  ry += 26;
+  // the writer's own sentences fill the rest of the column, set larger (owner 10/28/2026)
+  const cy = 704, pbot = Math.max(y - 6, ry); let pbot2 = 0;
+  let wu = {text:'', n:0};
+  if(RF){
+    // the food photo needs at least 130 pt: the paragraph gets only the lines that leave it
+    for(let ml = 6; ml >= 1; ml--){ const t = OHL.writeup(D, 'body', rw, 15.5, ml); if(t.text && t.fill >= .75 && pbot - (ry + t.n*15.5) - 12 >= 130){ wu = t; break; } }
+  } else for(let ml = 6; ml >= 1; ml--){ const t = OHL.writeup(D, 'body', rw, 15.5, ml); if(t.text && t.fill >= .75){ wu = t; break; } }   // a paragraph whose last line is 3/4 full, or none (the photo grows)
+  if(wu.text){ h += `<div class="abs body" style="left:${rx}pt;top:${ry}pt;width:${rw}pt;height:${wu.n*15.5+4}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`; ry += wu.n*15.5; }
+  if(RF){
+    // the food photo fills the column down to the foot of the white box; an accent outline sits offset behind it
+    const fy = ry + (wu.text ? 12 : 4), fh = pbot - fy - 7, fw2 = rw - 7;
+    h += `<div class="abs" style="left:${rx + 7}pt;top:${fy + 7}pt;width:${fw2}pt;height:${fh}pt;border:1.2pt solid var(--accent);box-sizing:border-box"></div>`;
+    h += OHL.photo(D, food, `left:${rx}pt;top:${fy}pt;width:${fw2}pt;height:${fh}pt`);
+    ry = pbot;
+  } else {
+  // nothing at all entered: the right photo runs down to the contact rule and a second room photo fills the left column.
+  // Only a note entered (a short box): a second room photo fills the left column under the box so the bottom is never blank
+  // (owner 11/1/2026), and the right photo runs down with it
+  const empty = !ev.h, fillL = spare && !!left2, pb2 = (empty || fillL) ? cy - 18 : (spare ? Math.max(pbot, y - 6) : pbot), ph2 = pb2 - ry - (wu.text ? 12 : 4);
+  const left = (empty || fillL) ? left2 : null, ltop = empty ? y + 6 : y;
+  if(left && pb2 - ltop >= 90) h += OHL.photo(D, left, `left:54pt;top:${ltop}pt;width:262pt;height:${pb2 - ltop}pt`);
+  if(empty || fillL) { y = pb2; pbot2 = pb2; }
+  if(rid && ph2 >= 90){ h += OHL.photo(D, rid, `left:${rx}pt;top:${ry + (wu.text ? 12 : 4)}pt;width:${rw}pt;height:${ph2}pt`); ry = pb2; }
+  }
+  h += `<div class="vr" style="left:326pt;top:${top0+4}pt;height:${Math.max(y, ry) - top0 - 2}pt"></div>`;
+  const issues = y > cy - 18 ? [{slot:'oh.note', kind:'overflow', detail:'the event runs into the agent card'}] : [];
+  const shift = 0;   // the block sits up under the photo
+  h = h.slice(0, mid0) + `<div class="abs" style="left:0;top:${shift}pt;width:612pt;height:0">` + h.slice(mid0) + `</div>`;
+  h += `<div class="hr" style="top:${cy - 12}pt"></div>`;
+  h += OHL.contact(D, {x:54, y:cy, w:522, h:62, tone:'dark', nameSize:18, phoneSize:13, lineSize:9.5, logoW:180, logoH:50});
+  h += `<div class="abs fine" style="left:54pt;top:778pt;width:522pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  const f = OHL.frame(D, h.replace(/([^\s<>"]+) · /g, '<span style="white-space:nowrap">$1 ·</span> '));   // a "·" never starts a line
+  f.issues = issues;
+  f.after = () => OHL.stack([...document.querySelectorAll('.hl')], 36, 22, top0, 1.05);
+  return f;
+});
+</script>
+</body>
+</html>

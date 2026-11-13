@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · Chevron</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<!--
+  Chevron (from reference B46, version B). Trim 612 x 792 pt. REALTOR(R) or public.
+  The second take on the owner's geometric favorite: the house across the top with its bottom edge cut into a wide V that
+  points down at the event, and an accent chevron line echoing the cut just below it (the V crosses lawn only; with no
+  proof it keeps a straight edge). Everything under it is centered on the brand's dark color: the event wording, the
+  date and time large, the address and the agent.
+  Event box (the owner 10/30): what's served and the notes sit in a white box under the date and time, 12 pt, with a thin
+  accent edge, centered under the time.
+  Type: Sora throughout.
+-->
+<style>
+  .sheet{background:var(--dark);color:var(--on-dark)}
+  .hl{font:700 46pt/52pt Sora;letter-spacing:2pt;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden}
+  .date{font:600 40pt/48pt Sora;text-align:center;white-space:nowrap;overflow:hidden}
+  .time{font:400 28pt/34pt Sora;text-align:center;white-space:nowrap;overflow:hidden;color:var(--accent-on-dark)}
+  .evb{font:500 13.5pt/18pt Sora;text-align:center;color:#1b1b1b}
+  .evb.b{font-weight:700}
+  .dia{position:absolute;width:9pt;height:9pt;background:var(--accent);transform:rotate(45deg)}
+  .addr{font:600 30pt/36pt Sora;text-align:center;white-space:nowrap;overflow:hidden}
+  .place{font:600 15pt/20pt Sora;letter-spacing:3pt;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden;color:var(--accent-on-dark)}
+  .hr{position:absolute;left:36pt;width:540pt;height:.8pt;background:var(--on-dark);opacity:.3}
+  .oh-agent-name{font-family:Sora;font-weight:600}
+  .oh-agent{font-family:Sora}
+  .fine{font:400 6.6pt/8pt Sora;white-space:nowrap;opacity:.6}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['700 10pt Sora', '600 10pt Sora', '400 10pt Sora'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  let h = '';
+  // room the centered block needs, then the house as tall as what is left allows
+  const lines = OHL.labelLines(E.label, E.label.length > 18 ? 2 : 1);
+  const boxOpts = {bg:'#fff', line:'var(--accent)', lineW:1.2, padX:14, padY:11, scale:((D.openHouse||{}).box||{}).w};
+  const evBox = (x, y) => Ivory.eventBox([[E.refreshments,'oh.refreshments','evb b'],[E.note,'oh.note','evb']], x, y, 540, 18, 4, boxOpts);
+  const evN = evBox(0, 0).h;
+  // with a white box the type steps down a little until the house keeps its V cut (the owner 11/01, Q3)
+  const side = 0.82, vee = [[0,0],[1,0],[1,side],[.5,1],[0,side]];
+  let t = 1, fr, ph, shaped;
+  for(t of evN ? [1, .95, .9, .86, .82, .78] : [1]){
+    const need = 34 + lines.length*52*t + 12 + 50*t + (E.time ? 40*t : 0) + (evN ? evN + 10 : 0) + 8 + 38*t + 22 + 10;
+    fr = OHL.fitHero(D, hero, 612, Math.min(408, 704 - 16 - need)); ph = fr.h;
+    shaped = fr.w === 612 && OHL.polyFits(D, hero, 612, ph, vee);
+    if(shaped) break;
+  }
+  const z = v => +(v*t).toFixed(1);
+  if(shaped){
+    h += OHL.maskedPhoto(D, hero, `left:0;top:0;width:612pt;height:${ph}pt`, vee);
+    const o = 16, P = 4/3;
+    h += `<svg class="abs" style="left:0;top:0;width:612pt;height:${ph+o+4}pt" viewBox="0 0 816 ${(ph+o+4)*P}"><polyline points="0,${(ph*side+o)*P} 408,${(ph+o)*P} 816,${(ph*side+o)*P}" fill="none" stroke="var(--accent)" stroke-width="2.4"/></svg>`;
+  } else h += OHL.photo(D, hero, `left:${(612-fr.w)/2}pt;top:0;width:${fr.w}pt;height:${ph}pt`);
+  let y = ph + (shaped ? 34 : 26);
+  const mid0 = h.length, y0 = y;
+  lines.forEach((w, i) => h += `<div class="abs hl" style="left:36pt;top:${y + i*z(52)}pt;width:540pt;height:${z(54)}pt;line-height:${z(52)}pt" data-slot="oh.label" data-lines="1">${esc(w)}</div>`);
+  y += lines.length*z(52) + 12;
+  h += `<div class="abs date" style="left:36pt;top:${y}pt;width:540pt;height:${z(48)}pt;line-height:${z(48)}pt" data-fit="${z(40)},24" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
+  y += z(50);
+  if(E.time){ h += `<div class="abs time" style="left:36pt;top:${y}pt;width:540pt;height:${z(34)}pt;line-height:${z(34)}pt" data-fit="${z(28)},18" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`; y += z(40); }
+  const ev = evBox(36, y + 2);
+  h += ev.html; y += ev.h + (ev.h ? 12 : 4);
+  y += 8;   // no diamond above the address (the owner 10/30 evening): the address takes the room
+  h += `<div class="abs addr" style="left:36pt;top:${y}pt;width:540pt;height:${z(36)}pt;line-height:${z(36)}pt" data-fit="${z(30)},18" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
+  y += z(38);
+  h += `<div class="abs place" style="left:36pt;top:${y}pt;width:540pt;height:20pt" data-fit="15,10" data-slot="place" data-lines="1">${esc(OHL.place(L))}</div>`;
+  y += 22;
+  const cy = 704;
+  const issues = y > cy - 16 ? [{slot:'oh.note', kind:'overflow', detail:'the event runs into the agent card'}] : [];
+  const shift = Math.max(0, (cy - 16 - y)/2);
+  h = h.slice(0, mid0) + `<div class="abs" style="left:0;top:${shift}pt;width:612pt;height:0">` + h.slice(mid0) + `</div>`;
+  h += `<div class="hr" style="top:${cy - 12}pt"></div>`;
+  h += OHL.contact(D, {x:36, y:cy, w:540, h:62, tone:'dark', nameSize:17, phoneSize:13, lineSize:9, logoW:180, logoH:50});
+  h += `<div class="abs fine" style="left:36pt;top:778pt;width:540pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  const f = OHL.frame(D, h);
+  f.issues = issues;
+  f.after = () => OHL.stack([...document.querySelectorAll('.hl')], z(46), 28, y0, 1.13);
+  return f;
+});
+</script>
+</body>
+</html>

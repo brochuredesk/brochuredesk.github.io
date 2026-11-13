@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · Crosscut</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<!--
+  Crosscut (new, 10/31/2026; draws on P17, P22 and P45 but is its own design). Trim 612 x 792 pt. Public or REALTOR(R).
+  Two opposite leans meet across the page. The event wording and three big facts sit on a main-color field whose foot
+  climbs to the right; the house photo under it is a wedge: its top edge climbs with the field (a thin paper gap between)
+  and its foot falls away to the right, so the two edges cross over the shot. An accent stripe rides the foot of the photo
+  and a dark slab follows it, holding the date, time and address large. Under the slab the writer's paragraph, the event
+  lines in a white box when the agent entered any, and the contact card.
+  Every cut is proved to cross only sky (top corner) and lawn (bottom corner): the lean steps down (and ends square)
+  until OHL.polyFits shows the whole house inside the shape.
+  Type: Epilogue (headline, facts, date, address), Crimson Pro (time, write-up).
+-->
+<style>
+  .sheet{background:var(--paper);color:var(--ink)}
+  .fld{position:absolute;left:0;width:612pt}
+  .hl{font:700 52pt/52pt Epilogue;text-transform:uppercase;white-space:nowrap;overflow:hidden;letter-spacing:-.4pt;color:var(--on-main)}
+  .fv{font:700 22pt/26pt Epilogue;color:var(--on-main);text-align:center;white-space:nowrap;overflow:hidden}
+  .fk{font:600 8.8pt/11pt Epilogue;letter-spacing:1.8pt;text-transform:uppercase;color:var(--accent-on-main);text-align:center;white-space:nowrap;overflow:hidden}
+  .date{font:700 38pt/42pt Epilogue;color:var(--on-dark);white-space:nowrap;overflow:hidden;letter-spacing:-.3pt}
+  .time{font:600 27pt/30pt 'Crimson Pro';color:var(--accent-on-dark);white-space:nowrap;overflow:hidden;font-style:normal;letter-spacing:.3pt}
+  .addr{font:700 22pt/26pt Epilogue;color:var(--on-dark);text-align:right}
+  .place{font:600 9.5pt/13pt Epilogue;letter-spacing:2pt;text-transform:uppercase;color:var(--accent-on-dark);text-align:right;white-space:nowrap;overflow:hidden}
+  .wu{font:500 14.5pt/20pt 'Crimson Pro';color:var(--on-dark)}
+  .evb{font:400 12pt/16pt Epilogue;color:var(--ink);text-align:center}
+  .evb.b{font-weight:700}
+  .oh-agent-name{font-family:Epilogue;font-weight:700}
+  .oh-agent{font-family:Epilogue}
+  .fine{font:400 6.6pt/8pt Epilogue;white-space:nowrap;opacity:.6;color:var(--on-dark)}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['700 10pt Epilogue', '600 10pt Epilogue', '400 10pt Epilogue', '500 10pt "Crimson Pro"', '600 10pt "Crimson Pro"'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'angled');
+  let h = '';
+  const poly = pts => `clip-path:polygon(${pts.map(([x, y]) => `${x}pt ${y}pt`).join(',')})`;
+
+  // ---- sizes: the field on top, the wedge photo, the slab, the foot
+  const evBox = yy => Ivory.eventBox([[E.refreshments,'oh.refreshments','evb b'],[E.note,'oh.note','evb']], 36, yy, 540, 16, 3,
+    {bg:'#fff', line:'var(--accent)', lineW:1.2, padX:16, padY:9, scale:((D.openHouse||{}).box||{}).w});
+  const evH = evBox(0).h;
+  const H1 = 138;                       // the field's foot at the left edge (its right end is t higher)
+  const slabBody = 80;                  // slab depth under the photo's foot at the right edge
+  const foot = 705;                     // the contact card's rule
+  // the lean: the field's foot and the photo's top edge climb t to the right; the photo's foot falls t2 to the right
+  // the photo gets the room that is left after at least 4 lines of write-up; it is never shorter than its house needs
+  const room = foot - 14 - (evH ? evH + 12 : 0) - 4*20 - slabBody - 6 - (H1 + 6);
+  const want = Math.max(250, Math.min(340, room + 44));
+  let ph = Math.max(want, OHL.minFrameH(D, hero, 612, 560)), t = 0, t2 = 0, mirror = false;
+  const mk = (t, t2) => [[0, t/ph], [1, 0], [1, 1], [0, 1 - t2/ph]];
+  for(const lean of [44, 38, 32, 26, 20]){
+    const p = mk(lean, lean);
+    if(OHL.polyFits(D, hero, 612, ph, p)){ t = t2 = lean; break; }
+    const q = mk(lean, Math.round(lean*.5));
+    if(OHL.polyFits(D, hero, 612, ph, q)){ t = lean; t2 = Math.round(lean*.5); break; }
+  }
+  const yF = H1 - 44 + 6;               // the photo frame's top (at its right edge, level with the field's raised foot)
+  const P = mk(t, t2);
+  // main-color field: foot climbs to the right by 44 (it stays this way even when the photo's cut is square)
+  h += `<div class="fld" style="left:0;top:0;height:${H1}pt;background:var(--main);${poly([[0,0],[612,0],[612,H1-44],[0,H1]])}"></div>`;
+  // the photo: a wedge, or square when no lean proved safe
+  const pTop = t ? yF : H1 + 6;
+  if(t){
+    h += OHL.maskedPhoto(D, hero, `left:0;top:${yF}pt;width:612pt;height:${ph}pt`, P);
+  } else {
+    h += OHL.photo(D, hero, `left:0;top:${pTop}pt;width:612pt;height:${ph}pt`);
+  }
+  const pBot = pTop + ph;               // the photo's foot at the right edge
+  // accent stripe along the photo's foot, then the dark slab on the same lean
+  const yL = pBot - t2;                 // foot at the left edge
+  const slabH = 792 - yL;                // the dark runs from the stripe to the foot of the flyer (owner 11/1)
+  h += `<div class="fld" style="top:${yL}pt;height:${slabH}pt;background:var(--accent);${poly([[0,0],[612,t2],[612,t2+6],[0,6]])}"></div>`;
+  h += `<div class="fld" style="top:${yL}pt;height:${slabH}pt;background:var(--dark);${poly([[0,6],[612,t2+6],[612,slabH],[0,slabH]])}"></div>`;
+
+  // ---- on the field: the event wording at left, three big facts at right
+  const lines = OHL.labelLines(E.label);
+  lines.forEach((tx, i) => h += `<div class="abs hl" style="left:26pt;top:${14 + i*46}pt;width:340pt;height:56pt" data-slot="oh.label" data-lines="1">${esc(tx)}</div>`);
+  const cells = [];
+  if(L.beds) cells.push([L.beds, L.beds == 1 ? 'Bed' : 'Beds']);
+  if(L.baths) cells.push([L.baths + (L.halfBaths ? '.5' : ''), 'Baths']);
+  if(L.sqft) cells.push([Number(L.sqft).toLocaleString('en-US'), 'Sq ft']);
+  const cws = cells.map(([v]) => String(v).length > 4 ? 96 : 66), fxs = [];
+  let fxa = 576 - cws.reduce((a, b) => a + b, 0);
+  cells.forEach(([v, k], i) => {
+    const cw = cws[i], fx = fxa; fxa += cw;
+    h += `<div class="abs fv" style="left:${fx}pt;top:36pt;width:${cw}pt;height:26pt" data-slot="fact.${i}" data-lines="1">${esc(v)}</div>`;
+    h += `<div class="abs fk" style="left:${fx}pt;top:64pt;width:${cw}pt;height:11pt" data-slot="fact.${i}.k" data-lines="1">${esc(k)}</div>`;
+    if(i) h += `<div class="abs" style="left:${fx}pt;top:36pt;width:.9pt;height:40pt;background:var(--on-main);opacity:.35"></div>`;
+  });
+
+  // ---- on the slab: date and time at left (the tall side), the address at right
+  const sTop = yL + 6 + t2*.62 - 16;   // date and time centered in the slab's tall (left) side
+  h += `<div class="abs date" style="left:28pt;top:${sTop + 26}pt;width:318pt;height:40pt" data-fit="33,22" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
+  if(E.time) h += `<div class="abs time" style="left:28pt;top:${sTop + 64}pt;width:318pt;height:30pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
+  const aw = 210, an = Ivory.linesNeeded('addr', L.address, aw, 26);
+  const aTop = pBot + 6 + 14 + (slabBody - 28 - (an*26 + 17))/2;
+  h += `<div class="abs" style="left:${576 - aw - 14}pt;top:${aTop - 2}pt;width:1.2pt;height:${an*26 + 17}pt;background:var(--accent-on-dark);opacity:.6;transform:rotate(${Math.atan2(t2, 612)*0}deg)"></div>`;
+  h += `<div class="abs addr" style="left:${576 - aw}pt;top:${aTop}pt;width:${aw}pt;height:${an*26 + 2}pt" data-slot="address" data-lines="${an}">${esc(L.address)}</div>`;
+  h += `<div class="abs place" style="left:${576 - aw}pt;top:${aTop + an*26 + 3}pt;width:${aw}pt;height:13pt" data-slot="place" data-lines="1">${esc(OHL.place(L))}</div>`;
+
+  // ---- under the slab: event lines (when entered), the write-up
+  let y = pBot + 6 + slabBody + 6;
+  const ev = evBox(y);
+  h += ev.html; y += ev.h + (ev.h ? 8 : 0);
+  const shown = Ivory.facts(L);
+  const wu = OHL.writeup(D, 'wu', 540, 20, Math.floor((foot - 8 - y)/20), shown, {narrow: true});
+  if(wu.text){
+    const ww = wu.w || 540;
+    h += `<div class="abs wu" style="left:${36 + (540 - ww)/2}pt;top:${y}pt;width:${ww}pt;height:${wu.n*20 + 4}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`;
+    y += wu.n*20 + 4;
+  }
+  const issues = (wu.text ? y : y - (ev.h ? 8 : 0)) > foot - 2 ? [{slot:'oh.note', kind:'overflow', detail:'the copy runs into the contact card'}] : [];
+
+  // ---- foot: the contact card on the paper, ruled in the accent
+  h += `<div class="abs" style="left:36pt;top:${foot}pt;width:540pt;height:1.2pt;background:var(--on-dark);opacity:.35"></div>`;
+  h += OHL.contact(D, {x:36, y:foot + 6, w:540, h:62, tone:'dark', nameSize:18, logoW:176, logoH:48, nameFont:'Epilogue', nameWeight:700, bodyFont:'Epilogue'});
+  h += `<div class="abs fine" style="left:36pt;top:778pt;width:540pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  const f = OHL.frame(D, h.replace(/([^\s<>"]+) · /g, '<span style="white-space:nowrap">$1 ·</span> '));   // a "·" never starts a line
+  f.issues = issues;
+  f.after = () => OHL.stack([...document.querySelectorAll('.hl')], 46, 26, 14, 1.0);
+  return f;
+});
+</script>
+</body>
+</html>

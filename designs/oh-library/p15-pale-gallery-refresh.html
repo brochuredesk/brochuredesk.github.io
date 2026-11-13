@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · Pale Gallery with Refreshments</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<!--
+  Pale Gallery, refreshments version (10/31/2026; base p15-pale-gallery.html). Trim 612 x 792 pt. REALTOR(R) / broker opens with
+  refreshments (the P flyers were drawn as public flyers; this edition is the agent's REALTOR(R)/broker wording). With none
+  entered (or on a public open) it falls back to the base layout (note box in the band, three rooms).
+  Refreshments version: the agent's words stay in the white box inside the band ("Refreshments" tag with the type, the words
+  at 15 pt, a "Good to know" note, all centered); the food photo is the lead picture of the gallery row, a wide tile at the left
+  (about half the row) with two room photos beside it, and the row is a little taller so it reads. The house gives up height.
+  Base notes follow.
+  Pale Gallery (from reference P15). Trim 612 x 792 pt. Public or REALTOR(R).
+  The owner: "a great looking flyer, I love it." A pale tint of the agent's main color for the page, the house large at top,
+  a band of the main color with the event wording in wide capitals, the date, time and address (the address here is
+  large, not the reference's small line), then a row of three rooms and the agent card with the logo.
+  Event box (owner 10/30): what's served and the notes sit in a white box inside the band, under the address, 12 pt.
+  Type: Josefin Sans (headline, date, address), Jost (details).
+-->
+<style>
+  .sheet{color:var(--ink)}
+  .band{position:absolute;background:var(--main)}
+  .band~.on{color:var(--on-main)}
+  .hl{font:700 46pt/52pt 'Josefin Sans';letter-spacing:5pt;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden}
+  .date{font:600 25pt/30pt 'Josefin Sans';letter-spacing:1pt;text-align:center;white-space:nowrap;overflow:hidden}
+  .time{font:600 20pt/26pt 'Josefin Sans';letter-spacing:1.5pt;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden;color:var(--accent-on-main)}
+  .addr{font:400 21.5pt/28pt 'Josefin Sans';letter-spacing:1pt;text-align:center;white-space:nowrap;overflow:hidden}
+  .evb{font:500 12pt/16pt Jost;text-align:center;color:#1b1b1b}
+  .evb.b{font-weight:600}
+  .rk{font:600 9pt/12pt 'Josefin Sans';letter-spacing:3pt;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden}
+  .rt{font:600 26pt/32pt 'Josefin Sans';letter-spacing:2pt;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden;color:#1b1b1b}
+  .rx{font:600 16pt/21pt Jost;text-align:center;color:#1b1b1b}
+  .rx.m{font-size:15pt;line-height:20pt}
+  .nx{font:500 13pt/18pt Jost;text-align:center;color:#1b1b1b}
+  .oh-agent-name{font-family:'Josefin Sans';font-weight:700}
+  .oh-agent{font-family:Jost}
+  .fine{font:400 6.6pt/8pt Jost;white-space:nowrap;opacity:.6}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['700 10pt "Josefin Sans"', '600 10pt "Josefin Sans"', '400 10pt "Josefin Sans"', '400 10pt Jost'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {}, k = OHL.colors(D);
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id)).slice(0, 3);
+  const X = 30, W = 552;
+  let h = `<div class="abs" style="left:0;top:0;width:612pt;height:792pt;background:${OHL.mix(k.main, '#ffffff', .88)}"></div>`;
+  const food = Object.keys(D.photos||{}).find(id => /^food\b/i.test(D.photos[id].tags||''));
+  const RF = E.hasRefresh && !!food;   // refreshments version: food photo leads the gallery row
+  const tagC = OHL.contrast(k.accent, '#ffffff') >= 3 ? k.accent : (OHL.contrast(k.main, '#ffffff') >= 3 ? k.main : k.dark);
+  const RS = Math.max(.8, Math.min(1.1, +((D.openHouse||{}).box||{}).w || 1)), rbw = Math.round((W - 60)*RS), rbx = X + (W - rbw)/2, RTW = rbw - 36;
+  let blk = [];
+  if(RF) for(const [cls, lh] of [['rx', 21], ['rx m', 20]]){
+    blk = [['rk', 'Refreshments' + (E.refreshTitle && E.refreshText ? '  ·  ' + E.refreshTitle : ''), 14, 1, null]];
+    if(E.refreshText){ const n = Ivory.linesNeeded(cls, E.refreshText, RTW, lh); blk.push([cls, E.refreshText, n*lh, n, 'oh.refreshments', 2]); }
+    else if(E.refreshTitle) blk.push(['rt', E.refreshTitle, 32, 1, 'oh.refreshTitle', 0]);
+    if(E.note){ blk.push(['rk', 'Good to know', 18, 1, null, 6]); const n = Ivory.linesNeeded('nx', E.note, RTW, 18); blk.push(['nx', E.note, n*18, n, 'oh.note']); }
+    if(blk.reduce((a, b) => a + b[2] + (b[5] || 0), 0) <= 80) break;
+  }
+  const blkH = blk.reduce((a, b) => a + b[2] + (b[5] || 0), 0), BHx = RF ? blkH + 22 : 0;
+  const evBox = y => RF ? {h: BHx, html: (() => {
+    let hh = `<div class="abs" data-box="oh.box" style="left:${rbx}pt;top:${y}pt;width:${rbw}pt;height:${BHx}pt;background:#fff"></div>`, ty = y + 11;
+    blk.forEach(([c, t, hgt, n, slot, gap]) => { ty += gap || 0;
+      hh += `<div class="abs ${c}" style="left:${rbx + 18}pt;top:${ty}pt;width:${RTW}pt;height:${hgt + (/^rx|^nx/.test(c) ? 3 : 0)}pt;${c === 'rk' ? 'color:' + tagC + ';' : ''}${/^rx|^nx/.test(c) ? 'white-space:normal;' : ''}"${slot ? ` data-slot="${slot}" data-lines="${n}"` : ''}${c === 'rt' ? ' data-fit="26,18"' : ''}>${esc(t)}</div>`; ty += hgt; });
+    return hh; })()} : Ivory.eventBox([[E.refreshments,'oh.refreshments','evb b'],[E.note,'oh.note','evb']], X + 30, y, W - 60, 16, 3, {bg:'#fff', padX:16, padY:10, scale:((D.openHouse||{}).box||{}).w});
+  const ev = evBox(0);
+  const RH = RF ? 110 : 100;   // the gallery row's height (taller with the food photo)
+  const bh = 18 + 52 + 6 + 30 + 26 + 8 + (ev.h ? ev.h + 16 : 0) + 28 + 18;
+  // the house as tall as the band and a 100 pt row of rooms allow (narrower, never cropped more, when it must be)
+  const fr = OHL.fitHero(D, hero, W, Math.min(336, 676 - RH - 8 - bh - 8 - 30)), ph = fr.h;
+  h += OHL.photo(D, hero, `left:${X + (W - fr.w)/2}pt;top:30pt;width:${fr.w}pt;height:${ph}pt`);
+  const bt = 30 + ph + 8;
+  h += `<div class="band" style="left:${X}pt;top:${bt}pt;width:${W}pt;height:${bh}pt"></div>`;
+  let y = bt + 18 + (ev.h ? 0 : 2.5);   // no white box: the label-to-address block sits a touch lower so the band's text is centered top to bottom (glyph cap top to baseline)
+  h += `<div class="abs on hl" style="left:${X+16}pt;top:${y}pt;width:${W-32}pt;height:52pt" data-fit="46,24" data-slot="oh.label" data-lines="1">${esc(E.label)}</div>`;
+  y += 58;
+  h += `<div class="abs on date" style="left:${X+16}pt;top:${y}pt;width:${W-32}pt;height:30pt" data-fit="25,20" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
+  y += 30;
+  if(E.time) h += `<div class="abs on time" style="left:${X+16}pt;top:${y}pt;width:${W-32}pt;height:26pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
+  y += 34;
+  if(ev.h){ h += evBox(y).html; y += ev.h + 16; }
+  h += `<div class="abs on addr" style="left:${X+16}pt;top:${y}pt;width:${W-32}pt;height:28pt" data-fit="21.5,14" data-slot="address" data-lines="1">${esc([L.address, OHL.place(L)].filter(Boolean).join(', '))}</div>`;   // with state and ZIP (owner 10/27/2026); below the white box, bigger (owner 10/30 evening)
+  // three rooms
+  const ry = bt + bh + 8, rh = 676 - ry, rw = (W - 16)/3;
+  if(RF){
+    // the food photo leads the row (about half), two rooms beside it
+    const fw = Math.round((W - 16)*.5), rw2 = (W - 16 - fw)/2;
+    h += OHL.photo(D, food, `left:${X}pt;top:${ry}pt;width:${fw}pt;height:${rh}pt`);
+    rooms.slice(0, 2).forEach((id, i) => h += OHL.photo(D, id, `left:${X + fw + 8 + i*(rw2 + 8)}pt;top:${ry}pt;width:${rw2}pt;height:${rh}pt`));
+  } else
+  rooms.forEach((id, i) => h += OHL.photo(D, id, `left:${X + i*(rw+8)}pt;top:${ry}pt;width:${rw}pt;height:${rh}pt`));
+  const issues = rh < 86 ? [{slot:'oh.note', kind:'overflow', detail:'the room photos are squeezed too thin'}] : [];
+  h += OHL.contact(D, {x:X, y:690, w:W, h:62, tone:'light', nameSize:17, phoneSize:13, lineSize:9.5, logoW:176, logoH:50});
+  h += `<div class="abs fine" style="left:${X}pt;top:776pt;width:${W}pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  const f = OHL.frame(D, h.replace(/([^\s<>"]+) · /g, '<span style="white-space:nowrap">$1 ·</span> '));   // a "·" never starts a line
+  f.issues = issues;
+  return f;
+});
+</script>
+</body>
+</html>

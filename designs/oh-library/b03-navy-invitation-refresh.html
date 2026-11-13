@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · Formal Invitation (refreshments)</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<!--
+  Formal Invitation, refreshments version (10/31/2026; from reference B03). Trim 612 x 792 pt. REALTOR(R) / broker opens with refreshments.
+  Same house across the top, invitation block, strips and foot as the base. The special note goes in the card (so the block shows the date and time bigger). The refreshments get their own white card on the paper, in place of the paragraph: the food photo framed on its
+  left with a white margin, the Refreshments tag, the type or the agent's words centered beside it, a thin main-color line
+  round the card. Nothing entered: the base's paragraph and event box.
+  The owner liked how high-end it looks and wants the colors to follow the agent's brokerage (the three-color picker).
+  The house across the top, then a formal invitation block in the agent's main color with the logo in white, the
+  event wording in tracked capitals in the accent color, and the date and time, with what's served and the notes in a white box (10/30); on the paper below, the
+  writer's listing paragraph (left out when it would crowd the page) and the address; the agent on a strip at the foot.
+  Type: EB Garamond (headline, date, paragraph, address), Josefin Sans (tracked labels).
+-->
+<style>
+  .sheet{background:var(--paper);color:var(--ink)}
+  .blk{position:absolute;left:0;width:612pt;background:var(--main)}
+  .blk~.on{color:var(--on-main)}
+  .label{font:600 32pt/40pt 'EB Garamond';letter-spacing:3.5pt;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden;color:var(--accent-on-main)}
+  .eyebrow{font:600 9pt/12pt 'Josefin Sans';letter-spacing:4pt;text-transform:uppercase;text-align:center;white-space:nowrap}
+  .date{font:500 32pt/38pt 'EB Garamond';text-align:center;white-space:nowrap;overflow:hidden}
+  .time{font:600 18pt/22pt 'Josefin Sans';letter-spacing:2.4pt;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden;color:var(--accent-on-main)}
+  .ev{font:400 12pt/16pt 'Josefin Sans';text-align:center;color:var(--ink)}
+  .ev.b{font-weight:700}
+  .strip{position:absolute;left:0;width:612pt;height:5pt;background:var(--accent)}
+  .body{font:500 14.5pt/19.5pt 'EB Garamond';text-align:center}
+  .addr{font:500 22pt/26pt 'EB Garamond';text-align:center;white-space:nowrap;overflow:hidden}
+  .place{font:400 9pt/12pt 'Josefin Sans';letter-spacing:2.2pt;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden}
+  .city{font:500 16pt/26pt 'EB Garamond';text-align:center;white-space:nowrap;overflow:hidden}
+  .foot{position:absolute;left:0;width:612pt;background:var(--main)}
+  .foot~.onf{color:var(--on-main)}
+  .oh-agent-name{font-family:'EB Garamond';font-weight:600}
+  .oh-agent{font-family:'Josefin Sans'}
+  .fine{font:400 6.6pt/8pt 'Josefin Sans';white-space:nowrap;opacity:.6;text-align:center}
+  .rtag{font:600 8.8pt/12pt 'Josefin Sans';letter-spacing:2.6pt;text-transform:uppercase;color:var(--main-on-paper)}
+  .rtt{font:600 23pt/30pt 'EB Garamond';letter-spacing:3pt;text-transform:uppercase;color:#161616}
+  .rtx{font:500 16.5pt/21pt 'EB Garamond';color:#161616}
+  .rnote{font:400 11.5pt/15pt 'Josefin Sans';color:#161616}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['600 10pt "EB Garamond"', '500 10pt "EB Garamond"', '400 10pt "Josefin Sans"', '600 10pt "Josefin Sans"'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {}, k = OHL.colors(D);
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  let h = '';
+  // refreshments block (10/31/2026): the tag, then the type (when the agent typed no text) or the agent's text (13 pt or
+  // more), then the special note under a hairline. o: center, lhx (text line), lhn (note line), lht (type line), note:false
+  const refStack = (E, x, y, w, o) => {
+    o = o || {};
+    const al = o.center ? 'text-align:center;' : '', lhx = o.lhx || 19, lhn = o.lhn || 15, lht = o.lht || 26;
+    let h = '', at = y, n;
+    const tag = 'Refreshments' + (E.refreshText && E.refreshTitle ? ' · ' + E.refreshTitle : '');
+    n = Ivory.linesNeeded('rtag', tag, w, 12);
+    h += `<div class="abs rtag" style="left:${x}pt;top:${at}pt;width:${w}pt;height:${n*12}pt;white-space:normal;${al}" data-slot="oh.refreshType" data-lines="${n}">${esc(tag)}</div>`; at += n*12 + 5;
+    if(E.refreshText){
+      n = Ivory.linesNeeded('rtx', E.refreshText, w, lhx);
+      h += `<div class="abs rtx" style="left:${x}pt;top:${at}pt;width:${w}pt;height:${n*lhx+4}pt;white-space:normal;${al}" data-slot="oh.refreshments" data-lines="${n}">${esc(E.refreshText)}</div>`; at += n*lhx;
+    } else if(E.refreshTitle){
+      n = Ivory.linesNeeded('rtt', E.refreshTitle, w, lht);
+      h += `<div class="abs rtt" style="left:${x}pt;top:${at}pt;width:${w}pt;height:${n*lht+4}pt;white-space:normal;${al}" data-slot="oh.refreshTitle" data-lines="${n}">${esc(E.refreshTitle)}</div>`; at += n*lht;
+    }
+    if(E.note && o.note !== false){
+      at += 7;
+      h += `<div class="abs" style="left:${o.center ? x + (w-70)/2 : x}pt;top:${at}pt;width:${o.center ? 70 : w}pt;height:.8pt;background:var(--main-on-paper);opacity:.4"></div>`; at += 8;
+      n = Ivory.linesNeeded('rnote', E.note, w, lhn);
+      h += `<div class="abs rnote" style="left:${x}pt;top:${at}pt;width:${w}pt;height:${n*lhn+3}pt;white-space:normal;${al}" data-slot="oh.note" data-lines="${n}">${esc(E.note)}</div>`; at += n*lhn;
+    }
+    return {html: h, h: at - y};
+  };
+  const food = Object.keys(D.photos||{}).find(id => /^food\b/i.test(D.photos[id].tags||''));
+  const R = E.hasRefresh && !!food;
+  const CX = 66, CWD = 480, PW = 176, TW = CWD - PW - 16 - 22;
+  const rbx = R ? refStack(E, 0, 0, TW, {center:true, lhx:21, lht:30}) : null, cardH = R ? Math.max(118, rbx.h + 30) : 0;
+  // the house across the top: as short as the photo allows without losing any of the house
+  // with the refreshments card the house gives up height first (it narrows at its own shape, nothing cropped)
+  const noteBox = R ? {h:0} : Ivory.eventBox([[E.note,'oh.note','ev']], 66, 0, 480, 16, 2, {bg:'#fff', padX:16, padY:7, scale:((D.openHouse||{}).box||{}).w});
+  const bigR = R && !noteBox.h, blkH = 16 + 18 + 44 + (bigR ? 4 : 0) + ((bigR ? 46 : 38) + 2) + ((bigR ? 27 : 22) + 4) + (noteBox.h ? noteBox.h + 10 : 0) + 14;
+  const maxPh = R ? Math.min(300, 714 - (cardH + 14 + 74 + 24) - blkH - 10 - 14) : 300;
+  const fr = OHL.fitHero(D, hero, 612, maxPh), ph = fr.h;
+  if(fr.w < 612) h += `<div class="abs" style="left:0;top:0;width:612pt;height:${ph}pt;background:var(--main)"></div>`;
+  h += OHL.photo(D, hero, `left:${(612-fr.w)/2}pt;top:0;width:${fr.w}pt;height:${ph}pt`);
+  h += `<div class="strip" style="top:${ph}pt"></div>`;
+  // the invitation block
+  const ev = R ? {h:0, html:''} : Ivory.eventBox([[E.refreshments,'oh.refreshments','ev b'],[E.note,'oh.note','ev']], 66, 0, 480, 16, 2, {bg:'#fff', padX:16, padY:7, scale:((D.openHouse||{}).box||{}).w});
+  // no notes (there is never an RSVP line, owner 10/27/2026): the date and time grow into the room a line would take
+  const big = !ev.h, dS = big ? 40 : 32, dH = big ? 46 : 38, tS = big ? 22 : 18, tH = big ? 27 : 22;
+  const bt = ph + 5, bh = 16 + 18 + 44 + (big ? 4 : 0) + (dH + 2) + (tH + 4) + (ev.h ? ev.h + 10 : 0) + 14;
+  h += `<div class="blk" style="top:${bt}pt;height:${bh}pt"></div>`;
+  let y = bt + 16 + (big ? 9 : 0);   // no white box: the type is centered in the band by its letters (cap top to baseline), no empty strip under the time
+  h += `<div class="abs on eyebrow" style="left:36pt;top:${y}pt;width:540pt;height:12pt">You're invited</div>`;
+  y += 18;
+  h += `<div class="abs on label" style="left:36pt;top:${y}pt;width:540pt;height:40pt" data-fit="32,22" data-slot="oh.label" data-lines="1">${esc(E.label)}</div>`;
+  y += 44;
+  if(big) y += 4;
+  h += `<div class="abs on date" style="left:36pt;top:${y}pt;width:540pt;height:${dH}pt;font-size:${dS}pt;line-height:${dH}pt" data-fit="${dS},24" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
+  y += dH + 2;
+  if(E.time) h += `<div class="abs on time" style="left:36pt;top:${y}pt;width:540pt;height:${tH}pt;font-size:${tS}pt;line-height:${tH}pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
+  y += tH + 4;
+  if(ev.h){ h += ev.html.replace(/top:(\d+(\.\d+)?)pt/g, (m, t) => `top:${+t + y + 6}pt`); y += ev.h + 10; }
+  y = bt + bh;
+  h += `<div class="strip" style="top:${y}pt"></div>`;
+  y += 5;
+  // on the paper: the writer's paragraph, as long as the room allows (owner 10/27/2026: more than three lines, larger),
+  // then the address with city, state and ZIP under it at the same size, then the facts
+  const footTop = 714;
+  const addrBlock = 26 + 26 + 6 + 12;
+  let issues = [];
+  if(R){
+    // the refreshments card, centered in the room above the address
+    const room = footTop - 16 - y - addrBlock;
+    const cy0 = y + Math.max(10, (room - cardH)/2 + 2);
+    h += `<div class="abs" data-box="oh.box" style="left:${CX}pt;top:${cy0}pt;width:${CWD}pt;height:${cardH}pt;background:#fff;border:.9pt solid var(--main-on-paper);box-sizing:border-box"></div>`;
+    h += OHL.photo(D, food, `left:${CX+8}pt;top:${cy0+8}pt;width:${PW}pt;height:${cardH-16}pt`);
+    h += refStack(E, CX + 8 + PW + 16, cy0 + (cardH - rbx.h)/2, TW, {center:true, lhx:21, lht:30}).html;
+    y = cy0 + cardH + 14;
+    if(cy0 + cardH + 12 + addrBlock > footTop - 8) issues.push({slot:'oh.refreshments', kind:'overflow', detail:'the refreshments card runs into the address'});
+  } else {
+  const room = footTop - 18 - y - 22 - addrBlock;
+  const wu = OHL.writeup(D, 'body', 470, 19.5, Math.min(7, Math.floor((room - 16)/19.5))), body = wu.text, bn = wu.n;
+  if(body && bn*19.5 + 16 <= room){
+    const top = y + 22 + Math.max(0, (room - bn*19.5 - 16)/2);
+    h += `<div class="abs body" style="left:71pt;top:${top}pt;width:470pt;height:${bn*19.5+4}pt" data-slot="listing.body" data-lines="${bn}">${esc(body)}</div>`;
+    y = top + bn*19.5 + 16;
+  } else y += 22 + Math.max(0, room)/2;
+  }
+  if(y + addrBlock > footTop - 16) issues.push({slot:'oh.note', kind:'overflow', detail:'the invitation block runs into the address'});
+  h += `<div class="abs addr" style="left:36pt;top:${y}pt;width:540pt;height:26pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
+  h += `<div class="abs city" style="left:36pt;top:${y+26}pt;width:540pt;height:26pt" data-slot="place" data-lines="1">${esc(OHL.place(L))}</div>`;
+  h += `<div class="abs place" style="left:36pt;top:${y+58}pt;width:540pt;height:12pt" data-slot="oh.facts" data-lines="1">${esc(Ivory.factsShort(L).replace(/  \/  /g, '  ·  '))}</div>`;
+  h += `<div class="abs fine" style="left:36pt;top:${footTop - 13}pt;width:540pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  // the agent card on a strip at the foot, with the brokerage panel (the brokerage's one logo is here)
+  h += `<div class="foot" style="top:${footTop}pt;height:${792-footTop}pt"></div>`;
+  h += OHL.contact(D, {x:36, y:footTop + 10, w:540, h:62, tone:'knockout', logoW:190, logoH:50, nameSize:17, phoneSize:12.5, lineSize:9, color:'var(--on-main)', panelBg:'color-mix(in srgb, var(--on-main) 20%, transparent)'}).replace('class="abs oh-agent"', 'class="abs onf oh-agent"');
+  const f = OHL.frame(D, h.replace(/([^\s<>"]+) · /g, '<span style="white-space:nowrap">$1 ·</span> '));   // a "·" never starts a line
+  f.issues = issues;
+  return f;
+});
+</script>
+</body>
+</html>

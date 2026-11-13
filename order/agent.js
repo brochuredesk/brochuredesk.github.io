@@ -1130,7 +1130,10 @@
     const ohPick = pkg.ohFlyer && (pkg.ohFlyer.library || pkg.ohFlyer.design === id) ? pkg.ohFlyer : null;
     if(ohP || ohPick){
       const OX = await ohxSpec(), f = ohPick || {}, ohDesign = f.design || id;
-      const cards = (OX.pieces || []).filter(p => p.flyer ? (p.flyer === f.piece || p.flyer === f.design) : p.design === ohDesign);
+      // a library flyer's public, refresh or REALTOR version takes its own cards if it has them, else its base flyer's
+      const libOf = id => (OX.pieces || []).filter(p => p.flyer && p.flyer === id);
+      const lib = f.piece ? (libOf(f.piece).length ? libOf(f.piece) : libOf(String(f.piece).replace(/-(public|refresh|realtor)$/, ''))) : [];
+      const cards = f.design === 'oh-library' ? lib : (OX.pieces || []).filter(p => !p.flyer && p.design === ohDesign);
       const front = ohxFront(), ev = pkg.openHouse && pkg.openHouse.date ? pkg.openHouse : null;
       for(const p of cards) out.push({group: p.kind === 'signin' ? 'Open House sign-in sheet' : 'Broker feedback card', dir: 'oh-extras',
         label: (p.kind === 'signin' ? 'Sign-in sheet' : 'Feedback card') + (p.bw ? ', black and white' : ''),

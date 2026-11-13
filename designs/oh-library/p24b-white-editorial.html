@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · White Editorial B</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<!--
+  White Editorial B (candidate, the owner 10/30: a new layout in P24's white editorial spirit, everything moved up, no empty
+  space). Trim 612 x 792 pt. Public or REALTOR(R). The page is one magazine spread on white: a tracked serif headline
+  with the address and the date and time under it, the house wide, a row of three rooms, then two columns, the writer's
+  paragraph at left and a ruled list of the home's facts at right, and the ruled agent footer. The refreshments and
+  notes sit in the pale gray box under the date. Every block is sized to fill the page: the photos take what the type leaves.
+  Type: Newsreader (headline, date, facts), Hanken Grotesk (details).
+-->
+<style>
+  .sheet{background:#fff;color:var(--ink)}
+  .hl{font:500 30pt/36pt Newsreader;text-transform:uppercase;letter-spacing:2pt;white-space:nowrap;overflow:hidden}
+  .addr{font:400 21pt/26pt Newsreader;white-space:nowrap;overflow:hidden}
+  .date{font:500 28pt/34pt Newsreader;white-space:nowrap;overflow:hidden}
+  .time{font:600 18pt/22pt 'Hanken Grotesk';white-space:nowrap;overflow:hidden;color:var(--main-on-paper);text-align:right}
+  .body{font:400 11.5pt/17pt 'Hanken Grotesk'}
+  .k{font:600 8.5pt/12pt 'Hanken Grotesk';letter-spacing:2.2pt;text-transform:uppercase;white-space:nowrap;color:var(--main-on-paper)}
+  .fct{font:500 14.5pt/20pt Newsreader;white-space:nowrap;overflow:hidden}
+  .evb{font:500 12pt/16pt 'Hanken Grotesk';text-align:center;color:var(--ink)}
+  .evb.b{font-weight:700}
+  .hr{position:absolute;height:.8pt;background:var(--ink);opacity:.35}
+  .hr.a{background:var(--main-on-paper);opacity:.8;height:1.6pt}
+  .vr{position:absolute;width:.8pt;background:var(--ink);opacity:.3}
+  .fine{font:400 6.6pt/8pt 'Hanken Grotesk';white-space:nowrap;opacity:.6}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['500 10pt Newsreader', '400 10pt Newsreader', '600 10pt Newsreader', '400 10pt "Hanken Grotesk"', '600 10pt "Hanken Grotesk"'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id));
+  const X = 40, W = 532, footer = 700;
+  let h = '', y = 36;
+  // headline, accent rule, address, then the date and time on one line
+  h += `<div class="abs hl" style="left:${X}pt;top:${y}pt;width:${W}pt;height:36pt" data-fit="30,20" data-slot="oh.label" data-lines="1">${esc(E.label)}</div>`; y += 40;
+  h += `<div class="hr a" style="left:${X}pt;top:${y}pt;width:${W}pt"></div>`; y += 9;
+  h += `<div class="abs addr" style="left:${X}pt;top:${y}pt;width:${W}pt;height:26pt" data-fit="21,14" data-slot="address" data-lines="1">${esc([L.address, OHL.place(L)].filter(Boolean).join(', '))}</div>`; y += 31;
+  h += `<div class="abs date" style="left:${X}pt;top:${y}pt;width:${W - 190}pt;height:34pt" data-fit="28,20" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
+  if(E.time) h += `<div class="abs time" style="left:${X + W - 190}pt;top:${y + 7}pt;width:190pt;height:22pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
+  y += 38;
+  const ev = Ivory.eventBox([[E.refreshments,'oh.refreshments','evb b'],[E.note,'oh.note','evb']], X, y, W, 16, 3,
+    {bg:'#f5f5f3', line:'var(--main-on-paper)', lineW:.8, padY:9, padX:16, scale:((D.openHouse||{}).box||{}).w});
+  h += ev.html; y += ev.h + (ev.h ? 12 : 4);
+  // below the header: the house with the home's facts beside it, a row of three rooms, then the write-up across the page.
+  // Sized from the bottom up so the page is full: the house takes what is left, any extra goes to the rooms and gaps.
+  const gap0 = 14;
+  const strong = OHL.factSix(L).filter(([ic]) => ic !== 'stories'), facts = (strong.length < 5 ? strong.concat(OHL.factSix(L).filter(([ic]) => ic === 'stories')) : strong).slice(0, 6);   // "One story" only last, only when nothing stronger exists
+  // the write-up (the owner 11/2: "far too small"): three lines across the whole page, lined up with the rooms row above and
+  // the line below; type steps up from 13 pt until the three lines end at least 3/4 full (the writer's sentences only)
+  let wu = {text: '', n: 0, fill: 0}, wsz = 13, wlh = 18.5;
+  // the biggest type wins (3 or 4 lines), then the longer text at the same size
+  for(let sz = 13; sz <= 17.01; sz += .25) for(const nl of [3, 4]){
+    const cn = 'wb' + Math.round(sz*100), lh = Math.round(sz*1.42*4)/4;
+    if(!document.getElementById(cn)){ const st = document.createElement('style'); st.id = cn; st.textContent = `.${cn}{font:400 ${sz}pt 'Hanken Grotesk';line-height:${lh}pt;text-align:justify}`; document.head.appendChild(st); }
+    const r = OHL.writeup(D, cn, W, lh, nl, facts.map(f => f[1]));
+    if(r.n >= 3 && r.fill >= .75 && (!wu.n || sz > wsz || (sz === wsz && r.text.length > wu.text.length))){ wu = Object.assign(r, {w: W}); wsz = sz; wlh = lh; }
+  }
+  if(!wu.n){ wu = Object.assign(OHL.writeup(D, 'wb1300', W, 18.5, 3, facts.map(f => f[1])), {w: W}); wsz = 13; wlh = 18.5; }
+  // the house photo's width comes from the room left once the write-up is settled
+  const ph0 = (D.photos || {})[hero] || {}, ratio0 = ph0.w && ph0.h ? ph0.w/ph0.h : 1.5;
+  const A0 = footer - 14 - y - (wu.n ? 24 + wu.n*wlh + 4 : 0) - 2*gap0 - 96;
+  const HWc = Math.max(310, Math.min(376, Math.round(A0*ratio0)));
+  const wn = wu.n;
+  const aboutH = wn ? 24 + wn*wlh + 4 : 0;
+  let roomsH = 96;
+  let A = footer - 14 - y - aboutH - 2*gap0 - roomsH;   // the height the house may take
+  const RW = W - HWc - 22, rx = X + HWc + 22;
+  const fr = OHL.fitHero(D, hero, HWc, Math.max(150, A), true);
+  let extra = Math.max(0, A - fr.h);
+  const addR = Math.min(extra, 70); roomsH += addR; extra -= addR;
+  const gap = gap0 + extra/2;
+  A = fr.h;
+  h += OHL.photo(D, hero, `left:${X}pt;top:${y}pt;width:${fr.w}pt;height:${fr.h}pt`);
+  // facts beside the house, evenly spaced over its height
+  h += `<div class="abs k" style="left:${rx}pt;top:${y}pt;width:${RW}pt;height:12pt">The home</div>`;
+  h += `<div class="hr a" style="left:${rx}pt;top:${y + 17}pt;width:${RW}pt"></div>`;
+  const fstep = (fr.h - 18)/Math.max(1, facts.length);
+  facts.forEach(([ic, t], i) => {
+    const fy = y + 20 + i*fstep + (fstep - 20)/2;
+    h += `<div class="abs fct" style="left:${rx}pt;top:${fy}pt;width:${RW}pt;height:22pt" data-fit="14.5,11" data-slot="fact.${i}" data-lines="1">${esc(t)}</div>`;
+    if(i < facts.length - 1) h += `<div class="hr" style="left:${rx}pt;top:${y + 20 + (i+1)*fstep}pt;width:${RW}pt;opacity:.22"></div>`;
+  });
+  y += fr.h + gap;
+  const rm = rooms.slice(0, 3), rw = (W - 2*10)/3;
+  rm.forEach((id, i) => h += OHL.photo(D, id, `left:${X + i*(rw + 10)}pt;top:${y}pt;width:${rw}pt;height:${roomsH}pt`));
+  y += roomsH + gap;
+  if(wu.text){
+    h += `<div class="abs k" style="left:${X}pt;top:${y}pt;width:${W}pt;height:12pt">About this home</div>`;
+    h += `<div class="abs body" style="left:${X}pt;top:${y + 20}pt;width:${W}pt;height:${wn*wlh + 4}pt;font-size:${wsz}pt;line-height:${wlh}pt;text-align:justify;text-align-last:left" data-slot="listing.body" data-lines="${wn}">${esc(wu.text)}</div>`;
+    y += aboutH;
+  }
+  const issues = y > footer - 4 || fr.h < 150 ? [{slot:'oh.note', kind:'overflow', detail:'the page is too full'}] : [];
+  h += `<div class="hr" style="left:${X}pt;top:${footer}pt;width:${W}pt"></div><div class="hr" style="left:${X}pt;top:${footer + 64}pt;width:${W}pt"></div>`;
+  h += OHL.contact(D, {x:X, y:footer + 2, w:W, h:60, tone:'light', nameSize:18, logoW:176, logoH:46, nameFont:'Newsreader', nameWeight:600, bodyFont:"'Hanken Grotesk'"});
+  h += `<div class="abs fine" style="left:${X}pt;top:${footer + 72}pt;width:${W}pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  const f = OHL.frame(D, h);
+  f.issues = issues;
+  return f;
+});
+</script>
+</body>
+</html>

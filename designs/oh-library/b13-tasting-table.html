@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Open house library · Tasting Table</title>
+<link rel="stylesheet" href="ohlib.css">
+<script src="../ivory/ivory.js"></script>
+<script src="ohlib.js"></script>
+<!--
+  Tasting Table (from reference B13). Trim 612 x 792 pt. REALTOR(R) / broker opens with refreshments.
+  The owner liked the food photo as the top and nothing after it, so everything below is rebuilt. The matching food photo
+  (assets/food, by refreshment type) fills the top third under a dark wash; the invitation sits on it: the agent's
+  event wording, the refreshment, and the date and time large. Below, on paper: the house at 3:2 beside the address and
+  the event details, a row of three rooms, and the agent and logo. With no food photo the house photo takes the top.
+  Event box (The owner 10/30): the refreshment line (the top keeps only its type, e.g. Lunch) and the notes sit together in a white box with a thin main edge under the
+  house and address, full width, set at 12 pt ("Good to know" tag dropped; the box carries them). The top picture is 20 pt
+  shorter and the house beside the address as before.
+  Type: Newsreader (headline, date, address), Instrument Sans (details).
+-->
+<style>
+  .sheet{background:var(--paper);color:var(--ink)}
+  .wash{position:absolute;left:0;top:0;width:612pt;background:linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.25) 45%, rgba(0,0,0,.72))}
+  .top{color:#fff;text-shadow:0 1pt 3pt rgba(0,0,0,.45)}
+  .ev.top{font:500 15pt/20pt 'Instrument Sans'}
+  .eyebrow{font:500 10pt/13pt 'Instrument Sans';letter-spacing:4pt;text-transform:uppercase;white-space:nowrap}
+  .hl{font:500 40pt/46pt Newsreader;white-space:nowrap;overflow:hidden}
+  .rt{font:italic 500 30pt/38pt Newsreader;white-space:nowrap;overflow:hidden}
+  .date{font:600 38pt/42pt Newsreader;white-space:nowrap;overflow:hidden}
+  .time{font:600 19pt/24pt 'Instrument Sans';letter-spacing:.6pt;white-space:nowrap;overflow:hidden}
+  .k{font:600 8.8pt/11pt 'Instrument Sans';letter-spacing:2.2pt;text-transform:uppercase;color:var(--main-on-paper);white-space:nowrap}
+  .addr{font:500 29pt/34pt Newsreader;text-wrap:balance}
+  .hdate{font:600 30pt/36pt Newsreader;white-space:nowrap;overflow:hidden;color:#fff}
+  .htime{font:600 18pt/38pt 'Instrument Sans';letter-spacing:.6pt;white-space:nowrap;overflow:hidden;color:#fff;text-align:right}
+  .place{font:400 10.5pt/15pt 'Instrument Sans'}
+  .facts{font:600 12.5pt/18pt 'Instrument Sans'}
+  .wu{font:400 11pt/15pt 'Instrument Sans'}
+  .ev{font:400 10.5pt/14pt 'Instrument Sans'}
+  .ev.b{font-weight:600}
+  .evb{font:500 12pt/16pt 'Instrument Sans';color:var(--ink)}
+  .evb.b{font-weight:600}
+  .rule{position:absolute;height:.9pt;background:var(--ink);opacity:.22}
+  .oh-agent-name{font-family:Newsreader;font-weight:600}
+  .oh-agent{font-family:'Instrument Sans'}
+  .fine{font:400 6.6pt/8pt 'Instrument Sans';white-space:nowrap;opacity:.6}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+OHL.start(['500 10pt Newsreader', '600 10pt Newsreader', 'italic 500 10pt Newsreader', '400 10pt "Instrument Sans"', '500 10pt "Instrument Sans"', '600 10pt "Instrument Sans"'], D => {
+  const esc = Ivory.esc, L = D.listing, C = D.companion || {};
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  const food = Object.keys(D.photos||{}).find(id => /^food\b/i.test(D.photos[id].tags||''));
+  const rooms = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id)).slice(0, 3);
+  let h = '';
+  // the top. With a food photo: the food photo under a dark wash, the invitation on it. Without one (The owner 10/30 evening:
+  // the house was buried under shading and text): the invitation sits in a dark band and the house runs full width,
+  // unshaded, under it.
+  const issues = [];
+  let TH = 280, y = 34;
+  if(food){
+    h += OHL.photo(D, food, `left:0;top:0;width:612pt;height:${TH}pt`);
+    h += `<div class="wash" style="height:${TH}pt"></div>`;
+    h += `<div class="abs top eyebrow" style="left:40pt;top:${y}pt;width:532pt;height:13pt">You're invited</div>`;
+    y += 18;
+    h += `<div class="abs top hl" style="left:38pt;top:${y}pt;width:536pt;height:46pt" data-fit="40,24" data-slot="oh.label" data-lines="1">${esc(E.label)}</div>`;
+    y += 48;
+    // the refreshment type as a title; the agent's own line under it (or alone, in the same italic, when there is no type)
+    if(E.refreshTitle){ h += `<div class="abs top rt" style="left:40pt;top:${y}pt;width:532pt;height:38pt" data-fit="30,18" data-slot="oh.refreshTitle" data-lines="1">${esc(E.refreshTitle)}</div>`; y += 40; }
+    h += `<div class="abs top date" style="left:40pt;top:${TH-88}pt;width:532pt;height:42pt" data-fit="38,24" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
+    if(E.time) h += `<div class="abs top time" style="left:40pt;top:${TH-44}pt;width:532pt;height:24pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
+    if(y > TH - 94) issues.push({slot:'oh.refreshments', kind:'overflow', detail:'the refreshment lines run into the date'});
+  } else {
+    // the dark band: invitation, the event wording, then the date and time on one line; the house under it, full width
+    const BH = 118;
+    h += `<div class="abs" style="left:0;top:0;width:612pt;height:${BH}pt;background:var(--dark)"></div>`;
+    h += `<div class="abs top eyebrow" style="left:40pt;top:14pt;width:532pt;height:13pt">You're invited</div>`;
+    h += `<div class="abs top hl" style="left:38pt;top:28pt;width:536pt;height:46pt" data-fit="40,24" data-slot="oh.label" data-lines="1">${esc(E.label)}</div>`;
+    h += `<div class="abs hdate" style="left:36pt;top:74pt;width:358pt;height:36pt" data-fit="30,24" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
+    if(E.time) h += `<div class="abs htime" style="left:394pt;top:74pt;width:184pt;height:36pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
+    const fr = OHL.fitHero(D, hero, 612, 312);
+    h += `<div class="abs" style="left:0;top:${BH}pt;width:612pt;height:${fr.h}pt;background:var(--dark)"></div>`;
+    h += OHL.photo(D, hero, `left:${(612-fr.w)/2}pt;top:${BH}pt;width:${fr.w}pt;height:${fr.h}pt`);
+    TH = BH + fr.h;
+  }
+  // below: the house beside the address and the details
+  y = TH + (food ? 24 : 18);
+  const pw = 300, ph = Math.max(200, OHL.minFrameH(D, hero, pw, 200));
+  const shown = food ? hero : null;
+  if(shown) h += OHL.photo(D, shown, `left:36pt;top:${y}pt;width:${pw}pt;height:${ph}pt`);
+  const hasEv = !!(E.refreshText || E.note), rx = shown ? 36 + pw + 20 : 36, rw = shown ? 576 - rx : (hasEv ? 296 : 540);
+  let ry = y;
+  h += `<div class="abs k" style="left:${rx}pt;top:${ry}pt;width:${rw}pt;height:11pt">Join us at</div>`; ry += 16;
+  // the address much bigger (The owner 10/30 evening): 29 pt (was 22)
+  const alh = 34, an = Ivory.linesNeeded('addr', L.address, rw, alh);
+  h += `<div class="abs addr" style="left:${rx}pt;top:${ry}pt;width:${rw}pt;height:${an*alh+5}pt" data-slot="address" data-lines="${an}">${esc(L.address)}</div>`; ry += an*alh + 2;
+  const pl = OHL.place(L);
+  h += `<div class="abs place" style="left:${rx}pt;top:${ry - 2}pt;width:${rw}pt;height:15pt;white-space:nowrap;overflow:hidden" data-slot="place" data-lines="1">${esc(pl)}</div>`; ry += food ? 22 : 19;
+  h += `<div class="abs facts" style="left:${rx}pt;top:${ry}pt;width:${rw}pt;height:18pt;white-space:nowrap;overflow:hidden" data-slot="oh.facts" data-lines="1">${esc(Ivory.factsShort(L).replace(/  \/  /g, '  ·  '))}</div>`; ry += food ? 26 : 22;
+  const colEnd = y + (shown ? ph : 0);
+  const noteH = 0;
+  const wl = 15, wu = OHL.writeup(D, 'wu', rw, wl, Math.floor((colEnd - ry - noteH)/wl));
+  if(wu.n){ h += `<div class="abs wu" style="left:${rx}pt;top:${ry}pt;width:${rw}pt;height:${wu.n*wl+3}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`; ry += wu.n*wl + 10; }
+  const blockEnd = Math.max(y + (shown ? ph : 0), ry);
+  // three rooms
+  let gy = blockEnd + (food ? 16 : 10);
+  // the event box: the refreshment line (when the top carries only its type) and the notes. Full width under the house
+  // beside the food photo; beside the address (right column) under the full-width house.
+  const side = !food && hasEv, bxx = side ? 352 : 36, bxw = side ? 224 : 540, bxy = side ? y : gy;
+  const bx = Ivory.eventBox([[E.refreshText, 'oh.refreshments', 'evb b'], [E.note, 'oh.note', 'evb']], bxx, bxy, bxw, 16, 3,
+    {bg:'#fff', line:'var(--main-on-paper)', lineW:1.2, padX:side ? 12 : 16, padY:9, scale:((D.openHouse||{}).box||{}).w});
+  h += bx.html;
+  if(side) gy = Math.max(gy, bxy + bx.h + 12); else if(bx.h) gy += bx.h + 14;
+  const rh = Math.min(220, 676 - gy), gw = (540 - 20)/3;
+  if(rh >= 70) rooms.forEach((id, i) => h += OHL.photo(D, id, `left:${36 + i*(gw+10)}pt;top:${gy}pt;width:${gw}pt;height:${rh}pt`));
+  if(ry > 690) issues.push({slot:'oh.note', kind:'overflow', detail:'the details run into the agent card'});
+  h += `<div class="rule" style="left:36pt;top:686pt;width:540pt"></div>`;
+  // the agent box bigger (The owner 10/30 evening)
+  h += OHL.contact(D, {x:36, y:694, w:540, h:78, tone:'light', nameSize:23, phoneSize:16, lineSize:11, logoW:210, logoH:60});
+  h += `<div class="abs fine" style="left:36pt;top:778pt;width:540pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(C.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  const f = OHL.frame(D, h);
+  f.issues = issues;
+  return f;
+});
+</script>
+</body>
+</html>
