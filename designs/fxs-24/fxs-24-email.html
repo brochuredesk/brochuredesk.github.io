@@ -30,6 +30,7 @@
 </style>
 </head>
 <body>
+<script src="ohe-fill.js"></script>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
 <script>
@@ -72,17 +73,18 @@ FXP.start(['700 20pt "Montserrat"', '600 20pt "Montserrat"', '500 20pt "Montserr
     h.push(`<div class="abs sl" data-small="1" style="left:${X0 + i*(rw + g)}pt;top:${y + rh + 6}pt;width:${rw}pt;height:17pt;font-size:12.5pt;line-height:17pt" data-slot="oh.room${i}" data-lines="1">${esc(FXS.labelFor(id).replace(/\.$/, '').toUpperCase())}</div>`); });
   y += rh + 6 + 17 + 14;
   // ---- the write-up
-  const wu = OHL.writeup(D2, 'wu', CW, 22, 8, [], {narrow: true});
-  if(wu.text){ const ww = wu.w || CW; h.push(`<div class="abs wu" style="left:${X0}pt;top:${y}pt;width:${ww}pt;height:${wu.n*22 + 2}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`); y += wu.n*22 + 2 + 20; }
+  const wu = OHEF.write(D2, CW, 15, 22, 7, 12), fillBad = [];
+  if(wu.text && !wu.ok) fillBad.push({slot: 'listing.body', kind: 'writeup-fill', detail: `the write-up cannot make every line 90%+ with word gaps within 1.7x (worst gap ${wu.worst.toFixed(2)}x, shortest line ${(wu.low*100).toFixed(0)}%)`});
+  if(wu.text){ const ww = CW; h.push(`<div class="abs wu" style="left:${X0}pt;top:${y}pt;width:${ww}pt;height:${wu.n*wu.lh + 2}pt;font-size:${wu.size}pt;line-height:${wu.lh}pt;text-align:justify;text-align-last:justify" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`); y += wu.n*wu.lh + 2 + 20; }
   // ---- the agent and the one logo on the blue footer
-  const FH = hsSrc ? 200 : 132, fine = C.fineprint || 'Information deemed reliable but not guaranteed.', fn = FXP.lines(fine, "font:400 10pt/14pt 'Montserrat'", CW);
+  const FH = hsSrc ? 192 : 120, fine = C.fineprint || 'Information deemed reliable but not guaranteed.', fn = FXP.lines(fine, "font:400 10pt/14pt 'Montserrat'", CW);
   h.push(`<div class="bar" style="left:0;top:${y}pt;width:${W}pt;height:${FH + fn*14 + 30}pt"></div>`);
   h.push(FXS.agentOn(A, X0, y + 18, hsSrc ? CW : CW*.56, hsSrc, {hs: 74}).replace(/data-fine="1"/, 'data-small="1"'));
-  h.push(`<div class="hr on" style="left:${X0}pt;top:${y + 118}pt;width:${CW}pt"></div>`);
-  h.push(hsSrc ? FXS.logoOn(D, X0, y + 132, 200, 52) : FXS.logoOn(D, X0 + CW*.56, y + 22, CW*.44, 76, 'flex-end'));   // owner 11/7 (no blank space): with no headshot, the agent left and the logo right
+  if(hsSrc) h.push(`<div class="hr on" style="left:${X0}pt;top:${y + 118}pt;width:${CW}pt"></div>`);
+  h.push(hsSrc ? FXS.logoOn(D, X0, y + 131, CW, 62, 'center') : FXS.logoOn(D, X0 + CW*.56, y + (FH + 14 - 76)/2, CW*.44, 76, 'flex-end'));   // owner 11/7 (no blank space): with no headshot, the agent left and the logo right
   h.push(`<div class="abs fine" style="left:${X0}pt;top:${y + FH + 14}pt;width:${CW}pt;height:${fn*14}pt" data-slot="fineprint" data-lines="${fn}" data-fine="1">${esc(fine)}</div>`);
   y += FH + fn*14 + 30;
-  return {W, H: y, html: `<div class="page em" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${y}pt;background:var(--fx-paper)">${h.join('')}</div>`};
+  return {W, H: y, issues: fillBad, html: `<div class="page em" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${y}pt;background:var(--fx-paper)">${h.join('')}</div>`};
 });
 </script>
 </body>

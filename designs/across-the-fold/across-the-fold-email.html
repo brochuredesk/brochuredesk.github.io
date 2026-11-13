@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Across the Fold Open House email</title>
+<link rel="stylesheet" href="../engine/ohlib.css">
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/setpage.js"></script>
+<!--
+  Across the Fold's own Open House email (owner 11/2/2026, Full Lineup review Q2; reworked the same day to be plainly its own). 600 px wide at 2x,
+  Event First and centered on the fold: the gold label between two gold hairlines, the big white Source Serif date, the time (REALTOR(R) cases:
+  what's served and the notes in one lifted navy box), the whole house as ONE photo edge to edge folded across a center line (a shaded crease,
+  a gold hairline) that runs into the diamond rule, the gold caps and the serif address, the facts in one row divided by gold lines, the flyer's own
+  write-up centered with its gold-diamond bullets in two columns, then the agent as a centered stack with the one logo under it. No room photos.
+  The event ends well inside the first 600 px. Every word is the listing's or the package's existing copy.
+-->
+<style>
+  @font-face{font-family:'Source Serif 4';font-weight:400;src:url(../../fonts/pool/source-serif-4-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Serif 4';font-weight:600;src:url(../../fonts/pool/source-serif-4-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Hanken Grotesk';font-weight:400;src:url(../../fonts/pool/hanken-grotesk-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Hanken Grotesk';font-weight:600;src:url(../../fonts/pool/hanken-grotesk-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Hanken Grotesk';font-weight:700;src:url(../../fonts/pool/hanken-grotesk-latin-700-normal.woff2) format('woff2')}
+  :root{--navy:#1a2134;--navy2:#232c45;--gold:#c8a46a;--txt:#e4e8f1;--mut:#b5bdd0;--line:rgba(200,164,106,.55)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .page{font-family:'Hanken Grotesk';color:#fff}
+  .t{position:absolute;white-space:nowrap;overflow:hidden}
+  .w{white-space:normal}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+SP.start(['400 10pt "Source Serif 4"', '600 10pt "Source Serif 4"', '400 10pt "Hanken Grotesk"', '600 10pt "Hanken Grotesk"', '700 10pt "Hanken Grotesk"'], D => {
+  const esc = Ivory.esc, L = D.listing, A = D.agent || {}, W = 450, MG = 22, CW = W - 2*MG;
+  const FL = SP.floor('email'), FB = FL.body, FS = FL.small, FE = FL.event;
+  const E = OHL.event(D), hero = OHL.hero(D, 'straight');
+  const T = SP.T, rect = SP.rect, wd = SP.width, fit = SP.fitSize, r1 = SP.r1;
+  const SE = "font-family:'Source Serif 4'", HG = "font-family:'Hanken Grotesk'", GOLD = 'var(--gold)';
+  const hs = OHL.cardMode(D) === 'headshot' && !!A.headshot;
+  const drule = (yy, cx) => rect(MG, yy + 4.6, cx - MG - 8, .75, 'background:var(--gold)') + rect(cx + 8, yy + 4.6, MG + CW - cx - 8, .75, 'background:var(--gold)') + rect(cx - 3, yy + 2, 6, 6, 'background:var(--gold);transform:rotate(45deg)');
+  let h = '', y = 28;
+
+  // ---- 1. the event: gold label between hairlines, the big serif date, the time, what's served and the notes in one lifted box
+  const lab = E.label.toUpperCase(), lcss = `font-weight:700;${HG};letter-spacing:.22em`;
+  let ls = fit(lab, lcss, CW - 56, 22, FE); const two = wd(lab, `${lcss};font-size:${ls}pt`) > CW - 56;
+  const lines = two ? OHL.labelLines(E.label, 2).map(t => t.toUpperCase()) : [lab]; if(two) ls = Math.min(22, ...lines.map(t => fit(t, lcss, CW - 56, 22, FE)));
+  const lh = r1(ls*1.45), tw = Math.max(...lines.map(t => wd(t, `${lcss};font-size:${ls}pt`)));
+  lines.forEach((t, i) => { h += T(`${lcss};font-size:${ls}pt;color:${GOLD};text-align:center;padding-left:.22em`, esc(t), MG + (CW - tw - ls*.6)/2, y + i*lh, tw + ls*.6, lh, 'data-slot="oh.label" data-lines="1" data-bg="#1a2134"'); });
+  h += rect(MG, y + lines.length*lh/2 - .4, (CW - tw)/2 - 12, .75, 'background:var(--gold)') + rect(MG + (CW + tw)/2 + 12, y + lines.length*lh/2 - .4, (CW - tw)/2 - 12, .75, 'background:var(--gold)');
+  y += lines.length*lh + 8;
+  const dcss = `font-weight:400;${SE};letter-spacing:-.4pt`, ds = fit(E.long, dcss, CW - 6, 44, 32);
+  if(wd(E.long, `${dcss};font-size:${ds}pt`) <= CW - 6){ const dh = r1(ds*1.2); h += T(`${dcss};font-size:${ds}pt;color:#fff;text-align:center`, esc(E.long), MG, y, CW, dh, 'data-slot="oh.date" data-lines="1" data-bg="#1a2134"'); y += dh; }
+  else {
+    if(E.weekday){ h += T(`font-weight:700;${HG};font-size:${FE}pt;letter-spacing:.2em;text-transform:uppercase;color:${GOLD};text-align:center;padding-left:.2em`, esc(E.weekday), MG, y, CW, r1(FE*1.4), 'data-slot="oh.day" data-lines="1"'); y += r1(FE*1.4); }
+    const s2 = fit(E.monthDay || E.long, dcss, CW - 6, 44, 32), dh = r1(s2*1.2); h += T(`${dcss};font-size:${s2}pt;color:#fff;text-align:center`, esc(E.monthDay || E.long), MG, y, CW, dh, 'data-slot="oh.date" data-lines="1" data-bg="#1a2134"'); y += dh;
+  }
+  if(E.time){ const tcss = `font-weight:600;${HG}`, st = fit(E.time, tcss, CW - 6, 28, FE), th = r1(st*1.3); y += 4;
+    h += T(`${tcss};font-size:${st}pt;color:#fff;text-align:center`, esc(E.time.replace(/(\d)\s+(am|pm)\b/gi, '$1 $2')), MG, y, CW, th, 'data-slot="oh.time" data-lines="1" data-bg="#1a2134"'); y += th; }
+  const items = [[E.refreshments, true, 'oh.refreshments'], [E.note, false, 'oh.note']].filter(i => i[0]);
+  if(items.length){
+    y += 14; const bs = FB, blh = r1(bs*1.4), pad = 12, bw = CW - 2*pad - 2;
+    const bl = items.map(([t, b, slot]) => ({t, b, slot, n: SP.linesNW(t, `font:${b ? 700 : 400} ${bs}pt/${blh}pt 'Hanken Grotesk';text-align:center`, bw)}));
+    const boxH = bl.reduce((a, q) => a + q.n*blh, 0) + 2*pad + (bl.length - 1)*2*pad + 2;
+    h += rect(MG, y, CW, boxH, 'background:var(--navy2);border-top:2pt solid var(--gold)').replace('<div class="abs"', '<div class="abs" data-box="oh.box"');
+    let yy = y + pad + 2;
+    bl.forEach((q, i) => { if(i){ h += rect(MG + pad, yy + pad - .4, CW - 2*pad, .75, 'background:var(--line)'); yy += 2*pad; }
+      h += `<div class="abs w" style="left:${MG + pad + 1}pt;top:${yy}pt;width:${bw}pt;height:${q.n*blh + 3}pt;font:${q.b ? 700 : 400} ${bs}pt/${blh}pt 'Hanken Grotesk';color:#fff;text-align:center" data-slot="${q.slot}" data-lines="${q.n}">${esc(q.t)}</div>`; yy += q.n*blh; });
+    y += boxH; }
+  y += 18;
+
+  // ---- 2. the whole house, one photo edge to edge, folded across a center line that runs into the diamond rule
+  const fr = SP.heroFrame(D, hero, W, 270, true), fx = (W - fr.w)/2, cpE = (() => { const b = OHL.houseInFrame(D, hero, fr.w, fr.h); if(!b || b.right < .47 || b.left > .53) return .5; return (1 - b.right) >= b.left && (1 - b.right) > .1 ? (b.right + 1)/2 : b.left > .1 ? b.left/2 : .5; })(), ccx = fx + fr.w*cpE;
+  h += OHL.photo(D, hero, `left:${fx}pt;top:${y}pt;width:${fr.w}pt;height:${fr.h}pt`) +
+    rect(ccx - .4, y + fr.h, .75, 16, 'background:var(--gold)');   // no fold line on the photo (owner 11/2); the short hairline below it still meets the diamond rule
+  y += fr.h + 10; h += drule(y, ccx); y += 10 + 22;
+
+  // ---- 3. gold caps over the centered serif address, the facts in one row, the write-up, the bullets in two columns
+  h += T(`font-weight:700;${HG};font-size:${FS}pt;letter-spacing:.22em;color:${GOLD};text-align:center;padding-left:.22em`, esc(OHL.place(L).toUpperCase()), MG, y, CW, 20, 'data-slot="place" data-small="1" data-lines="1"'); y += 24;
+  const acss = `font-weight:400;${SE};letter-spacing:-.4pt`, as = fit(L.address, acss, CW - 4, Math.min(38, ds - 1), 22);
+  h += T(`${acss};font-size:${as}pt;color:#fff;text-align:center`, esc(L.address), MG, y, CW, r1(as*1.2), 'data-slot="address" data-lines="1"'); y += r1(as*1.2) + 16;
+  const f = SP.facts(D), per = f.length, cw = CW/per, lcss2 = `font-weight:600;${HG};letter-spacing:.1em;text-transform:uppercase`;
+  f.forEach(([lb, v, key], i) => { const cx = MG + i*cw;
+    h += (i ? rect(cx - .4, y + 2, .75, 52, 'background:var(--line)') : '') + T(`font-weight:400;${SE};font-size:24pt;color:#fff;text-align:center`, v, cx, y, cw, 30, `data-slot="fact.${key}" data-lines="1"`) +
+      T(`${lcss2};font-size:${FS}pt;color:${GOLD};text-align:center;padding-left:.1em`, esc(lb), cx, y + 32, cw, 20, 'data-small="1"'); });
+  y += 56 + 16;
+  const oh = (((D.copy || {}).pc || {}).oh || {}).a || {}, lead = SP.lead(D), pool = (lead ? [lead] : []).concat((oh.text ? String(oh.text).split(/(?<=[.!?])\s+(?=[A-Z0-9])/) : SP.sentences(D)).filter(t => t !== lead && !SP.FRONT.test(t) && !SP.CONDITION.test(t) && !/^\s*come see\b/i.test(t)));
+  const wlh = 21, wu = SP.fillText(pool, `font:400 ${FB}pt/${wlh}pt 'Hanken Grotesk';text-align:center`, CW - 20, 6, true);
+  if(wu){ h += `<div class="abs w" style="left:${MG + (CW - wu.w)/2}pt;top:${y}pt;width:${wu.w}pt;height:${wu.n*wlh}pt;font:400 ${FB}pt/${wlh}pt 'Hanken Grotesk';color:var(--txt);text-align:center" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`; y += wu.n*wlh + 16; }
+  const bl2 = (oh.bullets || []).slice(0, 4), bw2 = (CW - 14)/2; let by = y;
+  for(let i = 0; i < bl2.length; i += 2){ const pair = bl2.slice(i, i + 2), ns = pair.map(t => SP.lines(t, `font:400 ${FB}pt/${wlh}pt 'Hanken Grotesk'`, bw2 - 18)), rh = Math.max(...ns)*wlh + 6;
+    pair.forEach((t, j) => { const x = MG + j*(bw2 + 14); h += rect(x + 2, by + 8, 6, 6, 'background:var(--gold);transform:rotate(45deg)') + `<div class="abs w" style="left:${x + 18}pt;top:${by}pt;width:${bw2 - 18}pt;height:${ns[j]*wlh}pt;font:400 ${FB}pt/${wlh}pt 'Hanken Grotesk';color:#fff" data-slot="listing.bullet" data-lines="${ns[j]}">${esc(t)}</div>`; }); by += rh; }
+  y = by + 14; h += drule(y, W/2); y += 10 + 18;
+
+  // ---- 4. the agent, a centered stack, and the one logo under it
+  const lab2 = A.phoneLabel || 'Call / Text', nar = A.nar || /realtor/i.test(A.designation || ''), hsd = hs ? 62 : 0, nS = fit(A.name || '', `font-weight:400;${SE}`, CW - 10, 30, 22);
+  const lcssA = `font-weight:700;${HG};letter-spacing:.16em;text-transform:uppercase;font-size:${FS}pt`, stack = wd(lab2.toUpperCase(), lcssA) + 14 + wd(A.phone || '', `font-weight:700;${HG};font-size:${FB}pt`) > CW - 10;
+  const pS = stack ? 19 : Math.min(19, fit(A.phone || '', `font-weight:700;${HG}`, CW - 10 - wd(lab2.toUpperCase(), lcssA) - 14, 19, FB));
+  if(hs){ h += `<div class="abs" style="left:${(W - hsd)/2}pt;top:${y}pt;width:${hsd}pt;height:${hsd}pt;border-radius:50%;overflow:hidden;border:1.5pt solid var(--gold)"><img src="${esc(A.headshot)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`; y += hsd + 8; }
+  h += T(`font-weight:400;${SE};font-size:${nS}pt;color:#fff;text-align:center`, esc(A.name || ''), MG, y, CW, r1(nS*1.2), 'data-slot="agent.name" data-lines="1"'); y += r1(nS*1.2);
+  if(nar){ h += T(`font-weight:700;${HG};font-size:${FS}pt;letter-spacing:.22em;color:var(--mut);text-align:center;padding-left:.22em`, 'REALTOR®', MG, y, CW, 18, 'data-slot="agent.desig" data-small="1" data-lines="1"'); y += 18; }
+  if(stack){ h += T(`${lcssA};color:${GOLD};text-align:center;padding-left:.16em`, esc(lab2), MG, y, CW, 18, 'data-small="1"'); y += 18; }
+  h += T(`font-weight:700;${HG};font-size:${pS}pt;color:#fff;text-align:center`, `${stack ? '' : `<span data-small="1" style="font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:${FS}pt;color:${GOLD};margin-right:9pt">${esc(lab2)}</span>`}${esc(A.phone || '')}`, MG, y + 2, CW, 28, 'data-slot="agent.phone" data-lines="1"'); y += 36 + 12;
+  const lgH = 44, lgW = 150; h += OHL.logo(D, 'dark', `left:${(W - lgW)/2}pt;top:${y}pt;width:${lgW}pt;height:${lgH}pt;justify-content:center`); y += lgH + 16;
+  h += `<div class="abs" data-fine="1" data-slot="fineprint" data-lines="1" style="left:${MG}pt;top:${y}pt;width:${CW}pt;height:14pt;font:400 10pt/14pt 'Hanken Grotesk';color:var(--mut);text-align:center">${esc((D.companion || {}).fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
+  y += 14 + 20;
+  const after = () => document.querySelectorAll('[data-slot="oh.note"],[data-slot="oh.refreshments"]').forEach(el => { el.innerHTML = el.innerHTML.replace(/[^\s<>]*‑[^\s<>]*/g, m => `<span style="white-space:nowrap">${m.replace(/‑/g, '-')}</span>`); });
+  return {W, H: y, after, html: `<div class="page em" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${y}pt;background:var(--navy)">${h}</div>`};
+});
+</script>
+</body>
+</html>

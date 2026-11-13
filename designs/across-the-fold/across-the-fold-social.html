@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Across the Fold socials</title>
+<link rel="stylesheet" href="../engine/ohlib.css">
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/setpage.js"></script>
+<!--
+  Across the Fold's own socials (owner 11/2/2026, Full Lineup review Q2; reworked the same day: "plainly its own design"). Built on the
+  set's fold device: the whole house is one photo split across a center line (the fold-over's crease): two halves with a hairline between,
+  the right half dropped a few points, the crease shaded, a gold diamond where the crease meets the diamond rule. Everything is centered on
+  that line. Open House is Event First, as the flyer: the gold label between two hairlines, the big white Source Serif date, the time, the
+  diamond rule, then the folded photo. Just Listed and Just Sold open with the folded photo edge to edge, then the label, the city, the
+  serif address, one row of facts divided by gold lines, and the agent card as a centered stack with the one logo under it. One photo, no
+  room panes. The short and wide shapes keep the fold on a left column (the photo folds across a horizontal crease) with the address and
+  card under it, and the event, facts and Just Sold line on the right. REALTOR(R) cases: what's served and the notes in one lifted navy box.
+-->
+<style>
+  @font-face{font-family:'Source Serif 4';font-weight:400;src:url(../../fonts/pool/source-serif-4-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Source Serif 4';font-weight:600;src:url(../../fonts/pool/source-serif-4-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Hanken Grotesk';font-weight:400;src:url(../../fonts/pool/hanken-grotesk-latin-400-normal.woff2) format('woff2')}
+  @font-face{font-family:'Hanken Grotesk';font-weight:600;src:url(../../fonts/pool/hanken-grotesk-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Hanken Grotesk';font-weight:700;src:url(../../fonts/pool/hanken-grotesk-latin-700-normal.woff2) format('woff2')}
+  :root{--navy:#1a2134;--navy2:#232c45;--gold:#c8a46a;--txt:#e4e8f1;--mut:#b5bdd0;--line:rgba(200,164,106,.55)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .page{font-family:'Hanken Grotesk';color:#fff}
+  .t{position:absolute;white-space:nowrap;overflow:hidden}
+  .w{white-space:normal}
+</style>
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+SP.start(['400 10pt "Source Serif 4"', '600 10pt "Source Serif 4"', '400 10pt "Hanken Grotesk"', '600 10pt "Hanken Grotesk"', '700 10pt "Hanken Grotesk"'], D => {
+  const esc = Ivory.esc, K = SP.K, L = D.listing, A = D.agent || {};
+  const kind = SP.kind(D), shape = D.piece.shape, E = OHL.event(D);
+  if(E.time) E.time = E.time.replace(/(\d)\s+(am|pm)\b/gi, '$1 $2');   // a number never splits from am/pm
+  const [W, H] = [D.piece.px[0]*K, D.piece.px[1]*K];
+  const FL = SP.floor(shape), FE = FL.event, FB = FL.body, FS = FL.small;
+  const r1 = SP.r1, T = SP.T, rect = SP.rect, wd = SP.width, fit = SP.fitSize;
+  const hero = OHL.hero(D, 'straight');
+  const hs = OHL.cardMode(D) === 'headshot' && !!A.headshot;
+  const GOLD = 'var(--gold)', SE = "font-family:'Source Serif 4'", HG = "font-family:'Hanken Grotesk'";
+  const isOH = kind === 'oh', isJS = kind === 'js';
+  let TIGHT = false;   // the heavy case on a short shape: leading and padding close up (never the type: that stays at its floor)
+
+  // ---- the fold: the photo across a center line --------------------------------------------------------------------------------------------
+  // One photo (a house shown twice would be flagged): the crease is a navy strip with a gold hairline in it, and each side of it is shaded as paper is
+  // where it folds. vertical crease for a band across the page; horizontal crease for a column.
+  // the crease falls beside the house, never through its door or middle: where the house box covers the center, the crease moves to the larger clear side
+  const crease = (id, w, h) => { const b = OHL.houseInFrame(D, id, w, h); if(!b || b.right < .5 - .03 || b.left > .5 + .03) return .5;
+    return (1 - b.right) >= b.left && (1 - b.right) > .1 ? (b.right + 1)/2 : b.left > .1 ? b.left/2 : .5; };
+  const fold = (id, x, y, w, h, cp) => { cp = cp == null ? crease(id, w, h) : cp; const cx = x + w*cp;
+    return OHL.photo(D, id, `left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt`); };   // no vertical fold line on the photo (owner 11/2, Round 2); cp still places the diamond rule
+  const foldH = (id, x, y, w, h) => OHL.photo(D, id, `left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt`);   // no horizontal fold line on the photo (owner 11/2: remove the line from every AF photo)
+  // the diamond rule: gold hairline broken by one small diamond at its center (the crease meets it here)
+  const drule = (w, cx) => ({h: 10, draw: (x, y) => rect(x, y + 4.6, (cx != null ? cx : w/2) - 8, .75, 'background:var(--gold)') + rect(x + (cx != null ? cx : w/2) + 8, y + 4.6, w - (cx != null ? cx : w/2) - 8, .75, 'background:var(--gold)') +
+    rect(x + (cx != null ? cx : w/2) - 3, y + 2, 6, 6, 'background:var(--gold);transform:rotate(45deg)')});
+
+  // ---- parts: each returns {h, draw(x, y)} for a width w, text centered ---------------------------------------------------------------------
+  // the gold tracked label between two gold hairlines
+  const label = (w, size, text, slot) => {
+    const up = text.toUpperCase(), css = `font-weight:700;${HG};letter-spacing:.22em`, aw = w - 56;
+    let s = fit(up, css, aw, size, FE), lines = [up];
+    if(wd(up, `${css};font-size:${s}pt`) > aw){ lines = OHL.labelLines(text, 2).map(t => t.toUpperCase()); s = Math.min(size, ...lines.map(t => fit(t, css, aw, size, FE))); }
+    const lh = r1(s*(TIGHT ? 1.0 : 1.4)), h = lines.length*lh, tw = Math.max(...lines.map(t => wd(t, `${css};font-size:${s}pt`)));
+    return {h, draw: (x, y) => lines.map((t, i) => T(`${css};font-size:${s}pt;color:${GOLD};text-align:center;padding-left:.22em`, esc(t), x + (w - tw - s*.6)/2, y + i*lh, tw + s*.6, lh, `data-slot="${slot}" data-lines="1"`)).join('') +
+      rect(x, y + h/2 - .4, (w - tw)/2 - 12, .75, 'background:var(--gold)') + rect(x + (w + tw)/2 + 12, y + h/2 - .4, (w - tw)/2 - 12, .75, 'background:var(--gold)')};
+  };
+  // the date in white serif, the time in white sans (the flyer's); the weekday in gold when the date takes two lines
+  const dateTime = (w, k) => {
+    const dcss = `font-weight:400;${SE};letter-spacing:-.3pt`, big = r1(Math.max(FE*1.5, 46*k)), dmin = TIGHT ? FE*1.1 : FE*1.5;
+    const one = E.long, s1 = fit(one, dcss, w - 6, big, dmin), twoLine = wd(one, `${dcss};font-size:${s1}pt`) > w - 6 || s1 < dmin, parts = [];
+    if(!twoLine){ const h = r1(s1*(TIGHT ? 1.03 : 1.18)); parts.push({h, f: (x, y) => T(`${dcss};font-size:${s1}pt;color:#fff;text-align:center`, esc(one), x, y, w, h, 'data-slot="oh.date" data-lines="1"')}); }
+    else {
+      const sd = fit(E.monthDay || E.long, dcss, w - 6, big, FE), hd = r1(sd*(TIGHT ? 1.03 : 1.18));
+      if(E.weekday){ const sw = Math.max(FE, r1(sd*.5)), hw = r1(sw*(TIGHT ? 1.05 : 1.4)); parts.push({h: hw, f: (x, y) => T(`font-weight:700;${HG};font-size:${sw}pt;letter-spacing:.2em;text-transform:uppercase;color:${GOLD};text-align:center;padding-left:.2em`, esc(E.weekday), x, y, w, hw, 'data-slot="oh.day" data-lines="1"')}); }
+      parts.push({h: hd, f: (x, y) => T(`${dcss};font-size:${sd}pt;color:#fff;text-align:center`, esc(E.monthDay || E.long), x, y, w, hd, 'data-slot="oh.date" data-lines="1"')});
+    }
+    if(E.time){ const tcss = `font-weight:600;${HG}`, st = fit(E.time, tcss, w - 6, r1(Math.max(FE*1.2, 28*k)), FE), ht = r1(st*(TIGHT ? 1.1 : 1.3));
+      parts.push({h: ht, f: (x, y) => T(`${tcss};font-size:${st}pt;color:#fff;text-align:center`, esc(E.time), x, y, w, ht, 'data-slot="oh.time" data-lines="1"')}); }
+    const h = parts.reduce((a, p) => a + p.h, 0), tb = E.time && wd(E.time, `font-weight:600;${HG};font-size:${FE}pt`) > w - 4;   // the time cannot fit this column even at its floor
+    return {h, bad: tb, draw: (x, y) => { let yy = y; return parts.map(p => { const s = p.f(x, yy); yy += p.h; return s; }).join(''); }};
+  };
+  // what's served and the notes: one lifted navy box with a gold top edge, centered, a gold hairline between them
+  const noteBox = (w, k) => {
+    const items = [E.refreshments && [E.refreshments, true, 'oh.refreshments'], E.note && [E.note, false, 'oh.note']].filter(Boolean); if(!items.length) return null;
+    const s = r1(Math.max(FB, FB*1.15*k)), lh = r1(s*(TIGHT ? 1.15 : 1.32)), pad = TIGHT ? 6 : r1(Math.max(11, s*.85)), ps = items.map(([text, bold, slot]) => {
+      const css = `font:${bold ? 700 : 400} ${s}pt/${lh}pt 'Hanken Grotesk';text-align:center`; return {text, bold, slot, n: SP.linesNW(text, css, w - 2*pad - 2)}; });
+    const h = ps.reduce((a, q) => a + q.n*lh, 0) + 2*pad + (ps.length - 1)*(2*pad) + 2;
+    return {h, draw: (x, y) => { let yy = y + pad + 2, o = rect(x, y, w, h, 'background:var(--navy2);border-top:2pt solid var(--gold)').replace('<div class="abs"', '<div class="abs" data-box="oh.box"');
+      ps.forEach((q, i) => { if(i){ o += rect(x + pad, yy + pad - .4, w - 2*pad, .75, 'background:var(--line)'); yy += 2*pad; }
+        o += `<div class="abs w" style="left:${x + pad + 1}pt;top:${yy}pt;width:${w - 2*pad - 2}pt;height:${q.n*lh + 3}pt;font:${q.bold ? 700 : 400} ${s}pt/${lh}pt 'Hanken Grotesk';color:#fff;text-align:center" data-slot="${q.slot}" data-lines="${q.n}">${esc(q.text)}</div>`; yy += q.n*lh; });
+      return o; }};
+  };
+  const addrNum = (L.address.match(/^\s*(\d+[A-Za-z-]*)\s+(.*)$/) || [null, '', L.address]);
+  const address = (w, k, max) => {
+    const css = `font-weight:400;${SE};letter-spacing:-.4pt`, s = fit(L.address, css, w - 4, r1(Math.max(FE*1.1, max*k)), FE);
+    if(wd(L.address, `${css};font-size:${s}pt`) <= w - 4){ const h = r1(s*1.2); return {h, draw: (x, y) => T(`${css};font-size:${s}pt;color:#fff;text-align:center`, esc(L.address), x, y, w, h, 'data-slot="address" data-lines="1"')}; }
+    const st = addrNum[2], s2 = fit(st, css, w - 4, r1(Math.max(FE*1.1, max*k*.85)), FE), h = r1(s2*1.2);
+    return {h: h*2, bad: wd(st, `${css};font-size:${s2}pt`) > w - 4, draw: (x, y) => T(`${css};font-size:${s2}pt;color:#fff;text-align:center`, esc(addrNum[1]), x, y, w, h, 'data-slot="address" data-lines="1"') +
+      T(`${css};font-size:${s2}pt;color:#fff;text-align:center`, esc(st), x, y + h, w, h, 'data-slot="address" data-lines="1"')};
+  };
+  const city = (w, k, noZip) => { const t = (noZip ? Ivory.cityST(L) : OHL.place(L)).toUpperCase(), css = `font-weight:700;${HG};letter-spacing:.22em`, s = fit(t, css, w - 6, r1(Math.max(FS*1.1, 13*k)), FS), h = r1(s*1.5);
+    if(wd(t, `${css};font-size:${s}pt`) > w - 6) return null;
+    return {h, draw: (x, y) => T(`${css};font-size:${s}pt;color:${GOLD};text-align:center;padding-left:.22em`, esc(t), x, y, w, h, 'data-slot="place" data-lines="1"')}; };
+  // the facts in one row, the serif number over its gold caps label, a gold line between each (two rows of two when the row will not hold the labels)
+  const factRow = (w, k, small) => {
+    const f = SP.facts(D); if(!f.length) return null;
+    const lcss = `font-weight:600;${HG};letter-spacing:.1em;text-transform:uppercase`, l2 = small ? FS : Math.max(FS + 1, r1(12.5*k)), vs = small ? Math.max(FB*1.2, r1(21*k)) : Math.max(FB*1.4, r1(26*k));
+    for(const per of [f.length, Math.ceil(f.length/2), 1]){
+      const cw = w/per, rws = Math.ceil(f.length/per), lh = r1(l2*1.3);
+      // a label may take two lines; its longest word must fit the cell
+      if(f.some(([lb]) => lb.toUpperCase().split(' ').some(wd0 => wd(wd0, `${lcss};font-size:${l2}pt`) > cw - 8))) continue;
+      const nl = Math.max(...f.map(([lb]) => wd(lb.toUpperCase(), `${lcss};font-size:${l2}pt`) > cw - 8 ? 2 : 1)), vh = r1(vs*1.2), ch = vh + nl*lh + 6, h = rws*ch + (rws - 1)*4;
+      return {h, draw: (x, y) => f.map(([lb, v, key], i) => { const cx = x + (i % per)*cw, cy = y + Math.floor(i/per)*(ch + 4), two = nl === 2 && wd(lb.toUpperCase(), `${lcss};font-size:${l2}pt`) > cw - 8;
+        return (per === 1 ? (i ? rect(cx + w*.2, cy - 2, w*.6, .75, 'background:var(--line)') : '') : (i % per ? rect(cx - .4, cy + 2, .75, ch - 4, 'background:var(--line)') : '')) +
+          T(`font-weight:400;${SE};font-size:${vs}pt;color:#fff;text-align:center`, v, cx, cy, cw, vh, `data-slot="fact.${key}" data-lines="1"`) +
+          `<div class="abs w" data-small="1" style="left:${cx + 2}pt;top:${cy + vh + 2}pt;width:${cw - 4}pt;height:${(two ? 2 : 1)*lh}pt;${lcss};font-size:${l2}pt;line-height:${lh}pt;color:var(--gold);text-align:center">${esc(lb)}</div>`; }).join('')};
+    }
+    return null;
+  };
+  // the agent card, a centered stack: round headshot, serif name, REALTOR(R), Call / Text and the phone
+  const agent = (w, k, o) => {
+    o = o || {};
+    const hsd = hs && !o.nohs ? r1(Math.min(w*.22, 50)) : 0, ncss = `font-weight:400;${SE}`, nS = fit(A.name || '', ncss, w - 6, r1(Math.max(FB*1.5, 28*k)), FB);
+    const nH = r1(nS*(TIGHT ? 1.1 : 1.2)), nar = A.nar || /realtor/i.test(A.designation || ''), dS = Math.max(FS, r1(10.5*k)), dH = r1(dS*(TIGHT ? 1.2 : 1.5));
+    const lab = A.phoneLabel || 'Call / Text'; let pS = r1(Math.max(FB*1.1, 18*k));
+    const lcss = `font-weight:700;${HG};letter-spacing:.16em;text-transform:uppercase`, lS = Math.max(FS, r1(10.5*k));
+    const oneLine = () => wd(lab.toUpperCase(), `${lcss};font-size:${lS}pt`) + 10 + wd(A.phone || '', `font-weight:700;${HG};font-size:${pS}pt`) <= w - 6;
+    while(!oneLine() && pS > FB) pS = r1(pS - .5);
+    const stack = !oneLine(), pH = r1(pS*(TIGHT ? 1.15 : 1.3)), lH = r1(lS*(TIGHT ? 1.2 : 1.5));
+    // compact: REALTOR(R), Call / Text and the phone on one line under the name (the tall posts), when the three fit side by side
+    const dl = `${lcss};font-size:${dS}pt;letter-spacing:.22em`, ll = `${lcss};font-size:${lS}pt`, cpW = (nar ? wd('REALTOR®', dl) + 16 : 0) + wd(lab.toUpperCase(), ll) + 10 + wd(A.phone || '', `font-weight:700;${HG};font-size:${FB}pt`);
+    const compact = !!o.compact && !hsd && cpW <= w - 6;
+    if(compact){ pS = Math.min(pS, r1(Math.max(FB, 16*k))); while(pS > FB && ((nar ? wd('REALTOR®', dl) + 16 : 0) + wd(lab.toUpperCase(), ll) + 10 + wd(A.phone || '', `font-weight:700;${HG};font-size:${pS}pt`)) > w - 6) pS = r1(pS - .5); }
+    const cH = r1(pS*1.35), h = compact ? nH + cH : (hsd ? hsd + 5 : 0) + nH + (nar ? dH : 0) + (stack ? lH : 0) + pH;
+    return {h, bad: wd(A.name || '', `${ncss};font-size:${nS}pt`) > w - 6, draw: (x, y) => {
+      let yy = y, s = '';
+      if(compact){
+        s += T(`${ncss};font-size:${nS}pt;color:#fff;text-align:center`, esc(A.name || ''), x, yy, w, nH, 'data-slot="agent.name" data-lines="1"'); yy += nH;
+        return s + T(`font-weight:700;${HG};font-size:${pS}pt;color:#fff;text-align:center`, `${nar ? `<span data-slot="agent.desig" data-small="1" style="${lcss};font-size:${dS}pt;letter-spacing:.22em;color:var(--mut);margin-right:16pt">REALTOR®</span>` : ''}<span data-small="1" style="${lcss};font-size:${lS}pt;color:${GOLD};margin-right:10pt">${esc(lab)}</span><span data-slot="agent.phone">${esc(A.phone || '')}</span>`, x, yy, w, cH, 'data-lines="1"'); }
+      if(hsd){ s += `<div class="abs" style="left:${x + (w - hsd)/2}pt;top:${yy}pt;width:${hsd}pt;height:${hsd}pt;border-radius:50%;overflow:hidden;border:1.5pt solid var(--gold)"><img src="${esc(A.headshot)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`; yy += hsd + 5; }
+      s += T(`${ncss};font-size:${nS}pt;color:#fff;text-align:center`, esc(A.name || ''), x, yy, w, nH, 'data-slot="agent.name" data-lines="1"'); yy += nH;
+      if(nar){ s += T(`${lcss};font-size:${dS}pt;color:var(--mut);text-align:center;letter-spacing:.22em;padding-left:.22em`, 'REALTOR®', x, yy, w, dH, 'data-slot="agent.desig" data-small="1" data-lines="1"'); yy += dH; }
+      if(stack){ s += T(`${lcss};font-size:${lS}pt;color:${GOLD};text-align:center;padding-left:.16em`, esc(lab), x, yy, w, lH, 'data-small="1"'); yy += lH; }
+      s += T(`font-weight:700;${HG};font-size:${pS}pt;color:#fff;text-align:center`, `${stack ? '' : `<span data-small="1" style="${lcss};font-size:${lS}pt;color:${GOLD};margin-right:9pt">${esc(lab)}</span>`}${esc(A.phone || '')}`, x, yy, w, pH, 'data-slot="agent.phone" data-lines="1"');
+      return s; }};
+  };
+  const writeup = (w, k, maxN) => { const s = r1(Math.max(FB, FB*1.15*k)), lh = r1(s*1.4), css = `font:400 ${s}pt/${lh}pt 'Hanken Grotesk';text-align:center`;
+    const r = SP.fillText(SP.pool(D), css, w, maxN, true); if(!r) return null;
+    return {h: r.n*lh + 2, draw: (x, y) => `<div class="abs w" style="left:${x + (w - r.w)/2}pt;top:${y}pt;width:${r.w}pt;height:${r.n*lh}pt;font:400 ${s}pt/${lh}pt 'Hanken Grotesk';color:var(--txt);text-align:center" data-slot="listing.body" data-lines="${r.n}">${esc(r.text)}</div>`}; };
+  // Just Sold: the short "thinking about selling" line from the Just Sold copy, in serif, centered
+  const SOLDK = {post: .01, pin: .01, story: .01, square: .01, slide: .01, wide: .01, gbp: .01};   // 11/7: this layout holds one pitch sentence (a longer pitch was dropped whole)
+    // about how many characters of the agent pitch a Just Sold post carries per pt of width (owner 11/6: Just Sold is about the agent)
+  const soldBlock = (w, k) => { const S = Object.assign({}, SP.agentPitch(D, Math.round(w*k*(SOLDK[shape]||3.6)), shape === 'slide' && D.piece.photo !== hero ? 1 : 0), /^(wide)$/.test(shape) ? {head: ''} : {}), sb0 = r1(Math.max(FB, FB*1.15*k)), hs0 = r1(Math.max(FB*1.3, 24*k));
+    const sized = (text, start, min, mk) => { if(!text) return {n: 0, s: start, l: 0}; let s = start, m; for(; s >= min; s -= .5){ m = SP.para(text, mk(s, r1(s*1.25)), w); if(m.n === 1 || m.fill >= .75) break; } s = Math.max(s, min); m = SP.para(text, mk(s, r1(s*1.25)), w); return {n: m.n, s, l: r1(s*1.25)}; };
+    const hd = sized(S.head, hs0, FB*1.1, (s, l) => `font:400 ${s}pt/${l}pt 'Source Serif 4';text-align:center`), ln = sized(S.line, sb0, FB, (s, l) => `font:400 ${s}pt/${l}pt 'Hanken Grotesk';text-align:center`);
+    const h = hd.n*hd.l + ln.n*ln.l + (hd.n && ln.n ? 3 : 0); if(!h) return null;
+    return {h, draw: (x, y) => (hd.n ? `<div class="abs w" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hd.n*hd.l + 3}pt;font:400 ${hd.s}pt/${hd.l}pt 'Source Serif 4';color:#fff;text-align:center" data-slot="sold.head" data-lines="${hd.n}">${esc(S.head)}</div>` : '') +
+      (ln.n ? `<div class="abs w" style="left:${x}pt;top:${y + hd.n*hd.l + (hd.n ? 3 : 0)}pt;width:${w}pt;height:${ln.n*ln.l + 3}pt;font:400 ${ln.s}pt/${ln.l}pt 'Hanken Grotesk';color:var(--txt);text-align:center" data-slot="sold.line" data-lines="${ln.n}">${esc(S.line)}</div>` : '')}; };
+  const logoBlk = (maxW, maxH) => { const lgH = r1(Math.min(maxH, maxW*.34)), lgW = r1(Math.min(maxW, lgH/.36)); return {h: lgH, w: lgW, draw: (x, y) => OHL.logo(D, 'dark', `left:${x}pt;top:${y}pt;width:${lgW}pt;height:${lgH}pt;justify-content:center`)}; };
+  const place = (html, x, y) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:0;height:0;overflow:visible">${html}</div>`;
+  const moment = isOH ? E.label : (kind === 'jl' ? 'Just Listed' : 'Just Sold');
+  const mslot = isOH ? 'oh.label' : 'moment';
+
+  // ---- carousel slide: the folded photo edge to edge, the crease meeting the diamond rule, the room under it, the card centered -------------------
+  const slide = () => {
+    const id = D.piece.photo, MG = 16, CW = W - 2*MG;
+    const lb = label(CW, r1(FE*1.05), isOH ? E.label : moment, mslot);
+    const evt = isOH ? [E.long, E.time].filter(Boolean) : [], ecss = `font-weight:600;${HG}`, joined = evt.join('  ·  ');
+    const eone = joined && wd(joined, `${ecss};font-size:${FE}pt`) <= CW - 6, es = !evt.length ? 0 : eone ? fit(joined, ecss, CW - 6, r1(FE*1.25), FE) : Math.min(...evt.map(t => fit(t, ecss, CW - 6, r1(FE*1.25), FE))), eh = r1(es*1.35), eN = !evt.length ? 0 : eone ? 1 : evt.length;
+    const ag = agent(CW, .78, {nohs: true}), lg = logoBlk(CW*.42, 30);
+    let nm = '', cap = null, capH = 0, ncs = 0, nh = 0, cs = 0, lh = 0;
+    if(!isJS){ nm = SP.roomName(D, id); const pool = SP.caption(D, id).filter(t => t !== nm);
+      if(pool.length){ for(cs = 24; cs >= FB; cs -= .5){ lh = r1(cs*1.3); const r = SP.fillText(pool, `font:400 ${cs}pt/${lh}pt 'Hanken Grotesk';text-align:center`, CW, cs > 17 ? 2 : 4, false); if(r && r.fill >= .8){ cap = r; break; } } if(!cap){ cs = FB; lh = r1(cs*1.3); cap = SP.fillText(pool.slice(0, 1), `font:400 ${cs}pt/${lh}pt 'Hanken Grotesk';text-align:center`, CW, 6, false, .6); }
+        if(cap && cap.fill < .8){ for(let c2 = FB + .5; c2 <= 34; c2 += .5){ const l2 = r1(c2*1.3), r = SP.fillText(pool, `font:400 ${c2}pt/${l2}pt 'Hanken Grotesk';text-align:center`, CW, 3, false, .6); if(r && r.fill >= .8){ cap = r; cs = c2; lh = l2; break; } } } }
+      if(cap) capH = cap.n*lh; ncs = nm ? Math.max(FE, r1(Math.min(28, FE*1.6))) : 0; nh = ncs ? r1(ncs*1.25) : 0; }
+    const sold = isJS ? soldBlock(CW, 1.05) : null;
+    const fixedBelow = 12 + 10 + 12 + (eN ? eN*eh + 8 : 0) + (nh ? nh + 4 : 0) + capH + (sold ? sold.h + 10 : 0) + 12 + lb.h + 10 + ag.h + 8 + lg.h + 14;
+    const ph = H - fixedBelow, isHouse = Ivory.fullHouse(D, id), fr = isHouse ? SP.heroFrame(D, id, W, ph, true) : {w: W, h: ph};
+    const cpS = crease(id, fr.w, fr.h);
+    let h = fold(id, (W - fr.w)/2, 0, fr.w, fr.h, cpS);
+    let y = fr.h + 12; const ccx = (W - fr.w)/2 + fr.w*cpS; h += drule(W, ccx).draw(0, y); h += rect(ccx - .4, fr.h, .75, 16, 'background:var(--gold)'); y += 10 + 12;
+    h += lb.draw(MG, y); y += lb.h + 10;
+    if(eN){ (eone ? [joined] : evt).forEach((t, i) => { h += T(`${ecss};font-size:${es}pt;color:#fff;text-align:center`, esc(t), MG, y + i*eh, CW, eh, `data-slot="${!eone && i ? 'oh.time' : 'oh.date'}" data-lines="1"`); }); y += eN*eh + 8; }
+    if(nh){ h += T(`font-weight:400;${SE};font-size:${ncs}pt;color:#fff;text-align:center`, esc(nm), MG, y, CW, nh, 'data-slot="slide.room" data-lines="1"'); y += nh + 4; }
+    if(cap) h += `<div class="abs w" style="left:${MG + (CW - cap.w)/2}pt;top:${y}pt;width:${cap.w}pt;height:${capH}pt;font:400 ${cs}pt/${lh}pt 'Hanken Grotesk';color:var(--txt);text-align:center" data-slot="slide.caption" data-lines="${cap.n}">${esc(cap.text)}</div>`;
+    if(sold) h += sold.draw(MG, y);
+    const spare = Math.max(0, H - 14 - lg.h - 8 - ag.h - y - (cap ? capH : 0) - (sold ? sold.h : 0)) ;
+    const ay = H - 14 - lg.h - 8 - ag.h; h += ag.draw(MG, ay) + lg.draw((W - lg.w)/2, H - 14 - lg.h);
+    return h;
+  };
+
+  // ---- the post-like shapes: centered on the crease -------------------------------------------------------------------------------------
+  const rows = () => {
+    const safe = shape === 'story' ? 93.75 : 0, MG = Math.max(14, W*.05), CW = W - 2*MG, first = isOH && !safe, top0 = safe ? 0 : (first ? MG : 0), bot = H - (safe ? safe : MG);
+    for(let lvl = 0; lvl <= 8; lvl++) for(let k = 1.1; k >= .7; k = Math.round((k - .05)*100)/100){
+      TIGHT = lvl >= 2;
+      const g = r1(Math.max(TIGHT ? 3 : 6, FE*.5*k));
+      const lb = label(CW, r1(Math.max(FE, 17*k)), moment, mslot);
+      const dt = isOH ? dateTime(CW, k) : null, bx = isOH ? noteBox(CW, k) : null;
+      const dr = drule(CW), ct = lvl >= 3 ? null : city(CW, k), ad = address(CW, k, 40);
+      const fr0 = lvl >= 5 ? null : factRow(CW, k, lvl >= 3);
+      const body = lvl >= 7 ? null : (kind === 'jl' ? writeup(CW*.92, k, shape === 'story' ? 4 : shape === 'pin' ? 3 : 2) : isJS ? soldBlock(CW*.92, k) : null);
+      const JLC = kind === 'jl', cb = JLC ? SP.contact(D, {w: CW, k, ink: '#fff', sub: 'var(--mut)', bar: GOLD, disp: "'Source Serif 4'", body: "'Hanken Grotesk'", label: "'Hanken Grotesk'", dw: 400, fb: FB, fs: FS, tone: 'dark', tight: TIGHT, barW: 2, headshot: hs && lvl < 1, email: lvl < 4, web: lvl < 3, logoMaxH: 36}) : null;   // Just Listed: the standard contact block (SP.contact), centered in the space under the text
+      const ag = JLC ? null : agent(CW, k, {nohs: lvl >= 1, compact: lvl >= 2}), lg = JLC ? null : logoBlk(CW*.36, 36);
+      if(ad.bad || (ag && ag.bad) || (cb && cb.bad) || (dt && dt.bad)) continue;
+      // event first: label, date, time, notes, then the folded photo; otherwise the folded photo first, edge to edge
+      const text = [lb, dt, bx, ct, ad, fr0, body, ag, lg, cb], pre = first ? [lb, dt, bx] : [];
+      const tp = text.filter(Boolean);
+      const fixed = tp.reduce((a, p) => a + p.h, 0) + g*(tp.length) + dr.h + g;
+      const availH = bot - top0 - fixed;
+      const minP = safe ? safe + 60 : (lvl >= 8 ? 100 : Math.ceil(OHL.minFrameH(D, hero, first ? CW : W, 99999)) + 4);   // the house across the full width of its band, never a narrower frame
+      if(availH < minP) continue;
+      let h = '', y = top0;
+      const ph = Math.min(availH, W*(shape === 'pin' ? 1.0 : .88)), spare = Math.max(0, availH - ph), gx = Math.min(spare/(tp.length + 1), g*1.5);
+      const full = !first, bw = full ? W : CW, bx0 = full ? 0 : MG;
+      const fr = SP.heroFrame(D, hero, bw, ph, true), fx = bx0 + (bw - fr.w)/2;
+      if(first){ pre.filter(Boolean).forEach(p => { h += p.draw(MG, y); y += p.h + (p === lb ? g*.6 : g) + gx*.5; }); y += gx*.3; }
+      h += fold(hero, fx, y, fr.w, fr.h); y += fr.h + g;
+      // the diamond rule sits on the crease: the photo's center line runs down into it
+      const cx = fx + fr.w*crease(hero, fr.w, fr.h);
+      h += place(drule(CW, cx - MG).draw(0, 0), MG, y) + rect(cx - .4, y - g, .75, g + 2, 'background:var(--gold)');
+      y += dr.h + g + gx*.5;
+      (first ? [ct, ad, fr0, body, ag, lg] : [lb, dt, bx, ct, ad, fr0, body, ag, lg]).filter(Boolean).forEach(p => { h += p.draw(p === lg ? (W - p.w)/2 : MG, y); y += p.h + (p === ad ? g*.6 : g) + gx*.5; });
+      if(cb){ const te = y - g - gx*.5; h += cb.draw((W - cb.w)/2, te + Math.max(0, (bot - te - cb.h)/2)); }
+      return h;
+    }
+    return T('', 'layout failed', 0, 0, 100, 12, 'data-slot="layout-failed"');
+  };
+
+  // ---- the short and wide shapes (square, gbp, wide): the fold on a left column with the address and card under it; the event, facts and Just Sold line on the right ---------------------
+  const cols = () => {
+    // 'full' (Just Listed and Just Sold): the folded photo takes the whole left column, the logo under it, and every word is on the right.
+    // 'text' (Open House, and when 'full' will not hold): the photo on top of the left column with the address and the card under it.
+    for(const mode of isOH ? ['text'] : ['full', 'text']) for(const tight of [false, true]) for(const lwf of mode === 'full' ? [.58, .54, .5, .46, .42, .38] : [.6, .56, .52, .48, .44, .4, .36, .35, .34, .33, .32, .31, .3, .28]) for(let lvl = 0; lvl <= 4; lvl++) for(let k = 1.05; k >= .7; k = Math.round((k - .05)*100)/100){
+      TIGHT = tight;
+      const M = tight ? Math.max(9.5, W*.016) : Math.max(10, W*.03), LW = r1(W*lwf), RW = W - LW - 3*M, g = r1(Math.max(tight ? 2 : 5, FE*(tight ? .08 : .3)*k)), availH = H - 2*M, lw = LW - M, full = mode === 'full';
+      const lg = kind === 'jl' ? {h: 0, w: 0, draw: () => ''} : logoBlk(lw, H*.1);
+      const lb = label(RW, r1(Math.max(FE, 17*k)), moment, mslot), dt = isOH ? dateTime(RW, k) : null, bx = isOH ? noteBox(RW, k) : null;
+      const fr0 = (lvl >= 1) ? null : factRow(RW, k, true), body = (lvl >= 1 || isOH) ? null : (isJS ? soldBlock(RW, k) : null);
+      const wr = full ? RW : lw;
+      // Just Listed wide (owner 11/6, Full Lineup Round 3): the address centered under the photo with city and state (no ZIP) under it; a smaller contact on the right
+      const JLW = kind === 'jl' && shape === 'wide' && full, kc = JLW ? k*.8 : k;
+      const JLC = kind === 'jl', ct = JLW ? city(lw, k*.9, true) : lvl >= 2 ? null : city(wr, k), ad = JLW ? address(lw, k, 26) : address(wr, k, 32), ag = JLC ? SP.contact(D, {w: wr, k: kc, nameMax: JLW ? 17 : 22, nameMin: JLW ? r1(FB*1.15) : 0, ink: '#fff', sub: 'var(--mut)', bar: GOLD, disp: "'Source Serif 4'", body: "'Hanken Grotesk'", label: "'Hanken Grotesk'", dw: 400, fb: FB, fs: FS, tone: 'dark', tight: TIGHT, barW: 2, headshot: hs && lvl < 1, email: lvl < 4, web: false, logoMaxH: 36}) : agent(wr, k, {nohs: true});   // Just Listed: the standard contact block, logo with it
+      if(ad.bad || ag.bad || (dt && dt.bad)) continue;
+      if(JLW && !ct) continue;
+      const R = (JLW ? [lb, fr0, ag] : full ? [lb, ct, ad, fr0, body, ag] : [lb, dt, bx, fr0, body]).filter(Boolean), Ls = JLW ? [ad, ct] : full ? [] : [ct, ad, ag].filter(Boolean);
+      const rH = R.reduce((a, p) => a + p.h, 0) + g*(R.length - 1), lH = Ls.reduce((a, p) => a + p.h, 0) + (Ls.length ? g*Ls.length : 0) + lg.h + g;
+      if(rH > availH + .01) continue;
+      const phH = availH - lH; if(phH < Math.min(lw*.45, 56)) continue;
+      const fr = SP.heroFrame(D, hero, lw, Math.min(phH, lw*1.1), true), cpH = crease(hero, fr.w, fr.h);
+      const gy = JLW ? M + Math.max(0, (availH - fr.h - lH)/2) : full ? M + Math.max(0, (availH - fr.h - 12 - lg.h)/2) : M;   // the photo and the logo under it sit as a group, centered in the column
+      let h = fold(hero, M + (lw - fr.w)/2, gy, fr.w, fr.h, cpH);
+      const free = (availH - fr.h - lH)/(Ls.length + 1);
+      let ly = JLW ? gy + fr.h + g*1.6 : M + fr.h + g + free; Ls.forEach(p => { h += p.draw(M, ly); ly += p.h + g + free*0; }); h += lg.draw(M + (lw - lg.w)/2, full ? gy + fr.h + 12 : H - M - lg.h);
+      h += rect(LW + M*.75 - .4, M, .75, availH, 'background:var(--line)') + rect(LW + M*.75 - 3, M + availH/2 - 3, 6, 6, 'background:var(--gold);transform:rotate(45deg)');
+      const gx = Math.min((availH - rH)/Math.max(1, R.length - 1), g*2);
+      let y = M + (availH - rH - gx*(R.length - 1))/2;
+      R.forEach(p => { h += p.draw(LW + 1.5*M + (JLW && p === ag ? (RW - ag.w)/2 : 0), y); y += p.h + g + gx; });
+      return h;
+    }
+    return T('', 'layout failed', 0, 0, 100, 12, 'data-slot="layout-failed"');
+  };
+
+  if(isJS) SP.voiceSteps(D);
+
+  const inner = shape === 'slide' ? slide() : /^(square|gbp|wide)$/.test(shape) ? cols() : rows();
+  return {W, H, html: `<div class="page" data-page="${esc(D.piece.id)}" style="position:relative;overflow:hidden;width:${W}pt;height:${H}pt;background:var(--navy)">${inner}</div>`};
+});
+</script>
+</body>
+</html>
