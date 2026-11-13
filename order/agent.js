@@ -177,7 +177,7 @@
     }
     designs = await fetch('/designs/designs.json').then(r => r.json());
     if(await backFromCheckout()) return;
-    if(window.Account && Account.needsWelcome()) return Account.intake();
+    // the first-sign-in welcome form (Texas license check) is off (owner 11/13/2026): new accounts go straight to Agent home
     const cur = lget('bd-current', null), hash = location.hash.slice(1);
     if(cur && ['rough', 'final', 'gallery', 'just-sold'].includes(hash)){
       const list = await store.list().catch(() => []);
