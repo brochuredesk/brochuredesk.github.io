@@ -114,6 +114,10 @@ window.brochureReady = (async function(){
       const r = info(t, w, font);
       if(r.k === n && r.fill >= lo && r.fill <= 1){ const sc = r.fill - 0.3*Math.abs(r.fill - 0.9) + 0.0005*t.length; if(!best || sc > best.sc) best = {t, sc, fill: r.fill}; }
     }
+    // the rough draft (D.preview): its preview lines can't hit an exact fit, and the order page refits them to each box after
+    // layout (PreviewTools.fitPreview), so take the combination nearest the target length instead of failing the layout.
+    // Never on a paid piece: print files carry no preview text.
+    if(!best && D.preview && list.length) return {t: list[0], sc: 0, fill: 0, near: true};
     return best;
   };
   const diag = (bts, w, font, n) => { const out = []; for(let k = Math.max(1, n - 1); k <= n + 1; k++){ const r = fitText(bts, w, font, k); out.push(k + ':' + (r ? 'ok' : 'no')); }
