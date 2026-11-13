@@ -58,9 +58,17 @@ FXP.start(['700 20pt "DM Sans"', '500 20pt "DM Sans"', '400 20pt "DM Sans"', '40
   const h = [];
   const HEAD = FX09HEAD(D);
   // ---- kicker row
-  h.push(`<div class="abs kk" style="left:${AX}pt;top:22pt;width:${CWd}pt;height:18pt;color:var(--fx-ink2);letter-spacing:2pt" data-slot="kicker.left" data-lines="1">${esc(HEAD.left)}</div>`);
+  // the two ends of the kicker never meet (text-overlap kicker.left, 11/13): a long neighborhood line loses what the header never carries (the city, after a slash or comma),
+  // then the stories pair gives up its tag, then both ends close their letter spacing a little; the type size never changes
+  const kmeasure = (t, ls) => { const c = kmeasure.c || (kmeasure.c = document.createElement('canvas').getContext('2d')); c.font = "700 15pt 'DM Sans'"; return c.measureText(t).width*.75 + ls*[...t].length; };
+  const kfits = (a, b, la, lb) => kmeasure(a, la) + (b ? kmeasure(b, lb) + 18 : 0) <= CWd;
+  if(HEAD.right && !kfits(HEAD.left, HEAD.right, 2, 2)) HEAD.left = HEAD.left.split(/\s*[\/,·]\s*/)[0] || HEAD.left;
+  if(HEAD.right && !kfits(HEAD.left, HEAD.right, 2, 2)) HEAD.right = HEAD.right.split(' · ')[0];
+  let lkt = 2;   // the letter spacing of both ends: 2 pt unless the line is long
+  lkt = [2, 1.5, 1, .5].find(v => kfits(HEAD.left, HEAD.right, v, v)) || .5;
+  h.push(`<div class="abs kk" style="left:${AX}pt;top:22pt;width:${CWd}pt;height:18pt;color:var(--fx-ink2);letter-spacing:${lkt}pt" data-slot="kicker.left" data-lines="1">${esc(HEAD.left)}</div>`);
+  let rks = 15, rkt = lkt;
   if(HEAD.right && HEAD.right.length > 24) HEAD.right = HEAD.right.split(' · ')[0];   // the 450 pt email header carries the stories alone when the pair is long
-  let rks = 15, rkt = 2;
   if(HEAD.right) h.push(`<div class="abs kk" style="left:${AX}pt;top:22pt;width:${CWd}pt;height:18pt;color:var(--fx-text);font:500 ${rks}pt/18pt 'DM Sans';letter-spacing:${rkt}pt;text-align:right" data-slot="kicker.right" data-lines="1">${esc(HEAD.right)}</div>`);
   h.push(rect(AX, 46, CWd, .75, 'background:var(--fx-rule)'));
   // ---- the event, straight on the navy: label, weekday, the date in huge serif numerals, the time in bold sans at 60% of it, the perks on a cream bar

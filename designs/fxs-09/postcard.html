@@ -186,6 +186,13 @@ window.brochureReady = (async function(){
   window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
   SW.fill();
+  if(front && sold){   // the logo sits centered under the agent's lines (owner 11/7 and 11/8): the lines are set left, so the logo's box is the width of the widest of the lines near it (the check reads the lines within a quarter of the card's height above the logo)
+    const al = document.querySelector('.agentline'), lg = document.querySelector('.logo');
+    if(al && lg){ const k = al.getBoundingClientRect().width/(big ? 200 : 172), rg = document.createRange(); let l0 = Infinity, r0 = -Infinity;
+      const pgH = (document.querySelector('.page') || document.body).getBoundingClientRect().height, lt = lg.getBoundingClientRect().top;
+      al.querySelectorAll('[data-slot]').forEach(e => { if(lt - e.getBoundingClientRect().bottom >= pgH*.25) return; rg.selectNodeContents(e); [...rg.getClientRects()].forEach(q => { if(q.width > 1){ l0 = Math.min(l0, q.left); r0 = Math.max(r0, q.right); } }); });
+      if(isFinite(l0)){ const a0 = al.getBoundingClientRect().left; lg.style.left = (18 + (l0 - a0)/k) + 'pt'; lg.style.width = ((r0 - l0)/k) + 'pt'; } }
+  }
   SW.fitLogos();
   ContactCard.fit(document);
   if(!front && !sold){   // the photo captions share one line count and fill their last line: when the first fit misses, the row's type steps through nearby sizes (never under 8 pt)
