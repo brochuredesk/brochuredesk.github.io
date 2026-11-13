@@ -4,7 +4,12 @@
   const Ivory = {};
   // the standard contact card (Right panel, 10/25/2026): templates/_shared/agentcard.js here, /designs/shared/agentcard.js on the site
   const ME = document.currentScript && document.currentScript.src;
-  Ivory.cardReady = window.ContactCard ? Promise.resolve() : new Promise(res => {
+  // while the page is still being read, load the card script in line, so it's there before any piece draws (most pieces
+  // don't wait for cardReady; the async load below lost that race now and then: "ContactCard is not defined", audit 11/2;
+  // carried from the site copy 11/13/2026). On the site this path reads ../engine/agentcard.js.
+  if(!window.ContactCard && document.readyState === 'loading')
+    document.write(`<script src="${new URL('../engine/agentcard.js', ME || location.href).href}"><\/script>`);
+  Ivory.cardReady = window.ContactCard || document.readyState === 'loading' ? Promise.resolve() : new Promise(res => {
     const add = (rel, next) => { const el = document.createElement('script'); el.src = new URL(rel, ME || location.href).href; el.onload = res; el.onerror = next || res; document.head.appendChild(el); };
     add('../engine/agentcard.js', () => add('../shared/agentcard.js'));
   });
@@ -233,8 +238,9 @@
         const edge = (document.body.dataset.mode === 'print' && field && field.getBoundingClientRect().bottom < sr.bottom) ? field.getBoundingClientRect().bottom : sr.bottom;
         const g2 = toPt(edge - r.bottom);
         if(g2 < 4) issues.push({slot:'contact-card', kind:'footer-too-close-to-edge', gapPt:+g2.toFixed(1)}); }
+      // the postcard card (opts.postcard) lines its brokerage group up with the agent block on purpose, so it is not centered
       const panel = card.querySelector('.cc-panel');
-      if(panel && vis(panel)){
+      if(panel && vis(panel) && card.dataset.post !== '1'){
         const pr = panel.getBoundingClientRect(), kids = [...panel.children].filter(vis);
         if(kids.length){
           const bx = kids.map(e => e.getBoundingClientRect());

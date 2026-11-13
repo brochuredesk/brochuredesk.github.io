@@ -67,9 +67,10 @@
   .front-photo{left:-9pt;top:-9pt;width:810pt;height:540pt}
   .front-location{left:24pt;top:548pt;width:744pt}
   .front-address{left:23pt;top:561pt;width:521pt;font-size:35pt;line-height:40pt;height:40pt}
-  .front-logo{right:24pt;top:556pt;height:38pt;width:220pt}
-  .front-logo[data-shape=square]{top:548pt;height:54pt}
-  .front-logo[data-shape=tall]{top:545pt;height:60pt}
+  /* centered between the photo's bottom edge (531) and the trim (612), at 571.5 (owner 10/29) */
+  .front-logo{right:24pt;top:552.5pt;height:38pt;width:220pt}
+  .front-logo[data-shape=square]{top:544.5pt;height:54pt}
+  .front-logo[data-shape=tall]{top:541.5pt;height:60pt}
   .hdr-logo[data-shape=square]{top:4pt;height:35pt}
   .hdr-logo[data-shape=tall]{top:3pt;height:36pt}
 
@@ -108,7 +109,9 @@
   .home-detail{font:400 9.5pt/13pt var(--font-body);color:var(--muted);padding-left:10pt;text-indent:-10pt}
   .home-detail::before{content:'\2022';display:inline-block;width:10pt;text-indent:0;color:var(--accent)}
   .home-detail b{font-weight:600;color:var(--ink)}
-  .details-more{font-size:10pt;line-height:14pt}
+  .home-detail.big{font-size:10.5pt;line-height:14.5pt}
+  .home-details.big{gap:5pt}
+  .loc-big{font-size:11pt;line-height:15.5pt}
   .hair-ink{position:absolute;height:.8pt;background:var(--accent)}
   .room-row{display:flex;justify-content:space-between;align-items:baseline;gap:8pt;font:400 10pt/18pt var(--font-body);height:19pt;border-bottom:.45pt solid var(--line);white-space:nowrap;overflow:hidden}
   .room-row span{color:var(--ink);font-weight:600;overflow:hidden;text-overflow:clip}
@@ -242,53 +245,53 @@ Ivory.whenFonts(function(){
     nearby.forEach((n,i)=> h += `<div class="abs nearby" style="left:${i%2 ? 642 : 516}pt;top:${376+locLines*13+Math.floor(i/2)*13}pt;width:126pt;${i%2 ? 'text-align:right' : ''}" data-slot="back.nearby${i}" data-lines="1"><b>${esc(n.name)}</b>${n.note ? '  ' + esc(n.note) : ''}</div>`);
     return h; };
 
-  // home details under Location (owner 10/28, IV-FO-4): the writer's own list (copy.back.details: strings or {label, value})
-  // or, without one, the listing's facts: year built, lot, garage, HOA and its amenities, updates. A fact the fact bar
-  // above the plan already shows is left out (owner 10/28: a piece never repeats a fact it shows).
+  // home details under Location (owner 10/28, IV-FO-4b): short bullets of plain facts about the house only, from the
+  // writer's own list (copy.back.details: strings or {label, value}) or, without one, the listing's facts. A list value
+  // that names several things ("Spray-foam insulation, tankless water heater") becomes one bullet each. Nothing the fact
+  // bar shows, nothing about the neighborhood or HOA, no writer sentences (owner 10/28: no detailsMore fill).
   const homeDetails = shown => {
     const on = re => shown.some(f => re.test(f));
     const BUILT = /built|\b(18|19|20)\d\d\b/i, LOT = /\blot\b|acre/i, GARAGE = /garage|attached|detached|carport/i;
-    if(Array.isArray(K.details) && K.details.length) return K.details.slice(0,6).map(d => typeof d === 'string' ? {label:'', value:d} : d)
-      .filter(d => { const t = `${d.label||''} ${d.value||''}`;
-        return !((/year built|^built/i.test(t) && on(BUILT)) || (/^lot\b/i.test(t) && on(LOT)) || (/garage/i.test(t) && on(GARAGE))); });
+    const house = d => { const t = `${d.label||''} ${d.value||''}`;
+      return !(/hoa|associat|neighbo|school|park|minutes|nearby|fee/i.test(t) || (/year built|^built/i.test(t) && on(BUILT))
+        || (/^lot\b/i.test(t) && on(LOT)) || (/garage/i.test(t) && on(GARAGE))); };
+    const split = d => !d.label || /update|feature|upgrade|include/i.test(d.label)
+      ? String(d.value||'').split(/,\s*|;\s*/).map(v => v.trim()).filter(Boolean).map(v => ({label:'', value: v[0].toUpperCase() + v.slice(1)}))
+      : [d];
+    const sentence = d => /[.!?]$/.test(String(d.value||'').trim()) || String(d.value||'').split(/\s+/).length > 9;
+    if(Array.isArray(K.details) && K.details.length) return K.details.map(d => typeof d === 'string' ? {label:'', value:d} : d)
+      .filter(house).flatMap(split).filter(d => !sentence(d)).slice(0, 8);
     const det = Object.assign({}, ...Object.values(L.details || {})), get = re => { const k = Object.keys(det).find(k=>re.test(k)); return k ? String(det[k]) : ''; };
     const out = [];
     if(L.yearBuilt && !on(BUILT)) out.push({label:'Year built', value:String(L.yearBuilt)});
     if(L.lotSize && !on(LOT) && !shown.includes(String(L.lotSize))) out.push({label:'Lot', value:String(L.lotSize).replace(/\s*sq\s*ft\.?.*$/i,' sq ft')});
     if(L.garage && !on(GARAGE) && !shown.includes(String(L.garage))){ const m = String(L.garage).match(/^(\d+)\s*\/\s*(\w+)/); out.push({label:'Garage', value: m ? `${m[1]}-car ${m[2].toLowerCase()}` : String(L.garage)}); }
-    const fee = get(/maintenance fee|hoa (fee|mandatory)/i), am = get(/hoa amenit|amenit/i);
-    if(fee || am) out.push({label:'HOA', value:[/voluntary/i.test(fee) ? 'Voluntary' : /mandatory|yes/i.test(fee) ? 'Mandatory' : '', am].filter(Boolean).join('; ')});
-    const up = get(/update|remodel|renovat/i); if(up) out.push({label:'Updates', value:up});
-    return out; };
-  const textCol = (x, shown) => { const w = 768 - x;
-    const est = Math.min(12, Math.ceil(String(K.locationBody||'').length * 5.1 / w) + 1);
+    [[/^foundation/i, 'Foundation'], [/^roof/i, 'Roof'], [/^heating/i, 'Heating'], [/^cooling/i, 'Cooling'], [/^floor/i, 'Floors']]
+      .forEach(([re, label]) => { const v = get(re); if(v) out.push({label, value:v}); });
+    const up = get(/update|remodel|renovat/i); if(up) out.push(...split({label:'Updates', value:up}));
+    return out.slice(0, 8); };
+  // Location and Home details in larger type (owner 10/28, IV-FO-4b), the column running past the bottom of the plan
+  const textCol = (x, shown, planBottom) => { const w = 768 - x, LH = 15.5, BH = 14.5, END = 458;
     const dets = nearby.length ? [] : homeDetails(shown || []);
+    const locN = Math.min(14, Ivory.linesNeeded('body loc-big', String(K.locationBody||''), w, LH));
     let h = `<div class="abs label" style="left:${x}pt;top:100pt;width:${w}pt" data-slot="back.location.title" data-lines="1">${esc(K.locationTitle)}</div>`
-          + `<div class="abs body" style="left:${x}pt;top:116pt;width:${w}pt;height:${(dets.length ? est : 12)*14}pt;font-size:10pt;line-height:14pt" data-slot="back.location.body" data-lines="${dets.length ? est : 12}">${esc(K.locationBody)}</div>`;
+          + `<div class="abs body loc-big" style="left:${x}pt;top:116pt;width:${w}pt;height:${(dets.length ? locN : 14)*LH}pt" data-slot="back.location.body" data-lines="${dets.length ? locN : 14}">${esc(K.locationBody)}</div>`;
     if(dets.length){
-      // one bullet per fact; the list flows from under the location text down to the plan's note line (438 pt)
-      const dy = 116 + est*14 + 8;
-      h += `<div class="abs label" style="left:${x}pt;top:${dy}pt;width:${w}pt" data-slot="back.details.title" data-lines="1">${esc(K.detailsTitle||'Home details')}</div>`
-         + `<div class="abs home-details" style="left:${x}pt;top:${dy+16}pt;width:${w}pt;height:${438-dy-16}pt" data-slot="back.details" data-lines="${Math.floor((438-dy-16)/13)}">`
-         + dets.map(d => `<div class="home-detail">${d.label ? `<b>${esc(d.label)}:</b> ` : ''}${esc(d.value||'')}</div>`).join('') + `</div>`;
-      // a short list leaves room (owner 10/28, IV-FO-4b: no blank space): the writer's sentences about the house
-      // (copy.back.detailsMore, an array or one paragraph) fill it, as many whole sentences as fit, down to 438 pt
-      const listH = dets.reduce((a, d) => a + Ivory.linesNeeded('home-detail', `${d.label ? d.label + ': ' : ''}${d.value||''}`, w, 13)*13, 0) + 6*(dets.length - 1);
-      const my = dy + 16 + listH + 12, room = Math.floor((438 - my)/14);
-      if(room >= 2){
-        const pool = (Array.isArray(K.detailsMore) ? K.detailsMore : String(K.detailsMore||'').split(/(?<=[.!?])\s+/)).map(t => String(t).trim()).filter(Boolean);
-        // the set of sentences (in the writer's order) that fills the most lines without running past the space
-        let text = '', n = 0;
-        for(let m = 1; m < (1 << Math.min(pool.length, 8)); m++){
-          const t = pool.filter((_, i) => m & (1 << i)).join(' '), k = Ivory.linesNeeded('body details-more', t, w, 14);
-          if(k <= room && (k > n || (k === n && t.length > text.length))){ text = t; n = k; }
-        }
-        if(n) h += `<div class="abs body details-more" style="left:${x}pt;top:${my}pt;width:${w}pt;height:${n*14 + 2}pt" data-slot="back.details.more" data-lines="${n}" data-fill="${Math.max(1, room - 1)}">${esc(text)}</div>`;
-        else window.planIssues.push({slot:'back.details.more', kind:'underfilled', detail:`${room} lines left blank under Home details; the writer adds sentences about the house (copy.back.detailsMore)`});
+      // clear space after the paragraph, then the heading and one bullet per fact; whole bullets only, down to END
+      const dy = 116 + locN*LH + 18, top = dy + 17;
+      const lines = d => Ivory.linesNeeded('home-detail big', `${d.label ? d.label + ': ' : ''}${d.value||''}`, w, BH);
+      let used = 0; const keep = [];
+      dets.forEach(d => { const k = lines(d)*BH + (keep.length ? 5 : 0); if(top + used + k <= END){ keep.push(d); used += k; } });
+      if(keep.length){
+        h += `<div class="abs label" style="left:${x}pt;top:${dy}pt;width:${w}pt" data-slot="back.details.title" data-lines="1">${esc(K.detailsTitle||'Home details')}</div>`
+           + `<div class="abs home-details big" style="left:${x}pt;top:${top}pt;width:${w}pt;height:${Math.ceil(used) + 2}pt" data-slot="back.details" data-lines="${Math.ceil(used/BH)}">`
+           + keep.map(d => `<div class="home-detail big">${d.label ? `<b>${esc(d.label)}:</b> ` : ''}${esc(d.value||'')}</div>`).join('') + `</div>`;
       }
+      if(planBottom && top + used < planBottom)
+        window.planIssues.push({slot:'back.details', kind:'underfilled', detail:`the Location and Home details column ends ${Math.round(planBottom - top - used)} pt above the bottom of the plan; the writer adds short house facts (copy.back.details)`});
     }
     if(nearby.length){
-      const ny = 116 + est*14 + 14;
+      const ny = 116 + locN*LH + 14;
       h += `<div class="abs label" style="left:${x}pt;top:${ny}pt;width:${w}pt" data-slot="back.nearby.title" data-lines="1">${esc(K.nearbyTitle||'Nearby')}</div>`;
       nearby.forEach((n,i)=> h += `<div class="abs nearby-stack" style="left:${x}pt;top:${ny+16+i*26}pt;width:${w}pt" data-slot="back.nearby${i}" data-lines="2"><b>${esc(n.name)}</b><br>${esc(n.note||'')}</div>`);
     }
@@ -348,7 +351,7 @@ Ivory.whenFonts(function(){
                  : pick.rotated ? ' The plan is turned on its side to fit.' : '');
     back += `<div class="abs plan-disclosure" style="top:${noteY}pt;width:${pick.t.w}pt" data-slot="back.disclosure0" data-lines="1" data-fine="1">${esc(note)}</div>`;
     if(pick.t.right==='feature') back += featureCol();
-    if(pick.t.right==='text') back += textCol(24 + 576 + 18, facts);
+    if(pick.t.right==='text') back += textCol(24 + 576 + 18, facts, y0 + gh);
   } else {
     // HAR writes levels as "1st" / "2nd" (10/27: "+level" read them as NaN and the list printed empty)
     const lvOf = r => { const m = String(r.level||'').match(/\d+/) || (/main|ground|first/i.test(r.level||'') ? ['1'] : /second|upper/i.test(r.level||'') ? ['2'] : null); return m ? +m[0] : 0; };

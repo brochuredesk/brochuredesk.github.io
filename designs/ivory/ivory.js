@@ -5,12 +5,13 @@
   // the standard contact card (Right panel, 10/25/2026): templates/_shared/agentcard.js here, /designs/shared/agentcard.js on the site
   const ME = document.currentScript && document.currentScript.src;
   // while the page is still being read, load the card script in line, so it's there before any piece draws (most pieces
-  // don't wait for cardReady; the async load below lost that race now and then: "ContactCard is not defined", audit 11/2)
+  // don't wait for cardReady; the async load below lost that race now and then: "ContactCard is not defined", audit 11/2;
+  // carried from the site copy 11/13/2026). On the site this path reads ../engine/agentcard.js.
   if(!window.ContactCard && document.readyState === 'loading')
-    document.write(`<script src="${new URL('../shared/agentcard.js', ME || location.href).href}"><\/script>`);
+    document.write(`<script src="${new URL('../engine/agentcard.js', ME || location.href).href}"><\/script>`);
   Ivory.cardReady = window.ContactCard || document.readyState === 'loading' ? Promise.resolve() : new Promise(res => {
     const add = (rel, next) => { const el = document.createElement('script'); el.src = new URL(rel, ME || location.href).href; el.onload = res; el.onerror = next || res; document.head.appendChild(el); };
-    add('../_shared/agentcard.js', () => add('../shared/agentcard.js'));
+    add('../engine/agentcard.js', () => add('../shared/agentcard.js'));
   });
 
   Ivory.data = function(){
@@ -126,6 +127,23 @@
     return {html: h, h: at > y ? at - y - (gap||0) : 0};
   };
 
+  // The event highlight box (The owner, 10/30/2026, standing rule for every Open House print flyer): what's served and the
+  // special notes sit in a clear box in the design's own colors (white, a light tint, or light gray with a thin accent
+  // border), notable but never loud. The lines inside are eventLines (they wrap, never shrink). The agent can resize
+  // the box on the proof: o.scale (openHouse.box.w, 0.8 to 1.25) narrows or widens it around its center (o.anchor
+  // 0 = left edge stays, 1 = right edge stays). Returns {html, h, x, w}; h = 0 (nothing drawn) when both lines are empty.
+  // o: bg, line (border color), lineW, radius, padX, padY, scale, anchor, maxW, extraStyle
+  Ivory.eventBox = (lines, x, y, w, lh, gap, o) => {
+    o = o || {};
+    if(!lines.some(l => l[0])) return {html: '', h: 0, x, w};
+    const px = o.padX != null ? o.padX : 12, py = o.padY != null ? o.padY : 9;
+    const s = Math.max(.8, Math.min(1.25, +o.scale || 1)), bw = Math.min(o.maxW || 9999, w*s), bx = x + (w - bw)*(o.anchor != null ? o.anchor : .5);
+    const inner = Ivory.eventLines(lines, bx + px, y + py, bw - 2*px, lh, gap, o.extraStyle);
+    const bh = inner.h + 2*py;
+    const box = `<div class="abs" data-box="oh.box" style="left:${bx}pt;top:${y}pt;width:${bw}pt;height:${bh}pt;background:${o.bg || '#fff'};${o.line ? `border:${o.lineW || .9}pt solid ${o.line};box-sizing:border-box;` : ''}border-radius:${o.radius || 0}pt"></div>`;
+    return {html: box + inner.html, h: bh, x: bx, w: bw};
+  };
+
   Ivory.ghost = (x, y, w, lines, lh) => {
     let h = '';
     const widths = [100, 96, 99, 92, 97, 88, 95, 100, 90, 62];
@@ -142,16 +160,14 @@
   Ivory.facts = L => {
     const f = [];
     if(L.beds) f.push(`${L.beds} bedroom${L.beds==1?'':'s'}`);
-    if(L.baths) f.push(`${L.baths} full bath${L.baths==1?'':'s'}`);
-    if(L.halfBaths) f.push(`${L.halfBaths} half bath${L.halfBaths==1?'':'s'}`);
+    if(L.baths){ const bt = BD.bathsText(L); f.push(bt.main.toLowerCase()); if(bt.half) f.push(bt.half.toLowerCase()); }
     if(L.sqft) f.push(`${Number(L.sqft).toLocaleString('en-US')} square feet`);
     return f;
   };
   Ivory.factsShort = L => {
     const f = [];
     if(L.beds) f.push(`${L.beds} bed${L.beds==1?'':'s'}`);
-    if(L.baths) f.push(`${L.baths} full bath${L.baths==1?'':'s'}`);
-    if(L.halfBaths) f.push(`${L.halfBaths} half`);
+    if(L.baths){ const bt = BD.bathsText(L); f.push(bt.main.toLowerCase()); if(bt.half) f.push(bt.half.toLowerCase()); }
     if(L.sqft) f.push(`${Number(L.sqft).toLocaleString('en-US')} sq ft`);
     return f.join('  /  ');
   };
@@ -409,3 +425,6 @@
 
   window.Ivory = Ivory;
 })();
+
+/* Bath wording (owner 11/1/2026; templates/_shared/baths.js): load it here for every page of this design; a ½ in text is set small. */
+(function(){ if(!window.BD || !BD.bathPair) document.write('<script src="../engine/baths.js"><\/script><script src="../engine/baths-text.js"><\/script>'); })();

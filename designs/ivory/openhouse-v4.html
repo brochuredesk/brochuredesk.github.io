@@ -9,7 +9,7 @@
   Ivory · Open House flyer v4 "Calendar tile" (trim 612 x 792 pt).
   A solid bar in the agent's accent color runs edge to edge across the top of the page with the label knocked out at
   28 pt tracked caps. Under it, a calendar tile framed in a 2 pt accent rule: the weekday, the day number at 124 pt in the
-  accent color, the month at 26 pt, a hairline, the time at 20 pt bold, then the special-notes and refreshments lines. The hero sits beside
+  accent color, the month at 26 pt, a hairline, the time at 20 pt bold, then the special-notes and refreshments lines on a tinted strip at 12 pt (10/30: bigger type, kept in the two-color text, accent over ink, no white box). The hero sits beside
   the tile. Below: address and facts on one baseline, three captioned photos, and a slightly larger contact card.
 -->
 <style>
@@ -23,11 +23,12 @@
   .tl-hair{left:52pt;top:282pt;width:188pt;height:.8pt;background:var(--accent);opacity:.5;position:absolute}
   .tl-time{left:40pt;top:290pt;width:212pt;height:26pt;font:700 20pt/26pt var(--font-body);color:var(--ink);text-align:center;white-space:nowrap;overflow:hidden}
   .ev-strip{position:absolute;left:36pt;width:540pt;background:var(--accent);opacity:.1}
-  .tl-note{height:14pt;font:600 11pt/14pt var(--font-body);color:var(--ink);text-align:center;white-space:nowrap;overflow:hidden;letter-spacing:.1pt}
-  .oh-strong{height:14pt;font:700 11pt/14pt var(--font-body);color:var(--accent);text-align:center;white-space:nowrap;overflow:hidden;letter-spacing:.1pt}
-  .address{left:35pt;top:372pt;width:540pt;height:30pt;font-size:24pt;line-height:30pt}
-  .placeline{left:36pt;top:406pt;width:300pt;height:9pt}
-  .factline{left:336pt;top:404pt;width:240pt;height:16pt;font:600 12.5pt/16pt var(--font-body);color:var(--ink);text-align:right;white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
+  .tl-note{height:16pt;font:600 12pt/16pt var(--font-body);color:var(--ink);text-align:center;white-space:nowrap;overflow:hidden;letter-spacing:.1pt}
+  .oh-strong{height:16pt;font:700 12pt/16pt var(--font-body);color:var(--accent);text-align:center;white-space:nowrap;overflow:hidden;letter-spacing:.1pt}
+  .address{left:35pt;top:430pt;width:540pt;height:38pt;font-size:32pt;line-height:38pt}
+  .placeline{left:36pt;top:470pt;width:300pt;height:9pt}
+  .factline{left:336pt;top:467pt;width:240pt;height:16pt;font:600 12.5pt/16pt var(--font-body);color:var(--ink);text-align:right;white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
+  .rm-desc{white-space:normal !important;height:20pt;line-height:10pt}
   .fine{left:36pt;top:760pt;width:540pt;font-size:6pt;line-height:8pt;height:8pt;white-space:nowrap;color:var(--muted)}
 </style>
 </head>
@@ -36,6 +37,7 @@
 <div id="pages"></div>
 <script>
 Ivory.whenFonts(function(){
+  const PS = a => String(a || '').replace(/\s+Street(?=\s*(,|$|\s+(Unit|Apt|#|Suite)\b))/i, '').trim();   // print address rule (The owner 10/30): no "Street"
   const D = Ivory.data();
   if(!D.listing){ document.getElementById('pages').innerHTML='<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
   const esc = Ivory.esc, b = D.brand||{}, L = D.listing, C = D.companion||{};
@@ -48,7 +50,7 @@ Ivory.whenFonts(function(){
   const pick = (C.flyerPhotos && C.flyerPhotos.length>=5) ? C.flyerPhotos : ids;
   const [hero, s1, s2, s3, s4] = (pick.length>=5 ? pick : ids);
 
-  let h = '', drop = 0;
+  let h = '';
   // the label bar: field edge to field edge, top of the page down to 62 pt
   h += `<div class="bar" style="left:${inset}pt;top:${inset}pt;width:${612-2*inset}pt;height:${62-inset}pt"></div>`;
   h += `<div class="abs label ev-label" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
@@ -63,34 +65,39 @@ Ivory.whenFonts(function(){
   } else h += Ivory.ghost(66, 130, 140, 2, 36);
   h += `<div class="tl-hair"></div>`;
   h += O.time ? `<div class="abs tl-time" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>` : '';
+  // 10/30 round 2 (IV-OHE-4): special notes and refreshments sit in a white box outlined in the accent color, under the tile and hero
+  let A = 372;
   { const ls = [[O.note,'oh.note','oh-strong'],[O.refreshments,'oh.refreshments','tl-note']].filter(l=>l[0]);
-    // the date and time sit centered in the tile; special notes and refreshments go on a strip under the tile and hero
     h += `<style>.tl-wd,.tl-day,.tl-mo,.tl-raw,.tl-hair,.tl-time{margin-top:16pt}.tl-day{margin-top:-8pt}</style>`;
     if(ls.length){
-      const ev = Ivory.eventLines(ls, 48, 373, 516, 14, 0, 'text-align:center');
-      drop = ev.h + 18;
-      h += `<div class="ev-strip" style="top:368pt;height:${ev.h+10}pt"></div>` + ev.html;
+      const ev = Ivory.eventBox(ls, 36, 372, 540, 16, 2, {bg:'#fff', line:'var(--accent)', lineW:1.5, scale:((D.openHouse||{}).box||{}).w, maxW:540, padX:12, padY:8, extraStyle:'text-align:center'});
+      h += ev.html; A = 372 + ev.h + 12;
     } }
   // hero beside the tile (narrower than the photo, so only the sides crop; the roofline stays)
   h += Ivory.photo(D, '', hero, 'left:272pt;top:80pt;width:304pt;height:280pt');
 
-  if(drop) h += `<style>.address{top:${372+drop}pt}.placeline{top:${406+drop}pt}.factline{top:${404+drop}pt}</style>`;
-  h += `<div class="abs display address" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
+  // the four room photos sit right under the rule (10/30: moved up) and fill down to the card; each has its label and two lines about the room
+  const blurb = (C.openHouse||{}).blurb || (C.listing||{}).body || '';
+  const CARD = 636, TXT = 36.5, pbot = CARD - 6 - TXT;
+  const withBlurb = !!blurb && (pbot - 84 - 10 - (A + 64)) >= 28;
+  let ph = withBlurb ? 84 : pbot - (A + 66);
+  if(!withBlurb && ph > 118){ A += (ph - 118)/2; ph = 118; }
+  const pt = withBlurb ? pbot - ph : A + 66, pw = 126, gp = 12;
+  h += `<style>.address{top:${A}pt}.placeline{top:${A+40}pt}.factline{top:${A+37}pt}</style>`;
+  h += `<div class="abs display address" data-slot="address" data-lines="1">${esc(PS(L.address))}</div>`;
   h += `<div class="abs place placeline" data-slot="place" data-lines="1" data-fine="1">${esc(Ivory.placeZip(L))}</div>`;
   h += `<div class="abs factline" data-slot="oh.facts" data-lines="1">${esc(Ivory.factsShort(L))}</div>`;
-  h += `<div class="hair" style="left:36pt;top:${422+drop}pt;width:540pt;opacity:.35"></div>`;
-  // four photos across the bottom, edge to edge of the 540 pt column, each with its label only (no description)
-  const ph = 104, pt = 611 - ph, pw = 126, gp = 12;
+  h += `<div class="hair" style="left:36pt;top:${A+54}pt;width:540pt;opacity:.35"></div>`;
   [s1,s2,s3,s4].forEach((id,i)=>{
     const x = 36 + i*(pw+gp);
     h += Ivory.photo(D, '', id, `left:${x}pt;top:${pt}pt;width:${pw}pt;height:${ph}pt`);
-    const c = Ivory.caption(D, id);
+    const c = Ivory.caption(D, id), two = (((C.roomLines||{})[id])||{}).long || c.detail;
     h += c.name ? `<div class="abs cap-name" style="left:${x}pt;top:${pt+ph+4}pt;width:${pw}pt;height:10.5pt" data-slot="row${i}.name" data-lines="1">${esc(c.name)}</div>` : Ivory.ghost(x, pt+ph+4, pw*0.55, 1, 10);
+    h += two ? `<div class="abs cap-detail rm-desc" style="left:${x}pt;top:${pt+ph+15.5}pt;width:${pw}pt" data-slot="row${i}.detail" data-lines="2">${esc(two)}</div>` : '';
   });
-  // the write-up: the writer's own sentences, fully justified from the first photo's left edge to the last photo's right edge
-  const blurb = (C.openHouse||{}).blurb || (C.listing||{}).body || '';
-  const blTop = 432+drop, blAvail = pt - 10 - blTop;
-  if(blurb && blAvail >= 28) h += `<div class="abs body" style="left:36pt;top:${blTop}pt;width:540pt;height:${blAvail}pt;text-align:justify;hyphens:none" data-slot="oh.blurb" data-lines="2" data-fill="2">${esc(blurb)}</div>`;
+  // the write-up (when the writer gave one): fully justified between the rule and the photos
+  const blTop = A + 64, blAvail = pt - 10 - blTop;
+  if(withBlurb) h += `<div class="abs body" style="left:36pt;top:${blTop}pt;width:540pt;height:${blAvail}pt;text-align:justify;hyphens:none" data-slot="oh.blurb" data-lines="2" data-fill="2">${esc(blurb)}</div>`;
 
   h += Ivory.card(D, {x:36, y:636, w:540, h:118, nameSize:30, phoneSize:18, lineSize:8.5, officeSize:16, qr:0, brkShift:9, logoH:42, gap:18, brkMin:250,
                       top:{name:9, title:46, callLbl:59, phone:67}});

@@ -126,8 +126,7 @@ Ivory.whenFonts(function(){
   const city = Ivory.place(L);
   const facts = [];
   if(L.beds) facts.push(`${L.beds} Bed${L.beds == 1 ? '' : 's'}`);
-  if(L.baths) facts.push(`${L.baths} Bath${L.baths == 1 ? '' : 's'}`);
-  if(L.halfBaths) facts.push(`${L.halfBaths} Half Bath${L.halfBaths == 1 ? '' : 's'}`);
+  if(L.baths){ const bt = BD.bathsText(L); facts.push(bt.main); if(bt.half) facts.push(bt.half); }
   if(L.sqft) facts.push(`${Number(L.sqft).toLocaleString('en-US')} Sq Ft`);
   const factsHTML = facts.map(esc).join('<span class="pc-sep">|</span>');
   const fine = [C.fineprint || 'Information deemed reliable but not guaranteed.',

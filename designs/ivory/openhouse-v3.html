@@ -8,23 +8,22 @@
 <!--
   Ivory · Open House flyer v3 "Event block" (trim 612 x 792 pt).
   The hero runs edge to edge from the top of the page; a solid panel in the agent's accent color sits into its lower
-  left corner and carries the whole event knocked out in ivory: the label at 22 pt tracked caps, the weekday, the month
-  and day at 56 pt, the time at 24 pt bold, then a hairline and the special-notes and refreshments lines. The panel is 384 x 250 pt
-  (10/25: trimmed to hug the event, bottom edge fixed at 450 pt). Address and facts below, a rule, three captioned photos, then the contact card (the one logo).
+  left corner and carries the whole event knocked out in ivory: the label at 20 pt tracked caps, the weekday, the month
+  and day at 48 pt, the time at 22 pt bold (10/30: a little smaller to make room for the box), then a white event box (10/30: the highlight box, 12 pt, resizable on the proof) holding the special-notes and refreshments lines. The panel is 384 pt wide; its bottom edge is fixed at 450 pt
+  and its top rises to fit the box. Address and facts below, a rule, three captioned photos, then the contact card (the one logo).
 -->
 <style>
   .panel{position:absolute;left:36pt;top:200pt;width:384pt;height:250pt;background:var(--accent)}
-  .pn-label{left:58pt;top:218pt;width:344pt;height:26pt;font-size:22pt;line-height:26pt;letter-spacing:3pt;font-weight:700;color:var(--paper)}
-  .pn-wd{left:58pt;top:252pt;width:344pt;height:32pt;font-size:26pt;line-height:32pt;color:var(--paper);opacity:.85}
-  .pn-date{left:57pt;top:284pt;width:344pt;height:66pt;font-size:56pt;line-height:66pt;color:var(--paper)}
-  .pn-raw{left:57pt;top:254pt;width:344pt;height:96pt;font-size:36pt;line-height:46pt;color:var(--paper);white-space:normal}
-  .pn-time{left:58pt;top:356pt;width:344pt;height:30pt;font:700 24pt/30pt var(--font-body);color:var(--paper);white-space:nowrap;overflow:hidden}
-  .pn-hair{position:absolute;left:58pt;top:394pt;width:340pt;height:.8pt;background:var(--paper);opacity:.5}
-  .pn-note{height:15pt;font:600 11.5pt/15pt var(--font-body);color:var(--paper);white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
-  .oh-strong{height:15pt;font:700 11.5pt/15pt var(--font-body);color:var(--paper);white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
-  .address{left:35pt;top:462pt;width:540pt;height:30pt;font-size:24pt;line-height:30pt}
-  .placeline{left:36pt;top:496pt;width:380pt;height:9pt}
-  .factline{left:336pt;top:495pt;width:240pt;height:16pt;font:600 12.5pt/16pt var(--font-body);color:var(--ink);text-align:right;white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
+  .pn-label{left:58pt;top:216pt;width:344pt;height:24pt;font-size:20pt;line-height:24pt;letter-spacing:3pt;font-weight:700;color:var(--paper)}
+  .pn-wd{left:58pt;top:242pt;width:344pt;height:28pt;font-size:22pt;line-height:28pt;color:var(--paper);opacity:.85}
+  .pn-date{left:57pt;top:268pt;width:344pt;height:56pt;font-size:48pt;line-height:56pt;color:var(--paper)}
+  .pn-raw{left:57pt;top:244pt;width:344pt;height:80pt;font-size:32pt;line-height:40pt;color:var(--paper);white-space:normal}
+  .pn-time{left:58pt;top:322pt;width:344pt;height:28pt;font:700 22pt/28pt var(--font-body);color:var(--paper);white-space:nowrap;overflow:hidden}
+  .pn-note{height:16pt;font:600 12pt/16pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
+  .oh-strong{height:16pt;font:700 12pt/16pt var(--font-body);color:var(--accent);white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
+  .address{left:35pt;top:460pt;width:540pt;height:36pt;font-size:31.5pt;line-height:36pt}
+  .placeline{left:36pt;top:500pt;width:380pt;height:9pt}
+  .factline{left:336pt;top:497pt;width:240pt;height:16pt;font:600 12.5pt/16pt var(--font-body);color:var(--ink);text-align:right;white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
   .fine{left:36pt;top:760pt;width:540pt;font-size:6pt;line-height:8pt;height:8pt;white-space:nowrap;color:var(--muted)}
 </style>
 </head>
@@ -33,6 +32,7 @@
 <div id="pages"></div>
 <script>
 Ivory.whenFonts(function(){
+  const PS = a => String(a || '').replace(/\s+Street(?=\s*(,|$|\s+(Unit|Apt|#|Suite)\b))/i, '').trim();   // print address rule (The owner 10/30): no "Street"
   const D = Ivory.data();
   if(!D.listing){ document.getElementById('pages').innerHTML='<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
   const esc = Ivory.esc, b = D.brand||{}, L = D.listing, C = D.companion||{};
@@ -60,25 +60,28 @@ Ivory.whenFonts(function(){
   h += O.time ? `<div class="abs pn-time" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>` : '';
   // 10/25 A09 round 2: the panel hugs the event (20 pt over the label, 18 pt under the last line); its bottom edge stays
   // at 450 pt, so the top comes down and more of the house shows above it. Longer notes grow it downward as before.
+  // 10/30 round 2 (IV-OHE-3): the panel runs the full 540 pt column but sits low; the date block is on its left and the
+  // white notes/refreshments box on its right, so the panel's top comes down and covers far less of the house.
   { const ls = [[O.note,'oh.note','oh-strong'],[O.refreshments,'oh.refreshments','pn-note']].filter(l=>l[0]);
-    const PT = 20, PB = 18, B = 450;
-    let dy, ev = null;
-    if(ls.length){
-      ev = Ivory.eventLines(ls, 58, 402, 344, 15, 2);
-      const end = 402 + ev.h;
-      dy = Math.max(0, B - PB - end); grow = Math.max(0, end + PB - B);
-      ev = Ivory.eventLines(ls, 58, 402 + dy, 344, 15, 2);
-    } else { dy = B - PB - 386; }
-    const top = 218 + dy - PT;
-    h += `<style>.pn-label,.pn-wd,.pn-date,.pn-raw,.pn-time,.pn-hair{margin-top:${dy}pt}.panel{top:${top}pt;height:${B + grow - top}pt}</style>`;
-    if(ev) h += `<div class="pn-hair"></div>` + ev.html; }
-
-  if(grow) h += `<style>.address{top:${462+grow}pt}.placeline{top:${496+grow}pt}.factline{top:${495+grow}pt}</style>`;
-  h += `<div class="abs display address" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
+    const PT = 18, PB = 20, B = 450, INFO = 134;
+    let ev = null, boxH = 0;
+    const o = {bg:'#fff', scale:((D.openHouse||{}).box||{}).w, maxW:196, padX:12, padY:9};
+    if(ls.length){ boxH = Ivory.eventBox(ls, 366, 0, 196, 16, 3, o).h; }
+    const blockH = Math.max(INFO, boxH), top = B - PB - blockH - PT, y0 = top + PT;
+    const dy = y0 + (blockH - INFO)/2 - 216;
+    if(ls.length) ev = Ivory.eventBox(ls, 366, y0 + (blockH - boxH)/2, 196, 16, 3, o);
+    h += `<style>.panel{width:540pt}.pn-label,.pn-wd,.pn-date,.pn-raw,.pn-time{margin-top:${dy}pt}.panel{top:${top}pt;height:${B - top}pt}</style>`;
+    if(ev) h += ev.html; }
+  h += `<div class="abs display address" data-slot="address" data-lines="1">${esc(PS(L.address))}</div>`;
   h += `<div class="abs place placeline" data-slot="place" data-lines="1" data-fine="1">${esc(Ivory.placeZip(L))}</div>`;
   h += `<div class="abs factline" data-slot="oh.facts" data-lines="1">${esc(Ivory.factsShort(L))}</div>`;
-  h += Ivory.fullRule(D, 612, 514+grow);
-  [[s1,36],[s2,221],[s3,406]].forEach(([id,x],i)=> h += Ivory.photo(D, '', id, `left:${x}pt;top:${524+grow}pt;width:170pt;height:${100-grow}pt`) + Ivory.captionHTML(D, id, x, 628, 170, 'row'+i));
+  h += Ivory.fullRule(D, 612, 516);
+  // each room: its label, then one full line about it (10/30: from the companion's roomLines, else the photo's detail tags)
+  [[s1,36],[s2,221],[s3,406]].forEach(([id,x],i)=>{
+    h += Ivory.photo(D, '', id, `left:${x}pt;top:524pt;width:170pt;height:96pt`);
+    const c = Ivory.caption(D, id), line = (((C.roomLines||{})[id])||{}).short || c.detail;
+    h += `<div class="abs cap-name" style="left:${x}pt;top:623.5pt;width:170pt;height:10.5pt" data-slot="row${i}.name" data-lines="1">${esc(c.name)}</div>`
+       + `<div class="abs cap-detail" style="left:${x}pt;top:634.5pt;width:170pt;height:10pt" data-slot="row${i}.detail" data-lines="1">${esc(line)}</div>`; });
 
   h += Ivory.card(D, {x:36, y:652, w:540, h:104, nameSize:26, phoneSize:16, lineSize:8.5, officeSize:15, qr:0, brkShift:9, logoH:36, gap:18, brkMin:230,
                       top:{name:8, title:39, callLbl:51, phone:59}});
