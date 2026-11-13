@@ -99,6 +99,11 @@
       <p>Your years in real estate, your write-up and your steps, in the order you like. They fill in on every Just Sold card you make.</p>
       <button class="btn line" type="button" id="jsWording">Set my wording</button>
     </div>
+    <div class="card wide" id="soldHome" hidden>
+      <h2>Pick up a Just Sold postcard</h2>
+      <p>Sold a listing? Its matching Just Sold postcard is included. Add the sale date and it's ready, any time up to 2 years after the sale.</p>
+      <div id="soldList" class="pickup"></div>
+    </div>
     <div class="card wide">
       <h2>Past orders</h2>
       <div id="orders" class="pickup"></div>
@@ -112,6 +117,37 @@
         <div id="acctReceipts"></div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- Just Sold pickup (product.md): the matching card of the package's design, open 2 years from the sale -->
+<section class="view" id="vSold" hidden>
+  <p><button type="button" class="link" data-go="home">Back to Agent home</button></p>
+  <div class="head row">
+    <div><h1>Your Just Sold postcard</h1>
+      <p class="lede" id="soldAddr"></p></div>
+  </div>
+  <div class="finalgrid">
+    <div class="proof" id="soldProof"></div>
+    <aside class="side">
+      <div class="ctl">
+        <h3>The sale</h3>
+        <label class="fine" for="soldDate">Sale date</label>
+        <input type="date" id="soldDate">
+        <p class="err" id="soldErr" role="status"></p>
+        <fieldset class="sizes"><legend class="fine">Size</legend>
+          <label><input type="radio" name="soldSize" value="6x9"> 6 x 9</label>
+          <label><input type="radio" name="soldSize" value="6x11"> 6 x 11</label>
+          <label><input type="radio" name="soldSize" value="both"> Both</label>
+        </fieldset>
+        <p class="fine"><button type="button" class="link" id="soldWording">Change my Just Sold wording</button></p>
+      </div>
+      <div class="ctl approve">
+        <p class="pstate" id="soldState"></p>
+        <button class="btn big" type="button" id="soldApprove">Approve</button>
+        <p class="fine" id="soldWindow"></p>
+      </div>
+    </aside>
   </div>
 </section>
 
@@ -333,7 +369,7 @@
 <script src="/order/upload-panel.js?v=1"></script>
 <script src="account.js?v=1"></script>
 <script src="proof-editor.js?v=2"></script>
-<script src="agent.js?v=50"></script>
+<script src="agent.js?v=51"></script>
 <script src="/order/help-bot.js?v=1" defer></script>
 </body>
 </html>

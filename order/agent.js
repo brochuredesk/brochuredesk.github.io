@@ -41,7 +41,11 @@
     {id: 'postcard', label: 'Just Listed postcard', short: 'postcard'},
     // the two-sided 8.5 x 11 listing flyer, in the $25 package (owner 11/2/2026), for designs that have one (flyer-front/back)
     {id: 'listing-flyer', label: 'Two-sided listing flyer', short: 'listing flyer', full: true},
+    // the Just Sold postcard: with the full package and the Essentials, picked up from Agent home after the sale (not one of
+    // the pieces approved with the package; open 2 years from the sale date; order-files and the order worker check it too)
+    {id: 'just-sold', label: 'Just Sold postcard', short: 'Just Sold postcard', after: true},
   ];
+  const JUST_SOLD_DAYS = 730;
   const HAS_FLYER = {};   // design id -> true once its pieces.json shows flyer-front and flyer-back
   // Approved pieces go live as they are approved (owner 11/7/2026): a design's pieces.json lists only its approved pieces,
   // and "comingSoon" names the piece types still in review. Those show "Coming soon" and can't be ordered.
@@ -117,11 +121,11 @@
   }
 
   // ---------- views ----------
-  const VIEWS = ['vSignin', 'vPassword', 'vWelcome', 'vHome', 'vStart', 'vGallery', 'vLib', 'vRough', 'vWriting', 'vFinal', 'vRebrand'];
+  const VIEWS = ['vSignin', 'vPassword', 'vWelcome', 'vHome', 'vStart', 'vGallery', 'vLib', 'vRough', 'vWriting', 'vFinal', 'vRebrand', 'vSold'];
   function show(id){
     VIEWS.forEach(v => $('#' + v).hidden = v !== id);
     closePop();
-    const hash = {vHome: 'home', vStart: 'start', vGallery: 'gallery', vLib: 'library', vRough: 'rough', vFinal: 'final'}[id];
+    const hash = {vHome: 'home', vStart: 'start', vGallery: 'gallery', vLib: 'library', vRough: 'rough', vFinal: 'final', vSold: 'just-sold'}[id];
     if(hash && location.hash !== '#' + hash) history.replaceState(null, '', '#' + hash);
     window.scrollTo({top: 0, behavior: 'auto'});
   }
@@ -175,7 +179,7 @@
     if(await backFromCheckout()) return;
     if(window.Account && Account.needsWelcome()) return Account.intake();
     const cur = lget('bd-current', null), hash = location.hash.slice(1);
-    if(cur && ['rough', 'final', 'gallery'].includes(hash)){
+    if(cur && ['rough', 'final', 'gallery', 'just-sold'].includes(hash)){
       const list = await store.list().catch(() => []);
       const p = list.find(x => x.id === cur);
       if(p){ await openPackage(p, hash); return; }
@@ -187,7 +191,7 @@
   // the pieces this order asks for in design d (the flyer only with designs that have it or will)
   function wanted(p, d){
     d = d || p.design;
-    if(p.order.kind === 'full') return PIECES.filter(x => !x.full || HAS_FLYER[d] || (SOON[d] || []).includes(x.id)).map(x => x.id);
+    if(p.order.kind === 'full') return PIECES.filter(x => !x.after).filter(x => !x.full || HAS_FLYER[d] || (SOON[d] || []).includes(x.id)).map(x => x.id);
     return p.order.kind === 'essentials' ? ['open-house-flyer', 'postcard'] : [p.order.piece];
   }
   // a piece is live in a design when the design can draw it (approved); unknown until its pieces.json loads
@@ -236,7 +240,88 @@
     $('#pickup').innerHTML = open.length ? open.map(p => row(p, 'open')).join('') : '<p class="empty">Nothing waiting. Start a package and it shows up here.</p>';
     $('#orders').innerHTML = past.length ? past.map(p => row(p, 'past')).join('') : '<p class="empty">No orders in the last 60 days.</p>';
     $$('[data-open]').forEach(b => b.onclick = () => { const p = list.find(x => x.id === b.dataset.open); openPackage(p); });
+    await soldHome(list);
     if(window.Account) Account.home();
+  }
+
+  // ---------- Just Sold pickup (product.md: the matching Just Sold postcard, included, open 2 years after the sale) ----------
+  // The card is the package's own design (its approved just-sold-<size>-front/back), made from the package's listing,
+  // photos and written copy, with the agent's Just Sold wording. The agent adds the sale date and picks the size.
+  const isoDay = d => { const c = new Date(new Date(d).toLocaleString('en-US', {timeZone: 'America/Chicago'}));
+    return `${c.getFullYear()}-${String(c.getMonth() + 1).padStart(2, '0')}-${String(c.getDate()).padStart(2, '0')}`; };
+  const dayOf = s => s + 'T12:00:00Z';   // a sale date (YYYY-MM-DD) read as that day in Central time
+  // open through the same day 2 years after the sale (order-files and the order worker allow 731 days, leap years included)
+  const soldUntil = p => p.sold && p.sold.at ? dayOf((+p.sold.at.slice(0, 4) + 2) + p.sold.at.slice(4, 10)) : null;
+  function soldOpen(p){
+    if(!p.paid || !['full', 'essentials'].includes(p.order.kind)) return false;
+    if(!p.sold || !p.sold.at) return new Date() <= new Date(addDays(p.paid.at, JUST_SOLD_DAYS + 365));   // not sold yet
+    const today = isoDay(new Date());
+    return p.sold.at <= today && today <= soldUntil(p).slice(0, 10);
+  }
+  async function soldHome(list){
+    const can = [];
+    for(const p of list.filter(soldOpen)){
+      const S = p.design ? await spec(p.design).catch(() => null) : null;
+      if(S && partsFor(Object.assign({design: p.design}, S), 'just-sold', p)) can.push(p);
+    }
+    $('#soldHome').hidden = !can.length;
+    $('#soldList').innerHTML = can.map(p => {
+      const cover = p.photos[0] ? photoUrlNow(p.photos[0].url) : '';
+      const st = !p.sold || !p.sold.at ? 'Add the sale date to make it'
+        : `Sold ${dayFmt(dayOf(p.sold.at))} · ${p.approvals['just-sold'] ? 'Approved' : 'Ready to review'} · open until ${dayFmt(soldUntil(p))}`;
+      return `<div class="pk">${cover ? `<img src="${esc(cover)}" alt="">` : '<img alt="">'}<div><b>${esc(p.listing.address || 'Listing')}</b><small>${esc(st)}</small></div>
+        <button class="btn line" type="button" data-sold="${p.id}">Pick up</button></div>`;
+    }).join('');
+    $$('[data-sold]').forEach(b => b.onclick = () => openPackage(list.find(x => x.id === b.dataset.sold), 'just-sold'));
+  }
+  async function openSold(p){
+    pkg = p;
+    if(!soldOpen(p)){ await openHome(); return; }
+    show('vSold');
+    $('#soldAddr').textContent = p.listing.address || '';
+    const di = $('#soldDate');
+    di.max = isoDay(new Date()); di.min = isoDay(p.paid.at);
+    di.value = (p.sold || {}).at || '';
+    const size = (p.sold || {}).size || (p.order.size === 'both' ? '6x11' : p.order.size) || '6x11';
+    if(!p.sold || !p.sold.size) pkg.sold = Object.assign({}, p.sold, {size});
+    $$('input[name=soldSize]').forEach(r => { r.checked = r.value === size; });
+    const change = async () => {
+      const v = di.value;
+      $('#soldErr').textContent = '';
+      if(v && (v > di.max || v < di.min)){ $('#soldErr').textContent = v > di.max ? "The sale date can't be in the future." : 'The sale date is before this package was ordered.'; return; }
+      const z = (document.querySelector('input[name=soldSize]:checked') || {}).value || size;
+      const was = JSON.stringify(pkg.sold || {});
+      pkg.sold = Object.assign({}, pkg.sold, {at: v || null, size: z});
+      if(JSON.stringify(pkg.sold) !== was) delete pkg.approvals['just-sold'];   // a new date or size: approve it again
+      save();
+      await drawSold();
+    };
+    di.onchange = change;
+    $$('input[name=soldSize]').forEach(r => r.onchange = change);
+    $('#soldWording').onclick = async () => { await $('#jsWording').onclick(); await drawSold(); };
+    $('#soldApprove').onclick = approveSold;
+    await drawSold();
+  }
+  async function drawSold(){
+    const S = Object.assign({}, await spec(pkg.design)); S.design = pkg.design;
+    const written = !!pkg.copy[pkg.design];
+    await drawParts($('#soldProof'), pkg.design, partsFor(S, 'just-sold', pkg) || [], await dataFor(pkg.design, written));
+    const dated = !!(pkg.sold && pkg.sold.at), a = pkg.approvals['just-sold'];
+    $('#soldApprove').disabled = !dated || !written;
+    $('#soldApprove').textContent = a ? 'Get my print file' : 'Approve';
+    $('#soldState').textContent = !written ? 'Finalize your package first; this card uses its written copy.'
+      : !dated ? 'Add the sale date to approve it.' : a ? `Approved ${dayFmt(a)}.` : 'Look it over, then approve.';
+    $('#soldWindow').textContent = dated ? `Open until ${dayFmt(soldUntil(pkg))}, 2 years after the sale.` : 'Open for 2 years after the sale.';
+  }
+  async function approveSold(){
+    if(!pkg.sold || !pkg.sold.at) return;
+    if(!pkg.approvals['just-sold']){
+      pkg.approvals['just-sold'] = new Date().toISOString();
+      store.event(pkg.id, 'approve', {piece: 'just-sold', sold: pkg.sold.at, size: pkg.sold.size});
+    }
+    await save(true);
+    await drawSold();
+    await deliver('just-sold');
   }
   // ---------- Just Sold wording (owner 10/30 and 10/31): years, write-up, steps and their order, call to action ----------
   // Saved on the account with the brand kit; every Just Sold card after this reads it (agent.years, agent.justSold).
@@ -449,6 +534,7 @@
     resolvePhotos(p);
     if(p.design) await spec(p.design).catch(() => null);   // knows whether this design has the two-sided flyer (piecesOf)
     if(where === 'gallery') return openGallery();
+    if(where === 'just-sold') return openSold(p);
     if(where === 'library' || (p.lib && !p.design)) return openLib();
     if(p.stage === 'rough' || p.stage === 'writing') return openRough();
     return openFinal(piece || (where === 'final' ? null : nextPiece()));
@@ -790,6 +876,11 @@
       const f = oh || by['open-house-flyer'] || S.pieces.find(x => x.variant === 'openhouse'); return f ? [{piece: f, label: oh ? f.title : 'Open House flyer'}] : null; }
     if(lid === 'listing-flyer'){ const f = by['flyer-front'], b = by['flyer-back'];
       return f && b ? [{piece: f, label: 'Front'}, {piece: b, label: 'Back'}] : null; }
+    if(lid === 'just-sold'){   // the size picked at pickup ('both': 6x11 and 6x9, included)
+      const z = (p && p.sold && p.sold.size) || (p && p.order.size) || '6x11', out = [];
+      for(const s of z === 'both' ? ['6x11', '6x9'] : [z]){ const f = by[`just-sold-${s}-front`], b = by[`just-sold-${s}-back`]; if(!f || !b) return null;
+        out.push({piece: f, label: `${s.replace('x', ' x ')}, front`}, {piece: b, label: `${s.replace('x', ' x ')}, back`}); }
+      return out; }
     if(lid === 'postcard'){   // 'both': the 6x11 and the 6x9, each front and back (+$1)
       const sizes = p && p.order.size === 'both' ? ['6x11', '6x9'] : [(p && p.order.size) || '6x11'], out = [];
       for(const s of sizes){ const f = by[`postcard-${s}-front`], b = by[`postcard-${s}-back`]; if(!f || !b) return null;
@@ -2171,7 +2262,8 @@
     if(pr.id !== 'other') try { can = await fetch(UPLOAD_RUNNER + '/printers').then(r => r.json()); } catch(e) {}
     const covers = (can.pieces || {})[pr.id];      // the pieces this printer's recipe uploads (none listed = all)
     const sizes = ((can.sizes || {})[pr.id] || {})[piece];   // postcard sizes this printer takes, when not all (PsPrint: 6x11)
-    const want = piece === 'postcard' ? (pkg.order.size === 'both' ? ['6x9', '6x11'] : [pkg.order.size]) : [];
+    const z = piece === 'just-sold' ? (pkg.sold || {}).size || pkg.order.size : pkg.order.size;
+    const want = piece === 'postcard' || piece === 'just-sold' ? (z === 'both' ? ['6x9', '6x11'] : [z]) : [];
     const ready = (can.printers || []).includes(pr.id) && (!covers || covers.includes(piece)) && (!sizes || want.every(z => sizes.includes(z)));
     if(!ready){
       const v = await ask(`<h2>Download for ${esc(pr.name)}</h2><p>We can't upload to ${esc(pr.name)} for you yet. Download the print file and add it to your ${esc(pr.name)} order yourself.</p>`,
@@ -2195,7 +2287,7 @@
       return;
     }
     const outcome = await UploadPanel.open({runner: UPLOAD_RUNNER, token, printer: pr.id, name: pr.name,
-      files, vars: {size: piece === 'foldover' ? '11x17' : piece === 'postcard' ? pkg.order.size : '8.5x11'}, onDownload: () => printPiece(piece)});
+      files, vars: {size: piece === 'foldover' ? '11x17' : piece === 'postcard' || piece === 'just-sold' ? z : '8.5x11'}, onDownload: () => printPiece(piece)});
     store.event(pkg.id, 'delivery', {printer: pr.id, upload: outcome});
   }
   // ---------- paid print files (audit repair R1, 11/2/2026) ----------
