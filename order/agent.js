@@ -1656,12 +1656,30 @@
       if(st && pages.length > st) pages = pages.slice(0, st);   // pages past the story count are not floors (same as the preview)
       let plan = PT.givenPlan(pages);
       if(!plan.levels.length) plan = null;
+      if(plan) await planRoomsRead(plan);
       Object.assign(pkg, {plan, planKey: key});
-      store.event(pkg.id, plan ? 'plan-placed' : 'plan-place-failed', plan ? {floors: plan.levels.length} : {why: ['no drawing found']});
+      store.event(pkg.id, plan ? 'plan-placed' : 'plan-place-failed', plan ? {floors: plan.levels.length, colored: !!plan.colored, roomsRead: plan.levels.filter(L => (L.roomBoxes || []).length).length} : {why: ['no drawing found']});
     } catch(e) {
       // a failure is tried again at the next Finalize (no key saved)
       pkg.plan = null; store.event(pkg.id, 'plan-place-failed', {why: [e.message]});
     }
+  }
+  // The plan's own room names and sizes (owner 11/13/2026, captions round 3 Q2: every room list beside a plan uses the plan's names
+  // and dimensions). One read-only look per floor (package-ai 'plan-rooms', the cheap model in config/models.json, logged with
+  // tokens and cost there); the plan is never changed. Each floor keeps roomBoxes [{name, dims, box}]; templates read them through
+  // designs/engine/planrooms.js. A read that fails leaves the floor without them, and the room lists keep the listing's names.
+  async function planRoomsRead(plan){
+    const pic = L => new Promise(ok => { const i = new Image(); i.onload = () => { const k = Math.min(1, 1568 / Math.max(i.width, i.height)), c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(i.width * k)); c.height = Math.max(1, Math.round(i.height * k)); const g = c.getContext('2d');
+      g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(i, 0, 0, c.width, c.height);
+      ok({data: c.toDataURL('image/jpeg', 0.85).split(',')[1], media_type: 'image/jpeg'}); }; i.onerror = () => ok(null); i.src = L.src; });
+    const lv = (plan.levels || []).filter(L => L.kind === 'image' && L.src).slice(0, 4);
+    if(!lv.length) return;
+    try {
+      const plans = (await Promise.all(lv.map(pic))).map(p => p || {data: ''});
+      const j = await ai({action: 'plan-rooms', packageId: pkg.id, plans});
+      (j.plans || []).forEach((p, i) => { if(lv[i] && Array.isArray(p.roomBoxes) && p.roomBoxes.length) lv[i].roomBoxes = p.roomBoxes; });
+    } catch(e) { store.event(pkg.id, 'plan-rooms-failed', {why: [e.message]}); }
   }
   const masterJobs = {};
   function masterFor(p){

@@ -353,9 +353,10 @@
         pieces(m, w, h, (comp, a0, b0, a1, b1) => { const big = Math.max(a1 - a0, b1 - b0) + 1; if(big < 0.6 * ppf && big > 0.08 * ppf) c.push([(a0 + a1) / 2, (b0 + b1) / 2]); });
         for(const [px, py] of c){ let best = null, bd = 1e9; for(const [qx, qy] of c){ const dd = Math.hypot(qx - px, qy - py); if(dd > 0 && dd < bd){ bd = dd; best = [qx - px, qy - py]; } }
           if(best && bd < 0.5 * ppf){ if(Math.abs(best[0]) > Math.abs(best[1])) hz++; else vt++; } } } }
-    return {kind: 'image', textDir: vt > hz ? 'v' : 'h', name: L.name, floor: L.floor, roof: !!L.roof, front: L.front || 'bottom', w: F.W, h: F.H, pageScale: +(1 / F.k).toFixed(4),
+    return Object.defineProperty({kind: 'image', textDir: vt > hz ? 'v' : 'h', name: L.name, floor: L.floor, roof: !!L.roof, front: L.front || 'bottom', w: F.W, h: F.H, pageScale: +(1 / F.k).toFixed(4),
       feet: L.feet ? {w: +(F.W / ((F.T(F.o).r - F.T(F.o).x) / L.feet.w)).toFixed(1), d: +(F.H / ((F.T(F.o).r - F.T(F.o).x) / L.feet.w)).toFixed(1)} : null,
-      src: F.c.toDataURL('image/png'), labels: unnamed(F, L), issues: []};
+      src: F.c.toDataURL('image/png'), labels: unnamed(F, L), issues: []},
+      '_canvas', {value: F.c, configurable: true});   // the floor's own canvas for PlanColor; not enumerable, so never saved
   }
   function colorFloor(page, L){
     const F = floorCrop(page, L, false), {b, P, T, c, W, H, k, x0, y0} = F, o = F.o, outside = F.outside, N = W * H, issues = [];
@@ -1291,6 +1292,11 @@
     const named = levels.map((L, i) => Object.assign(L, {floor: i + 1, name: grid.has(L.page) ? '' : (FLOORS[i] || ''), rooms: [], feet: null}));
     return {levels: named, garages: garages.map(G => Object.assign(G, {rooms: [], feet: null, name: 'Detached garage'}))};
   };
+  // each placed floor's colored-room flag, from its own (cleared) drawing; true when any floor has colored rooms
+  const markColored = levels => { let any = false;
+    for(const L of levels){ const c = L._canvas; delete L._canvas;   // the floor's own canvas, never saved with the package
+      try { if(c){ const m = PlanColor.ofImage(c); L.coloredRooms = m.colored; any = any || m.colored; } } catch(e) {} }
+    return any; };
   PT.givenPlan = canvases => {
     const F = PT.findFloors(canvases), levels = [];
     for(const L of F.levels){ const c = canvases[L.page - 1]; if(c) levels.push(finishedFloor(c, L)); }
@@ -1299,7 +1305,10 @@
       return Object.assign(finishedFloor(c, G), {name: 'Detached garage', detached: 'garage', site: {house: P(H.walls), garage: P(G.walls)}}); }).filter(Boolean);
     const fin = PT.planFinished(canvases, {levels: F.levels});
     if(fin.watermark && levels[0]) levels[0].issues.push({kind: 'plan-watermark', detail: "another company's name across the plan: ask the agent for a clean file"});
-    return {kind: 'color', source: 'Floor plan from the listing.', levels, detached, finished: true, colored: fin.colored > 0.1, watermark: fin.watermark, noSizes: false};
+    // colored rooms (owner 11/13/2026, captions round 3 Q4): each placed floor measured with the shared fill rule (designs/engine/plancolor.js,
+    // same as the print server's renderer/plancolor.py); a colored-room plan sits on a light panel on dark designs (PlanInk.panel)
+    const colored = window.PlanColor ? markColored(levels) : fin.colored > 0.1;
+    return {kind: 'color', source: 'Floor plan from the listing.', levels, detached, finished: true, colored, coloredFrom: window.PlanColor ? 'plancolor' : 'planFinished', watermark: fin.watermark, noSizes: false};
   };
   // the agent said yes to sizes from the MLS room list: each label takes the size of the MLS room with its name on its
   // floor (Primary for Master; "Bedroom 2" or the next unused bedroom), in feet only. A room with no match stays unsized.
