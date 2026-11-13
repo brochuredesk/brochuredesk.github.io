@@ -15,9 +15,9 @@
   const FINE_PRINT = 'Information deemed reliable but not guaranteed.';
 
   const MSG = {
-    har: "That's a har.com link. HAR's site blocks automatic reading, and we don't work around that, so we need the Matrix link instead. It takes about a minute.",
-    'other-site': "We can only read Matrix links right now, not Zillow or Realtor.com. Your Matrix link is quick to make, and you can also add photos yourself.",
-    'not-matrix': "That doesn't look like a Matrix listing link. It should start with https://matrix.harmls.com/. Paste the link from the Matrix email, or see how to make one.",
+    har: "We need your Matrix link for this one. Here's how to make one, or upload your photos instead.",
+    'other-site': "We need your Matrix link for this one. Here's how to make one, or upload your photos instead.",
+    'not-matrix': "We need your Matrix link for this one. Here's how to make one, or upload your photos instead.",
     'not-a-link': "That doesn't look like a link yet. Paste the whole Matrix link, starting with https://.",
     blocked: "HAR's site asked us to prove we're a person, and we won't try to get past that. Give it a few minutes and try again, or add your photos instead.",
     unreadable: "We opened the link but couldn't find the listing on it. Check that it's a link to one listing, or add your photos instead.",

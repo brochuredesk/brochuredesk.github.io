@@ -118,7 +118,7 @@
           <p class="fl-hint"><button type="button" class="fl-a" data-mx-help>How do I create a Matrix link?</button> <button type="button" class="fl-a" id="flManual">No Matrix link? Add photos instead</button></p>
         </form>
         <div class="fl-status" id="flStatus" role="status" aria-live="polite"></div>
-        <div class="fl-err" id="flErr" role="alert" hidden><p id="flErrText"></p><div class="row"><button type="button" class="btn" id="flRetry">Try again</button><button type="button" class="btn line" id="flErrManual">Add photos instead</button></div></div>
+        <div class="fl-err" id="flErr" role="alert" hidden><p id="flErrText"></p><div class="row"><button type="button" class="btn" id="flRetry">Try again</button><button type="button" class="btn line" id="flErrHelp" data-mx-help hidden>How to make one</button><button type="button" class="btn line" id="flErrManual">Upload your photos</button></div></div>
         <div id="flManualBox" hidden>
           <label class="fl-drop" id="flDrop" tabindex="0"><b>Click to add photos</b> or drag them here<small>Up to 16. The first one goes on the cover.</small><input type="file" id="flFiles" accept="image/*" multiple hidden></label>
           <label class="fl-lbl" for="flDocs">Draft listing printout, if you have one</label>
@@ -188,6 +188,7 @@
     const fail = code => {
       say(''); $('flErrText').textContent = E.MSG[code] || E.MSG.network; $('flErr').hidden = false;
       $('flRetry').hidden = !E.RETRY.includes(code);
+      $('flErrHelp').hidden = !['har', 'other-site', 'not-matrix'].includes(code);   // M01: not a Matrix link
     };
     let busy = false;
     async function run(){

@@ -30,7 +30,10 @@
   const PICK_CAP = 13;
   const PICK_FULL = 'You need to remove an active photo to pull in a new photo.';   // the owner's wording; don't change without asking
   const PICK_LABELS = {upper: 'In your package', lower: 'More listing photos'};     // draft wording
-  const PLAN_NOTE = "Your floor plan is placed just as the listing gives it, sized to fit this design.";      // draft wording (the owner's call)
+  // the line under the preview plan (C04 F01 and F02, approved 11/13/2026, in the "we" voice; worded to the 11/10 rule that
+  // plans are never redrawn, only placed as given and tinted): F02 when the plan was too rough to turn into clean lines
+  const PLAN_NOTE = "We'll place your floor plan just as the listing gives it, in this design's colors.";
+  const PLAN_NOTE_ROUGH = "This is your plan as we received it. We'll place it just as it is, sized to fit this design.";
   const PT = window.PreviewTools;
   const FINE_PRINT = 'Information deemed reliable but not guaranteed.';
   const PRICE = {full: 2500, essentials: 2000, single: 1000};
@@ -216,7 +219,7 @@
     const note = lget(NOTE_KEY(), null);
     $('#switchNote').hidden = !note;
     if(note){
-      $('#switchNote').innerHTML = `<h2>New brokerage?</h2><p>Your profile shows ${esc(note.to || 'a new sponsoring broker')}. We'll update the pieces you've ordered for free.</p>
+      $('#switchNote').innerHTML = `<h2>New brokerage?</h2><p>We'll update all of your pieces for free.</p>
         <p><button class="btn" type="button" id="noteGo">Update my pieces</button> <button class="link" type="button" id="noteNo">Not now</button></p>`;
       lput(NOTE_KEY(), null);   // shown once
       $('#noteGo').onclick = () => openRebrand(); $('#noteNo').onclick = () => { $('#switchNote').hidden = true; };
@@ -388,7 +391,7 @@
     return out.length ? out : ['#1f4e5f'];
   }
   const fileUrl = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(f); });
-  const RB_STEPS = ['Upload your new brokerage logo.', 'Update your contact info.', 'Pick the pieces to update.', 'Review your updated pieces.', 'Send to my printer.'];
+  const RB_STEPS = ['Upload your new brokerage logo.', 'Update your contact info.', 'Pick the pieces to update.', 'Review your updated pieces.', 'Send to your preferred printer.'];
   let rb = null;
   async function openRebrand(){
     show('vRebrand');
@@ -415,8 +418,8 @@
       <div class="stack2">
         <label>Brokerage logo (PNG, JPG or SVG)<input type="file" id="rbLogo" accept="image/png,image/jpeg,image/svg+xml"></label>
         ${K.logo ? `<img class="rb-logo" src="${esc(K.logo)}" alt="Your new brokerage logo">` : ''}
-        <div id="rbColors">${cs.length ? `<p>Do these colors look right?</p><div class="rb-colors">${cs.map((c, i) => `<input type="color" value="${c}" data-ci="${i}" aria-label="Brand color ${i + 1}">`).join('')}
-          <button type="button" class="link" id="rbColorsOk">${K.colorsOk ? 'Colors confirmed' : 'Yes, use these'}</button></div>` : ''}</div>
+        <div id="rbColors">${cs.length ? `<p>We pulled these colors from your logo. Do they look right?</p><div class="rb-colors">${cs.map((c, i) => `<input type="color" value="${c}" data-ci="${i}" aria-label="Brand color ${i + 1}">`).join('')}</div>
+          <p class="acts"><button type="button" class="btn" id="rbColorsOk">${K.colorsOk ? 'Colors confirmed' : 'Looks right'}</button> <button type="button" class="btn line" id="rbColorsEdit">Change colors</button></p>` : ''}</div>
         <label>Brokerage name<input id="rbName" value="${esc(K.brokerage || '')}" autocomplete="organization"></label>
         <label>Office address<input id="rbAddr" value="${esc(K.officeAddress || '')}"></label>
         <label>Office phone<input id="rbOPhone" value="${esc(K.officePhone || '')}" inputmode="tel"></label>
@@ -428,6 +431,8 @@
       K.logo = await fileUrl(f); K.colors = await logoColors(K.logo).catch(() => ['#1f4e5f']); K.colorsOk = false; rbLogo(); };
     $$('[data-ci]').forEach(i => i.oninput = () => { K.colors[+i.dataset.ci] = i.value; K.colorsOk = true; });
     const ok = $('#rbColorsOk'); if(ok) ok.onclick = () => { K.colorsOk = true; ok.textContent = 'Colors confirmed'; };
+    const edit = $('#rbColorsEdit'), first = $('[data-ci]');   // opens the first color's picker; each swatch can be changed
+    if(edit && first) edit.onclick = () => { try { first.showPicker(); } catch(e) { first.focus(); first.click(); } };
     rbWire(() => {
       Object.assign(K, {brokerage: $('#rbName').value.trim(), officeAddress: $('#rbAddr').value.trim(), officePhone: $('#rbOPhone').value.trim(),
         officeWeb: $('#rbOWeb').value.trim(), sponsoringBroker: $('#rbBroker').value.trim()});
@@ -445,7 +450,7 @@
       const email = $('#rbEmail').value.trim(), before = (rb.old.contact || {}).email || (profile && profile.preferred_email) || '';
       Object.assign(C, {email, phone: $('#rbPhone').value.trim(), web: $('#rbWeb').value.trim()});
       if(email && before && email.toLowerCase() !== before.toLowerCase()){
-        const v = await ask('<h2>Use this new email to sign in too?</h2><p>Your account, profile and order history stay the same.</p>', [['Yes', 'yes'], ['No, just on my pieces', 'no', 'line']]);
+        const v = await ask('<h2>Use this new email to sign in too?</h2><p>Your account and past orders stay the same either way.</p>', [['Yes', 'yes'], ['No, just on my pieces', 'no', 'line']]);
         rb.newLogin = v === 'yes' ? email : null;
       }
     });
@@ -460,7 +465,7 @@
     const tile = p => { const cover = p.photos[0] ? photoUrlNow(p.photos[0].url) : '';
       return `<label class="rb-tile"><input type="checkbox" data-rb="${p.id}"${rb.picks.has(p.id) ? ' checked' : ''}>${cover ? `<img src="${esc(cover)}" alt="">` : ''}
         <span><b>${esc(p.listing.address)}</b><small>Ordered ${dayFmt(p.paid.at)}</small><small>${piecesOf(p).map(pieceLabel).join(', ')}</small></span></label>`; };
-    $('#rbBody').innerHTML = `<h2>${RB_STEPS[2]}</h2>` + (rb.orders.length ? `<div class="rb-grid">${rb.orders.map(tile).join('')}</div>`
+    $('#rbBody').innerHTML = `<h2>${RB_STEPS[2]}</h2>` + (rb.orders.length ? `<p class="fine">Everything from the last 2 years is checked. Uncheck anything you don't need.</p><div class="rb-grid">${rb.orders.map(tile).join('')}</div>`
       : '<p class="empty">No orders from the last 2 years yet. Your new brand is saved for every new package.</p>') + `<p class="err" id="rbErr"></p>` + rbNav(rb.orders.length ? 'Next' : 'Save my new brand', true);
     $$('[data-rb]').forEach(c => c.onchange = () => { c.checked ? rb.picks.add(c.dataset.rb) : rb.picks.delete(c.dataset.rb); });
     rbWire(() => {
@@ -470,7 +475,7 @@
   }
   async function rbReview(){
     const list = rb.orders.filter(p => rb.picks.has(p.id));
-    $('#rbBody').innerHTML = `<h2>${RB_STEPS[3]}</h2><p class="fine">Before on the left, your new brand on the right. Copy, photos, crops and the floor plan stay as you ordered them.</p>` +
+    $('#rbBody').innerHTML = `<h2>${RB_STEPS[3]}</h2><p class="fine">Old on the left, new on the right. Copy, photos, crops and the floor plan stay as you ordered them.</p>` +
       list.map(p => `<section data-rbp="${p.id}"><h3>${esc(p.listing.address)}</h3>${ownedDesign(p) ? `<div class="offer" data-closest="${p.id}"></div>` : ''}
         ${piecesOf(p).map(lid => `<div class="rb-pair" data-lid="${lid}"><div><h4>${esc(pieceLabel(lid))}, before</h4><div class="proof single" data-side="before"></div></div>
           <div><h4>After</h4><div class="proof single" data-side="after"></div></div></div>`).join('')}</section>`).join('') + rbNav('Looks good', true);
@@ -479,7 +484,7 @@
     for(const p of list){
       if(ownedDesign(p)){   // that design stays with the old brokerage: our five closest, then the whole gallery
         const box = $(`[data-closest="${p.id}"]`), near = closestDesigns(p);
-        box.innerHTML = `<h3>Closest to what you had</h3><div class="rb-colors">${near.map(d => `<button type="button" class="btn line" data-swap="${p.id}:${d.id}">${esc(d.name)}</button>`).join('')}</div>
+        box.innerHTML = `<h3>Closest to what you had</h3><p class="fine">Your old design stays with your previous brokerage, so here are our five closest matches.</p><div class="rb-colors">${near.map(d => `<button type="button" class="btn line" data-swap="${p.id}:${d.id}">${esc(d.name)}</button>`).join('')}</div>
           <p class="fine">Or pick any of our designs: ${designs.filter(d => !d.library && !(d.owner && d.owner !== 'standard')).map(d => `<button type="button" class="link" data-swap="${p.id}:${d.id}">${esc(d.name)}</button>`).join(' · ')}</p>`;
         rb.designFor[p.id] = rb.designFor[p.id] || (near[0] && near[0].id);
       }
@@ -953,11 +958,11 @@
     // the simple floor plan sits in the plan spot. Both are preview only: the templates' checks block them on any export.
     const pre = written ? null : await previewCopy(designId, ids);
     const fp = pkg.floorPlan, plan = !written && fp && fp.active && fp.art ? fp.art.map(a => ({src: a.src, tinted: a.tinted, label: a.label})) : null;
-    return Object.assign({template: designId, sample: true, brand, agent, listing: pkg.listing, mailVendor: null, photos: P,
+    const out = Object.assign({template: designId, sample: true, brand, agent, listing: pkg.listing, mailVendor: null, photos: P,
       openHouse: final ? oh : null,
       copy: written ? written.copy : pre.copy,
       companion: written ? Object.assign({fineprint: FINE_PRINT}, written.companion) : pre.companion,
-      copyPending: false}, written ? {} : {preview: true}, plan ? {planPreview: plan, planNote: PLAN_NOTE} : {},
+      copyPending: false}, written ? {} : {preview: true}, plan ? {planPreview: plan, planNote: plan.some(a => a.tinted === false) ? PLAN_NOTE_ROUGH : PLAN_NOTE} : {},
       pkg.colors ? {colors: pkg.colors} : {},   // the fold-over's background and plan box (owner 11/7/2026)
       savedMap() ? {map: savedMap()} : {},   // Atlas: the street map drawn once for this listing (print uses the same one)
       // the colored plan is saved as masks and labels; each design tints it in its own colors, never a second read
@@ -966,6 +971,9 @@
       (await example(designId) || {}).as ? {[(await example(designId)).as]: written ? written.copy : pre.copy} : {},
       // and some read part of it from their own key (copy.cards -> data.cards: copy-example.json "lift")
       Object.fromEntries(((await example(designId) || {}).lift || []).map(k => [k, ((written ? written.copy : pre.copy) || {})[k] || {}])));
+    // this package's line rotation, for growing slots after layout (kept out of the JSON the design reads)
+    if(pre && pre.turn) Object.defineProperty(out, 'lineTurn', {value: pre.turn});
+    return out;
   }
   // The design's own example copy gives the shape and the length of every slot. Photo sections get the room heading of
   // the photo placed there and a line about that room; other text gets a line about what that part will say.
@@ -973,7 +981,7 @@
     await PT.load();
     const ex = await exampleFor(designId, ids), base = {copy: draftCopy(ids), companion: draftCompanion(ids)};
     if(!ex || !ex.copy) return base;
-    const rest = ids.length > 1 ? ids.slice(1) : ids; let n = 0, seed = 0, first = true;
+    const rest = ids.length > 1 ? ids.slice(1) : ids; let n = 0, seed = PT.rotation(), first = true;   // one rotation for every piece (C04 lines)
     const roomOf = id => { const ph = pkg.photos[+String(id).slice(1)]; return (ph && ph.room) || 'room'; };
     const at = (o, path) => path.reduce((v, k) => v == null ? v : v[k], o);
     const KEEP = /^(location|stats|variant|footnote|planDisclosures|flyerPhotos|eyebrow|fineprint|stat\d)$/;
@@ -1002,15 +1010,15 @@
       if(room && key === 'caption') return '';   // the heading sits over the copy; a caption would only repeat it
       if(room && /^(title|q|label|name)$/.test(key)) return PT.heading(room);
       if(room && key === 'lead') return '';
-      if(room && /^(body|a|detail|notes)$/.test(key)) return PT.line(room, len, seed++);
+      if(room && /^(body|a|detail|notes)$/.test(key)) return PT.line(room, len, seed);
       const t = TEXT[key];
       // a short label stays; a short fact from the example's house (a size, "Never flooded", "New roof") never shows on this one
-      if(!t) return b !== undefined ? b : ids.includes(v) ? v : v.length < 24 ? (FACTY.test(v) ? 'To come' : v) : PT.line('feature', len, seed++) || 'To come';
+      if(!t) return b !== undefined ? b : ids.includes(v) ? v : v.length < 24 ? (FACTY.test(v) ? 'To come' : v) : PT.line('feature', len, seed) || 'To come';
       if(t.startsWith('heading:')) return t.slice(8);
       if(t === 'kicker') return v;
-      return PT.line(t, len, seed++);
+      return PT.line(t, len, seed);
     }
-    return {copy: walk(ex.copy, ['copy']), companion: Object.assign({fineprint: FINE_PRINT}, walk(ex.companion || {}, ['companion']))};
+    return {copy: walk(ex.copy, ['copy']), companion: Object.assign({fineprint: FINE_PRINT}, walk(ex.companion || {}, ['companion'])), turn: seed};
   }
 
   // ---------- drawing a part into a sheet ----------
@@ -1070,7 +1078,7 @@
       fr.title = pt.label;
       fr.onload = () => { const w = fr.contentWindow;
         Promise.resolve(w.brochureReady).then(() => fr.contentDocument.fonts ? fr.contentDocument.fonts.ready : 0)
-          .then(() => addressFit(fr)).then(() => { if(d.preview) PT.fitPreview(fr.contentDocument);
+          .then(() => addressFit(fr)).then(() => { if(d.preview) PT.fitPreview(fr.contentDocument, data.lineTurn);
             // the fold-over's background and plan box colors, over the design's own (pieces.json); text flips by contrast
             if(pt.piece.kind === 'foldover' && d.colors && w.FoldColors) w.FoldColors.apply(d.colors, pt.piece.colors || {});
             keepMap(w); fit(s); if(onReady) onReady(fr, s, pt); }).finally(done); fit(s); };

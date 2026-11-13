@@ -28,29 +28,42 @@
   PT.load = () => loading || (loading = fetch('/designs/shared/preview-lines.json').then(r => r.json()).then(j => (LIB = j)));
   PT.load().catch(() => { loading = null; });
   PT.heading = key => LIB ? (LIB.headings[key] || LIB.headings.room) : key;
-  // whole lines from the room's own pool (a different start for each slot, so two sections never read the same), joined
-  // until they reach the real copy's length, then trimmed at a word so the line count matches what the final copy fills
-  PT.line = (key, len, seed) => {
-    const pool = LIB.rooms[key] || LIB.sections[key] || LIB.rooms.room, more = key === 'headline' ? [] : key in LIB.sections ? LIB.sections.feature : LIB.rooms.room;
-    const order = pool.map((_, i) => pool[(i + (seed || 0)) % pool.length]).concat(more.filter(s => !pool.includes(s)));
+  // a room type's group in the approved lines (C04, 11/13/2026): 'bedroom' and 'bathroom' share one set, and so on
+  const group = key => (LIB.roomGroups && LIB.roomGroups[key]) || key;
+  // one rotation for a whole package: each section of a room group opens on the group's next line, and lines not yet
+  // shown anywhere in the package come first, so two pieces never show the same line until a group runs out
+  PT.rotation = () => ({next: {}, used: new Set()});
+  // whole lines from the room group's pool, joined until they reach the real copy's length, then trimmed at a word so
+  // the line count matches what the final copy fills. `turn` is a PT.rotation() (or, for the old checks, a number)
+  PT.line = (key, len, turn) => {
+    const g = group(key), pool = LIB.rooms[g] || LIB.sections[g] || LIB.rooms.room, more = g === 'headline' ? [] : g in LIB.sections ? LIB.sections.feature : LIB.rooms.room;
+    const rot = turn && typeof turn === 'object', start = rot ? (turn.next[g] = (turn.next[g] || 0) + 1) - 1 : (turn || 0);
+    let order = pool.map((_, i) => pool[(i + start) % pool.length]).concat(more.filter(s => !pool.includes(s)));
+    if(rot) order = order.filter(s => !turn.used.has(s)).concat(order.filter(s => turn.used.has(s)));
     // whole sentences only: add each one that still fits the slot (about the real copy's length), skipping the ones too long
     const got = [], room = () => len * 1.08 - (got.join(' ').length + (got.length ? 1 : 0));
     for(const s of order){ if(got.join(' ').length >= len * 0.92) break; if(s.length <= room()) got.push(s); }
     let out = got.join(' ');
     if(!out){   // a very short slot: the shortest line, cut at a word
-      out = order.slice().sort((x, y) => x.length - y.length)[0].slice(0, Math.max(12, len)).replace(/\s+\S*$/, '').replace(/[,;:]$/, '');
+      const short = order.slice().sort((x, y) => x.length - y.length)[0];
+      out = short.slice(0, Math.max(12, len)).replace(/\s+\S*$/, '').replace(/[,;:]$/, '');
       if(!/[.!?]$/.test(out)) out += '.';
+      got.push(short);
     }
+    if(rot) got.forEach(s => turn.used.add(s));
     return out;
   };
   // after the design lays out: each preview line grows a sentence at a time to the lines its slot fills (data-fill), then
   // drops words until it fits its box, so the line count matches what the final copy will fill
   const pools = () => [...Object.entries(LIB.rooms), ...Object.entries(LIB.sections)];
   const keyOf = t => (pools().find(([, a]) => a.some(x => t.includes(x.slice(0, 28)))) || ['room'])[0];
-  const more = (t, key) => { const a = (LIB.rooms[key] || LIB.sections[key] || []).concat(LIB.rooms.room, LIB.sections.feature);
-    const next = a.find(x => !t.includes(x.slice(0, 28))); return next ? t + ' ' + next : t; };
-  PT.fitPreview = doc => {
+  // growing a slot takes a line no other section of the package shows yet, when there is one
+  const more = (t, key, seen) => { const a = (LIB.rooms[group(key)] || LIB.sections[key] || []).concat(LIB.rooms.room, LIB.sections.feature);
+    const fresh = x => !t.includes(x.slice(0, 28)), next = a.find(x => fresh(x) && !seen.has(x)) || a.find(fresh);
+    if(next) seen.add(next); return next ? t + ' ' + next : t; };
+  PT.fitPreview = (doc, turn) => {
     if(!LIB || !doc) return;
+    const seen = (turn && turn.used) || new Set();
     const fillers = (LIB.fillers || []).slice().sort((x, y) => y.length - x.length);
     for(const el of doc.querySelectorAll('[data-slot]')){
       if(el.children.length || !el.getClientRects().length || !PT.isPreview(el.textContent)) continue;   // hidden panels wait for their own frame
@@ -61,7 +74,7 @@
       const over = () => (one ? el.scrollWidth > el.clientWidth + 1 : el.scrollHeight > el.clientHeight + 1) || lines() > max;
       let parts = el.textContent.split(/(?<=[.!?])\s+/);
       const set = a => { el.textContent = a.join(' '); };
-      for(let i = 0; want && i < 8 && lines() < want && !over(); i++){ const t = more(parts.join(' '), key); if(t === parts.join(' ')) break; parts = t.split(/(?<=[.!?])\s+/); set(parts); }
+      for(let i = 0; want && i < 8 && lines() < want && !over(); i++){ const t = more(parts.join(' '), key, seen); if(t === parts.join(' ')) break; parts = t.split(/(?<=[.!?])\s+/); set(parts); }
       while(over() && parts.length > 1){ parts.pop(); set(parts); }
       for(let round = 0; want && round < 3 && lines() < want; round++){   // top up the last line with the longest closing line that fits
         const f = fillers.find(x => !parts.includes(x) && (set(parts.concat(x)), !over()));
@@ -77,7 +90,7 @@
   };
   PT.isPreview = text => {
     if(!LIB || !text) return false;
-    const t = String(text), all = [...Object.values(LIB.rooms), ...Object.values(LIB.sections)].flat();
+    const t = String(text), all = [...Object.values(LIB.rooms), ...Object.values(LIB.sections), LIB.fillers || []].flat();
     return all.some(s => t.includes(s.slice(0, 28)));
   };
 
