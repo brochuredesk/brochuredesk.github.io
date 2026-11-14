@@ -372,7 +372,7 @@ Ivory.whenFonts(function(){
         .map(([k, z]) => `<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, var(--paper))"></i>${z.label}</span>`);
       if(zs.includes('outdoor')) leg.push(`<span><i style="background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--accent) 35%, var(--paper)) 0 .6pt, var(--paper) .6pt 2.8pt)"></i>Outdoor</span>`);
       h += `<div class="abs fl-legend" style="left:${X0}pt;top:${ly + 16}pt;width:${pk.t.w}pt;height:10pt">${leg.join('')}</div>`;
-      const note = (D.plan.source || 'Floor plan redrawn for this flyer.') + ' Room sizes are approximate.' + (front2 ? ' ' + front2 + '.' : '') + (pk.mixedScale ? ' Floors are drawn at different scales.' : '') + (pk.detachedSmaller ? ' The garage box is drawn at a smaller scale.' : '');
+      const note = (D.plan.source || 'Floor plan from the listing.') + ' Room sizes are approximate.' + (front2 ? ' ' + front2 + '.' : '') + (pk.mixedScale ? ' Floors are drawn at different scales.' : '') + (pk.detachedSmaller ? ' The garage box is drawn at a smaller scale.' : '');
       h += `<div class="abs fl-note" style="left:${X0}pt;top:${ly + (hasLeg ? 32 : 16)}pt;width:${pk.t.w}pt;height:8pt" data-slot="back.disclosure0" data-lines="1" data-fine="1">${esc(note)}</div>`;
       if(pk.t.col){
         const cx = X0 + 333 + 18, cw = SW - X0 - cx, fr = fitRow(feat.map(poolOf), cw, F.fb, 3, 6), fl = Math.max(...fr.map(r => r.lines));

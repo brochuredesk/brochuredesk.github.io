@@ -656,9 +656,10 @@
         + (cur ? '<button type="button" class="pe-link" data-a="reset">Back to the standard</button>' : '') + '</div>';
     }
     function draw(){
-      const pageStd = def.page || '#ffffff', planStd = def.planBox || val.page || pageStd;
-      el.innerHTML = row('page', 'Background', "The fold-over's main color. Text and lines switch light or dark so they stay easy to read.", pageStd, 'The design’s own background (standard)')
-        + (opt.plan === false ? '' : row('planBox', 'Floor plan box', def.planBox ? 'The box behind your floor plan.' : 'The area behind your floor plan. It matches the background until you pick a color.', planStd, def.planBox ? 'The design’s own plan box (standard)' : 'Same as the background (standard)'));
+      // the floor plan box defaults to the design's background (owner 11/13/2026, standing rule): the plan prints clear
+      const pageStd = def.page || '#ffffff', planStd = val.page || pageStd;
+      el.innerHTML = (opt.only === 'planBox' ? '' : row('page', 'Background', "The fold-over's main color. Text and lines switch light or dark so they stay easy to read.", pageStd, 'The design’s own background (standard)'))
+        + (opt.plan === false ? '' : row('planBox', 'Floor plan box', 'The box behind your floor plan. It matches the background until you pick a color. Pick a lighter or darker one if the plan is hard to see.', planStd, 'Same as the background (standard)'));
       el.querySelectorAll('[data-part]').forEach(box => {
         const key = box.dataset.part;
         const set = v => { if(v) val[key] = v; else delete val[key]; draw(); opt.onChange && opt.onChange(Object.keys(val).length ? Object.assign({}, val) : null); };

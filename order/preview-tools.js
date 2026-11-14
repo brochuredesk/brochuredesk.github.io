@@ -318,7 +318,10 @@
   };
   // a listing's own drawing keeps its own labels; a walk-in closet it left unnamed gets ours (the owner 10/28: label Eubanks'
   // primary closet WIC), at its center, in the room's own space
-  const unnamed = (F, L) => L.rooms.filter(r => r.printed === false && /walk-?in closet|\bw\.?i\.?c\b/i.test(r.name)).map(r => { const B = F.T(F.P(r.box)), W = F.W, H = F.H;
+  // owner 11/13/2026 (standing rule): the listing's plan is used exactly as is, never redrawn or reinterpreted, so we add
+  // no labels of our own to it (the 10/28 WIC label is off)
+  const unnamed = () => [];
+  const unnamedOld = (F, L) => L.rooms.filter(r => r.printed === false && /walk-?in closet|\bw\.?i\.?c\b/i.test(r.name)).map(r => { const B = F.T(F.P(r.box)), W = F.W, H = F.H;
     const cx = (B.x + B.r) / 2, cy = (B.y + B.z) / 2, hw = 0.4 * (B.r - B.x), hh = 0.4 * (B.z - B.y);
     return {name: 'Walk-In Closet', short: 'WIC', dims: '', kind: 'closet', zone: 'inherit', x: +(cx / W).toFixed(4), y: +(cy / H).toFixed(4),
       bx: +(B.x / W).toFixed(4), by: +(B.y / H).toFixed(4), w: +((B.r - B.x) / W).toFixed(4), h: +((B.z - B.y) / H).toFixed(4),

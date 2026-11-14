@@ -1087,11 +1087,44 @@
         Promise.resolve(w.brochureReady).then(() => fr.contentDocument.fonts ? fr.contentDocument.fonts.ready : 0)
           .then(() => addressFit(fr)).then(() => { if(d.preview) PT.fitPreview(fr.contentDocument, data.lineTurn);
             // the fold-over's background and plan box colors, over the design's own (pieces.json); text flips by contrast
-            if(pt.piece.kind === 'foldover' && d.colors && w.FoldColors) w.FoldColors.apply(d.colors, pt.piece.colors || {});
-            keepMap(w); fit(s); if(onReady) onReady(fr, s, pt); }).finally(done); fit(s); };
+            if(pt.piece.kind === 'foldover' && d.colors && w.FoldColors) w.FoldColors.apply(Object.assign({}, d.colors, {planBox: undefined}), pt.piece.colors || {});
+            return planBox(fr, d); }).then(() => { keepMap(w); fit(s); if(onReady) onReady(fr, s, pt); }).finally(done); fit(s); };
       fr.srcdoc = srcdoc(designId, html[pt.piece.file], d, pt.panel, false, pt.piece.kind === 'foldover');
     });
     await Promise.all(ready);
+  }
+
+  // ---------- the floor plan box (owner 11/13/2026, standing rule, every design that shows a plan) ----------
+  // The box behind the floor plan is the design's own background (the plan prints clear). The agent clicks the plan on
+  // the proof and picks another color when the plan is hard to see; pkg.colors.planBox goes to the print renderer, which
+  // paints it the same way (designs/engine/planbox.js = templates/_shared/planbox.js). The plan itself is never redrawn.
+  async function planBox(fr, d){
+    const w = fr.contentWindow, doc = fr.contentDocument; if(!w || !doc) return;
+    if(!doc.querySelector('img[data-plan], img[data-plan-img], [data-plan-preview], .plan-svg, .plan-color, .planwrap svg, .boardvars svg, svg.plan, .plan.lv')) return;
+    if(!w.PlanBox) await new Promise(r => { const sc = doc.createElement('script'); sc.src = '/designs/engine/planbox.js?v=3'; sc.onload = sc.onerror = r; doc.head.appendChild(sc); });
+    if(!w.PlanBox) return;
+    try { fr.dataset.planStd = w.PlanBox.under(); } catch(e){}   // before any paint: the design's own color
+    const c = d.colors && d.colors.planBox; if(c) try { w.PlanBox.apply(c); } catch(e){ console.warn(e); }
+    if(!pkg || !pkg.id) return;
+    doc.querySelectorAll(w.PlanBox.SEL).forEach(p => { if(p.parentElement && p.parentElement.closest(w.PlanBox.SEL)) return;
+      p.style.cursor = 'pointer'; p.title = 'Click to change the color behind your floor plan';
+      p.addEventListener('click', ev => { ev.preventDefault(); ev.stopPropagation(); planBoxPick(fr); }); });
+  }
+  function planBoxPick(fr){
+    let dlg = $('#planBoxPick');
+    if(!dlg){ dlg = document.createElement('div'); dlg.id = 'planBoxPick'; dlg.setAttribute('role', 'dialog'); dlg.setAttribute('aria-label', 'Floor plan box color');
+      dlg.style.cssText = 'position:fixed;z-index:60;background:#fff;border:1px solid #d6d2c8;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:14px 16px;max-width:340px';
+      dlg.innerHTML = '<div class="pb-body"></div><p style="margin:10px 0 0;text-align:right"><button type="button" class="btn line" id="planBoxDone">Done</button></p>';
+      document.body.appendChild(dlg); }
+    const r = fr.closest('.sheet').getBoundingClientRect();
+    dlg.style.left = Math.max(12, Math.min(innerWidth - 352, r.left + 16)) + 'px'; dlg.style.top = Math.max(12, Math.min(innerHeight - 260, r.top + 16)) + 'px';
+    const k = brandKit() || {}, cur = (pkg.colors || {}).planBox || '';
+    ProofEditor.foldColors(dlg.querySelector('.pb-body'), {value: cur ? {planBox: cur} : {}, defaults: {page: fr.dataset.planStd || '#ffffff', planBox: null}, colors: [pkg.brand.accent].concat(k.colors || []), plan: true, only: 'planBox',
+      onChange: c => { const v = c && c.planBox; pkg.colors = Object.assign({}, pkg.colors); if(v) pkg.colors.planBox = v; else delete pkg.colors.planBox;
+        if(!Object.keys(pkg.colors).length) delete pkg.colors;
+        save(); store.event(pkg.id, 'plan-box', {color: v || null}); foldColorFields(); clearTimeout(fcTimer); fcTimer = setTimeout(() => $('#vRough') && !$('#vRough').hidden ? drawRough() : drawFinal(), 60); }});
+    $('#planBoxDone').onclick = () => dlg.remove();
+    setTimeout(() => document.addEventListener('mousedown', function off(e){ if(!dlg.contains(e.target)){ dlg.remove(); document.removeEventListener('mousedown', off); } }), 0);
   }
 
   // ---------- socials, Open House email and Just Sold postcard of the design (owner 11/7/2026) ----------
