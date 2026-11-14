@@ -5,6 +5,7 @@
 <title>BrochureDesk · Ivory fold-over</title>
 <link rel="stylesheet" href="ivory.css">
 <script src="ivory.js"></script>
+<script src="../engine/planink.js"></script>
 <script src="plan.js"></script>
 <!--
   BrochureDesk · Ivory design · 11 x 17 fold-over
@@ -59,7 +60,8 @@
 
   /* header shared by inside panels and back */
   .hdr-kicker{left:24pt;top:23.5pt;width:560pt}
-  .hdr-logo{right:24pt;top:9pt;height:30pt;width:220pt}   /* ends 7 pt above the title line (owner 10/26: a long title ran under it) */
+  .hdr-logo{right:24pt;top:19.1pt;height:44pt;width:220pt}   /* owner 11/10/2026: centered top to bottom between the page top and the rule (0 to 82.2 pt); the title beside it stops short of it */
+  .hdr-title.beside-logo{width:512pt}
   .hdr-title{left:23pt;top:46pt;width:745pt;font-size:30pt;line-height:36pt;height:36pt}
   .hdr-rule{top:82.2pt}
 
@@ -71,8 +73,8 @@
   .front-logo{right:24pt;top:552.5pt;height:38pt;width:220pt}
   .front-logo[data-shape=square]{top:544.5pt;height:54pt}
   .front-logo[data-shape=tall]{top:541.5pt;height:60pt}
-  .hdr-logo[data-shape=square]{top:4pt;height:35pt}
-  .hdr-logo[data-shape=tall]{top:3pt;height:36pt}
+  .hdr-logo[data-shape=square]{top:15.1pt;height:52pt}
+  .hdr-logo[data-shape=tall]{top:13.1pt;height:56pt}
 
   /* ---------- INSIDE TOP (kitchen, living) ---------- */
   .stats{top:95pt;height:12pt}
@@ -92,7 +94,7 @@
   .bot-feature-caption{top:245pt;width:240pt;font-size:8.2pt;line-height:10.5pt;height:10.5pt;white-space:nowrap}
   .bot-feature-title{top:262pt;width:240pt;font-size:15.5pt;line-height:19pt;height:19pt}
   .bot-feature-body{top:288pt;width:240pt;font-size:10.5pt;line-height:14pt;height:70pt}
-  .bot-tile-photo{top:346pt;width:240pt;height:172pt}
+  .bot-tile-photo{top:341pt;width:240pt;height:177pt}   /* sits 11 pt under the three-line write-ups above (owner 11/10/2026: no blank band under text) */
   .bot-tile-title{top:522pt;width:240pt;font-size:14.5pt;line-height:18pt;height:18pt}
   .bot-tile-body{top:544pt;width:240pt;font-size:9.8pt;line-height:12.5pt;height:37.5pt}
 
@@ -122,11 +124,11 @@
   .plan-legend{position:absolute;display:flex;justify-content:center;gap:30pt;font:600 10.5pt/13pt var(--font-body);color:var(--ink);white-space:nowrap}
   .plan-legend i{display:inline-block;width:13pt;height:13pt;margin-right:6pt;vertical-align:-2.5pt;border:.6pt solid rgba(0,0,0,.4)}
   .plan-disclosure{left:24pt;width:474pt;font-size:6.5pt;line-height:9pt;height:9pt;color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden}
-  .back-feature-photo{left:516pt;top:98pt;width:252pt;height:168pt}
-  .back-feature-title{left:516pt;top:271pt;width:252pt;font-size:17pt;line-height:21pt;height:21pt}
-  .back-feature-body{left:516pt;top:296pt;width:252pt;font-size:10.5pt;line-height:14pt;height:70pt}
-  .back-location-label{left:516pt;top:375pt;width:252pt}
-  .back-location-body{left:516pt;top:390pt;width:252pt;font-size:10pt;line-height:13pt;height:52pt}
+  .back-feature-photo{left:516pt;top:98pt;width:252pt;height:228pt}
+  .back-feature-title{left:516pt;top:331pt;width:252pt;font-size:17pt;line-height:21pt;height:21pt}
+  .back-feature-body{left:516pt;top:356pt;width:252pt;font-size:10.5pt;line-height:14pt;height:70pt}
+  .back-location-label{left:516pt;top:435pt;width:252pt}
+  .back-location-body{left:516pt;top:450pt;width:252pt;font-size:10pt;line-height:13pt;height:52pt}
 
   /* contact card: the standard Right panel card (templates/_shared/agentcard.js, 10/25/2026), in Ivory's fonts and colors */
 </style>
@@ -161,7 +163,7 @@ Ivory.whenFonts(function(){
   const header = (k, t, name, withLogo=true) => `
     <div class="abs label hdr-kicker" data-slot="${name}.kicker" data-lines="1">${esc(k)}</div>
     ${withLogo ? logo('hdr-logo') : ''}
-    ${title('hdr-title', t, name+'.title')}
+    ${title(withLogo ? 'hdr-title beside-logo' : 'hdr-title', t, name+'.title')}
     <div class="rule hdr-rule"></div>`;
 
   const L = D.listing, C = D.copy, A = D.agent;
@@ -238,11 +240,11 @@ Ivory.whenFonts(function(){
     const nb = Math.ceil(nearby.length/2), locLines = nb ? Math.max(1, 5 - nb) : 4;   // rows of two
     let h = photo('back-feature-photo', F.photo)
        + title('back-feature-title', F.title, 'back.feature.title')
-       + slot('back-feature-body', F.body, 'back.feature.body', nb ? 4 : 5).replace('data-lines=', `data-fill="${nb ? 4 : 5}" data-lines=`)
-       + `<div class="abs label back-location-label" style="top:${nb?362:375}pt" data-slot="back.location.title" data-lines="1">${esc(K.locationTitle)}</div>`
-       + `<div class="abs body back-location-body" style="top:${nb?376:390}pt;height:${locLines*13}pt" data-slot="back.location.body" data-lines="${locLines}">${esc(K.locationBody)}</div>`;
+       + slot('back-feature-body', F.body, 'back.feature.body', nb ? 4 : 5).replace('data-lines=', `data-fill="${nb ? 4 : 5}" data-lines=`).replace('class="abs body back-feature-body"', `class="abs body back-feature-body" style="height:${(nb ? 4 : 5)*14}pt"`)
+       + `<div class="abs label back-location-label" style="top:${(nb?362:375) + 60}pt" data-slot="back.location.title" data-lines="1">${esc(K.locationTitle)}</div>`
+       + `<div class="abs body back-location-body" style="top:${(nb?376:390) + 60}pt;height:${locLines*13}pt" data-slot="back.location.body" data-lines="${locLines}">${esc(K.locationBody)}</div>`;
     // places in pairs: the first of each pair on the left, the second right-aligned on the same row
-    nearby.forEach((n,i)=> h += `<div class="abs nearby" style="left:${i%2 ? 642 : 516}pt;top:${376+locLines*13+Math.floor(i/2)*13}pt;width:126pt;${i%2 ? 'text-align:right' : ''}" data-slot="back.nearby${i}" data-lines="1"><b>${esc(n.name)}</b>${n.note ? '  ' + esc(n.note) : ''}</div>`);
+    nearby.forEach((n,i)=> h += `<div class="abs nearby" style="left:${i%2 ? 642 : 516}pt;top:${436+locLines*13+Math.floor(i/2)*13}pt;width:126pt;${i%2 ? 'text-align:right' : ''}" data-slot="back.nearby${i}" data-lines="1"><b>${esc(n.name)}</b>${n.note ? '  ' + esc(n.note) : ''}</div>`);
     return h; };
 
   // home details under Location (owner 10/28, IV-FO-4b): short bullets of plain facts about the house only, from the
@@ -271,7 +273,7 @@ Ivory.whenFonts(function(){
     const up = get(/update|remodel|renovat/i); if(up) out.push(...split({label:'Updates', value:up}));
     return out.slice(0, 8); };
   // Location and Home details in larger type (owner 10/28, IV-FO-4b), the column running past the bottom of the plan
-  const textCol = (x, shown, planBottom) => { const w = 768 - x, LH = 15.5, BH = 14.5, END = 458;
+  const textCol = (x, shown, planBottom) => { const w = 768 - x, LH = 15.5, BH = 14.5, END = 512;
     const dets = nearby.length ? [] : homeDetails(shown || []);
     const locN = Math.min(14, Ivory.linesNeeded('body loc-big', String(K.locationBody||''), w, LH));
     let h = `<div class="abs label" style="left:${x}pt;top:100pt;width:${w}pt" data-slot="back.location.title" data-lines="1">${esc(K.locationTitle)}</div>`
@@ -315,43 +317,31 @@ Ivory.whenFonts(function(){
     back += `<div class="abs plan-disclosure" style="top:${y0+ph+(fl.length > 1 ? 22 : 8)}pt;width:${w}pt" data-slot="back.disclosure0" data-lines="1" data-fine="1">${esc(D.planNote||'')}</div>`;
     back += featureCol();
   } else if(V.plan){
-    const box = {x:24, y:120, h:275};
-    // no feature and no location text for this listing: the plan takes the full width (nothing borrowed from another listing)
-    const tiers = [{w:474, right:'feature'}, {w:576, right:'text'}, {w:744, right:'none'}].filter(t=>t.right==='none' || (t.right==='feature' ? K.feature && K.feature.photo : K.locationBody));
-    const runs = tiers.map(t => Object.assign({t}, IvoryPlan.draw(D.plan, Object.assign({w:t.w}, box), {allowRotate:true})));
-    const best = Math.max(...runs.map(r=>r.issues.length ? 0 : r.scale));
-    // keep the photo column when the plan is already drawn large enough (5.5 pt per foot or near its best);
-    // otherwise the photo drops to a text column, then drops entirely, before the plan gets smaller
-    let pick = runs.find(r => !r.issues.length && r.scale >= Math.min(best*0.92, 5.5)) || runs.find(r=>!r.issues.length) || runs[runs.length-1];
-    // plan, legend and note sit together as one block, centered between the fact bar and the contact card
-    const gh = pick.usedH, blockH = gh + 12 + 12 + 12 + 9, y0 = 126 + Math.max(0, (318 - blockH)/2);  // 126 to 444 pt (10/28: the line under the facts and the plan moved down 6 pt for air at the top)
+    // the listing's own plan (owner 11/10/2026: never redrawn) in the left column, from the fact bar down to the panel's
+    // bottom; the feature or Location column and the narrow contact card share the right column
+    const box = {x:24, y:126, h:365};
+    const right = K.feature && K.feature.photo ? 'feature' : K.locationBody ? 'text' : 'none';
+    const t0 = {w:474, right};
+    let pick = Object.assign({t:t0}, IvoryPlan.draw(D.plan, Object.assign({w:t0.w}, box), {allowRotate:true}));
+    const gh = pick.usedH, blockH = gh + 12 + 9, y0 = 126 + Math.max(0, (box.h + 21 - blockH)/2);
     pick = Object.assign({t:pick.t}, IvoryPlan.draw(D.plan, {x:24, y:y0, w:pick.t.w, h:gh + 0.5}, {allowRotate:true, rotate:!!pick.rotated, angle:pick.angle}));
-    const legY = y0 + gh + 12, noteY = legY + 24;
+    const noteY = y0 + gh + 12;
     back += pick.html;
     window.planIssues = pick.issues;
     // the home at a glance above the plan (10/21/2026: the plan looked naked on its own)
     const facts = (K.facts || (()=>{ const f = (T.stats||[]).slice(0,4);
       if(!f.some(x=>/stor/i.test(x))) f.push(V.stories > 1 ? `${V.stories} Stories` : '1 Story');
       if(L.garage) f.push(L.garage); if(L.lotSize) f.push(L.lotSize); return f; })()).slice(0,6)
-      // the bar and the plan agree (owner 10/28, rule 14): when the plan shows more levels than the listing's stories
-      // (a floor drawn as separate blocks), the bar counts the levels drawn
       .map(x=>{ const lv = (D.plan.levels||[]).filter(l=>!l.roof).length, m = String(x).match(/^(\d+)\s+Stor(y|ies)$/i);
         return m && lv > +m[1] ? `${lv} Levels` : x; });
     back += `<div class="factbar" style="top:98pt;width:${pick.t.w}pt">` + facts.map((x,i)=>`<div class="stat" data-slot="back.fact${i}" data-lines="1">${esc(x)}</div>`).join('') + `</div>`
           + `<div class="hair-ink" style="left:24pt;top:119pt;width:${pick.t.w}pt;opacity:.35"></div>`;
-    const zs = IvoryPlan.zonesOf(D.plan);
-    const leg = Object.entries(IvoryPlan.ZONES).filter(([k])=>zs.includes(k))
-      .map(([k,z])=>`<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, var(--paper))"></i>${z.label}</span>`);
-    if(zs.includes('outdoor')) leg.push(`<span><i style="background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--accent) 35%, var(--paper)) 0 .6pt, var(--paper) .6pt 2.8pt)"></i>Outdoor</span>`);
-    back += `<div class="plan-legend" style="left:24pt;top:${legY}pt;width:${pick.t.w}pt">${leg.join('')}</div>`;
     document.body.dataset.planTier = pick.t.right;
-    const note = (D.plan.source || 'Floor plan redrawn for this brochure.') + ' Room sizes are approximate.' + (pick.mixedScale ? ' Floors are drawn at different scales.' : '')
-               + (pick.detachedSmaller ? ' The garage box is drawn at a smaller scale.' : '')
-               + (pick.front ? (pick.front === 'left' ? ' The front of the home is on the left.' : pick.rotated ? ' The front of the home is at the bottom.' : '')
-                 : pick.rotated ? ' The plan is turned on its side to fit.' : '');
+    const note = (D.plan.source || 'Floor plan.') + ' Room sizes are approximate.'
+               + (pick.rotated ? ' The plan is turned on its side to fit.' : '');
     back += `<div class="abs plan-disclosure" style="top:${noteY}pt;width:${pick.t.w}pt" data-slot="back.disclosure0" data-lines="1" data-fine="1">${esc(note)}</div>`;
     if(pick.t.right==='feature') back += featureCol();
-    if(pick.t.right==='text') back += textCol(24 + 576 + 18, facts, y0 + gh);
+    if(pick.t.right==='text') back += textCol(516, facts, 0);
   } else {
     // HAR writes levels as "1st" / "2nd" (10/27: "+level" read them as NaN and the list printed empty)
     const lvOf = r => { const m = String(r.level||'').match(/\d+/) || (/main|ground|first/i.test(r.level||'') ? ['1'] : /second|upper/i.test(r.level||'') ? ['2'] : null); return m ? +m[0] : 0; };
@@ -386,7 +376,7 @@ Ivory.whenFonts(function(){
       }
       back += `<div class="abs plan-note" style="left:24pt;top:${y-8}pt;width:474pt;text-align:left" data-slot="back.disclosure0" data-lines="1" data-fine="1">${esc(K.roomNote || 'Room sizes from the MLS listing; approximate.')}</div>`;
       // photos under the list grow to fill what's left above the contact card
-      const lp = (K.listPhotos||[]).slice(0,2), ph = 446 - (y + 8) - 44;
+      const lp = (K.listPhotos||[]).slice(0,2), ph = 516 - (y + 8) - 44;
       if(lp.length && ph >= 80){
         lp.forEach((f,i)=>{ const x = 24 + i*245;
           back += photo('', f.photo, `style="left:${x}pt;top:${y+8}pt;width:229pt;height:${ph}pt"`)
@@ -396,7 +386,7 @@ Ivory.whenFonts(function(){
       } else if(lp.length) window.planIssues.push({slot:'back.listPhotos', kind:'no-room', detail:'room list fills the panel; drop the list photos'});
     } else {
       // a closer look: two captioned photos with a little description in place of room sizes
-      const tallF = V.stories >= 3, ph = tallF ? 214 : 186;
+      const tallF = V.stories >= 3, ph = 516 - 98 - 31 - (tallF ? 6 : 8)*13.5 - 4;
       // older data (the site preview) sends back.plans as two photos: treat them as the closer look
       const closer = K.closer || (K.plans||[]).map(p=>({photo:p.photo, title:p.label, body:''}));
       closer.slice(0,2).forEach((f,i)=>{ const x = 24 + i*245;
@@ -411,7 +401,12 @@ Ivory.whenFonts(function(){
   // contact card: Right panel (agent column | tinted brokerage panel), on the panel bottom; it grows upward for square and stacked logos
   const footnote = (K.footnote||'') + (district ? ` Square footage from ${district} living area.` : '');
   const hsSrc = src(A.headshot) || (/^(file|https?|data):/.test(A.headshot||'') ? A.headshot : '');   // a photo id or a headshot url
-  back += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hsSrc}), b, {layout:'panel', fine:footnote});
+  // owner 11/10/2026, round 3 (book p14/p36): "narrower" means SHORTER TOP TO BOTTOM. The card runs the panel's full width
+  // again at the short size (about 0.9 in with the fine print, was 136 pt); the plan, the feature photo and its text above
+  // take the freed height.
+  // owner 11/12 (book p1): no empty band right of the email; bigger type, wider gap and a wider brokerage panel fill the card
+  back += `<div class="hair-ink" style="left:24pt;top:514pt;width:744pt;opacity:.35"></div>`;
+  back += ContactCard.html([24, 520, 744, 74], Object.assign({}, A, {headshot: hsSrc}), b, {layout:'panel', size:'short', fine:footnote.trim(), s:{desigInline:true, rowGap:92, name:21, phone:17, label:9.5, line:12, pad:[6, 12, 4], panelW:250, logo:{wide:[196, 38], square:[38, 38], tall:[40, 40]}}});
 
   // ---- assemble pages ----
   const panel = (cls, html) => `<div class="panel ${cls}">${html}</div>`;
@@ -448,6 +443,28 @@ Ivory.whenFonts(function(){
 
   ContactCard.fit(document);
 
+  // ---- the inside-top write-up: three full lines (owner 11/10/2026, p3: its last line ran 15% wide) ----
+  // keeps every sentence the writer gave, then adds the writer's extra true sentences (copy.insideTop.introMore) in order and
+  // raises the type a step (up to 12%) until the third line reaches 90%; lines above the last are justified when needed
+  document.querySelectorAll('.top-intro').forEach(el => {
+    const base = String(T.intro||'').trim(), more = [].concat(T.introMore||[]).map(x=>String(x).trim()).filter(Boolean).slice(0, 6);
+    const fs0 = parseFloat(getComputedStyle(el).fontSize), lh0 = parseFloat(getComputedStyle(el).lineHeight);
+    const lines = () => { const rg = document.createRange(); rg.selectNodeContents(el); const box = el.getBoundingClientRect(), rows = [];
+      [...rg.getClientRects()].filter(r => r.width > .5).forEach(r => { const row = rows.find(x => Math.abs(x.top - r.top) < 3); if(row) row.right = Math.max(row.right, r.right); else rows.push({top:r.top, right:r.right}); });
+      return rows.map(x => (x.right - box.left)/box.width); };
+    el.style.height = 'auto';
+    const picks = []; for(let m = 0; m < (1 << more.length); m++) picks.push(more.filter((x, i) => m & (1 << i)));
+    picks.sort((a, c) => a.length - c.length);
+    let done = null;
+    outer: for(const k of [1, 1.03, 1.06, 1.09, 1.12]) for(const ex of picks){
+      el.style.fontSize = (fs0*k) + 'px'; el.style.lineHeight = (lh0*k) + 'px'; el.textContent = [base, ...ex].join(' ');
+      const f = lines(); if(f.length === 3 && f[2] >= .9){ done = {k, ex, rag: f[0] >= .8 && f[1] >= .8}; break outer; }
+    }
+    if(!done){ el.style.fontSize = ''; el.style.lineHeight = ''; el.textContent = base; done = {k:1, rag:true}; }
+    if(!done.rag) el.style.textAlign = 'justify';
+    el.style.height = (3*lh0*done.k*72/96) + 'pt';
+  });
+
   // ---- nearby places: centered in the space between the end of the location paragraph and the contact card ----
   // (measured in layout units, so the rotated back panel of the print spread gets the same result)
   document.querySelectorAll('.panel').forEach(pn=>{
@@ -457,7 +474,7 @@ Ivory.whenFonts(function(){
     const probe = document.createElement('div'); probe.style.cssText = getComputedStyle(loc).cssText; probe.className = loc.className;
     probe.style.height = 'auto'; probe.style.visibility = 'hidden'; probe.textContent = loc.textContent; loc.parentElement.appendChild(probe);
     const lines = Math.max(1, Math.round(probe.offsetHeight*72/96 / lh)); probe.remove();
-    const end = parseFloat(loc.style.top) + lines*lh, rows = Math.ceil(near.length/2), top = end + (446 - end - rows*13)/2;
+    const end = parseFloat(loc.style.top) + lines*lh, rows = Math.ceil(near.length/2), top = end + (508 - end - rows*13)/2;   // the card now starts at 520 (round 3)
     near.forEach((n,i)=> n.style.top = (top + Math.floor(i/2)*13)+'pt');
   });
 
