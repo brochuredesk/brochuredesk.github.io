@@ -86,5 +86,8 @@
       const sp = CTX.measureText(' ').width + (parseFloat(cs.letterSpacing) || 0), R = el.getBoundingClientRect().right - (parseFloat(cs.paddingRight) || 0);
       if(sp > .5 && L.slice(0, -1).some(x => x.n > 1 && ((R - x.r) / (x.n - 1) + sp) / sp > 2.6)){ el.style.textAlign = 'left'; el.dataset.ragged = '1'; }
     }
+    // a row keeps one text setting (owner 11/13): when one caption in a row of photos sets ragged, the others in that row do too
+    for(const el of els){ if(!el.dataset.ragged) continue; const row = el.closest('.row'); if(!row) continue;
+      row.querySelectorAll('.a').forEach(o => { if(o !== el && /justify/.test(getComputedStyle(o).textAlign)){ o.style.textAlign = 'left'; o.dataset.ragged = '1'; } }); }
   }};
 })();

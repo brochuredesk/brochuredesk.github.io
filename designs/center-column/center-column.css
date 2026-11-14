@@ -97,6 +97,12 @@ img{display:block}
 .plan-room span{display:block;color:#4b5a57;font-size:8pt;line-height:9.5pt}
 .plan-level{text-align:center;font:700 9pt/12pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:#7a5f22;white-space:nowrap;overflow:hidden}
 .plan-note{text-align:center;font:400 6.5pt/8pt var(--font-body);color:#4b5a57;white-space:nowrap;overflow:hidden}
+/* owner 11/10/2026 (standing rule): a line-only listing plan prints on a CLEAR background, its lines light on the dark field (PlanInk);
+   only a plan with colored rooms keeps the white panel */
+.planframe.clear{background:transparent;border:.7pt solid rgba(255,255,255,.3)}
+.planlayer.clear{--paper:transparent;--ink:#f2efe6;--text:#f2efe6;--muted:#c9c6bc;--signal:#c2a36b}
+.planlayer.clear .plan-level,.planframe.clear .pf-title{color:#c2a36b}
+.planlayer.clear .plan-note{color:#c9c6bc}
 .pf-title{position:absolute;left:12pt;top:8pt;font:700 8pt/10pt var(--font-body);letter-spacing:1.5pt;text-transform:uppercase;color:#7a5f22;white-space:nowrap}
 .legend{position:absolute;right:10pt;top:7pt;text-align:right;font:700 8pt/10pt var(--font-body);color:#1e2e2d;white-space:nowrap}
 .plandisc{flex:none;text-align:center;white-space:nowrap;margin-top:4pt}

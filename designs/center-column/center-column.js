@@ -100,7 +100,7 @@
   // ---------- floor plan facts ----------
   // A design built around the plan: it needs a plan that lists rooms (owner 10/28).
   // A level lists rooms either as drawn rooms (L.rooms) or, for the agent's own plan image, by the room names printed on it (L.roomNames).
-  const listsRooms = l => (l.rooms||[]).length || (l.kind === 'image' && (l.roomNames||[]).length);
+  const listsRooms = l => (l.rooms||[]).length || (l.kind === 'image' && !!l.src);   // the listing's own plan image always counts (owner 11/10/2026)
   AT.planOK = D => !!(D.plan && (D.plan.levels||[]).some(listsRooms));
   AT.levels = D => ((D.plan && D.plan.levels) || []).filter(l => !l.inset && listsRooms(l));
   const footprint = L => L.kind === 'image' ? (L.feet ? L.feet.w*L.feet.d : L.w*L.h) : (L.rooms||[]).filter(r => r.kind !== 'outdoor').reduce((a, r) => a + r.w*r.d, 0);
@@ -159,9 +159,9 @@
 
   // ---------- contact card ----------
   // The standard Right panel card, with and without a headshot. The card carries the spread's one brokerage logo.
-  AT.card = function(D, box, fine){
+  AT.card = function(D, box, fine, o){
     const A = D.agent || {}, hs = AT.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
-    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, {layout:'panel', fine: fine || '', bottomGap: 0.5});
+    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, Object.assign({layout:'panel', fine: fine || '', bottomGap: 0.5}, o || {}));
   };
 
   // ---------- print checks (read by the renderer) ----------
@@ -219,6 +219,38 @@
   };
   AT.placements = () => [...document.querySelectorAll('.ph img')].map(img => ({src: img.getAttribute('src'), w: img.parentElement.clientWidth/96, h: img.parentElement.clientHeight/96}));
 
+  // ---------- postcard and Open House copy ----------
+  // data.copy.pc when the writer gave it; otherwise built from the fold-over's own true copy (the house write-up and the rooms' captions),
+  // so a postcard or Open House flyer never prints an empty write-up or caption (owner 11/10/2026, rule 6). The Just Sold seller lines
+  // are the company's standing seller copy, not about the house.
+  AT.pcCopy = D => {
+    const C = D.copy || {};
+    if(C.pc && (C.pc.jl || C.pc.oh || C.pc.js)) return C.pc;
+    const P = D.photos || {}, has = id => id && P[id] && P[id].src;
+    const SP = t => (String(t || '').match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || []).map(x => x.trim()).filter(Boolean);
+    const rows = S => [].concat(...((S || {}).rows || []).map(r => [r.main, r.side, r.extra]));
+    const items = [...((C.cover || {}).items || []), ...rows(C.left), ...rows(C.right), ...((C.back || {}).photos || [])].filter(i => i && has(i.photo));
+    const seen = new Set(), uniq = items.filter(i => !seen.has(i.photo) && seen.add(i.photo));
+    const hero = (C.cover || {}).photo || Object.keys(P)[0], house = (C.cover || {}).house || (D.listing || {}).description || '';
+    // a short caption: the lead sentence(s) up to about 120 characters; the rest of its true lines go to x for the caption fitter
+    const capOf = it => { const ss = SP(it.body), pool = ss.concat(it.x || []), a = [];
+      for(const t of pool){ if(!a.length || (a.join(' ') + ' ' + t).length <= 96) a.push(t); }   // about three full lines: the lead, then whole true lines that fit
+      return {id: it.photo, t: it.title, dims: it.dims || '', a: a.join(' '), x: pool.filter(t => !a.includes(t))}; };
+    const caps = uniq.filter(i => i.photo !== hero).map(capOf).filter(c => c.a && c.a.length <= 110 && c.a.length >= 70);
+    const rooms = caps.filter(c => c.dims), others = caps.filter(c => !c.dims);
+    const backCaps = [...rooms, ...others].slice(0, 3), stripIds = caps.map(c => c.id).filter(id => !backCaps.some(c => c.id === id)).concat(backCaps.map(c => c.id)).slice(0, 4);
+    const js = {hero, strip: stripIds, photos: caps.slice(0, 2).map(c => c.id), slab: {big: 'Let’s meet', sub: 'At your house, on a day that suits you.'},
+      front9: 'I’d start with a walk through your home and a look at the recent sales on your street. Then we can talk about timing, what you’d like to see happen and any questions you have. You make every decision, and there’s never any rush.',
+      front11: 'I’d start with a walk through your home and a look at the recent sales on your street. Then we can talk about timing, what you’d like to see happen and any questions you have, and I’ll put a written estimate of your home’s value in your hands. You make every decision, and there’s no rush. Call or text me whenever it suits you best.',
+      services: ['A written estimate of what your home is worth, and how I got there.', 'Recent sales on your street and in the blocks around it, side by side.', 'Photos and a printed brochure made just for your home and its rooms.', 'Flyers and postcards for the neighbors on your street and on nearby streets.'],
+      services11: ['A written estimate of what your home is worth.', 'Recent sales on your street and nearby.', 'Photos and a brochure made for your home.', 'Flyers and postcards for the neighborhood.', 'A walk through your home, room by room.', 'Each step explained in plain words.'],
+      meet9: 'We can meet at your house, whenever works for you. I’ll walk through every room, hear what you’re hoping for and how soon you’d like to move, then lay out the steps from there. You make every decision, and there’s no rush.',
+      meet11: 'We can meet at your house, whenever works for you. I’ll walk through every room, hear what you’re hoping for and how soon you’d like to move, then lay out the steps from there, one at a time. If you’d rather start with a phone call, that works too. You make every decision, and there’s no rush.'};
+    return {fromFoldover: true,
+      oh: {write: house, photos: [hero, ...rooms.slice(0, 2).map(c => c.id)], rooms: rooms.slice(0, 2).map(c => ({t: c.t, dims: c.dims, a: c.a}))},
+      jl: {hero, strip: stripIds, front9: house, front11: [house, ...((C.back || {}).floors || []).map(f => f.body || '')].filter(Boolean).join(' '), back: backCaps, slab: {big: 'Come see it', sub: 'Call or text me to book a private tour.'}},
+      js};
+  };
 
   window.AT = AT;
 })();

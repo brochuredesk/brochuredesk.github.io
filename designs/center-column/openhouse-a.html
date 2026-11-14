@@ -8,6 +8,12 @@
 <script src="../engine/baths.js"></script>
 <script src="center-column.js"></script>
 <script src="center-column-cards.js"></script>
+<style>
+  /* room for the descenders (printchecks text-clipped): the date and the room labels under the photos */
+  #date{padding-bottom:4pt;box-sizing:content-box}
+  .rm.cp .t{font-size:15pt;line-height:19pt;min-width:0;flex:1 1 auto}
+  .rm.cp .d{font-size:13pt;line-height:19pt}
+</style>
 <!--
   The Center Column · Open House flyer "Photos Down the Middle" (trim 612 x 792 pt; print: 0.25 in white margin around the green-slate field).
   The event leads: the label in tracked brass caps, the date as the largest type on the page (EB Garamond, white), the time in brass,
@@ -25,10 +31,11 @@
 window.brochureReady = (async function(){
   const D = AT.data();
   if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
-  const esc = AT.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), OHC = PC.oh || {};
+  const esc = AT.esc, L = D.listing, PC = AT.pcCopy(D), OHC = PC.oh || {};
   const issues = await AT.fontsReady(D);
   document.body.dataset.mode = D.mode || 'email';
   const O = AT.openHouse(D), X = 36, W = 540;
+  if(!O.long || !O.time) issues.push({slot: 'oh.when', kind: 'oh-date-time-missing'});   /* every Open House piece shows its date and time, big (owner 11/10) */
   const hero = (OHC.photos || [])[0] || 'front';
   let h = '';
 
@@ -45,18 +52,25 @@ window.brochureReady = (async function(){
   // the whole house: the frame is sized from the house box (roof to steps), no taller than that needs
   const hp = (D.photos || {})[hero] || {}, b = hp.box;
   const need = b && hp.w ? W*(hp.h/hp.w)*(b[3] - b[1]) + 6 : 230;
-  const hh = Math.round(Math.max(need, 214)), hy = 158 + dy, hb = hy + hh;
-  h += AT.photo(D, hero, `position:absolute;left:${X}pt;top:${hy}pt;width:${W}pt;height:${hh}pt`, 'oh.hero', 'hero');
+  // the frame never cuts the roof or the sides (owner 11/7). A tall house that would need more than 270 pt across the full width keeps a
+  // 260 pt band: its frame narrows to the house's own shape (roof to steps, side to side) and a second outside photo fills the rest
+  const hh = Math.round(need > 270 ? 260 : Math.max(need, 214)), hy = 158 + dy, hb = hy + hh;
+  if(need > 270 && b && hp.w){
+    const pa = hp.w / hp.h, Wf = Math.max(Math.ceil(hh * pa * Math.min(1, (b[2] - b[0]) + .08)), Math.min(Math.floor(hh * pa / ((b[3] - b[1]) + .03)), Math.round((W - 10)/2 + 40))),   /* the house frame a little wider than half; the side photo keeps a photo's shape */ used = new Set([hero, ...(OHC.photos || [])]);
+    const ids = Object.keys(D.photos || {}).filter(id => !used.has(id) && AT.src(D, id)), side = ids.find(id => /court|gate|roof|yard|patio|deck|balcon|porch|front|street|garden/i.test(id)) || ids[0];
+    h += AT.photo(D, hero, `position:absolute;left:${X}pt;top:${hy}pt;width:${Wf}pt;height:${hh}pt`, 'oh.hero', 'hero');
+    if(side) h += AT.photo(D, side, `position:absolute;left:${X + Wf + 10}pt;top:${hy}pt;width:${W - Wf - 10}pt;height:${hh}pt`, 'oh.hero2');
+  } else h += AT.photo(D, hero, `position:absolute;left:${X}pt;top:${hy}pt;width:${W}pt;height:${hh}pt`, 'oh.hero', 'hero');
 
   // the address (city, state and ZIP under it) and the facts
-  h += `<div class="abs dsp" id="addr" style="left:${X-1}pt;top:${hb + 6}pt;width:340pt;height:42pt;font-size:40pt;line-height:42pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
+  h += `<div class="abs dsp" id="addr" style="left:${X-1}pt;top:${hb + 6}pt;width:${W - 232 - 12}pt;height:44pt;font-size:40pt;line-height:42pt;white-space:nowrap;overflow:hidden" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
   h += `<div class="abs kicker" style="left:${X}pt;top:${hb + 50}pt;width:340pt;height:10pt" data-slot="place" data-lines="1">${esc([L.neighborhood, AT.placeZip(L)].filter(Boolean).join(' · ').toUpperCase())}</div>`;
   { const f = [[L.beds, 'Beds'], [BD.bathNum(L).num, BD.bathNum(L).label], [L.sqft ? Number(L.sqft).toLocaleString('en-US') : '', 'Sq Ft'], [L.yearBuilt || L.year, 'Built']].filter(x => x[0]);
     h += `<div class="abs fx" style="left:${X + W - 232}pt;top:${hb + 10}pt;width:232pt;height:48pt">${f.map((x, i) => `<div class="f"><div class="v" data-slot="oh.fact${i}" data-lines="1">${i === 1 ? x[0] : esc(x[0])}</div><div class="l" data-slot="oh.fact${i}l" data-lines="1">${esc(x[1])}</div>${i === 1 && BD.bathNum(L).half ? `<div class="l" data-slot="oh.fact1x" data-lines="1">${esc(BD.bathNum(L).half)}</div>` : ''}</div>`).join('')}</div>`; }
   h += `<div class="hrule" style="top:${hb + 68}pt;left:${X}pt;right:${X}pt"></div>`;
 
   // the house in a write-up on the left, two horizontal room photos stacked on the right, each captioned with its room and size
-  const rooms = OHC.rooms || [], ids = (OHC.photos || []).slice(1, 3), top = hb + 78, bot = 654, g = 10, cap = 15, rh = (bot - top - g)/2 - cap;
+  const rooms = OHC.rooms || [], ids = (OHC.photos || []).slice(1, 3), top = hb + 78, bot = 654, g = 10, cap = 23, rh = (bot - top - g)/2 - cap;
   const pw = Math.min(276, Math.floor(rh * 2.95)), tw = W - pw - 20, px = X + W - pw;
   ids.forEach((id, i) => { const c = rooms[i] || {}, y = top + i*(rh + cap + g);
     h += AT.photo(D, id, `position:absolute;left:${px}pt;top:${y}pt;width:${pw}pt;height:${rh}pt`, 'oh.room' + i, 'room');
@@ -72,6 +86,7 @@ window.brochureReady = (async function(){
   await AT.settle();
   document.querySelectorAll('#date').forEach(el => AT.fitLine(el, 40));
   AT.fitLine(document.getElementById('addr'), 28);
+  document.querySelectorAll('.rm.cp .t').forEach(el => AT.fitLine(el, 10));   // a long room name shrinks to fit beside its size
   issues.push(...AT.fitHouse(D));
   { const el = document.getElementById('ohw'), box = el.parentElement, maxH = box.clientHeight; let best = 9.5;   // the write-up takes the biggest size that fits the column, last line well filled
     for(let fs = 12; fs >= 9; fs -= 0.25){ el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs * 1.5) + 'pt'; if(el.scrollHeight > maxH + 0.5) continue; AT.balance(el);

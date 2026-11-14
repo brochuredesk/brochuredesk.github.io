@@ -7,6 +7,8 @@
 <script src="../engine/baths.js"></script>
 <script src="center-column.js"></script>
 <script src="plan.js"></script>
+<script src="../engine/planink.js"></script>
+<script src="capfit.js"></script>
 <!--
   The Center Column · 11 x 17 fold-over (laid 17 wide, folded down the middle into four upright 8.5 x 11 pages that open like a book)
     outside spread: back (left) + cover (right)        inside spread: front rooms (left) + bedrooms and baths (right)
@@ -21,6 +23,11 @@
 <style>
   .kick{position:absolute;left:var(--m);top:31pt;width:380pt}
   .ttl{position:absolute;left:var(--m);top:41pt;width:430pt}
+  .bk .cap .a{font-size:9.5pt;line-height:13pt}   /* the back's captions grow into the room the shorter card left (owner 11/10, p106) */
+  .bk .cap .h{font-size:13.5pt;line-height:16pt}
+  .cc .cc-nameblock .cc-name{padding-bottom:2pt}
+  .tx .h{padding-bottom:5pt}   /* room for the descenders (printchecks text-clipped) */
+  .cap .h{padding-bottom:2pt}
 </style>
 </head>
 <body>
@@ -49,10 +56,10 @@ window.brochureReady = (async function(){
   const header = (P, which, logo) => `${kick(P.kicker, which + '.kicker')}${title(P.title, which + '.title')}${logo ? logoHTML() : ''}<div class="hrule" style="top:78pt"></div>`;
   const logoHTML = () => b.logo ? `<div class="hdr-logo" data-logo="1"><img src="${esc(b.logo)}" alt=""></div>` : '';
   const cap = (it, slot, min) => `<div class="cap"><div class="h" data-slot="${slot}.h" data-lines="1">${esc(it.title)}</div>${it.dims ? `<div class="d" data-slot="${slot}.d" data-lines="1">${esc(dm(it.dims))}</div>` : ''}` +
-    `<div class="a" data-slot="${slot}.a" data-para="1" data-min="${min || 2}">${esc(it.body)}</div></div>`;
+    `<div class="a"${it.x ? ` data-x="${esc(JSON.stringify(it.x))}"` : ''} data-slot="${slot}.a" data-para="1" data-min="${min || 2}">${esc(it.body)}</div></div>`;
   const item = (it, slot, style, min) => `<div class="item" style="${style || 'flex:' + (it.grow || 1) + ' 1 0'}">${AT.photo(D, it.photo, '', slot)}${cap(it, slot, min)}</div>`;
-  const places = (B, grid, fill) => `<div class="places" style="${fill ? 'flex:1 1 0' : ''}"><div class="sect" data-slot="back.placesTitle" data-lines="1" style="margin-bottom:5pt;flex:none">${esc(B.placesTitle)}</div><div class="${grid ? 'grid' : ''}" style="${grid ? '' : 'display:flex;flex-direction:column' + (fill ? ';flex:1 1 0;min-height:0' : '')}">` +
-    B.places.map((p, i) => `<div class="pr" style="${fill ? '' : 'flex:none;min-height:16pt'}"><span data-slot="back.place${i}.n" data-lines="1">${esc(p.n)}</span><b data-slot="back.place${i}.d" data-lines="1">${esc(p.d)}</b></div>`).join('') + `</div></div>`;
+  const places = (B, grid, fill) => `<div class="places" style="${fill ? 'flex:1 1 0' : ''}"><div class="sect" data-slot="back.placesTitle" data-lines="1" style="margin-bottom:5pt;flex:none${grid ? ';border-bottom:.8pt solid var(--line);padding-bottom:4pt' : ''}">${esc(B.placesTitle)}</div><div class="${grid ? 'grid' : ''}" style="${grid ? '' : 'display:flex;flex-direction:column' + (fill ? ';flex:1 1 0;min-height:0' : '')}">` +
+    (B.places || []).map((p, i) => `<div class="pr" style="${fill ? '' : 'flex:none;min-height:16pt'}"><span data-slot="back.place${i}.n" data-lines="1">${esc(p.n)}</span><b data-slot="back.place${i}.d" data-lines="1">${esc(p.d)}</b></div>`).join('') + `</div></div>`;
 
   // ---------- cover ----------
   function cover(){
@@ -73,7 +80,7 @@ window.brochureReady = (async function(){
 
   // ---------- inside: the central column ----------
   const textCol = (it, slot, xt, fw) => `<div class="tx"${fw ? ` data-fixw="${fw}" style="flex:0 0 ${fw}pt"` : ''}><div class="h" data-slot="${slot}.h" data-lines="1">${esc(it.title)}</div>` +
-    `<div class="a" data-slot="${slot}.a" data-para="1" data-min="2">${esc(it.body)}</div>` +
+    `<div class="a"${it.x ? ` data-x="${esc(JSON.stringify(it.x))}"` : ''} data-slot="${slot}.a" data-para="1" data-min="2">${esc(it.body)}</div>` +
     (xt ? `<div class="xt">${AT.photo(D, xt.photo, 'flex:1 1 0;min-height:82pt', slot + '.xt')}<div class="cap"><div class="h" data-slot="${slot}.xt.h" data-lines="1">${esc(xt.title)}</div><div class="a" data-slot="${slot}.xt.a" data-para="1" data-min="2">${esc(xt.body)}</div></div></div>` : '') +
     (it.dims ? `<div class="big" data-slot="${slot}.big" data-lines="1">${esc(dm(it.dims))}</div>` : ``) + `</div>`;
   const sideCol = (it, slot, i, fw) => `<div class="sd"${fw ? ` style="flex:0 0 ${fw}pt"` : ''}>${i % 2 ? cap(it, slot, 2).replace('class="cap"', 'class="cap top"') : ''}${AT.photo(D, it.photo, 'flex:1 1 0;min-height:70pt;max-height:218pt', slot)}${i % 2 ? '' : cap(it, slot, 2)}</div>`;
@@ -87,7 +94,7 @@ window.brochureReady = (async function(){
   };
   function inside(P, which){
     return `${header(P, which, false)}
-      <div class="flow" style="top:92pt;bottom:29pt;gap:14pt">${P.rows.map((r, i) => rowHTML(r, i, which)).join('')}${P.note ? `<div style="flex:none;border-top:.8pt solid var(--line);padding-top:8pt"><div class="sect" data-slot="${which}.noteTitle" data-lines="1" style="margin-bottom:4pt">${esc(P.note.title)}</div><div class="body" data-slot="${which}.note" data-para="1" data-min="2">${esc(P.note.body)}</div></div>` : ''}</div>`;
+      <div class="flow" style="top:92pt;bottom:29pt;gap:14pt">${(P.rows || []).map((r, i) => rowHTML(r, i, which)).join('')}${P.note ? `<div style="flex:none;border-top:.8pt solid var(--line);padding-top:8pt"><div class="sect" data-slot="${which}.noteTitle" data-lines="1" style="margin-bottom:4pt">${esc(P.note.title)}</div><div class="body" data-slot="${which}.note" data-para="1" data-min="2">${esc(P.note.body)}</div></div>` : ''}</div>`;
   }
 
   // ---------- back ----------
@@ -97,28 +104,34 @@ window.brochureReady = (async function(){
   function back(){
     const B = C.back || {}, ph = (B.photos || []).slice(0, 3);
     const zoneHead = planOK ? `<div class="pf-title" data-slot="back.planTitle" data-lines="1">Floor plan</div><div class="legend" id="planbox-leg" style="${floors === 1 ? 'top:auto;bottom:8pt;left:0;right:0;text-align:center' : ''}"></div>` : '';
+    // owner 11/10/2026 (p106, round 3 rule 1): the contact card runs the full width again, shorter top to bottom (two rows), with the brokerage
+    // logo inside it (none by the title); the nearby places sit above it and the plan, photos and captions grow into the room
+    const CARDH = 66, CY = 757 - CARDH, short = {grow: 0, size: 'short', s: {name: 20, nameFloor: 15, desigInline: true, wrap: false, phone: 13.5, line: 9.5, office: 9.5,
+      hsW: 50, hsGap: 14, pad: [6, 14, 5], panelW: 160, panelPad: [5, 8], logo: {wide: [140, 30], square: [32, 32], tall: [34, 34]}}};
+    const FB = 810 - (CY - (planOK && floors === 3 ? -2 : 12));   // the flow ends 12 pt above the card (2 pt when the photos' captions sit right over it)
     let body;
     if(floors === 1){
-      // one floor: the plan (or the room list) in a tall column on the left, three photos stacked on the right
+      // one floor: the plan (or the room list) in a tall column on the left with the places under it, three photos stacked on the right
       const W = 258;
-      body = `<div class="flow" style="top:92pt;bottom:172pt;flex-direction:row;gap:14pt">
+      body = `<div class="flow bk" style="top:92pt;bottom:${FB}pt;flex-direction:row;gap:14pt">
         <div style="flex:0 0 ${W}pt;display:flex;flex-direction:column;min-height:0">
-          ${planOK ? `<div class="planframe" id="planbox" style="height:392pt">${zoneHead}</div>` : `<div class="rooms-wrap" style="flex:none"><div class="sect" data-slot="back.roomsTitle" data-lines="1" style="margin-bottom:6pt">${esc(B.roomsTitle || 'Room by room')}</div>${roomsList(B, W)}</div>`}
-          <div style="flex:none;display:flex;flex-direction:column;margin-top:14pt">${places(B, false)}</div>
+          ${planOK ? `<div class="planframe" id="planbox" style="flex:1 1 0;min-height:340pt">${zoneHead}</div>` : `<div class="rooms-wrap" style="flex:none"><div class="sect" data-slot="back.roomsTitle" data-lines="1" style="margin-bottom:6pt">${esc(B.roomsTitle || 'Room by room')}</div>${roomsList(B, W)}</div>`}
+          <div style="flex:${planOK ? 'none' : '1 1 0'};display:flex;flex-direction:column;margin-top:14pt;min-height:0">${places(B, false, !planOK)}</div>
         </div>
         <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:11pt;min-height:0">${ph.map((it, i) => item(it, `back.photo${i}`, '', 2)).join('')}</div>
       </div>`;
     } else {
-      body = `<div class="flow" style="top:92pt;bottom:172pt;gap:12pt">
+      body = `<div class="flow bk" style="top:92pt;bottom:${FB}pt;gap:12pt">
         ${planOK && floors === 3 ? `<div style="flex:none;display:flex;gap:16pt"><div class="planframe" id="planbox" style="height:272pt;width:376pt;flex:none">${zoneHead}</div><div style="flex:1;min-width:0;display:flex;flex-direction:column">${places(B, false, true)}</div></div>`
         : planOK ? `<div class="planframe" id="planbox" style="height:${floors === 4 ? 282 : 272}pt">${zoneHead}</div>`
-          : `<div class="rooms-wrap" style="flex:none"><div class="sect" data-slot="back.roomsTitle" data-lines="1" style="margin-bottom:6pt">${esc(B.roomsTitle || 'Floor by floor')}</div><div style="display:grid;grid-template-columns:repeat(${Math.min(floors, 4)},1fr);column-gap:14pt">${(B.floors || []).map((f, fi) => roomsList({floors: [f]}, 130).replace(/data-slot="back\.floor0/g, `data-slot="back.floor${fi}`)).join('')}</div></div>`}
+          : `<div class="rooms-wrap" style="flex:none"><div class="sect" data-slot="back.roomsTitle" data-lines="1" style="margin-bottom:6pt">${esc(B.roomsTitle || 'Floor by floor')}</div><div style="display:grid;grid-template-columns:repeat(${Math.min(floors, 4)},1fr);column-gap:14pt;align-items:start">${(B.floors || []).map((f, fi) => roomsList({floors: [f]}, 130).replace(/data-slot="back\.floor0/g, `data-slot="back.floor${fi}`)).join('')}</div></div>`}
         <div style="flex:1 1 0;display:flex;gap:12pt;min-height:0">${ph.map((it, i) => item(it, `back.photo${i}`, 'flex:1 1 0', 2)).join('')}</div>
-        ${planOK && floors === 3 ? '' : places(B, true)}
+        ${planOK && floors === 3 ? '' : `<div style="flex:none">${places(B, true)}</div>`}
       </div>`;
     }
-    return `${kick(B.kicker, 'back.kicker')}${title(B.title, 'back.title')}<div class="hrule" style="top:78pt"></div>${body}
-      ${AT.card(D, [29, 628, 554, 129], C.footnote || '')}`;
+    const card = AT.card(D, [29, CY, 554, CARDH], '', short);
+    return `${header(B, 'back', false)}${body}${card}
+      <div class="abs fine" style="left:29pt;top:762pt;width:554pt;height:8pt;white-space:nowrap" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(C.footnote || 'Information deemed reliable but not guaranteed.')}</div>`;
   }
 
   const panels = {front: cover(), left: inside(C.left || {}, 'left'), right: inside(C.right || {}, 'right'), back: back()};
@@ -154,7 +167,9 @@ window.brochureReady = (async function(){
     }
     issues.push(...pl.issues);
     if(levels.length === 1) pl.html = pl.html.replace(/<div class="abs plan-level"[^>]*>[^<]*<\/div>/g, '');
-    const layer = document.createElement('div'); layer.className = 'planlayer'; layer.innerHTML = pl.html; bk.closest('.panel').appendChild(layer);
+    const clr = !(window.PlanInk && PlanInk.panel(D, true)); if(clr) bk.classList.add('clear');
+    const layer = document.createElement('div'); layer.className = 'planlayer' + (clr ? ' clear' : ''); layer.innerHTML = pl.html; bk.closest('.panel').appendChild(layer);
+    if(window.PlanInk) PlanInk.applyAll(D, true);   // owner 11/10: the listing's own plan, background clear, light lines on the dark field
     const Z = PlanDraw.ZONES, zs = PlanDraw.zonesOf(D.plan);
     document.getElementById('planbox-leg').innerHTML = Object.keys(Z).filter(k => zs.includes(k)).map(k => `<span style="display:inline-flex;align-items:center;margin:0 4pt"><i style="display:inline-block;width:10pt;height:10pt;margin-right:5pt;border:.6pt solid rgba(30,46,45,.5);background:color-mix(in srgb, ${Z[k].fill} ${Math.round(Z[k].op * 100)}%, #fff)"></i>${esc(Z[k].label)}</span>`).join('');
     const d = document.createElement('div'); d.className = 'fine plandisc'; d.setAttribute('data-slot', 'back.planDisc'); d.setAttribute('data-fine', '1'); d.setAttribute('data-lines', '1');
@@ -206,6 +221,26 @@ window.brochureReady = (async function(){
   }
   fitText();
   document.querySelectorAll('[data-para]').forEach(el => AT.balance(el));
+  // owner 11/10/2026 (p103): the cover write-up runs the full width of the rule above it, every line 90%+ and lined up with the photos below:
+  // no balancing to a narrower box; the type size (9.5 to 11.5 pt) that ends the last line at 90%+ with only small word gaps, then justified
+  (function(){
+    const el = document.querySelector('[data-slot="cover.house"]'); if(!el) return;
+    const stats = () => { const rg = document.createRange(), rows = [], tn = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n;
+      while((n = tn.nextNode())){ const re = /\S+/g; let m; while((m = re.exec(n.textContent))){ rg.setStart(n, m.index); rg.setEnd(n, m.index + m[0].length); const r = rg.getClientRects()[0]; if(!r) continue;
+        const row = rows.find(x => Math.abs(x.t - r.top) < r.height * .5); if(row){ row.r = Math.max(row.r, r.right); row.n++; } else rows.push({t: r.top, l: r.left, r: r.right, n: 1}); } }
+      const b = el.getBoundingClientRect(), W = b.width, sp = parseFloat(getComputedStyle(el).fontSize) * .26;
+      rows.sort((p, q) => p.t - q.t);
+      return {lines: rows.length, last: rows.length ? (rows[rows.length - 1].r - b.left) / W : 0,
+        gap: Math.max(1, ...rows.slice(0, -1).map(x => x.n > 1 ? 1 + (b.right - x.r) / ((x.n - 1) * sp) : 9))}; };
+    el.style.maxWidth = 'none'; el.style.width = '100%'; el.style.textAlign = 'left';
+    let pick = null;
+    for(const fs of [10, 10.1, 10.2, 10.3, 10.4, 10.5, 9.9, 9.8, 9.7, 9.6, 9.5, 10.6, 10.7, 10.8, 10.9, 11, 11.2, 11.4]) for(const ls of [0, .004, -.004, .008, -.008]){
+      el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs * 1.42).toFixed(2) + 'pt'; el.style.letterSpacing = ls ? ls + 'em' : '';
+      const q = stats(); if(q.last >= .9 && q.gap <= 2.5){ pick = {fs, ls}; break; } }
+    if(!pick){ el.style.fontSize = ''; el.style.lineHeight = ''; el.style.letterSpacing = ''; issues.push({slot: 'cover.house', kind: 'cover-writeup-short', detail: 'no size ends the last line at 90%+'}); return; }
+    el.style.fontSize = pick.fs + 'pt'; el.style.lineHeight = (pick.fs * 1.42).toFixed(2) + 'pt'; el.style.letterSpacing = pick.ls ? pick.ls + 'em' : '';
+    el.style.textAlign = 'justify'; el.style.textAlignLast = 'left'; el.dataset.fullw = pick.fs;
+  })();
   issues.push(...AT.fitPhotos(D));
 
   document.querySelectorAll('.tx').forEach(tx => {   // the size block (rule and number) sits fully below the text above it
@@ -224,6 +259,29 @@ window.brochureReady = (async function(){
   window.proofNotes.push({gaps: [...document.querySelectorAll('.tx')].map(tx => { const a = tx.querySelector('.a'), big = tx.querySelector('.big'), xt = tx.querySelector('.xt'); const end = xt ? xt.offsetTop + xt.offsetHeight : a.offsetTop + a.offsetHeight; const lim = big ? big.offsetTop : tx.clientHeight; return {slot: a.dataset.slot, gap: Math.round(pt(lim - end)), fs: +(parseFloat(getComputedStyle(a).fontSize) * 72 / 96).toFixed(2), w: Math.round(pt(tx.clientWidth)), h: Math.round(pt(tx.clientHeight))}; })});
   window.proofNotes.push({photos: [...document.querySelectorAll('.ph')].map(el => ({slot: el.dataset.slotPhoto, w: Math.round(pt(el.clientWidth)), h: Math.round(pt(el.clientHeight))}))});
   ContactCard.fit(document);
+  await document.fonts.ready; CapFit.run(document.querySelectorAll('.cap .a, .fc .a, .tx .a'));
+  // side-by-side captions run the same number of lines (owner 11/10, rule 4): a shorter caption takes more of its own true lines (data-x),
+  // never fewer, until it matches its row-mate; then it is fitted again
+  const sents = t => (String(t).match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || []).map(x => x.trim()).filter(Boolean);
+  const level = (slots, plus) => {
+    const els = slots.map(q => document.querySelector(`[data-slot="${q}"]`)).filter(Boolean); if(els.length < 2) return;
+    const n = el => AT.lineBoxes(el).length, tgt = Math.max(...els.map(n)) + (plus || 0);
+    for(const el of els){ if(n(el) >= tgt) continue;
+      let x = []; try { x = JSON.parse(el.dataset.x || '[]'); } catch(e) {}
+      if(el.dataset.capst){ const st = JSON.parse(el.dataset.capst); el.innerHTML = el.dataset.caporig; [el.style.maxWidth, el.style.fontSize, el.style.letterSpacing, el.style.textAlign] = st; el.style.wordSpacing = ''; }
+      ['caporig', 'capst', 'capfit', 'capw', 'fixed'].forEach(k => delete el.dataset[k]);
+      const base = sents(el.textContent), extra = x.filter(t => !base.includes(t)).slice(0, 8), keep = el.textContent;
+      const tried = [];
+      for(let m = 1; m < (1 << extra.length); m++){ const t = base.concat(extra.filter((_, i) => m >> i & 1)).join(' '); el.textContent = t; if(n(el) === tgt) tried.push(t); }
+      let done = false;
+      for(const t of tried.slice(0, 12)){ el.textContent = t; ['caporig', 'capst', 'capfit', 'capw', 'fixed'].forEach(k => delete el.dataset[k]); el.style.fontSize = ''; el.style.letterSpacing = ''; el.style.textAlign = '';
+        CapFit.run([el]); if(n(el) === tgt && el.dataset.capfit && el.dataset.capfit !== 'none'){ done = true; break; } }
+      if(!done && tried.length){ el.textContent = tried[0]; ['caporig', 'capst', 'capfit', 'capw', 'fixed'].forEach(k => delete el.dataset[k]); el.style.fontSize = ''; el.style.letterSpacing = ''; el.style.textAlign = 'left'; done = true; }
+      if(!done){ el.textContent = keep; ['caporig', 'capst', 'capfit', 'capw', 'fixed'].forEach(k => delete el.dataset[k]); CapFit.run([el]); issues.push({slot: el.dataset.slot, kind: 'caption-row-uneven', detail: 'no true lines bring it level with its row-mate'}); }
+    }
+  };
+  level(['cover.item0.a', 'cover.item1.a']);
+  level(['back.photo0.a', 'back.photo1.a', 'back.photo2.a'], planOK && floors === 3 ? 2 : 0);   // over the card (3-floor plan back) the captions take a line more of true detail
   window.brochureCheck = () => AT.check(D, issues);
   window.photoPlacements = AT.placements;
 })();

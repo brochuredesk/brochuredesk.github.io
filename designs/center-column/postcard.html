@@ -8,6 +8,7 @@
 <script src="../engine/baths.js"></script>
 <script src="center-column.js"></script>
 <script src="center-column-cards.js"></script>
+<script src="capfit.js"></script>
 <!--
   The Center Column · Just Listed and Just Sold postcards. data.piece: card "listed" | "sold", size "6x9" (trim 648 x 432 pt) | "6x11"
   (792 x 432 pt), side "front" | "back". Print adds 0.125 in (9 pt) bleed on every edge (TrimBox set by the renderer).
@@ -34,7 +35,7 @@ window.brochureReady = (async function(){
   const esc = AT.esc, L = D.listing, A = D.agent || {}, b = D.brand || {};
   const issues = await AT.fontsReady(D);
   const sold = D.piece.card === 'sold', big = D.piece.size === '6x11', front = D.piece.side === 'front';
-  const PCall = ((D.copy || {}).pc || {}), PC = (sold ? PCall.js : PCall.jl) || {};
+  const PCall = AT.pcCopy(D), PC = (sold ? PCall.js : PCall.jl) || {};
   document.body.dataset.mode = D.mode || 'email';
   const PT = 96/72, W = big ? 792 : 648, H = 432, M = 27, status = sold ? ['Just', 'Sold'] : ['Just', 'Listed'];
   const hero = PC.hero || 'front';
@@ -42,15 +43,17 @@ window.brochureReady = (async function(){
 
   if(front){
     // ---------- front ----------
-    const xR = big ? 497 : 420, ph = 261, cx = xR + 18, cw = W - M - cx, S = big ? 70 : 64, LH = big ? 58 : 54;
+    // the frame never cuts the roof or the sides (owner 11/7): a tall house narrows the photo to its own shape and the right column takes the room
+    const hp0 = (D.photos || {})[PC.hero || 'front'] || {}, bx0 = hp0.box, xFit = bx0 && hp0.w ? Math.floor(261 * (hp0.w / hp0.h) / ((bx0[3] - bx0[1]) + .03)) - 9 : 9999;
+    const xR = Math.max(big ? 430 : 370, Math.min(big ? 497 : 420, xFit)), ph = 261, cx = xR + 18, cw = W - M - cx, S = big ? 70 : 64, LH = big ? 58 : 54;
     h += AT.photo(D, hero, `position:absolute;left:-9pt;top:-9pt;width:${xR + 9}pt;height:${ph}pt`, 'front.hero', 'hero');
     let bottom;
     if(!sold){
       const st = AT.stats(L);
       bottom = `<div class="stk">${st.slice(0, 4).map((t, i) => `<div data-slot="stat${i}" data-lines="1">${esc(t).replace(/½/g, '<span class="bd-half">½</span>')}</div>`).join('')}</div>`;
     } else {
-      bottom = `<div><div class="dsp" style="font-size:22pt;line-height:24pt;color:var(--signal)" data-slot="sold.cta" data-lines="2">${esc(PC.cta1 || 'Thinking of selling?')}<br>${esc(PC.cta2 || 'Let’s talk.')}</div>
-        <div class="dsp" id="agname" style="margin-top:8pt;font-size:21pt;line-height:24pt" data-slot="agent.name" data-lines="1">${esc(A.name || '')}</div>
+      bottom = `<div><div class="dsp" id="cta" style="font-size:22pt;line-height:24pt;color:var(--signal);white-space:nowrap" data-slot="sold.cta" data-lines="2">${esc(PC.cta1 || 'Thinking of selling?')}<br>${esc(PC.cta2 || 'Let’s talk it over.')}</div>
+        <div class="dsp" id="agname" style="margin-top:8pt;font-size:21pt;line-height:24pt;padding-bottom:3pt" data-slot="agent.name" data-lines="1">${esc(A.name || '')}</div>
         <div style="font:700 13pt/16pt var(--font-body);color:var(--ink);letter-spacing:.3pt;white-space:nowrap;overflow:hidden;margin-top:1pt" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div></div>`;
     }
     const nrc = sold ? 294 : 243;
@@ -73,13 +76,13 @@ window.brochureReady = (async function(){
     // the light mail panel (postage, return address, address block) and the barcode strip's panel; the amber edge strip runs across the top
     h += `<div class="mailp" style="left:${W - 252}pt;top:-9pt;width:${261}pt;height:${309}pt"></div><div class="mailp" style="left:${zB[0] - 4}pt;top:386pt;width:${W - zB[0] + 4 + 9}pt;height:55pt"></div>`;
     h += `<div class="bnd" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:15pt"></div>`;
-    h += `<div class="abs mret" style="left:${zA[0]}pt;top:20pt;width:${zP[0] - 8 - zA[0]}pt;height:34pt;overflow:hidden" data-slot="return" data-lines="3">${b.brokerage ? '<b>' + esc(b.brokerage) + '</b>' : ''}${ret.map(r => '<br>' + esc(r)).join('')}</div>`;
+    h += `<div class="abs mret" style="left:${zA[0]}pt;top:20pt;width:${zP[0] - 8 - zA[0]}pt;height:34pt;overflow:hidden" data-slot="return" data-small="1" data-lines="3">${b.brokerage ? '<b>' + esc(b.brokerage) + '</b>' : ''}${ret.map(r => '<br>' + esc(r)).join('')}</div>`;
     h += `<div class="abs dsp" style="left:${zA[0]}pt;top:70pt;width:${zP[0] - 10 - zA[0]}pt;height:70pt;font-size:38pt;line-height:34pt;color:#1e2e2d;letter-spacing:-.5pt" data-slot="status" data-lines="2">${status[0]}<br><span style="color:#7a5f22;font-style:italic">${status[1]}</span></div>`;
     h += `<div class="abs dsp" id="st" style="left:${zA[0]}pt;top:146pt;width:${zP[0] - 10 - zA[0]}pt;height:14pt;font-size:13pt;line-height:14pt;color:#1e2e2d;letter-spacing:0" data-slot="back.street" data-lines="1">${esc(L.address)}</div>`;
     h += `<div class="abs kicker" style="left:${zA[0]}pt;top:163pt;width:${zP[0] - 10 - zA[0]}pt;height:10pt;color:#7a5f22" data-slot="back.place" data-lines="1">${esc(AT.placeZip(L).toUpperCase())}</div>`;
     const slab = PC.slab || {};
-    h += `<div class="slab" data-blk="1" style="left:${zP[0]}pt;top:116pt;width:${W - zP[0] + 9}pt;height:68pt;padding:6pt 18pt 6pt 9pt"><div class="big" data-slot="slab.big" data-lines="2">${esc(slab.big || '')}</div><div class="sub" data-slot="slab.sub" data-lines="3">${esc(slab.sub || '')}</div></div>`;
-    const cap = (c, x, y, w, slot, lines) => `<div class="abs cap2 bk" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h"><span data-slot="${slot}.title" data-lines="1">${esc(c.t)}</span>${c.dims ? `<i data-slot="${slot}.size" data-lines="1">${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="${slot}" data-para="1" data-min="2" data-lines="${lines}">${esc(big && c.a11 ? c.a11 : c.a)}</div></div>`;
+    h += `<div class="slab" data-blk="1" style="left:${zP[0]}pt;top:116pt;width:${W - zP[0] + 9}pt;height:68pt;padding:5pt 18pt 5pt 9pt"><div class="big" data-slot="slab.big" data-lines="2">${esc(slab.big || '')}</div><div class="sub" data-slot="slab.sub" data-lines="4">${esc(slab.sub || '')}</div></div>`;
+    const cap = (c, x, y, w, slot, lines) => `<div class="abs cap2 bk" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h"><span data-slot="${slot}.title" data-lines="1">${esc(c.t)}</span>${c.dims ? `<i data-slot="${slot}.size" data-lines="1">${esc(c.dims)}</i>` : ''}</div><div class="a"${c.x ? ` data-x="${esc(JSON.stringify(c.x))}"` : ''} data-slot="${slot}" data-para="1" data-min="2" data-lines="${lines}">${esc(big && c.a11 ? c.a11 : c.a)}</div></div>`;
     if(!sold){
       const bk = (PC.back || []).slice(0, big ? 3 : 2), g = 10, pw = (avail - g*(bk.length - 1))/bk.length, capH = 5 + 15 + 3*12, phh = bot0 - top0 - capH;
       bk.forEach((c, i) => { const x = X + i*(pw + g);
@@ -87,11 +90,11 @@ window.brochureReady = (async function(){
         h += cap(c, x.toFixed(2), top0 + phh, pw.toFixed(2), "back.cap" + i, 3); });
     } else {
       const ids = PC.photos || [], g = 10, pw = (avail - g)/2;
-      const items = (big && PC.services11) || PC.services || [], svcH = big ? 68 : 52, lh = big ? 15 : 14.5, nl = 3, ty = bot0 - nl*lh, sy = ty - 14 - 10 - svcH - 15, ph1 = sy - 12 - top0;
+      const items = (big && PC.services11) || PC.services || [], svcH = big ? 50 : 52, lh = big ? 15 : 14.5, nl = 3, ty = bot0 - nl*lh, sy = ty - 14 - (big ? 4 : 10) - svcH - 15, ph1 = sy - 12 - top0;
       ids.slice(0, 2).forEach((id, i) => { h += AT.photo(D, id, `position:absolute;left:${(X + i*(pw + g)).toFixed(2)}pt;top:${top0}pt;width:${pw.toFixed(2)}pt;height:${ph1}pt`, 'back.photo' + i, 'bp'); });
       h += `<div class="abs kicker" style="left:${X}pt;top:${sy}pt;width:${avail}pt;height:10pt" data-slot="sold.servicesLabel" data-lines="1">${esc(PC.servicesLabel || 'What I do for sellers')}</div>`;
       h += `<div class="abs svc${big ? ' b11' : ''}" style="left:${X}pt;top:${sy + 15}pt;width:${avail}pt;height:${svcH}pt;display:grid;grid-template-columns:1fr 1fr;column-gap:14pt;row-gap:4pt;align-content:space-between">${items.map((s, i) => `<div class="it"><span class="bx"></span><span data-slot="sold.svc${i}" data-lines="2">${esc(s)}</span></div>`).join('')}</div>`;
-      const my = sy + 15 + svcH + 10;
+      const my = sy + 15 + svcH + (big ? 4 : 10);
       h += `<div class="abs kicker" style="left:${X}pt;top:${my}pt;width:${avail}pt;height:10pt" data-slot="sold.meetLabel" data-lines="1">${esc(PC.meetLabel || 'When we meet')}</div>`;
             h += `<div class="abs ptxt jt" style="left:${X}pt;top:${ty}pt;width:${avail}pt;height:${nl*lh}pt;font-size:${big ? 10.5 : 10}pt;line-height:${lh}pt" data-slot="sold.meet" data-para="1" data-min="2" data-fillbox="1" data-nobal="1">${esc(big ? PC.meet11 : PC.meet9)}</div>`;
     }
@@ -120,6 +123,49 @@ window.brochureReady = (async function(){
   issues.push(...AT.fitHouse(D));
   AT.fitRow([...document.querySelectorAll('.cap2 .a')]);
   document.querySelectorAll('[data-para]:not([data-nobal])').forEach(el => AT.balance(el));
+  // owner 11/10/2026 (rules 5, 8): every line of a write-up, caption or bullet fills its width (last line 80%+), with only small word gaps:
+  // the type size moves a little (never past 12% up) until the last line fills, then the text is justified; captions may also swap in
+  // their own extra true lines (CapFit)
+  { const cta = document.getElementById('cta'); if(cta){ const w = cta.clientWidth, rg = document.createRange(); rg.selectNodeContents(cta);
+      const wid = () => Math.max(...[...rg.getClientRects()].map(r => r.width)); let fs = 22; cta.style.fontSize = fs + 'pt';
+      while(wid() < w * .97 && fs < 32){ fs += .25; cta.style.fontSize = fs + 'pt'; cta.style.lineHeight = (fs * 1.09) + 'pt'; }
+      while(wid() > w && fs > 16){ fs -= .25; cta.style.fontSize = fs + 'pt'; cta.style.lineHeight = (fs * 1.09) + 'pt'; } } }
+  const stats = el => { const rows = [], rg = document.createRange(), tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n;
+    while((n = tw.nextNode())){ const re = /\S+/g; let m; while((m = re.exec(n.textContent))){ rg.setStart(n, m.index); rg.setEnd(n, m.index + m[0].length); const r = rg.getClientRects()[0]; if(!r) continue;
+      const row = rows.find(x => Math.abs(x.t - r.top) < r.height * .5); if(row){ row.r = Math.max(row.r, r.right); row.n++; } else rows.push({t: r.top, r: r.right, n: 1}); } }
+    rows.sort((p, q) => p.t - q.t); const b = el.getBoundingClientRect(), sp = parseFloat(getComputedStyle(el).fontSize) * .26;
+    return {n: rows.length, last: rows.length ? (rows[rows.length - 1].r - b.left) / b.width : 0, gap: Math.max(1, ...rows.slice(0, -1).map(x => x.n > 1 ? 1 + (b.right - x.r) / ((x.n - 1) * sp) : 9)), over: el.scrollHeight > el.clientHeight + 1}; };
+  const fillPara = (el, maxN) => { const fs0 = parseFloat(getComputedStyle(el).fontSize) * 72 / 96, lh0 = parseFloat(getComputedStyle(el).lineHeight) * 72 / 96, r0 = lh0 / fs0;
+    el.style.textAlign = 'left';
+    for(const k of [0, .01, -.01, .02, -.02, .03, -.03, .04, -.04, .05, -.05, .06, .07, .08, .09, .1, .11, .12]) for(const ls of [0, .006, -.006, .012, -.012]){ const fs = fs0 * (1 + k); if(fs < 8 && k < 0) continue;
+      el.style.fontSize = fs.toFixed(2) + 'pt'; el.style.letterSpacing = ls ? ls + 'em' : ''; if(!maxN) el.style.lineHeight = (fs * r0).toFixed(2) + 'pt';
+      const q = stats(el); if(q.n >= 2 && (!maxN || q.n <= maxN) && !q.over && q.last >= .8 && q.gap <= 2.5){ el.style.textAlign = 'justify'; el.style.textAlignLast = 'left'; return true; } }
+    el.style.fontSize = fs0 + 'pt'; el.style.lineHeight = lh0 + 'pt'; el.style.letterSpacing = ''; return false; };
+  // a write-up built from the fold-over's house copy (no postcard copy given) keeps the most of its sentences, in order, that fill the box
+  const fitSents = el => { const all = (el.textContent.match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || []).map(x => x.trim()).filter(Boolean), n = Math.min(all.length, 10), cands = [];
+    for(let m = 1; m < (1 << n); m += 2){ const pick = all.filter((_, i) => i < n && (m >> i & 1)); cands.push(pick.join(' ')); }
+    cands.sort((p, q) => q.length - p.length);
+    const fs0 = el.style.fontSize, lh0 = el.style.lineHeight;
+    const T0 = performance.now();
+    for(const t of cands.slice(0, 40)){ if(performance.now() - T0 > 4000) break; el.textContent = t; el.style.fontSize = fs0; el.style.lineHeight = lh0; if(el.scrollHeight > el.clientHeight + 1 && t.length > 60) continue; if(fillPara(el, 0)) return; }
+    el.textContent = all.join(' '); };
+  document.querySelectorAll('[data-slot="front.about"], [data-slot="sold.meet"]').forEach(el => { if(!fillPara(el, 0) && PCall.fromFoldover) fitSents(el); });
+  document.querySelectorAll('.svc .it > span[data-slot]').forEach(el => fillPara(el, 2));
+  { const sub = document.querySelector('[data-slot="slab.sub"]'); if(sub){ sub.style.lineHeight = '9.5pt'; if(!fillPara(sub, 4)) AT.balance(sub); } }
+  document.querySelectorAll('.cap2 .a[data-x]').forEach(el => { const want = +el.dataset.lines || 3, NL = () => AT.lineBoxes(el).length, lastF = () => { const ls = AT.lineBoxes(el), l = ls[ls.length - 1]; return l ? (l.r - l.l) / el.getBoundingClientRect().width : 0; };
+    if(NL() >= want && lastF() >= .8) return;
+    let x = []; try { x = JSON.parse(el.dataset.x); } catch(e) {}
+    const base = el.textContent.trim(), keep = base; let best = null;
+    const fs0 = parseFloat(getComputedStyle(el).fontSize) * 72 / 96;
+    // the caption's own true lines (its lead first): the set that fills the box's lines with a full last line (80%+), else the fullest
+    const pool = [base, ...x].slice(0, 8);
+    for(let m = 1; m < (1 << pool.length); m++){ const t = pool.filter((_, i) => m >> i & 1).join(' '); el.textContent = t;
+      for(const k of [1, 1.03, .97, 1.06, .94, 1.09, .91]){ if(fs0 * k < 8) continue; el.style.fontSize = (fs0 * k).toFixed(2) + 'pt';   // never under 8 pt
+        if(el.scrollHeight > el.clientHeight + 1) continue; const n = NL(); if(n !== want && n !== want - 1) continue;
+        const ls = AT.lineBoxes(el), last = ls[ls.length - 1], f = (last.r - last.l) / el.getBoundingClientRect().width;
+        const sc = (f >= .82 ? 10 : 0) + (n === want ? 4 : 0) + (m & 1 ? 2 : 0) + f - Math.abs(1 - k); if(!best || sc > best.sc) best = {t, f, k, sc}; } }
+    el.style.fontSize = best ? (fs0 * best.k).toFixed(2) + 'pt' : ''; el.textContent = best ? best.t : keep; });
+  await document.fonts.ready; CapFit.run(document.querySelectorAll('.cap2 .a'));
   if(window.mailZones){
     const sh = document.querySelector('.sheet').getBoundingClientRect(), P = r => ({l:(r.left - sh.left)/PT, r:(r.right - sh.left)/PT, t:(r.top - sh.top)/PT, b:(r.bottom - sh.top)/PT});
     const hit = (q, z) => q.l < z[0] + z[2] - .5 && q.r > z[0] + .5 && q.t < z[1] + z[3] - .5 && q.b > z[1] + .5;
@@ -137,6 +183,7 @@ window.brochureReady = (async function(){
   window.proofNotes = [{paragraphs: [...document.querySelectorAll('[data-para]')].map(el => { const ls = AT.lineBoxes(el), w = el.getBoundingClientRect().width, last = ls[ls.length-1];
     return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, wPt: Math.round(AT.pt(w))}; })}];
   window.photoPlacements = AT.placements;
+  if(!front && ![].concat((D.brand || {}).returnAddress || (D.brand || {}).address || []).filter(Boolean).length) issues.push({slot: 'return', kind: 'return-address-missing'});   /* every mailer back carries the brokerage's full return address (owner 11/10) */
   window.brochureCheck = () => AT.checkSingle(D, issues);
 })();
 </script>

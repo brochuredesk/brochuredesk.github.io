@@ -351,7 +351,7 @@ Ivory.whenFonts(function(){
         const runs = tiers.map(t => Object.assign({t}, IvoryPlan.draw(D.plan, {x: inner.x, y: inner.y, w: t.w - 24, h: inner.h}, {allowRotate: true})));
         const best = Math.max(...runs.map(r => r.issues.length ? 0 : r.scale));
         pk = (planImg ? runs.filter(r => !r.issues.length).sort((p, q) => q.scale - p.scale)[0] : runs.find(r => !r.issues.length && r.scale >= Math.min(best*0.92, 5.5))) || runs.find(r => !r.issues.length) || runs[runs.length-1];   // a listing's own image takes the widest tier
-        if(!pk.issues.length && (!planImg || pk.usedW >= (pk.t.w - 24)*0.94 || g === 48)) break;
+        if(!pk.issues.length && (!planImg || pk.usedW >= (pk.t.w - 24)*0.94 || pk.usedH >= inner.h*0.97 || g === 48)) break;   // tall, narrow floors fill the height first: the room photos keep their size (11/13)
       }
       const gh = pk.usedH, blk = gh + 8 + 10 + (hasLeg ? 6 + 10 : 0) + 6 + 8;
       // a listing's own plan image keeps the panel as tall as its drawing needs (plus a little air); the rest of the height goes to the room photos
