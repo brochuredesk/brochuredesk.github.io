@@ -5,7 +5,9 @@
 <title>BrochureDesk · Architectural Negative open house flyer · Black Label</title>
 <link rel="stylesheet" href="negative.css">
 <script src="negative.js"></script>
+<script src="lastfix.js"></script>
 <script src="../engine/setpieces.js"></script>
+<script src="capfit.js"></script>
 <!--
   Architectural Negative · Open House flyer b "Black Label" (trim 612 x 792 pt; print: 0.25 in white margin around the paper).
   The reverse of flyer a: the event is black type on white paper under a solid black label bar, the date in heavy uppercase
@@ -46,6 +48,7 @@ window.brochureReady = (async function(){
   const issues = await SP.ready(D);
   document.body.dataset.mode = D.mode || 'email';
   const O = SP.openHouse(D), X = 36, W = 540;
+  if(!O.long || !O.time) issues.push({slot: 'oh.when', kind: 'oh-date-time-missing'});   /* every Open House piece shows its date and time, big (owner 11/10) */
   let h = '';
 
   // the event: a black label bar over black type on white paper
@@ -72,17 +75,17 @@ window.brochureReady = (async function(){
   h += `<div class="fcol" style="left:${X + pwid + 14}pt;top:${hy}pt;width:${W - pwid - 14}pt;height:${hh}pt">${fp.map((p, i) => `<div><b data-slot="oh.fact${i}" data-lines="1">${esc(p[0])}</b><i data-slot="oh.factl${i}" data-lines="1">${esc(p[1])}</i></div>`).join('')}</div>`;
 
   // three interiors over black caption tiles
-  const cs = (C.caps || []).slice(0, 3), g = 10, pw = (W - 2*g)/3, ph = 64, ty = 514;
+  const cs = (C.caps || []).slice(0, 3), g = 10, pw = (W - 2*g)/3, ph = 72, ty = 514;   // round 3: the tiles hold four caption lines with no slack under them
   let row = '';
   cs.forEach((c, i) => { const x = X + i*(pw + g);
     row += SP.photo(D, c.id, x, ty, pw, ph, 'oh.photo' + i);
-    row += `<div class="tile" style="left:${x}pt;top:${ty + ph}pt;width:${pw}pt;height:${660 - ty - ph}pt"><div class="nm" data-slot="oh.cap${i}.t" data-lines="1">${esc(c.t)}</div><div class="tx" data-slot="oh.cap${i}" data-cap="1" data-row="oh" data-para="1" data-min="3">${esc(c.a)}</div></div>`; });
+    row += `<div class="tile" style="left:${x}pt;top:${ty + ph}pt;width:${pw}pt;height:${660 - ty - ph}pt"><div class="nm" data-slot="oh.cap${i}.t" data-lines="1">${esc(c.t)}</div><div class="tx" data-slot="oh.cap${i}" data-cap="1" data-capmax="1.05" data-row="oh" data-para="1" data-min="3">${esc(c.a)}</div></div>`; });
   h += `<div class="abs" data-gapcheck="oh.row" style="left:0;top:0">${row}</div>`;
 
   h += SP.card(D, [X, 670, W, 88], {layout: 'panel', fieldAccent: true});
   h += `<div class="abs" style="left:${X}pt;top:765pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
 
-  await SP.finish(D, 612, 792, h, issues);
+  await SP.finish(D, 612, 792, h, issues, async () => { await document.fonts.ready; NG.fillBoxes(); if(window.CapFit) CapFit.run(document.querySelectorAll('.tile .tx[data-cap]')); if(window.LastFix) LastFix.run(document, Object.assign({}, PC.alts || {}, C.alts || {})); });
 })();
 </script>
 </body>

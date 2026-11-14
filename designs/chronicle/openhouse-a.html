@@ -18,6 +18,7 @@
 -->
 </head>
 <body data-mode="email">
+<script src="capfit.js"></script>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
 <script>
@@ -59,9 +60,11 @@ window.brochureReady = (async function(){
 
   // two rooms from the inside
   const rooms = OHC.rooms || [], ids = (OHC.photos || []).slice(1, 3), gap = 14, pws = [(W - gap)*0.54, (W - gap)*0.46], ry = hb + 72;
+  // (the captions get exactly the lines that fit above the contact card, so nothing slides under it, owner 11/10)
+  const capN = Math.max(2, Math.floor((662 - 4 - (ry + rh) - 22)/12.75));
   if(!noRooms) ids.forEach((id, i) => { const c = rooms[i] || {}, pw = pws[i], x = X + (i ? pws[0] + gap : 0);
     h += AT.photo(D, id, `position:absolute;left:${x}pt;top:${ry}pt;width:${pw}pt;height:${rh.toFixed(2)}pt`, 'oh.room' + i, 'room');
-    h += `<div class="abs cap2" style="left:${x}pt;top:${(ry + rh).toFixed(2)}pt;width:${pw}pt"><div class="h" data-slot="oh.room${i}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="oh.room${i}.body" data-para="1" data-min="2" data-lines="3">${esc(c.a)}</div></div>`; });
+    h += `<div class="abs cap2" style="left:${x}pt;top:${(ry + rh).toFixed(2)}pt;width:${pw}pt"><div class="h" data-slot="oh.room${i}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="oh.room${i}.body" data-para="1" data-min="2" data-lines="${capN}" style="height:${(capN*12.75).toFixed(2)}pt">${esc(c.a)}</div></div>`; });
 
   h += AT.cardBox(D, [X, 662, W, 94], {layout: 'panel'});
   h += `<div class="abs fine" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;white-space:nowrap" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
@@ -76,8 +79,13 @@ window.brochureReady = (async function(){
   AT.fitRow([...document.querySelectorAll('.cap2 .a')]);
   ContactCard.fit(document);
   window.photoPlacements = AT.placements;
+  if(window.CapFit) (window.proofNotes = window.proofNotes || []).push({capFit: CapFit.run(((typeof D !== "undefined" && D.copy) || {}).extra)});
+  AT.gapGuard();
   window.brochureCheck = () => AT.checkSingle(D, issues);
 })();
+
+// a piece that fails to build reports it (the render then fails its checks) instead of hanging until the renderer times out
+if(window.brochureReady && window.brochureReady.catch) window.brochureReady.catch(e => { console.error(e); window.brochureCheck = () => [{slot: 'page', kind: 'render-error', detail: String(e && e.message || e)}]; });
 </script>
 </body>
 </html>

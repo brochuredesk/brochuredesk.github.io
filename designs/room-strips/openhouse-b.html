@@ -19,8 +19,8 @@
   .cc{--cc-paper:#ffffff;--cc-ink:#1b1b1d;--cc-muted:#6c6c70;--cc-accent:#c0292f;--cc-line:rgba(27,27,29,.22)}
   .band{position:absolute;background:var(--accent)}
   .oh-lbl{font:600 20pt/22pt var(--font-display);letter-spacing:3.5pt;text-transform:uppercase;color:#fff;white-space:nowrap;overflow:hidden}
-  .oh-date{font:700 54pt/58pt var(--font-display);letter-spacing:-.2pt;color:#fff;white-space:nowrap;overflow:hidden}
-  .oh-time{font:500 24pt/26pt var(--font-display);letter-spacing:.6pt;color:#fff;white-space:nowrap;overflow:hidden;text-align:right}
+  .oh-date{font:700 54pt/58pt var(--font-display);letter-spacing:-.2pt;color:#fff;white-space:nowrap;overflow:visible}
+  .oh-time{font:500 24pt/26pt var(--font-display);letter-spacing:.6pt;color:#fff;white-space:nowrap;overflow:visible;text-align:right}
   .oh-strong{font:600 10.5pt/14pt var(--font-body);color:#fff}
   .oh-note{font:400 10.5pt/14pt var(--font-body);color:#fff}
   .ad{font:700 38pt/42pt var(--font-display);letter-spacing:-.2pt;color:var(--ink);white-space:nowrap;overflow:hidden}
@@ -37,6 +37,7 @@
 </style>
 </head>
 <body data-mode="email">
+<script src="capfit.js"></script>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
 <script>
@@ -69,7 +70,7 @@ window.brochureReady = (async function(){
   h += `<div class="fc" style="left:${fx}pt;top:${hy}pt;width:${X + W - fx}pt;height:${hh}pt">${SP.factPairs(L, 4).map((p, i) => `<div data-slot="oh.fact${i}" data-lines="1"><b>${esc(p[0])}</b><span>${esc(p[1])}</span></div>`).join('')}</div>`;
 
   // three captioned interiors, each under its own red rule
-  const cs = (C.caps || []).slice(0, 3), g = 12, pw = (W - 2*g)/3, ph = 133, py = 436, N = 3;
+  const cs = (C.caps || []).slice(0, 3), g = 12, pw = (W - 2*g)/3, ph = 118, py = 436, N = 5;
   let row = '', cp = '';
   cs.forEach((c, i) => { const x = X + i*(pw + g);
     row += SP.photo(D, c.id, x, py, pw, ph, 'oh.photo' + i);

@@ -25,6 +25,7 @@
 -->
 </head>
 <body data-mode="email">
+<script src="capfit.js"></script>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
 <script>
@@ -90,7 +91,7 @@ window.brochureReady = (async function(){
     h += `<div class="abs kicker" style="left:${zA[0]}pt;top:163pt;width:${zP[0] - 10 - zA[0]}pt;height:10pt;color:#3a5f82" data-slot="back.place" data-lines="1">${esc(AT.placeZip(L).toUpperCase())}</div>`;
     const slab = PC.slab || {};
     h += `<div class="slab" data-blk="1" style="left:${zP[0] - 4}pt;top:115pt;width:${W - zP[0] + 13}pt;height:70pt;padding:6pt 16pt 6pt 9pt"><div class="big" data-slot="slab.big" data-lines="2">${esc(slab.big || '')}</div><div class="sub" data-slot="slab.sub" data-lines="3">${esc(slab.sub || '')}</div></div>`;
-    const cap = (c, x, y, w, slot, lines) => `<div class="abs cap2 bk" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="${slot}" data-para="1" data-min="2" data-lines="${lines}">${esc(big && c.a11 ? c.a11 : c.a)}</div></div>`;
+    const cap = (c, x, y, w, slot, lines) => `<div class="abs cap2 bk" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" style="height:${lines*(big ? 13.5 : 12.25)}pt" data-slot="${slot}" data-para="1" data-min="2" data-lines="${lines}">${esc(big && c.a11 ? c.a11 : c.a)}</div></div>`;
     if(!sold){
       const bk = (PC.back || []).slice(0, big ? 3 : 2), g = big ? 14 : 16, pw = (avail - g*(bk.length - 1))/bk.length, capH = 7 + 15 + 1 + (big ? 4*13.5 : 3*12.25), phh = bot0 - top0 - capH;
       bk.forEach((c, i) => { const x = X + i*(pw + g);
@@ -148,6 +149,7 @@ window.brochureReady = (async function(){
   window.proofNotes = [{paragraphs: [...document.querySelectorAll('[data-para]')].map(el => { const ls = AT.lineBoxes(el), w = el.getBoundingClientRect().width, last = ls[ls.length-1];
     return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, wPt: Math.round(AT.pt(w))}; })}];
   window.photoPlacements = AT.placements;
+  if(window.CapFit) (window.proofNotes = window.proofNotes || []).push({capFit: CapFit.run(((typeof D !== "undefined" && D.copy) || {}).extra)});
   window.brochureCheck = () => AT.checkSingle(D, issues);
 })();
 </script>

@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>BrochureDesk · The Houston Answer Book fold-over</title>
 <link rel="stylesheet" href="answer-book.css">
+<script src="../engine/planink.js"></script>
 <script src="answer-book.js"></script>
 <!--
   BrochureDesk · The Houston Answer Book · 11 x 17 fold-over
@@ -56,6 +57,12 @@
   .plan .note{position:absolute;width:190pt}
   .plan .note .t{font:600 8pt/10pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:var(--kicker)}
   .plan .note .d{font-size:8pt;line-height:10.5pt;color:var(--text);margin-top:3pt;overflow:hidden}
+  .plan.img{display:flex;flex-direction:column;border-top:1.6pt solid var(--rule);padding-top:8pt}
+  .plan.img .note{position:static;width:auto;flex:none;height:50pt}
+  .plan.img .note .d{font-size:8.5pt;line-height:11pt}
+  .plan.img .lvls{flex:1 1 0;min-height:0;display:flex;gap:10pt;align-items:center;justify-content:center;padding-top:6pt}
+  .plan.img .lvl{height:100%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .plan.img .lvl img{max-width:100%;max-height:100%;object-fit:contain;mix-blend-mode:multiply}
 
   /* back */
   .near{flex:none;border-top:.6pt solid var(--line);padding-top:9pt;margin-top:12pt}
@@ -73,7 +80,28 @@
   .roomtbl td:first-child{font-weight:600;color:var(--ink)}
   .roomtbl td:last-child{text-align:right;white-space:nowrap}
   .roomtbl tr:last-child td{border-bottom:.5pt solid var(--line)}
-  .builtin{flex:none;border-top:.6pt solid var(--line);padding-top:9pt;margin-top:12pt}
+  .builtin{flex:none;border-top:.6pt solid var(--line);padding-top:9pt;margin-top:0}
+  .roomsbox{flex:none;justify-content:flex-start;padding:12pt 16pt 13pt}
+  .roomsbox .rr{display:flex;margin-top:8pt}
+  .roomsbox .rm{flex:1 1 0;padding-left:14pt;border-left:.5pt solid rgba(244,241,233,.3)}
+  .roomsbox .rm:first-child{padding-left:0;border-left:0}
+  .roomsbox .n{font:600 8.5pt/11pt var(--font-body);letter-spacing:1.1pt;text-transform:uppercase;color:var(--on-dark);white-space:nowrap}
+  .roomsbox .s{font:500 21pt/26pt var(--font-display);color:var(--gold);white-space:nowrap;margin-top:2pt}
+  /* the back: bigger type now that the card is narrow (owner 11/10) */
+  .bk .cap .q{font-size:9.5pt;line-height:12pt;height:12pt}
+  .bk .cap .a{font-size:9.5pt;line-height:12.5pt;max-height:none !important}
+  .bk .checks{max-height:none !important}
+  .bk .checks div{font-size:9.5pt;line-height:12.5pt}
+  .bk .checkblock .lead{font-size:9.5pt;line-height:12.5pt}
+  .bk .roomtbl td{font-size:9.5pt;line-height:12pt}
+  .bk .callout .big{font-size:26pt;line-height:30pt}
+  .near.stackn{border-top:1.6pt solid var(--rule);margin:0;padding-top:9pt;display:flex;flex-direction:column}
+  .near.stackn .q{font-size:9.5pt;line-height:12pt}
+  .near.stackn .rows{flex:1;display:flex;flex-direction:column;justify-content:space-around;margin-top:4pt}
+  .near.stackn .c{padding:0;border:0;border-top:.6pt solid var(--line);display:flex;align-items:baseline;justify-content:space-between;gap:10pt;padding-top:6pt}
+  .near.stackn .c:first-child{border-top:0}
+  .near.stackn .d{font-size:24pt;line-height:28pt}
+  .near.stackn .p{font-size:8.5pt;margin:0}
 </style>
 </head>
 <body>
@@ -146,46 +174,41 @@ window.brochureReady = (async function(){
   // ================= INSIDE LEFT: FRONT ROOMS =================
   function frontRooms(){
     const F = C.frontRooms || {};
-    const plan = on('front.plan', F.plan) && F.plan.rooms ? F.plan : null;
-    const ph = (F.photos || []).filter(Boolean).slice(0, plan ? 4 : 6);
+    // the listing's own floor plan, printed as given (owner 11/10/2026: never redrawn); its note comes from the copy
+    const lv = ((D.plan || {}).levels || []).filter(l => l.kind === 'image' && l.src);
+    const plan = on('front.plan', lv.length ? lv : null) ? {levels: lv, note: (F.plan || {}).note, title: (F.plan || {}).title} : null;
+    const ph = (F.photos || []).filter(Boolean).slice(0, plan ? 4 : 6);   // the plan version keeps every photo (owner 11/10/2026)
     const rows = [];
     for(let i=0;i<ph.length;i+=2) rows.push(ph.slice(i, i+2));
     const showIntro = on('front.intro', F.intro) || D.copyPending;
-    return `${tabs(0)}
+    const head = `${tabs(0)}
       ${kicker(F.kicker, 'front.kicker')}
       ${title(F.title, 'front.title', showIntro ? 384 : 554)}
-      ${showIntro ? `<div class="abs" style="left:421pt;top:49pt;width:162pt">${AB.pending(D, F.intro) ? AB.ghost(4, 11.5) : `<div class="intro" style="font-size:8.5pt;line-height:11.5pt;height:46pt" data-slot="front.intro" data-lines="4">${esc(F.intro)}</div>`}</div>` : ''}
+      ${showIntro ? `<div class="abs" style="left:421pt;top:49pt;width:162pt">${AB.pending(D, F.intro) ? AB.ghost(4, 11.5) : `<div class="intro" style="font-size:8.5pt;line-height:11.5pt;height:46pt" data-slot="front.intro" data-lines="4">${esc(F.intro)}</div>`}</div>` : ''}`;
+    if(plan){
+      // photos down the left, the plan down the right at the size its shape allows (centered in its box)
+      const HF = 665, NOTE = 58, a = plan.levels.reduce((s, l) => s + l.w / l.h, 0), PW = 554 - 14 - 270, RH = ph[3] ? (HF - 24) / 3 : 0;   // the photos keep the 270 pt column of the two-across grid; the fourth sits under the plan, level with the third
+      return `${head}
+      <div class="flow" style="top:101pt;bottom:26pt;gap:0;flex-direction:row">
+        <div class="vstack" style="flex:1 1 0;gap:12pt;margin-right:14pt">${ph.slice(0, 3).map((p, i) => `<div class="row" style="flex:1 1 0">${item(p, 'front.photo' + i, 5)}</div>`).join('')}</div>
+        <div class="vstack" style="flex:none;width:${PW}pt;gap:12pt">
+          ${planBlock(plan, PW, HF - RH - 12, NOTE)}
+          ${ph[3] ? `<div class="row" style="flex:none;height:${RH}pt">${item(ph[3], 'front.photo3', 5)}</div>` : ''}
+        </div>
+      </div>`;
+    }
+    return `${head}
       <div class="flow" style="top:101pt;bottom:26pt;gap:12pt">
-        ${rows.map((r,ri)=>`<div class="row" style="flex:1 1 0">${r.map((p,i)=>item(p, `front.photo${ri*2+i}`, 3)).join('')}${r.length===1 ? '<div class="item" style="flex:1 1 0"></div>' : ''}</div>`).join('')}
-        ${plan ? planBlock(plan, 554, 246) : ''}
+        ${rows.map((r,ri)=>`<div class="row" style="flex:1 1 0">${r.map((p,i)=>item(p, `front.photo${ri*2+i}`, 5)).join('')}${r.length===1 ? '<div class="item" style="flex:1 1 0"></div>' : ''}</div>`).join('')}
       </div>`;
   }
 
-  // Redrawn floor plan: rooms as rectangles in the plan's own units, drawn in the design's colors, with dimensions.
-  function planBlock(P, W, H){
-    const s = Math.min(W / P.w, H / P.h), ox = 0, oy = (H - P.h*s)/2;
-    const fill = {room:'#efe9dc', wet:'#dde6e6', outdoor:'url(#hatch)', garage:'#d8dcd8', closet:'#efe9dc', hall:'#efe9dc'};
-    let svg = `<svg width="${W}pt" height="${H}pt" viewBox="0 0 ${W} ${H}"><defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="#f4f1e9"/><line x1="0" y1="0" x2="0" y2="5" stroke="#bfc6c2" stroke-width="1"/></pattern></defs>`;
-    let labels = '';
-    for(const r of P.rooms){
-      const x = ox + r.x*s, y = oy + r.y*s, w = r.w*s, h = r.h*s;
-      const k = r.kind || 'room';
-      svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill[k]||fill.room}" stroke="#22383a" stroke-width="${k==='outdoor'?0.5:0.8}"/>`;
-      if(r.label){
-        const vert = !!r.vertical;
-        const lw = vert ? h : w, cx = x + w/2, cy = y + h/2;
-        // room name may take two lines in a small room; the size line never wraps
-        labels += `<div class="rl${vert?' v':''}" style="left:${cx - lw/2}pt;top:${cy}pt;width:${lw}pt" data-center="1"><span class="n" data-slot="front.plan.${esc(r.label)}" data-lines="2" data-fine="1">${esc(r.label)}</span>${r.dims ? `<span class="rd" data-slot="front.plan.${esc(r.label)}.dims" data-lines="1" data-fine="1">${esc(r.dims)}</span>` : ''}</div>`;
-      }
-    }
-    for(const w of (P.walls||[])) svg += `<polyline points="${w.map(([x,y])=>`${ox+x*s},${oy+y*s}`).join(' ')}" fill="none" stroke="#22383a" stroke-width="3.2" stroke-linejoin="miter"/>`;
-    for(const d of (P.doors||[])) svg += `<path d="M${ox+d.x*s},${oy+d.y*s} l${d.r*s*(d.dx||1)},0 a${d.r*s},${d.r*s} 0 0 ${d.sweep||0} ${-d.r*s*(d.dx||1)},${d.r*s*(d.dy||1)}" fill="none" stroke="#22383a" stroke-width=".5"/>`;
-    svg += '</svg>';
-    const corner = P.noteCorner || 'tr';
-    const pos = {tr:'right:0;top:0', tl:'left:0;top:0', br:'right:0;bottom:0', bl:'left:0;bottom:0'}[corner];
-    const note = AB.pending(D, P.note) ? `<div class="note" style="${pos}">${AB.ghost(3, 10.5)}</div>`
-      : `<div class="note" style="${pos}"><div class="t">${esc(P.title || 'The floor plan')}</div><div class="d" style="height:31.5pt" data-slot="front.plan.note" data-lines="3">${esc(P.note)}</div></div>`;
-    return `<div class="plan" style="height:${H}pt">${svg}${labels}${note}</div>`;
+  // The listing's floor plan image, as given: a paper box with the plan's title and note on top, the plan centered under it
+  function planBlock(P, W, H, NOTE){
+    const note = AB.pending(D, P.note) ? `<div class="note">${AB.ghost(3, 10.5)}</div>`
+      : `<div class="note"><div class="t">${esc(P.title || 'The floor plan')}</div><div class="d" data-slot="front.plan.note" data-lines="3">${esc(P.note || '')}</div></div>`;
+    const imgs = P.levels.map((l, i) => `<div class="lvl" style="flex:${(10 * l.w / l.h).toFixed(3)} 1 0"><img src="${esc(l.src)}" alt="" data-plan="1">${P.levels.length > 1 ? `<div class="pl-n" data-slot="front.plan.floor${i}" data-lines="1">${esc(l.name || '')}</div>` : ''}</div>`).join('');
+    return `<div class="plan img" style="flex:none;width:${W}pt;height:${H}pt">${note}<div class="lvls">${imgs}</div></div>`;
   }
 
   // ================= INSIDE RIGHT: BEDROOMS AND BATHS =================
@@ -195,6 +218,27 @@ window.brochureReady = (async function(){
     const tiles = (B.tiles || []).filter(Boolean).slice(0, 9);
     const built = on('beds.builtIn', B.builtIn) ? B.builtIn : null;
     const showIntro = on('beds.intro', B.intro) || D.copyPending;
+    // a house with only a few bedroom and bath photos (owner 11/10, 11/9 book p13): no single huge photo; two bedrooms over the
+    // baths and a dark box with the bedroom and bath sizes from the MLS room list, so every photo stays near 3:2
+    const all = [...pair.map((t,i) => Object.assign({}, t, {_slot:'beds.pair'+i})), ...tiles.map((t,i) => Object.assign({}, t, {_slot:'beds.tile'+i}))];
+    const bedRooms = (L.rooms||[]).filter(r => r.name && r.dims && /bed|bath|closet/i.test(r.name)).slice(0, 6);
+    if(all.length >= 3 && all.length <= 4 && bedRooms.length >= 2){
+      const r1 = all.length === 4 ? [all[0], all[2]] : [all[0], all[1]], r2 = all.length === 4 ? [all[1], all[3]] : [all[2]];
+      const box = `<div class="callout roomsbox"><div class="cap on-dark" style="padding-top:0"><div class="q" data-slot="beds.rooms.q" data-lines="1"><i class="dash"></i>${esc(B.roomsQ || 'How big are the rooms?')}</div></div>
+          <div class="rr">${bedRooms.map((r, i) => `<div class="rm"><div class="n" data-slot="beds.rooms${i}.name" data-lines="1">${esc(r.name)}</div><div class="s" data-slot="beds.rooms${i}.size" data-lines="1">${esc(r.dims)}</div></div>`).join('')}</div></div>`;
+      const few = `<div class="row" style="flex:1 1 0">${r1.map((t, i) => item(t, t._slot, 8, r1.length === 2 ? [1.65, 1][i] : 1)).join('')}</div>
+        <div class="row" style="flex:1 1 0">${r2.map(t => item(t, t._slot, 8, 1)).join('')}${r2.length === 1 ? '<div class="item" style="flex:1 1 0"></div>' : ''}</div>
+        ${box}`;
+      return `${tabs(1)}${logo('hdr-logo')}
+      ${kicker(B.kicker, 'beds.kicker')}
+      ${title(B.title, 'beds.title', 554)}
+      <div class="flow" style="top:97pt;bottom:26pt;gap:12pt">
+        ${showIntro ? intro(B.intro, 'beds.intro', B.introLines || 1, 'margin-bottom:-2pt') : ''}
+        ${few}
+        ${built ? `<div class="builtin"><div class="kicker">${esc(B.builtInTitle || 'Built in, and new')}</div>
+          <div class="checks inline" style="margin-top:5pt;max-height:27pt" data-slot="beds.builtIn" data-lines="2">${built.map(t=>`<div>${esc(t)}</div>`).join('')}</div></div>` : ''}
+      </div>`;
+    }
     const rows = AB.bestRows(pair, tiles, {W:554, gap:14, H:669 - (showIntro ? 12*(B.introLines||1)+10 : 0) - (built ? 52 : 0)});
     let k = 0;
     const html = rows.map(r => {
@@ -230,12 +274,16 @@ window.brochureReady = (async function(){
     if(ext) blocks.push({t:'photo', it:ext, slot:'outside.exterior', w:270, home:'L', ord:0});
     if(small.length) blocks.push({t:'small', w:(270-14)/2, home:'R', ord:1});
     if(yard) blocks.push({t:'photo', it:yard, slot:'outside.backyard', w:270, home:'L', ord:2});
-    if(list) blocks.push({t:'list', fixed: 34 + Math.ceil(list.items.length / 2) * 15 + list.items.filter(x => x.length > 30).length * 6, home:'R', ord:3});
+    if(list) blocks.push({t:'list', fixed: 36 + Math.ceil(list.items.length / 2) * 16 + list.items.filter(x => x.length > 26).length * 8, home:'R', ord:3});
     const roomList = (L.rooms||[]).filter(r => r.name && r.dims).slice(0, 12);
     const rooms = !call && on('outside.rooms', roomList) && roomList.length >= 4 ? roomList : null;
     if(call) blocks.push({t:'call', fixed:124, home:'R', ord:4});
     if(rooms) blocks.push({t:'rooms', fixed: 30 + rooms.length * 16.4, home:'R', ord:4});
-    const avail = 604 - 101 - (near.length ? 82 : 0), CAP = 46, T = 1.5;
+    // the narrow contact card sits at the foot of the page with the nearby list beside it (owner 11/10, 11/9 book p14):
+    // everything above moves down into the freed space
+    // round 3 (owner 11/10/2026): the full-width short card at the foot; the nearby row sits over it, across the page
+    const CH = AB.cardShortH, CY = 746 - CH, NH = near.length ? 64 : 0, NY = CY - 12 - NH, FLOWB = (near.length ? NY - 10 : CY - 14);
+    const avail = FLOWB - 101, CAP = 52, T = 1.5;
     let left = [], right = [], best = Infinity;
     for(let m = 0; m < (1 << blocks.length); m++){
       const L2 = blocks.filter((_,i) => !(m >> i & 1)), R2 = blocks.filter((_,i) => m >> i & 1);
@@ -257,11 +305,11 @@ window.brochureReady = (async function(){
     right = right.map(x => x.t === 'photo' ? Object.assign({}, x, {grow: x.w/T}) : x);
     const colHTML = col => col.map((x,i) => {
       if(x.t === 'photo') return item(x.it, x.slot, 3, x.grow.toFixed(1));
-      if(x.t === 'small') return `<div class="row" style="flex:${(x.w/1.5).toFixed(1)} 1 0">${small.map((s,j)=>item(s, 'outside.small'+j, 3)).join('')}</div>`;
+      if(x.t === 'small') return `<div class="row" style="flex:${(x.w/1.5).toFixed(1)} 1 0">${small.map((s,j)=>item(s, 'outside.small'+j, 4)).join('')}</div>`;
       if(x.t === 'list') return `<div class="checkblock"${i ? ' style="border-top:.6pt solid var(--line)"' : ''}>
           <div class="cap" style="padding-top:0"><div class="q" data-slot="outside.checklist.q" data-lines="1"><i class="dash"></i>${esc(list.q)}</div></div>
           ${list.lead ? `<div class="lead" data-slot="outside.checklist.lead" data-lines="1">${esc(list.lead)}</div>` : '<div style="height:5pt"></div>'}
-          <div class="checks" style="column-count:2;max-height:${(list.maxLines||7)*14}pt" data-slot="outside.checklist" data-lines="${list.maxLines||7}">${list.items.map(t=>`<div>${esc(t)}</div>`).join('')}</div></div>`;
+          <div class="checks" style="column-count:2;max-height:${(list.maxLines||7)*14}pt" data-slot="outside.checklist" data-lines="${(list.maxLines||7) + 4}">${list.items.map(t=>`<div>${esc(t)}</div>`).join('')}</div></div>`;
       if(x.t === 'rooms') return `<div class="roomtbl"${i ? ' style="border-top:.6pt solid var(--line);padding-top:9pt"' : ''}>
           <div class="cap" style="padding-top:0"><div class="q" data-slot="outside.rooms.q" data-lines="1"><i class="dash"></i>${esc(O.roomsQ || 'How big are the rooms?')}</div></div>
           <table>${rooms.map(r => `<tr><td>${esc(r.name)}</td><td>${esc(r.dims)}</td></tr>`).join('')}</table></div>`;
@@ -269,20 +317,20 @@ window.brochureReady = (async function(){
           <div class="cap on-dark" style="padding-top:0"><div class="q" data-slot="outside.callout.q" data-lines="1"><i class="dash"></i>${esc(call.q)}</div></div>
           <div class="big" style="max-height:58pt" data-slot="outside.callout.big" data-lines="2">${esc(call.big)}</div></div>`;
     }).join('');
-    const nearHTML = near.length ? `<div class="near"><div class="q"><i class="dash"></i>${esc(O.nearbyQ || 'What is nearby?')}</div>
+    const nearHTML = near.length ? `<div class="near" style="position:absolute;left:29pt;top:${NY}pt;width:554pt;height:${NH - 9}pt;margin-top:0"><div class="q"><i class="dash"></i>${esc(O.nearbyQ || 'What is nearby?')}</div>
         <div class="cols">${near.map((x,i)=>`<div class="c"><div class="d" data-slot="outside.near${i}.dist" data-lines="1">${esc(x.dist)}</div><div class="p" data-slot="outside.near${i}.place" data-lines="1">${esc(x.place)}</div></div>`).join('')}</div></div>` : '';
     const fine = C.finePrint || (D.companion && D.companion.fineprint) || '';
     return `${tabs(2)}
       ${kicker(O.kicker, 'outside.kicker')}
       ${title(O.title, 'outside.title', 554)}
-      <div class="flow" style="top:101pt;bottom:${792-604}pt;gap:0">
+      <div class="flow bk" style="top:101pt;bottom:${792-FLOWB}pt;gap:0">
         <div class="row" style="flex:1 1 0;gap:14pt">
           <div class="vstack" style="flex:1 1 0;gap:12pt">${colHTML(left)}</div>
           ${right.length ? `<div class="vstack" style="flex:1 1 0;gap:12pt">${colHTML(right)}</div>` : ''}
         </div>
-        ${nearHTML}
       </div>
-      ${AB.card(D, {x:29, y:614, w:554, h:132})}
+      ${nearHTML}
+      ${AB.cardShort(D, {x:29, y:CY, w:554, h:CH})}
       <div class="abs fine" style="left:var(--m);right:var(--m);top:757pt;height:15pt;border-top:0" data-slot="finePrint" data-lines="2" data-fine="1">${esc(fine)}</div>`;
   }
 
@@ -298,8 +346,6 @@ window.brochureReady = (async function(){
   }
   document.getElementById('pages').innerHTML = html;
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
-  // floor plan labels sit centered on their room, whatever lines they take
-  document.querySelectorAll('.plan .rl[data-center]').forEach(el => el.style.top = (parseFloat(el.style.top) - pt(el.offsetHeight)/2) + 'pt');
   document.querySelectorAll('.band').forEach(band => {
     const st = band.querySelector('.street'), addr = band.querySelector('.addr'), loc = band.querySelector('.loc');
     if(!st || !band.querySelector('.sum')) return;
@@ -308,15 +354,42 @@ window.brochureReady = (async function(){
     const sum = band.querySelector('.sum .a');
     const fit = n => { if(sum){ sum.dataset.lines = n; sum.style.maxHeight = (n*11.5 + 2) + 'pt'; } };
     st.style.whiteSpace = 'nowrap'; const w = AB.textWidth(st);
-    if(w > 318){ st.style.whiteSpace = ''; fit(6); return; }
+    if(w > 318){ st.style.whiteSpace = '';
+      const rg = document.createRange(); rg.selectNodeContents(st);
+      const wide = Math.max(...[...rg.getClientRects()].map(r => pt(r.width)));
+      addr.style.width = Math.max(wide, AB.textWidth(loc), 180) + 4 + 'pt';
+      fit(6); return; }
     fit(4);
     const fs = Math.min(42, Math.floor(31 * 300 / w));
     st.style.fontSize = fs + 'pt'; st.style.lineHeight = (fs + 6) + 'pt';
     addr.style.width = Math.max(AB.textWidth(st), AB.textWidth(loc), 180) + 2 + 'pt';
   });
+  // the "What kind of house?" block (owner 11/10, 11/9 book p11): it runs past the rule below it, to the same gap from the trim
+  // edge as the gap between the divider and its text (16 pt), and its type grows to fill the divider's height
+  document.querySelectorAll('.band').forEach(band => {
+    const sumBox = band.querySelector('.sum'), a = band.querySelector('.sum .a'), addr = band.querySelector('.addr');
+    if(!sumBox || !a) return;
+    sumBox.style.marginRight = '-13pt';
+    const q = band.querySelector('.sum .q'), room = pt(addr.offsetHeight) - (q ? pt(q.offsetHeight) : 11) - 7.5 + 6;
+    const fits = fs => { const lh = Math.round(fs * 1.36 * 2) / 2; a.style.fontSize = fs + 'pt'; a.style.lineHeight = lh + 'pt';
+      a.style.maxHeight = 'none'; const n = AB.lines(a); return n * lh <= room + .5 ? {n, lh} : null; };
+    let best = null;
+    a.style.textAlign = 'justify';
+    const lastOK = () => { const rg = document.createRange(); rg.selectNodeContents(a); const rs = [...rg.getClientRects()].filter(q => q.width > .5);
+      const bot = Math.max(...rs.map(q => q.top)), last = rs.filter(q => q.top > bot - 2), l = Math.min(...last.map(q => q.left)), r = Math.max(...last.map(q => q.right));
+      return (r - l) / a.getBoundingClientRect().width; };
+    let full = null;
+    for(let fs = 8.5; fs <= 12.01; fs += 0.1){ const r = fits(fs); if(r){ best = {fs, ...r}; if(lastOK() >= .82) full = best; } }
+    if(full) best = full;
+    if(!best){ fits(8.5); return; }
+    fits(best.fs); a.dataset.lines = best.n; a.style.maxHeight = (best.n * best.lh + 2) + 'pt';
+  });
+  AB.capFit(document);
   AB.equalizeRows();
   AB.fitLogos();
+  AB.layoutStacks();
   issues.push(...AB.layoutCards());
+  if(window.PlanInk) PlanInk.applyAll(D, false);   // owner 11/10/2026 (p2): the listing plan's background is clear
   window.brochureCheck = () => AB.check(D, issues);
   window.photoPlacements = AB.placements;
 })();

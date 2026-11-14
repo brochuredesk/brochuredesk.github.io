@@ -5,6 +5,9 @@
 <title>BrochureDesk · Midnight Residence two-sided flyer</title>
 <link rel="stylesheet" href="midnight.css">
 <script src="midnight.js"></script>
+<script src="lastfix.js"></script>
+<script src="capfit.js"></script>
+<script src="../engine/planink.js"></script>
 <script src="../engine/setpieces.js"></script>
 <script src="../engine/baths.js"></script>
 <!--
@@ -115,14 +118,18 @@ window.brochureReady = (async function(){
   };
   const pickN = (bs, w, style, ns) => { const r = enumerate(bs, w, style); return ns.find(n => r.has(n) && r.get(n).best) || null; };
   const commonN = (lists, w, style, ns) => ns.find(n => lists.every(l => pickN(l, w, style, [n]))) || null;
+  // never shorter (owner 11/10/2026): of the line counts that fill, the one that keeps the most of the copy
+  const lenAt = (bs, w, style, n) => { const v = enumerate(bs, w, style).get(n); return v && v.best ? v.best.t.length : -1; };
+  const mostN = (bs, w, style, ns) => { let b = null; for(const n of ns){ const L = lenAt(bs, w, style, n); if(L >= 0 && (!b || L > b.L + 8)) b = {n, L}; } return b ? b.n : null; };
+  const mostCommonN = (lists, w, style, ns) => { let b = null; for(const n of ns){ const Ls = lists.map(l => lenAt(l, w, style, n)); if(Ls.some(x => x < 0)) continue; const L = Ls.reduce((a, c) => a + c, 0); if(!b || L > b.L + 8*lists.length) b = {n, L}; } return b ? b.n : null; };
   const fillAll = () => { for(const p of pending){
     const el = document.querySelector(`[data-slot="${p.slot}"]`); if(!el) continue;
     const r = enumerate(p.beats, p.w, p.style).get(+el.dataset.lines);
     el.textContent = r && r.best ? r.best.t : r && r.near ? r.near.t : enumerate(p.beats, p.w, p.style).first;
     if(!(r && r.best)){ el.dataset.nofit = '1'; const m = enumerate(p.beats, p.w, p.style), o = {}; for(const [k, v] of m) if(typeof k === 'number') o[k] = [v.best ? v.best.t.length : null, Math.round(v.near.fill*100)];
       el.dataset.diag = `w=${p.w.toFixed(0)} want ${el.dataset.lines} have ${JSON.stringify(o)} chars ${p.beats.map(b => [].concat(b)[0].length).join('+')}`; } } pending.length = 0; };
-  const para = (slot, bs, x, y, w, n, o) => { o = o || {}; const lh = o.lh || 14, st = lh === 13 ? SBODYST : BODYST; pending.push({slot, beats: bs, w, style: st});
-    return `<div class="abs fl-p${lh === 13 ? ' s' : ''}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${n*lh}pt" data-slot="${slot}" data-para="1" data-nobal="1" data-min="${n}" data-lines="${n}"></div>`; };
+  const para = (slot, bs, x, y, w, n, o) => { o = o || {}; const lh = o.lh || 14, st = o.st || (lh === 13 ? SBODYST : BODYST); pending.push({slot, beats: bs, w, style: st});
+    return `<div class="abs fl-p${lh === 13 ? ' s' : ''}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${n*lh}pt${o.st ? ';' + o.st : ''}" data-slot="${slot}" data-para="1" data-nobal="1" data-min="${n}" data-lines="${n}"></div>`; };
   const kick = (t, slot, x, y, w) => `<div class="abs kick" style="left:${x}pt;top:${y}pt;width:${w}pt;height:10pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
   const logo = (x, y, w, h) => `<div class="logo" data-maxh="${h}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;justify-content:flex-end">${b.logo ? `<img src="${esc(b.logo)}" alt="">` : `<span style="font:700 ${h*0.6}pt/1 var(--font-display);white-space:nowrap" data-slot="broker.name" data-lines="1">${esc(b.brokerage || '')}</span>`}</div>`;
   const rule = (x, y, w) => `<div class="rule" style="left:${x}pt;top:${y}pt;width:${w}pt"></div>`;
@@ -130,7 +137,7 @@ window.brochureReady = (async function(){
   // a caption under a photo: serif name + gold small-caps detail, then n lines (captions in a row share n)
   const cap = (c, slot, x, y, w, n, row, bs) => { pending.push({slot: `${slot}.text`, beats: bs || beats(c.text), w, style: CAPST});
     return `<div class="abs fl-cap" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${16 + n*12}pt"><div class="nm" data-slot="${slot}.name" data-lines="1">${esc(c.name)}${c.tag ? `<span>${esc(feetOnly(c.tag))}</span>` : ''}</div>` +
-      `<div class="tx" data-slot="${slot}.text" data-lines="${n}" data-cap="1" data-row="${row}" style="height:${n*12}pt"></div></div>`; };
+      `<div class="tx" data-slot="${slot}.text" data-lines="${n}" data-cap="1" data-capmax="1" data-row="${row}" style="height:${n*12}pt"></div></div>`; };
   const capRow = (items, slot, x, y, w, n, ph_h, gap) => { const cw = (w - gap*(items.length - 1))/items.length; let h = '';
     items.forEach((c, i) => { const cx = x + i*(cw + gap); h += ph(c.photo || c.id, cx, y, cw, ph_h) + cap(c, `${slot}${i}`, cx, y + ph_h + 6, cw, n, slot); }); return h; };
 
@@ -151,18 +158,18 @@ window.brochureReady = (async function(){
   };
 
   // ---------- the footer: rule, the shared agent card, the brokerage's office lines on the card's name and phone lines ----------
-  const FY = 664, CY = 670, CH = 84, OW = 132;
+  // owner 11/10/2026: no agent contact block and no brokerage logo on the flyer front (the fine print stays); on the back a much
+  // narrower contact block (name / phone / email stacked) at the lower right, and the Around list takes the freed room beside it
+  const FY = 664, CY = 670, CH = 84, CARDW = 236;
+  const fineLine = fine => `<div class="abs" style="left:${X0}pt;top:${CY + CH + 7}pt;width:${CW}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(fine || 'Information deemed reliable but not guaranteed.')}</div>`;
+  // round 3 (owner 11/10, rule 1): on the back the card runs the full width again, only shorter top to bottom (two rows), with the
+  // brokerage logo inside it (no logo by the title); the Around places sit in one row above it
+  const BCY = 694, BCH = 60;
   const footer = fine => {
-    let h = rule(X0, FY, CW);
-    h += SP.card(D, [X0, CY, CW - OW, CH], {layout: 'panel', size: 'mid', brokerage: false, fieldAccent: true, s: {inlineLabel: true, desigInline: true, pad: [12, 10, 10], rowGap: 14, hsW: 64}});
-    h += `<div class="abs" style="left:${XR - OW}pt;top:${CY + 6}pt;width:.7pt;height:${CH - 12}pt;background:var(--line)"></div>`;
-    const offL = [].concat(b.address || []).flatMap(a => String(a).split('\n')).map(x => x.trim()).filter(Boolean).slice(0, 2);
-    h += `<div id="offblk" class="abs fl-office" style="left:${XR - OW + 12}pt;top:${CY}pt;width:${OW - 12}pt;height:${CH}pt">`
-      + (b.phone ? `<div class="ol" data-at="name" data-slot="broker.phone" data-lines="1" style="font:400 12pt/15pt var(--font-body)">${esc(b.officeLabel || 'Office')} <b style="font-weight:700">${esc(b.phone)}</b></div>` : '')
-      + offL.map(t => `<div class="ol" data-at="desig" data-slot="broker.address" data-lines="1" style="font:400 9pt/11pt var(--font-body)">${esc(t)}</div>`).join('')
-      + (b.web ? `<div class="ol" data-at="phone" data-slot="broker.web" data-lines="1" style="font:400 12pt/15pt var(--font-body)">${esc(b.web)}</div>` : '') + `</div>`;
-    h += `<div class="abs" style="left:${X0}pt;top:${CY + CH + 7}pt;width:${CW}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(fine || 'Information deemed reliable but not guaranteed.')}</div>`;
-    return h;
+    let h = rule(X0, BCY - 7, CW);
+    h += SP.card(D, [X0, BCY, CW, BCH], {layout: 'panel', size: 'short', fieldAccent: true, grow: 0,
+      s: {name: 20, nameFloor: 15, desigInline: true, wrap: false, phone: 13.5, line: 9.5, office: 9.5, hsW: 46, hsGap: 14, pad: [6, 14, 5], panelW: 160, panelPad: [4, 8], panelGap: 2, officeLH: 1.15, logo: {wide: [132, 26], square: [30, 30], tall: [32, 32]}}});
+    return h + fineLine(fine);
   };
 
   window.__fit = {enumerate, pickN, beats, commonN};
@@ -172,21 +179,24 @@ window.brochureReady = (async function(){
   if(side === 'front'){
     const K = FL.front || {}, cells = factCells();
     const caps = (K.caps || []).slice(0, 3), aboutB = beats(K.about);
-    const capW = (CW - 16)/3;
-    const nCap = commonN(caps.map(c => beats(c.text)), capW, CAPST, [3, 4, 5]) || 3;
-    const capH = 16 + nCap*12, capTop = 654 - capH;
+    const capW = (CW - 24)/3;   // a 12 pt gutter between the caption columns, so lines never read across (11/12 review p30)
+    // the gutter must not change the page's balance: keep the line count the captions took at the old, one-space gutter when every
+    // caption still fills it (or one line more) at the new width, so the write-up above keeps its lines; otherwise the count that keeps the most copy
+    const capB = caps.map(c => beats(c.text)), nOld = mostCommonN(capB, (CW - 16)/3, CAPST, [3, 4, 5]);
+    const nCap = (nOld && commonN(capB, capW, CAPST, [nOld, nOld + 1])) || mostCommonN(capB, capW, CAPST, [3, 4, 5]) || 3;
+    const capH = 16 + nCap*12, capTop = CY + CH - 2 - capH;   // no card on the front: the photos and the write-up run down to the fine print
     const hero = P[K.photo] ? K.photo : Object.keys(P)[0], hp = P[hero] || {}, ap = (hp.w && hp.h) ? hp.w/hp.h : 1.5, bx = hp.box;
     const need = w => bx ? Math.ceil(w*((bx[3] - bx[1]) + 0.03)/ap) : Math.ceil(w/ap*0.77);   // a house box keeps the whole box in frame; no box, at least 75% of the photo's height shows
     const fieldW = W - 2*I;
     let pick = null;
     // A: the house across the field, the facts as a row under the rule. B (a tall house): the house narrower, the facts a column beside it.
-    for(const PH of [112, 104, 96, 90]){ const rowTop = capTop - 6 - PH;
+    for(const PH of [196, 184, 172, 160, 148, 136, 124, 112, 104, 96, 90]){ const rowTop = capTop - 6 - PH;
       for(const n of [4, 3, 5]){ if(!pickN(aboutB, CW, BODYST, [n])) continue;
         const blockH = 98 + n*14, heroH = rowTop - 14 - blockH - 14 - I;
         if(heroH >= Math.max(262, need(fieldW))){ pick = {mode: 'A', PH, rowTop, n, blockH, heroH}; break; } }
       if(pick) break; }
     const HWB = 352;
-    if(!pick){ for(const PH of [104, 96, 90]){ const rowTop = capTop - 6 - PH;
+    if(!pick){ for(const PH of [184, 160, 136, 112, 104, 96, 90]){ const rowTop = capTop - 6 - PH;
       for(const n of [3, 4, 2]){ if(!pickN(aboutB, CW, BODYST, [n])) continue;
         const blockH = 66 + n*14, heroH = rowTop - 14 - blockH - 14 - I;
         if(heroH >= 250){ pick = {mode: 'B', PH, rowTop, n, blockH, heroH}; break; } }
@@ -195,9 +205,8 @@ window.brochureReady = (async function(){
     const y0 = I + pick.heroH + 14;
     if(pick.mode === 'A'){
       h += ph(hero, I, I, fieldW, pick.heroH);
-      h += logo(XR - 156, y0 + 1, 156, 36);
-      h += `<div class="abs fl-addr" style="left:${X0 - 1}pt;top:${y0}pt;width:${CW - 176}pt;height:40pt" data-slot="address" data-lines="1" data-fit="22">${esc(L.address)}</div>`;
-      h += kick(SP.placeZip(L), 'front.place', X0, y0 + 44, CW - 176);
+      h += `<div class="abs fl-addr" style="left:${X0 - 1}pt;top:${y0}pt;width:${CW}pt;height:40pt" data-slot="address" data-lines="1" data-fit="22">${esc(L.address)}</div>`;
+      h += kick(SP.placeZip(L), 'front.place', X0, y0 + 44, CW);
       h += rule(X0, y0 + 62, CW);
       h += `<div class="fl-facts${cells.length > 4 ? ' five' : ''}" style="left:${X0}pt;top:${y0 + 68}pt;width:${CW}pt;height:26pt">${cells.map((c, i) => `<div data-slot="front.fact${i}" data-lines="1">${c[2] ? `${esc(c[1])}<b class="pre">${c[0]}</b>` : `<b>${c[0]}</b>${esc(c[1])}`}</div>`).join('')}</div>`;
       h += rule(X0, y0 + 98, CW);
@@ -205,64 +214,72 @@ window.brochureReady = (async function(){
     } else {
       const GX = X0 + HWB + 18, GW = XR - GX;
       h += ph(hero, I, I, X0 + HWB - I, pick.heroH);
-      h += logo(XR - 156, y0 + 1, 156, 36);
       const gt = I + 8, gh = pick.heroH - 8;
       h += `<div class="fl-grid big" style="left:${GX}pt;top:${gt}pt;width:${GW}pt;height:${gh}pt">${cells.map((c, i) => `<div class="r"><span class="l" data-slot="front.grid${i}.l" data-lines="1">${esc(c[1])}</span><span class="v" data-slot="front.grid${i}.v" data-lines="1">${c[0]}</span></div>`).join('')}<div class="end"></div></div>`;
-      h += `<div class="abs fl-addr" style="left:${X0 - 1}pt;top:${y0}pt;width:${CW - 176}pt;height:40pt" data-slot="address" data-lines="1" data-fit="22">${esc(L.address)}</div>`;
-      h += kick(SP.placeZip(L), 'front.place', X0, y0 + 44, CW - 176);
+      h += `<div class="abs fl-addr" style="left:${X0 - 1}pt;top:${y0}pt;width:${CW}pt;height:40pt" data-slot="address" data-lines="1" data-fit="22">${esc(L.address)}</div>`;
+      h += kick(SP.placeZip(L), 'front.place', X0, y0 + 44, CW);
       h += rule(X0, y0 + 62, CW);
       h += para('front.about', aboutB, X0, y0 + 72, CW, pick.n);
     }
-    h += capRow(caps, 'front.cap', X0, pick.rowTop, CW, nCap, pick.PH, 8);
-    h += footer(K.fine);
+    h += capRow(caps, 'front.cap', X0, pick.rowTop, CW, nCap, pick.PH, 12);
+    h += fineLine(K.fine);
   }
 
   // ======================================= BACK =======================================
   else {
     const B = FL.back || {}, NP = B.noplan || {}, PL = B.plan || {}, A = B.around || {};
     const kicker = (!hasPlan && NP.kicker) || B.kicker || '', title = (!hasPlan && NP.title) || B.title || '';
-    h += kick(kicker, 'back.kicker', X0, 34, 370);
-    h += `<div class="abs title one" style="left:${X0}pt;top:45pt;width:372pt;height:32pt" data-slot="back.title" data-lines="1" data-fit="19">${esc(title)}</div>`;
-    h += logo(XR - 156, 36, 156, 38);
+    h += kick(kicker, 'back.kicker', X0, 34, CW);
+    h += `<div class="abs title one" style="left:${X0}pt;top:45pt;width:${CW}pt;height:32pt" data-slot="back.title" data-lines="1" data-fit="19">${esc(title)}</div>`;
     h += rule(X0, 82, CW);
-    const TOP = 94, BOT = 654, GAPC = 14;
-    // bottom row: the big phrase and its write-up at left, the Around list at right (the foldover's right column)
-    const LWc = 318, AX = X0 + LWc + 24, AW = XR - AX, paraB = beats(B.para);
-    const nP = [4, 5, 3].find(n => pickN(paraB, LWc, SBODYST, [n])) || 4, Hc = 46 + nP*13, Cy = BOT - Hc;
-    const Hu = Cy - 14 - TOP;                              // the upper block: left column and right column
-    const lrows = (hasPlan ? 3 : 3);
+    const TOP = 94, BOT = 628, GAPC = 14;
+    // owner 11/10/2026 (narrower contact block): the big phrase and its write-up sit under the left column, the right column's
+    // photos run down to the footer, and the Around list moves into the footer row beside the narrow card
+    const AX = X0, AW = CW - CARDW - 20, paraB = beats(B.para);
+    // the line count (and type up to 12% larger) that keeps the most of the write-up with every line full (owner 11/10/2026)
+    let PF = null;
+    const paraFit = w => { let b = null;
+      for(const k of [1, 1.04, 1.08, 1.12]){ const fs = +(10*k).toFixed(2), lh = +(13*k).toFixed(1), st = `font-size:${fs}pt;line-height:${lh}pt`;
+        for(let n = 3; n <= 12; n++){ const L = lenAt(paraB, w, st, n); if(L >= 0 && (!b || L > b.L + 8)) b = {n, lh, st, L}; } }
+      PF = b || {n: 4, lh: 13, st: SBODYST}; return PF.n; };
+    // the write-up block goes under the wider of the two columns, so it keeps all its copy (never shorter, owner 11/10/2026)
+    let PW, boardH, leftBelow = 0, leftHtml = '', LWc, BX, nP, Hc, Cy, Hu, HR, onLeft;
+    const place = () => { const RW0 = XR - (X0 + PW + 14); paraFit(PW); const lL = PF.L || 0; paraFit(RW0); const lR = PF.L || 0;
+      onLeft = lL > lR + 8 || (Math.abs(lL - lR) <= 8 && PW >= RW0); LWc = onLeft ? PW : RW0; BX = onLeft ? X0 : X0 + PW + 14;
+      nP = paraFit(LWc); Hc = 46 + nP*PF.lh; Cy = BOT - Hc; Hu = onLeft ? Cy - 14 - TOP : BOT - TOP; HR = onLeft ? BOT - TOP : Cy - 14 - TOP; };
     // ----- left column -----
-    let PW, boardH, leftBelow = 0, leftHtml = '';
     if(hasPlan){
-      const probe = MN.plan(D, {x: X0 + 10, y: TOP + 10, w: 320, h: Hu - 32});
-      const u = probe.used || {w: 200, h: Hu - 32};
-      PW = Math.max(176, Math.min(340, Math.ceil(u.w) + 26));
+      const probe = MN.plan(D, {x: X0 + 10, y: TOP + 10, w: 320, h: BOT - TOP - 120 - 32});
+      const u0 = probe.used || {w: 200, h: BOT - TOP - 152};
+      PW = Math.max(176, Math.min(340, Math.ceil(u0.w) + 26)); place();
+      const pr0 = MN.plan(D, {x: X0 + 10, y: TOP + 10, w: PW - 20, h: Hu - 32}), u = pr0.used || u0;
       let bh = Math.ceil(u.h) + 10 + 28;
       boardH = (Hu - bh >= 150) ? bh : Hu;                 // a short board leaves room for a photo under it; else it runs the full height
       const pr = MN.plan(D, {x: X0 + 10, y: TOP + 10, w: PW - 20, h: boardH - 10 - 24});
       issues.push(...pr.issues);
-      leftHtml += `<div class="board" style="left:${X0}pt;top:${TOP}pt;width:${PW}pt;height:${boardH}pt"></div>` + pr.html;
+      const lightPanel = window.PlanInk ? PlanInk.panel(D, true) : true;   // a colored-room plan keeps its light panel; a line plan sits on the field
+      leftHtml += `<div class="board${lightPanel ? '' : ' clear'}" style="left:${X0}pt;top:${TOP}pt;width:${PW}pt;height:${boardH}pt"></div>` + pr.html; if(!lightPanel) document.body.classList.add('plan-clear');
       leftHtml += `<div class="abs" style="left:${X0}pt;top:${TOP + boardH - 16}pt;width:${PW}pt;height:8pt"><div class="pnote" style="top:0" data-slot="back.plannote" data-fine="1" data-lines="1">${esc(B.planNote || 'Approximate; not to scale.')}</div></div>`;
       leftBelow = Hu - boardH;
     } else {
-      PW = 248;
+      PW = 248; place();
     }
     const RX = X0 + PW + 14, RW = XR - RX;
     // ----- right column -----
     const pics = (B.photos || []).slice(0, 2);
-    const nRs = pics.map(c => [3, 4, 5, 6].find(n => pickN(beats(c.text), RW, CAPST, [n])) || 3), capHs = nRs.map(n => 16 + n*12);   // stacked captions each take their own line count
+    const nRs = pics.map(c => mostN(beats(c.text), RW, CAPST, [3, 4, 5, 6]) || 3), capHs = nRs.map(n => 16 + n*12);   // stacked captions each take their own line count
     let ry = TOP, hn = 0;
     if(hasPlan){
       const noteSrc = beats(PL.note), kH = 14;
-      let nN = [4, 5, 3, 6].find(n => pickN(noteSrc, RW, SBODYST, [n])) || 4;
-      const avail = n => Hu - (kH + n*13 + 12) - capHs.reduce((a, c) => a + c + 6, 0) - 2*12;
+      let nN = mostN(noteSrc, RW, SBODYST, [3, 4, 5, 6, 7]) || 4;
+      const avail = n => HR - (kH + n*13 + 12) - capHs.reduce((a, c) => a + c + 6, 0) - 2*12;
       while(nN > 3 && avail(nN)/2 < 96) nN--;
       hn = kH + nN*13 + 12;
       h += kick(PL.head || 'Reading the plan', 'back.planhead', RX, ry, RW);
       h += para('back.plannote', noteSrc, RX, ry + 14, RW, nN, {lh: 13});
       ry += hn;
     }
-    const totalPh = Hu - hn - capHs.reduce((a, c) => a + c + 6, 0) - (pics.length - 1)*12;
+    const totalPh = HR - hn - capHs.reduce((a, c) => a + c + 6, 0) - (pics.length - 1)*12;
     const phR = Math.floor(totalPh/pics.length);
     pics.forEach((c, i) => { h += ph(c.photo || c.id, RX, ry, RW, phR) + cap(c, `back.photo${i}`, RX, ry + phR + 6, RW, nRs[i], `backR${i}`); ry += phR + 6 + capHs[i] + 12; });
     // ----- left column, plan: a photo under a short board; no plan: the rooms floor by floor, a photo under them -----
@@ -278,25 +295,29 @@ window.brochureReady = (async function(){
     }
     const lbH = TOP + Hu - ly;
     if(L1 && lbH >= 140){
-      const nL = [3, 4, 5, 2].find(n => pickN(beats(L1.text), PW, CAPST, [n])) || 3, cH = 16 + nL*12, pH = lbH - cH - 6;
+      const nL = mostN(beats(L1.text), PW, CAPST, [3, 4, 5]) || 3, cH = 16 + nL*12, pH = lbH - cH - 6;
       h += leftHtml + ph(L1.photo || L1.id, X0, ly, PW, pH) + cap(L1, 'back.photoL', X0, ly + pH + 6, PW, nL, 'backL');
     } else h += leftHtml;
     // ----- bottom row -----
-    h += rule(X0, Cy - 8, CW);
-    h += kick(B.bigHead || 'What it comes with', 'back.head', X0, Cy, LWc);
-    h += `<div class="abs fl-bigphrase" style="left:${X0}pt;top:${Cy + 14}pt;width:${LWc}pt;height:26pt" data-slot="back.big" data-lines="1">${esc(B.big)}</div>`;
-    h += para('back.para', paraB, X0, Cy + 46, LWc, nP, {lh: 13});
-    const rows = (A.rows || []).slice(0, 3), rh = (Hc - 16)/Math.max(1, rows.length);
-    h += kick(A.head || 'Around', 'back.aroundhead', AX, Cy, AW);
-    h += `<div class="abs fl-around" style="left:${AX}pt;top:${Cy + 14}pt;width:${AW}pt;height:${Hc - 14}pt">${rows.map((q, i) => (q.t || !q.d)
-      ? `<div class="r" style="top:${(i*rh).toFixed(2)}pt;height:${rh.toFixed(2)}pt"><div class="d" style="width:auto;flex:1" data-slot="back.around${i}.d" data-lines="1">${esc(q.p)}</div>${q.t ? `<div class="p t" data-slot="back.around${i}.p" data-lines="1">${esc(q.t)}</div>` : ''}</div>`
-      : `<div class="r" style="top:${(i*rh).toFixed(2)}pt;height:${rh.toFixed(2)}pt"><div class="d" data-slot="back.around${i}.d" data-lines="1">${esc(q.d)}${q.u ? `<small>${esc(q.u)}</small>` : ''}</div><div class="p" data-slot="back.around${i}.p" data-lines="1">${esc(q.p)}</div></div>`).join('')}</div>`;
+    h += rule(BX, Cy - 8, LWc);
+    h += kick(B.bigHead || 'What it comes with', 'back.head', BX, Cy, LWc);
+    h += `<div class="abs fl-bigphrase" style="left:${BX}pt;top:${Cy + 14}pt;width:${LWc}pt;height:26pt" data-slot="back.big" data-lines="1">${esc(B.big)}</div>`;
+    h += para('back.para', paraB, BX, Cy + 46, LWc, nP, {lh: PF.lh, st: PF.st});
+    // the places around the house in one row across the page, over the card
+    const rows = (A.rows || []).slice(0, 3), cwA = (CW - 2*16)/Math.max(1, rows.length), AY = 642;
+    h += rule(X0, AY - 6, CW);
+    h += kick(A.head || 'Around', 'back.aroundhead', X0, AY, CW);
+    h += `<div class="abs fl-around" style="left:${X0}pt;top:${AY + 14}pt;width:${CW}pt;height:24pt">${rows.map((q, i) => (q.t || !q.d)
+      ? `<div class="r" style="top:0;height:24pt;left:${(i*(cwA + 16)).toFixed(2)}pt;right:auto;width:${cwA.toFixed(2)}pt"><div class="d" style="width:auto;flex:1" data-slot="back.around${i}.d" data-lines="1">${esc(q.p)}</div>${q.t ? `<div class="p t" data-slot="back.around${i}.p" data-lines="1">${esc(q.t)}</div>` : ''}</div>`
+      : `<div class="r" style="top:0;height:24pt;left:${(i*(cwA + 16)).toFixed(2)}pt;right:auto;width:${cwA.toFixed(2)}pt"><div class="d" style="width:auto;margin-right:8pt" data-slot="back.around${i}.d" data-lines="1">${esc(q.d)}${q.u ? `<small>${esc(q.u)}</small>` : ''}</div><div class="p" data-slot="back.around${i}.p" data-lines="1">${esc(q.p)}</div></div>`).join('')}</div>`;
     h += footer(hasPlan ? B.fine : (NP.fine || B.fine));
   }
 
   await SP.finish(D, W, H, h, issues, async () => {
     fillAll();
-    MN.fitLogos();
+    // text under a photo: every line 80%+ of its width, never by shortening (owner 11/8, 11/10): bigger type or justified
+    await document.fonts.ready; if(window.CapFit) CapFit.run(document.querySelectorAll('.fl-cap .tx[data-cap]')); if(window.LastFix) LastFix.run(document, FL.alts || {}); if(window.CapFit && CapFit.noWide) CapFit.noWide(document.querySelectorAll('.fl-cap .tx[data-cap]'));
+    MN.fitLogos(); if(window.PlanInk) PlanInk.applyAll(D, true);   // the plan's background clear, light lines on the navy field (owner 11/10)
     // the office lines sit on the agent card's own lines: the office phone on the name's line, the address on the REALTOR line, the website on the phone line
     const blk = document.getElementById('offblk'), cc = document.querySelector('.cc[data-contactcard]');
     if(blk && cc){ const k = 96/72, bb = blk.getBoundingClientRect(), rows = {name: '.cc-name', desig: '.cc-desig', phone: '.cc-phone'};
@@ -309,8 +330,9 @@ window.brochureReady = (async function(){
   window.brochureCheck = () => {
     const out = sp();
     const logos = [...document.querySelectorAll('.logo img, .logo [data-slot="broker.name"], .cc-logo img, .cc-brkname')].filter(e => e.offsetParent);
-    if(logos.length !== 1) out.push({slot: 'logo', kind: 'logo-count', found: logos.length, want: 1});
-    if(window.AgentCard) out.push(...AgentCard.trec(document, [...document.querySelectorAll('.logo img')]));
+    const wantLogos = side === 'front' ? 0 : 1;   // owner 11/10/2026: no brokerage logo on the flyer front
+    if(logos.length !== wantLogos) out.push({slot: 'logo', kind: 'logo-count', found: logos.length, want: wantLogos});
+    if(window.AgentCard && side !== 'front') out.push(...AgentCard.trec(document, [...document.querySelectorAll('.logo img')]));
     document.querySelectorAll('[data-nofit]').forEach(el => out.push({slot: el.dataset.slot, kind: 'box-not-full', lines: +el.dataset.lines, diag: el.dataset.diag}));
     return out;
   };

@@ -44,7 +44,23 @@ window.brochureReady = (async function(){
   h += `<div class="hrule" style="top:${152 + dy}pt;left:${X}pt;right:${X}pt"></div>`;
 
   // the whole house, then the address with its city, state and ZIP, and the facts beside it
-  h += `<div class="abs" style="left:${X}pt;top:${162 + dy}pt;width:${W}pt;height:250pt">${CN.photo(D, hero, 'position:absolute;inset:0', 'oh.hero')}</div>`;
+  // a tall house that a 540 x 250 frame would cut takes the narrower frame with two interiors stacked beside it (CN.heroHtml),
+  // so the whole house always shows (four-story sample, 11/10/2026)
+  const roomIds = new Set((OHC.rooms || []).map(r => r.photo)), side = Object.keys(D.photos || {}).filter(id => id !== hero && !roomIds.has(id) && !/^plan/.test(id) && D.photos[id] && D.photos[id].src && !D.photos[id].fullHouse && !D.photos[id].box && !/exterior|front|plan/i.test(D.photos[id].tags || ''));
+  // the two interiors beside a narrow house frame each get their room name and a true line from the fold-over's captions
+  // (owner 11/10/2026: every photo gets a caption; side-by-side captions level)
+  const capOf = id => { const out = []; const walk = o => { if(Array.isArray(o)) o.forEach(walk); else if(o && typeof o === 'object'){ if(o.photo === id && o.title && o.s) out.push(o); Object.values(o).forEach(walk); } };
+    walk(['left', 'right', 'back', 'front'].map(k => (D.copy || {})[k])); return out[0]; };
+  const pref = id => /kitchen|dining|family|living|primary|game/i.test(id + ' ' + ((D.photos[id] || {}).tags || '')) ? 0 : 1; side.sort((a, b) => pref(a) - pref(b));
+  const sc = side.map(capOf), sideOK = side.length >= 1 && sc[0] && !CN.fits(D, hero, W, 250);
+  if(sideOK){
+    // one interior beside the narrow house frame, tall enough to read, with its room name and true lines under it
+    const HY = 162 + dy, HH = 250, w1 = Math.round(HH*1.3), gap = 12, w2 = W - w1 - gap, CL = 3, LHs = 12.5, ch = 18 + 2 + CL*LHs, ph = HH - ch - 4, c = sc[0];
+    h += `<div class="abs" style="left:${X}pt;top:${HY}pt;width:${w1}pt;height:${HH}pt">${CN.photo(D, hero, 'position:absolute;inset:0', 'oh.hero')}</div>`;
+    h += `<div class="abs" style="left:${X + w1 + gap}pt;top:${HY}pt;width:${w2}pt;height:${ph}pt">${CN.photo(D, side[0], 'position:absolute;inset:0', 'oh.side0')}</div>`;
+    h += `<div class="abs cap cap2" style="left:${X + w1 + gap}pt;top:${HY + ph + 4}pt;width:${w2}pt"><div class="h" data-slot="oh.side0.h" data-lines="1">${esc(c.title)}</div>
+      <div class="a" data-slot="oh.side0" data-lh="${LHs}" data-lines="${CL}" data-lead="" data-s='${sattr(c.s)}' style="height:${CL*LHs}pt;font-size:9.8pt;line-height:${LHs}pt"></div></div>`;
+  } else h += CN.heroHtml(D, hero, X, 162 + dy, W, 250, 'oh.hero', null);
   const ay = 420 + dy, st = CN.stats(L);
   h += `<div class="abs dsp" id="addr" style="left:${X-1}pt;top:${ay}pt;width:360pt;height:40pt;font-size:36pt;line-height:40pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
   h += `<div class="abs kicker" style="left:${X}pt;top:${ay + 42}pt;width:360pt;height:11pt" data-slot="place" data-lines="1">${esc([L.neighborhood, CN.placeZip(L)].filter(Boolean).join(' · '))}</div>`;

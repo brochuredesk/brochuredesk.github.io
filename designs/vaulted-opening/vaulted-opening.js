@@ -105,7 +105,7 @@
   // ---------- floor plan facts ----------
   // A design built around the plan: it needs a plan that lists rooms (owner 10/28).
   // A level lists rooms either as drawn rooms (L.rooms) or, for the agent's own plan image, by the room names printed on it (L.roomNames).
-  const listsRooms = l => (l.rooms||[]).length || (l.kind === 'image' && (l.roomNames||[]).length);
+  const listsRooms = l => l.kind === 'image' && !!l.src;   // the listing's own plan image only; never a drawing from room sizes (owner 11/10/2026)
   AT.planOK = D => !!(D.plan && (D.plan.levels||[]).some(listsRooms));
   AT.levels = D => ((D.plan && D.plan.levels) || []).filter(l => !l.inset && listsRooms(l));
   const footprint = L => L.kind === 'image' ? (L.feet ? L.feet.w*L.feet.d : L.w*L.h) : (L.rooms||[]).filter(r => r.kind !== 'outdoor').reduce((a, r) => a + r.w*r.d, 0);
@@ -179,8 +179,40 @@
     return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, {layout:'panel', fine: fine || '', bottomGap: 0.5});
   };
 
+  // the narrow card for a back (owner 11/10/2026): the headshot (or stripe) beside the agent's lines stacked, the brokerage on a band below
+  AT.cardNarrow = function(D, box, fine, s){
+    const A = D.agent || {}, hs = AT.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
+    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, {layout:'band', size:'band', fine: fine || '', bottomGap: 0.5, grow: 0,
+      s: Object.assign({name: 21, nameFloor: 15, phone: 15, line: 9, hsW: 72, bandH: 36}, s || {})});
+  };
+
   // ---------- print checks (read by the renderer) ----------
+  // justified text never spreads a word gap past about 1.7x the real space width; such a block is set ragged instead
+  // (reviewer4 p9/p10 11/12: ~2.3x gaps; runs before every check and before the proofs are shot; pattern: in-sections capfit.js gapsTooWide)
+  AT.wordGaps = el => {
+    const rg = document.createRange(), rows = [], w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    while(w.nextNode()){ const n = w.currentNode, re = /\S+/g; let m; while((m = re.exec(n.textContent))){ rg.setStart(n, m.index); rg.setEnd(n, m.index + m[0].length); const q = rg.getClientRects()[0]; if(q) rows.push(q); } }
+    const lines = []; for(const r of rows){ const l = lines.find(x => Math.abs(x.m - (r.top + r.bottom)/2) < r.height*.5); if(l) l.w.push(r); else lines.push({m: (r.top + r.bottom)/2, w: [r]}); }
+    return lines.sort((a, b) => a.m - b.m).map(l => l.w.sort((a, b) => a.left - b.left).slice(1).map((r, i) => r.left - l.w[i].right));
+  };
+  AT.raggedGuard = (limit = 1.7) => { const out = [];
+    document.querySelectorAll('[data-slot]').forEach(el => {
+      if(el.querySelector('[data-slot]') || getComputedStyle(el).textAlign !== 'justify') return;
+      const j = el.style.textAlign; el.style.textAlign = 'left'; const rag = AT.wordGaps(el).flat().filter(g => g > .3).sort((a, b) => a - b); el.style.textAlign = j;
+      if(!rag.length) return; const space = rag[Math.floor(rag.length/2)];
+      const g = AT.wordGaps(el).slice(0, -1).flat(); if(!g.length) return;
+      const mx = Math.max(...g); if(mx > space*limit){ el.style.textAlign = 'left'; el.style.textAlignLast = 'left'; el.dataset.capragged = '1'; out.push({slot: el.dataset.slot, gap: +(mx/space).toFixed(2)}); } });
+    // a row keeps one setting (reviewer5 p10): among multi-line text blocks whose tops line up, if any is set ragged, the justified
+    // ones set ragged too
+    const blocks = [...document.querySelectorAll('[data-slot]')].filter(el => { if(el.querySelector('[data-slot]') || !el.offsetParent) return false;
+      const q = el.getBoundingClientRect(), lh = parseFloat(getComputedStyle(el).lineHeight) || 12; return q.height >= lh*1.5 && el.textContent.trim().length > 40; });
+    const just = el => /justify/.test(getComputedStyle(el).textAlign);
+    blocks.forEach(el => { if(!just(el)) return; const t = el.getBoundingClientRect().top;
+      if(blocks.some(o => o !== el && !just(o) && !o.dataset.rowragged && Math.abs(o.getBoundingClientRect().top - t) < 3)){
+        el.style.textAlign = 'left'; el.style.textAlignLast = 'left'; el.dataset.capragged = '1'; el.dataset.rowragged = '1'; out.push({slot: el.dataset.slot, row: 1}); } });
+    (window.proofNotes = window.proofNotes || []).push({raggedGuard: out}); return out; };
   AT.check = function(D, extra){
+    AT.raggedGuard();
     const issues = [...(extra||[])];
     if(window.ContactCard) issues.push(...ContactCard.check(document));
     if(D && D.preview) issues.push({slot:'copy', kind:'preview-text', detail:'rough-draft preview lines; the writer has not run'});

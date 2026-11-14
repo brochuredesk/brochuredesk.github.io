@@ -95,7 +95,7 @@
     let best = null;
     for(const cols of lv.length === 4 ? [4, 2] : lv.length === 2 ? [2, 1] : [lv.length]){
       const up = layout(0, cols), tu = layout(90, cols);
-      const pick = tu.area >= up.area*1.33 ? tu : up;
+      const pick = tu.area >= up.area*1.33 && !lv.every(l => l.textDir === 'h') ? tu : up;   // a plan whose words read across stays upright (owner 11/10/2026: as given)
       if(!best || pick.area > best.area) best = pick;
     }
     const A = best, gridW = A.colW.reduce((a,b)=>a+b,0)*A.s + GAP*(A.cols-1), gridH = A.rowH.reduce((a,b)=>a+b,0)*A.s + (LAB+4)*A.rows + GAP*0.6*(A.rows-1);
@@ -108,7 +108,7 @@
       const uw = l.w*A.s, uh = l.h*A.s, ppi = l.w / (uw/72);
       if(ppi < 300) issues.push({slot:`plan.${i}`, kind:'plan-under-300ppi', ppi:Math.round(ppi)});
       if(LAB) html += `<div class="plan flr" style="left:${cx - 20}pt;top:${cy - LAB - 4}pt;width:${w+40}pt;height:10pt" data-slot="plan.floor${i}" data-lines="1">${esc(l.name)}</div>`;
-      html += `<div class="plan lv" style="left:${cx}pt;top:${cy}pt;width:${w}pt;height:${h}pt"><div class="in" style="left:${(w-uw)/2}pt;top:${(h-uh)/2}pt;width:${uw}pt;height:${uh}pt;${A.ang===90?'transform:rotate(90deg);':''}"><img src="${esc(l.src)}" alt="" data-plan="1"></div></div>`;
+      html += `<div class="plan lv" style="left:${cx}pt;top:${cy}pt;width:${w}pt;height:${h}pt"><div class="in" style="left:${(w-uw)/2}pt;top:${(h-uh)/2}pt;width:${uw}pt;height:${uh}pt;${A.ang===90?'transform:rotate(90deg);':''}"><img src="${esc(l.src)}" alt="" data-plan="1" style="${window.PlanInk ? PlanInk.style(D.plan, !PlanInk.panel(D.plan, true)) : ''}"></div></div>`;
     }));
     return {html, issues, used:{x:x0, y:y0, w:gridW, h:gridH, ang:A.ang}};
   };

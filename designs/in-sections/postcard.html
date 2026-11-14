@@ -22,6 +22,7 @@
 -->
 </head>
 <body data-mode="email">
+<script src="capfit.js"></script>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
 <script>
@@ -40,7 +41,10 @@ window.brochureReady = (async function(){
 
   if(front){
     // ---------- front ----------
-    const xR = big ? 497 : 420, ph = 261, cx = xR + 18, cw = W - M - cx, S = big ? 56 : 52, LH = big ? 52 : 48;
+    // (owner 11/7: the whole house, roof and sides, always shows: a tall house photo narrows the hero frame to the photo's own shape,
+    // and the tinted column beside it takes the width it gives up)
+    const hp0 = (D.photos || {})[hero] || {}, bx0 = hp0.box || (AT.fullHouse(D, hero) ? [0, 0, 1, 1] : null), ph = 261, xMax = bx0 && hp0.w ? Math.floor(ph*hp0.w/(hp0.h*((bx0[3] - bx0[1]) + .012))) - 9 : 1e9;
+    const xR = Math.max(360, Math.min(big ? 497 : 420, xMax)), cx = xR + 18, cw = W - M - cx, S = big ? 56 : 52, LH = big ? 52 : 48;
     // the tinted column: the full height of the card, edge to edge (bleed included)
     h += `<div class="tcol" style="left:${xR}pt;top:-9pt;width:${W - xR + 9}pt;height:${H + 18}pt"></div>`;
     h += AT.ph(D, hero, `position:absolute;left:-9pt;top:-9pt;width:${xR + 9}pt;height:${ph}pt`, 'front.hero', 'hero');
@@ -58,8 +62,15 @@ window.brochureReady = (async function(){
       <div style="margin-top:14pt"><div class="dsp" id="addr" style="margin-left:-1pt;font-size:${big ? 29 : 25.5}pt;line-height:${big ? 31 : 27}pt;white-space:normal;height:auto" data-slot="address" data-lines="2">${esc(L.address)}</div>
         <div class="kicker" style="margin-top:7pt;height:10pt" data-slot="place" data-lines="1">${esc(AT.placeZip(L).toUpperCase())}</div></div>
       ${bottom}</div>`;
-    const tw = xR - M - 18, tt = ph - 9 + 10, flh = sold && big ? 16.5 : 15;
-    h += `<div class="abs ptxt2 jt" style="left:${M}pt;top:${tt}pt;width:${tw}pt;height:${3*flh + 1}pt;line-height:${flh}pt;font-size:${sold && big ? 11.5 : 10.5}pt" data-slot="front.about" data-para="1" data-min="3" data-fillbox="1"${sold && big ? ' data-nobal="1"' : ''}>${esc(big ? PC.front11 : PC.front9)}</div>`;
+    const tw = xR - M - 18, tt = ph - 9 + 10;
+    let flh = sold && big ? 16.5 : 15, ffs = sold && big ? 11.5 : 10.5, ftx = big ? PC.front11 : PC.front9;
+    // (a narrowed hero frame, a tall or box-less house photo, gives the write-up less width: it keeps its three lines with the shorter
+    // write-up and the type that still fills them)
+    if(xR < (big ? 497 : 420) && AT.measure){ let pick = null;
+      for(const t of [ftx, PC.front9].filter(Boolean)) for(let fs = ffs; fs >= 9.5 - 1e-6; fs -= 0.25){ const m = AT.measure(t, tw, fs, fs*1.43);
+        if(m.lines === 3 && m.last >= .8){ pick = {t, fs}; break; } if(m.lines < 3) break; }
+      if(pick){ ftx = pick.t; ffs = pick.fs; flh = Math.round(pick.fs*1.43*4)/4; } }
+    h += `<div class="abs ptxt2 jt" style="left:${M}pt;top:${tt}pt;width:${tw}pt;height:${3*flh + 1}pt;line-height:${flh}pt;font-size:${ffs}pt" data-slot="front.about" data-para="1" data-min="3" data-fillbox="1"${sold && big ? ' data-nobal="1"' : ''}>${esc(ftx)}</div>`;
     // the interiors across the bottom of the left side
     const ids = (PC.strip || []).slice(0, big ? 4 : 3), g = 8, sw = (tw - g*(ids.length - 1))/ids.length;
     ids.forEach((id, i) => { h += AT.ph(D, id, `position:absolute;left:${(M + i*(sw + g)).toFixed(2)}pt;top:318pt;width:${sw.toFixed(2)}pt;height:96pt`, 'front.strip' + i, 'strip'); });
@@ -76,7 +87,7 @@ window.brochureReady = (async function(){
     h += `<div class="abs dsp" id="st" style="left:${zA[0]}pt;top:146pt;width:${zP[0] - 10 - zA[0]}pt;height:14pt;font-size:11pt;line-height:14pt;color:var(--ink);letter-spacing:0" data-slot="back.street" data-lines="1">${esc(L.address)}</div>`;
     h += `<div class="abs kicker" style="left:${zA[0]}pt;top:163pt;width:${zP[0] - 10 - zA[0]}pt;height:10pt;color:var(--accent)" data-slot="back.place" data-lines="1">${esc(AT.placeZip(L).toUpperCase())}</div>`;
     const slab = PC.slab || {};
-    h += `<div class="slab" data-blk="1" style="left:${zP[0] - 12}pt;top:113pt;width:${W - zP[0] + 21}pt;height:72pt;padding:3pt 18pt 3pt 9pt"><div class="big" data-slot="slab.big" data-lines="2">${esc(slab.big || '')}</div><div class="sub" data-slot="slab.sub" data-lines="3">${esc(slab.sub || '')}</div></div>`;
+    h += `<div class="slab" data-blk="1" style="left:${zP[0] - 12}pt;top:113pt;width:${W - zP[0] + 21}pt;padding:7pt 18pt 7pt 9pt"><div class="big" data-slot="slab.big" data-lines="2">${esc(slab.big || '')}</div><div class="sub" data-slot="slab.sub" data-lines="3">${esc(slab.sub || '')}</div></div>`;
     const cap = (c, x, y, w, slot, lines) => `<div class="abs cap2 bk" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="${slot}" data-para="1" data-min="2" data-lines="${lines}">${esc(big && c.a11 ? c.a11 : c.a)}</div></div>`;
     if(!sold){
       const bk = (PC.back || []).slice(0, big ? 3 : 2), g = 10, pw = (avail - g*(bk.length - 1))/bk.length, capH = 6 + 14 + 1 + 3*12, hd = 16, phh = bot0 - top0 - hd - capH;
@@ -136,6 +147,7 @@ window.brochureReady = (async function(){
   window.proofNotes = [{paragraphs: [...document.querySelectorAll('[data-para]')].map(el => { const ls = AT.lineBoxes(el), w = el.getBoundingClientRect().width, last = ls[ls.length-1];
     return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, wPt: Math.round(AT.pt(w))}; })}];
   window.photoPlacements = AT.placements;
+  if(window.CapFit) (window.proofNotes = window.proofNotes || []).push({capFit: CapFit.run(((typeof D !== "undefined" && D.copy) || {}).extra)});
   window.brochureCheck = () => AT.checkSingle(D, issues);
 })();
 </script>

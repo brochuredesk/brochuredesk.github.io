@@ -5,6 +5,7 @@
 <title>BrochureDesk · The Room Strips fold-over</title>
 <link rel="stylesheet" href="room-strips.css">
 <script src="room-strips.js"></script>
+<script src="../engine/planink.js"></script>
 <!--
   BrochureDesk · The Room Strips · 11 x 17 fold-over
   11 x 17 sheet folded once across the middle: four landscape 11 x 8.5 panels (792 x 612 pt), 0.125 in (9 pt) bleed.
@@ -21,6 +22,7 @@
 -->
 </head>
 <body>
+<script src="capfit.js"></script>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
 <script>
@@ -53,11 +55,14 @@ window.brochureReady = (async function(){
     h += `<div class="abs addr" style="left:24pt;top:18pt;width:560pt;height:46pt" data-slot="front.address" data-lines="1">${esc(L.address)}</div>`;
     h += `<div class="abs city" style="left:25pt;top:68pt;width:560pt;height:12pt" data-slot="front.city" data-lines="1">${esc(RS.place(L))}${L.zip ? ' ' + esc(L.zip) : ''}</div>`;
     if(K.tag) h += `<div class="flood" style="right:24pt;top:60pt" data-slot="front.tag" data-lines="1">${esc(K.tag)}</div>`;
-    h += RS.photo(D, K.photo, -9, 104, 480, 296) + RS.photo(D, K.photo2, 479, 104, 322, 296);
-    h += RS.photo(D, K.small, 24, 408, 296, 180);
+    const PHH = K.cap1 ? 270 : 296;
+    h += RS.photo(D, K.photo, -9, 104, 480, PHH) + RS.photo(D, K.photo2, 479, 104, 322, PHH);
+    if(K.cap1) h += `<div class="abs body" style="left:24pt;top:379pt;width:447pt;height:25pt;font-size:9.5pt;line-height:12pt" data-slot="front.cap1" data-lines="2" data-nmin="2" data-nmax="2" data-cap="1">${esc(K.cap1)}</div>`;
+    if(K.cap2) h += `<div class="abs body" style="left:487pt;top:379pt;width:281pt;height:25pt;font-size:9.5pt;line-height:12pt" data-slot="front.cap2" data-lines="2" data-nmin="2" data-nmax="2" data-cap="1">${esc(K.cap2)}</div>`;
+    h += RS.photo(D, K.small, 24, 408, 296, K.cap ? 147 : 180);
+    if(K.cap) h += `<div class="abs body" style="left:24pt;top:559pt;width:296pt;height:34pt;font-size:9.25pt;line-height:11pt" data-slot="front.photocap" data-lines="3" data-nmin="3" data-nmax="3" data-cap="1">${esc(K.cap)}</div>`;
     const tx = 332, tw = 768 - tx, st = RS.stats(L);
-    h += `<div class="facts4" style="left:${tx}pt;top:408pt;width:${tw}pt">${st.slice(0,4).map((t, i) => { const m = t.match(/^(Built in )?(\S+)\s*(.*)$/); const num = m[1] ? m[2] : m[2], lab = m[1] ? 'Built' : m[3];
-      return `<div data-slot="front.fact${i}" data-lines="1"><b>${esc(num)}</b> <span>${esc(lab)}</span></div>`; }).join('')}</div>`;
+    h += `<div class="facts4" style="left:${tx}pt;top:408pt;width:${tw}pt">${st.slice(0,4).map((t, i) => `<div data-slot="front.fact${i}" data-lines="1">${esc(t.replace(/^Built in /, 'Built '))}</div>`).join('')}</div>`;
     h += `<div class="abs body" style="left:${tx}pt;top:466pt;width:${tw}pt;height:78pt;font-size:9.5pt;line-height:13pt" data-slot="front.intro" data-lines="6" data-nmin="6" data-nmax="6" data-cap="1">${esc(RS.txt(K.intro))}</div>`;
     h += `<div class="abs body" style="left:${tx}pt;top:552pt;width:${tw}pt;height:36pt" data-slot="front.around" data-lines="3" data-nmin="3" data-nmax="3" data-cap="1"><b class="hd" style="font-weight:600">${esc(K.aroundHead || 'Around the house')}&nbsp; </b>${esc(RS.txt(K.around))}</div>`;
     return h;
@@ -85,11 +90,17 @@ window.brochureReady = (async function(){
     h += RS.photo(D, (B.small||{}).id, rx, y2, ax - rx - 14, ph2);
     h += block(B.small, 'back.small', rx, y2 + ph2 + 6, ax - rx - 14, h2 - ph2 - 6);
     h += `<div class="abs hd" style="left:${ax}pt;top:${y2}pt;width:${aw}pt;height:12pt" data-slot="back.aroundhead" data-lines="1">${esc(B.aroundHead || 'Around the house')}</div>`;
-    h += `<div class="abs around" style="left:${ax}pt;top:${y2+15}pt;width:${aw}pt">${(B.around||[]).slice(0,5).map((x,i)=>`<div class="r"><span class="p" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</span><span class="d" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}${x.u === '' ? '' : `<small>${esc(x.u || 'mi')}</small>`}</span></div>`).join('')}</div>`;
-    const gy = y2 + 15 + 5*20 + 10;
-    h += `<div class="abs hd" style="left:${ax}pt;top:${gy}pt;width:${aw}pt;height:12pt" data-slot="back.newhead" data-lines="1">${esc(B.newHead || 'What is new')}</div>`;
-    h += `<div class="abs newgrid" style="left:${ax}pt;top:${gy + 16}pt;width:${aw}pt">${(B.items||[]).slice(0,8).map((t,i)=>`<div data-slot="back.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div>`;
-    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', brokerage: true, fine: B.footnote || ''});
+    // the "what is new" list moves beside the narrow card (owner 11/10/2026, rule 3); the around list takes its column's full height
+    const arH = (462 - (y2 + 15))/5;
+    h += `<div class="abs around" style="left:${ax}pt;top:${y2+15}pt;width:${aw}pt">${(B.around||[]).slice(0,5).map((x,i)=>`<div class="r" style="height:${arH}pt;padding-top:${(arH - 16)/2}pt"><span class="p" style="font-size:11pt" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</span><span class="d" style="font-size:15pt" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}${x.u === '' ? '' : `<small>${esc(x.u || 'mi')}</small>`}</span></div>`).join('')}</div>`;
+    // the contact card runs the full width but short top to bottom (owner 11/10/2026, rule 1); the "what is new" list runs full width above it.
+    // Its type and brokerage panel are sized up so the card's width is used, with no empty stretch between the email and the logo (r3 reviewer2 p13)
+    h += RS.rule(24, 468, 744).replace('class="', 'class="newbar ');
+    h += `<div class="abs hd" style="left:24pt;top:474pt;width:744pt;height:12pt" data-slot="back.newhead" data-lines="1">${esc(B.newHead || 'What is new')}</div>`;
+    h += `<div class="abs newgrid" style="left:24pt;top:490pt;width:744pt;height:30pt;grid-template-rows:repeat(2,1fr);grid-template-columns:repeat(4,1fr);align-items:center;gap:0 14pt">${(B.items||[]).slice(0,8).map((t,i)=>`<div data-slot="back.item${i}" data-lines="1" style="font-size:11pt;line-height:15pt">${esc(t)}</div>`).join('')}</div>`;
+    h += ContactCard.html([24, 524, 744, 70], Object.assign({}, A, {headshot: hs}), b, {layout: 'panel', size: 'short', brokerage: true, bottomGap: .5, grow: 0, fine: '',
+      s: {name: 26, nameFloor: 17, desig: 9.5, label: 9.5, phone: 17, line: 10.5, office: 10, desigInline: true, hsW: 58, panelW: 236, rowGap: 52, logo: {wide: [160, 32], square: [32, 32], tall: [34, 34]}}});
+    if(B.footnote) h += `<div class="abs" style="left:24pt;top:598pt;width:744pt;height:8pt;font:400 6.5pt/8pt var(--font-body);color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(B.footnote)}</div>`;
     return h;
   }
 
@@ -100,7 +111,9 @@ window.brochureReady = (async function(){
     (T.strips || []).slice(0, 3).forEach((s, i) => {
       const y = y0 + i*(H + G), alt = i % 2 === 1;
       const bx = alt ? 24 + cw + 10 : 24, sx = bx + bw + 10, cx = alt ? 24 : 768 - cw;
-      h += RS.photo(D, s.big, bx, y, bw, H) + RS.photo(D, s.comp, sx, y, sw, H) + block(s, `${key}.s${i}`, cx, y, cw, H);
+      const CPH = s.cap ? 26 : 0;
+      h += RS.photo(D, s.big, bx, y, bw, H) + RS.photo(D, s.comp, sx, y, sw, H - CPH) + block(s, `${key}.s${i}`, cx, y, cw, H);
+      if(s.cap) h += `<div class="abs body" style="left:${sx}pt;top:${y + H - CPH + 4}pt;width:${sw}pt;height:${CPH - 4}pt;font-size:8.5pt;line-height:11pt" data-slot="${key}.s${i}.cap" data-lines="2" data-nmin="2" data-nmax="2" data-cap="1">${esc(s.cap)}</div>`;
     });
     return h;
   }
@@ -117,8 +130,11 @@ window.brochureReady = (async function(){
   document.getElementById('pages').innerHTML = html;
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
   RS.fitLogos();
+  if(window.PlanInk) PlanInk.applyAll(D, false);
+  document.querySelectorAll('img[data-plan-img]').forEach(im => { const f = im.style.filter, pl = im.closest('.plan'); if(f && pl){ im.style.filter = ''; pl.style.filter = f + ' drop-shadow(0 0 0.45px #1c1c1c) drop-shadow(0 0 0.45px #1c1c1c)'; } });
   ContactCard.fit(document);
   document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  if(window.CapFit) (window.proofNotes = window.proofNotes || []).push({capFit: CapFit.run(((typeof D !== "undefined" && D.copy) || {}).extra)});
   window.brochureCheck = () => RS.check(D, issues);
 })();
 </script>

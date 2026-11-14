@@ -5,6 +5,7 @@
 <title>BrochureDesk · Swatchbook postcards</title>
 <link rel="stylesheet" href="swatchbook.css">
 <script src="swatchbook.js"></script>
+<script src="capfit.js"></script>
 <script src="../engine/agentcard.js"></script>
 <!--
   BrochureDesk · Swatchbook · Just Listed and Just Sold postcards.
@@ -32,7 +33,7 @@
   .pc-wbox .p b{font-weight:700}
   .pc-bstatus{position:absolute;display:flex;align-items:center;white-space:nowrap;overflow:hidden}
   .pc-bstatus .st{font:700 12pt/1 var(--font-body);letter-spacing:2.2pt;color:var(--gold);text-transform:uppercase}
-  .pc-bstatus .ln{flex:1;height:.8pt;background:var(--line-on-navy);margin:0 10pt;min-width:16pt}
+  .pc-bstatus .ln{flex:1;align-self:stretch;background:linear-gradient(transparent calc(50% - .4pt), var(--line-on-navy) 0 calc(50% + .4pt), transparent 0);margin:0 10pt;min-width:16pt}   /* the rule is drawn inside a full-height span, so the status reads as one line */
   .pc-bstatus .ad{font:600 10.5pt/1 var(--font-body);letter-spacing:2pt;color:#fff;text-transform:uppercase}
   .pc-steps .it{display:flex;gap:8pt;align-items:baseline;white-space:nowrap;overflow:hidden}
   .pc-steps .bx{width:5pt;height:5pt;background:var(--navy);flex:none;transform:translateY(-1pt)}
@@ -113,16 +114,18 @@ window.brochureReady = (async function(){
     h += `<div class="row" style="position:absolute;left:0;top:0;width:${W}pt;height:${H}pt;display:block;pointer-events:none">${rowH}</div>`;
     // return address beside the postage box, right-justified to the right edge of the far-right photo below it (owner 10/30 standing rule)
     const ret = [b.brokerage || ''].concat([].concat(b.returnAddress || b.address || []).flatMap(a => String(a).split('\n'))).filter(Boolean).slice(0, 3);
-    h += `<div class="pc-ret" data-slot="back.return" style="left:${rx}pt;top:18pt;width:${rw}pt;text-align:right"><b>${esc(ret[0] || '')}</b>${ret.slice(1).map(t => '<br>' + esc(t)).join('')}</div>`;
+    h += `<div class="pc-ret" data-slot="back.return" data-small="1" style="left:${rx}pt;top:18pt;width:${rw}pt;text-align:right"><b>${esc(ret[0] || '')}</b>${ret.slice(1).map(t => '<br>' + esc(t)).join('')}</div>`;
     // the write-up (Just Listed) or the steps (Just Sold) under the photos, left zone only
     const cardH = 80, cardY = 304.5;
-    const bx = py + phH + 5 + capLines*12.5 + 10, bh = 298 - bx;
+    // owner 11/10 (rule 11): the captions sit close over the box (no empty band under them); the box takes the room
+    const bx = py + phH + 5 + capLines*12.5 + 8, bh = 298 - bx;
     if(!sold){
-      const lh = 15, lines = Math.floor((bh - 11 - 11 - 3 - 9)/lh), pad = (bh - 14 - lines*lh)/2;
-      h += `<div class="pc-wbox" style="position:absolute;left:${X}pt;top:${bx}pt;width:${lw}pt;height:${bh}pt;padding-top:${pad}pt;padding-bottom:${pad}pt"><div class="k" data-slot="back.box.k" data-lines="1">About this home</div>${SW.para(B.about, 'back.box', lines, 'p', 'font-size:10.75pt', lh)}</div>`;
+      // five lines of write-up (never shorter); the line step shrinks a little before a line is lost; the kicker keeps a clear top margin
+      const lines = 5, lh = Math.min(15, (bh - 16 - 8 - 14)/lines), padB = Math.max(8, bh - 16 - 14 - lines*lh);
+      h += `<div class="pc-wbox" style="position:absolute;left:${X}pt;top:${bx}pt;width:${lw}pt;height:${bh}pt;padding-top:16pt;padding-bottom:${padB}pt"><div class="k" data-slot="back.box.k" data-lines="1">About this home</div>${SW.para(B.about, 'back.box', lines, 'p', 'font-size:10.75pt', lh)}</div>`;
     } else {
       const steps = big ? (B.steps2 || B.steps || []) : (B.steps || []);
-      const stepsCss = big ? 'display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,auto);grid-auto-flow:column;column-gap:22pt;row-gap:6pt;font-size:10.75pt;line-height:14pt;color:var(--ink)' : 'font-size:10pt;line-height:12.8pt;color:var(--ink)';
+      const stepsCss = big ? 'display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,auto);grid-auto-flow:column;column-gap:22pt;row-gap:6pt;font-size:10.75pt;line-height:14pt;color:var(--ink)' : 'font-size:11pt;line-height:13.6pt;color:var(--ink)';
       h += `<div class="pc-wbox" style="position:absolute;left:${X}pt;top:${bx}pt;width:${lw}pt;height:${bh}pt;justify-content:space-between">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10pt"><div class="k" style="margin-bottom:0" data-slot="back.box.k" data-lines="1">Here’s how I’d start</div><div class="pc-call" data-slot="back.call" data-lines="1">${esc(B.call || 'Call or text me anytime.')}</div></div>
         <div class="pc-steps" data-slot="back.steps" style="${stepsCss}">${steps.map(s => `<div class="it"><span class="bx"></span><span>${esc(s)}</span></div>`).join('')}</div></div>`;
@@ -144,14 +147,17 @@ window.brochureReady = (async function(){
   document.getElementById('pages').innerHTML = f.html;
   window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
-  SW.fill();
+  await Promise.all([...document.fonts].filter(f => f.status !== 'loaded').map(f => f.load().catch(() => {}))); await document.fonts.ready; SW.fill();   // measure with the real fonts (owner 11/10: never shorter)
   SW.fitLogos();
+  await Promise.all([...document.fonts].filter(f => f.status !== 'loaded').map(f => f.load().catch(() => {}))); await document.fonts.ready; await new Promise(r => setTimeout(r, 60)); SW.fill(); CapFit.run(document.querySelectorAll('.cap .a'));
   ContactCard.fit(document);
   if(front && sold) centerFacts();
   if(!front) fitDisc();
   issues.push(...SW.focus(D));
   if(!front) issues.push(...mailCheck());
   // the sold front's box and the listed boxes are checked like every paragraph: whole sentences, the last line at least 3/4 full
+  if(!front && ![].concat((D.brand || {}).returnAddress || (D.brand || {}).address || []).filter(Boolean).length) issues.push({slot: 'return', kind: 'return-address-missing'});   /* every mailer back carries the brokerage's full return address (owner 11/10) */
+  SW.lastFix();   // owner 11/10: no last line under 80% (a small type step, same words)
   window.brochureCheck = () => SW.check(D, issues);
   window.photoPlacements = SW.placements;
 

@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>The House in Sections fold-over</title>
 <link rel="stylesheet" href="in-sections.css">
+<script src="../engine/planink.js"></script>
 <script src="in-sections.js"></script>
 <!--
   The House in Sections · 11 x 17 portrait book-fold
@@ -20,6 +21,7 @@
 -->
 </head>
 <body>
+<script src="capfit.js"></script>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
 <script>
@@ -32,7 +34,7 @@ window.brochureReady = (async function(){
   await Promise.all(['400 10pt','500 10pt','600 10pt','700 10pt'].map(w => document.fonts.load(`${w} 'Hanken Grotesk'`)));
   document.body.dataset.mode = mode;
   PG.cfg = {lh: 13, nm: 15, lead: {lh: 15, nm: 20}};
-  const hasPlan = !!(D.plan && D.plan.levels && D.plan.levels.length);
+  const hasPlan = PG.planOK(D);
   const hs = (D.photos||{})[A.headshot] ? D.photos[A.headshot].src : (A.headshot || '');
   const G = 8, M = 29, W = 554, BOT = 763, Y0 = 92, HWIDTH = 232;
   const ln = (slot, d) => PG.lines(D, slot, d);
@@ -75,15 +77,20 @@ window.brochureReady = (async function(){
     const facts = y => '';
     if(K.alt){
       // a house photo that needs a tall band: one photo beside the paragraph instead of a pair under the band
-      const pn = ln('front.intro', 10), rowH = pn*pl, n = ln('front.cap0', 3), H1 = BOT - 94 - 12 - rowH - 12;
+      // (owner 11/9 p35, every cover: the main write-up in bigger type, every line run to the column's edge, justified)
+      const it = PG.txt(K.intro), pf = PG.fitPara(it, w1 - 8, {fsLo: 10, fsHi: 13, fsT: 11.5, maxLines: 14}) || {fs: 10, lh: pl, lines: ln('front.intro', 10), last: 1};
+      const pn = pf.lines, rowH = pn*pf.lh, n = ln('front.cap0', 3), H1 = BOT - 94 - 12 - rowH - 12;
       h += PG.photo(D, K.photo, -9, 94, 630, H1);
       let y = 94 + H1 + 12;
       const pph = rowH - 6 - PG.capH(n);
       h += PG.photo(D, c[0].id, M, y, w0, pph) + cp(c[0], 'front.cap0', M, y + pph + 6, w0, n);
-      h += PG.para(K.intro, 'front.intro', M + w0 + G + 8, y, w1 - 8, pn, pl);
+      h += PG.paraFit(it, 'front.intro', M + w0 + G + 8, y, w1 - 8, pf, 'body intro');
       return h;
     }
-    const pn = ln('front.intro', 4), n = Math.max(ln('front.cap0', 3), ln('front.cap1', 3)), capb = 6 + PG.capH(n), paraH = pn*pl;
+    // (owner 11/9 p35, every cover: the main write-up under the photos in bigger type so it stands out, its whole text, every line run to
+    // the right edge of the photos above it, 90%+, justified)
+    const it = PG.txt(K.intro), pf = PG.fitPara(it, W, {fsLo: 10.75, fsHi: 13.25, fsT: 12.25, maxLines: 7}) || {fs: 10, lh: pl, lines: ln('front.intro', 4), last: 1};
+    const pn = pf.lines, n = Math.max(ln('front.cap0', 3), ln('front.cap1', 3)), capb = 6 + PG.capH(n), paraH = pn*pf.lh;
     const total = BOT - 94 - 12 - 6 - capb - 14 - paraH, H1 = Math.max(Math.round(total*0.66), Hmin), hp = total - H1;
     h += PG.photo(D, K.photo, -9, 94, 630, H1);
     let y = 94 + H1 + 12;
@@ -91,7 +98,7 @@ window.brochureReady = (async function(){
     wd.forEach((w, k) => { const ph = hp + (mx - ns[k])*PG.cfg.lh, x = M + (k ? w0 + G : 0);
       h += PG.photo(D, c[k].id, x, y, w, ph) + cp(c[k], `front.cap${k}`, x, y + ph + 6, w, ns[k]); });
     y += hp + 6 + PG.capH(mx) + 14;
-    h += PG.para(K.intro, 'front.intro', M, y, W, pn, pl);
+    h += PG.paraFit(it, 'front.intro', M, y, W, pf, 'body intro');
     return h;
   }
 
@@ -123,17 +130,23 @@ window.brochureReady = (async function(){
   // ================= BACK =================
   function back(){
     const bp = hasPlan ? 'back.photo' : 'back.nphoto';
-    const B = C.back || {}, y1 = 602, H = y1 - Y0, around = B.around || [], ph0 = (B.photos || []).slice(0, 2);
+    // the contact block runs the panel's full content width but short top to bottom (owner 11/9 p36 and 11/10 rule 1: tighter and
+    // shorter, moved down a little; the flyer back's pattern), its fine print under it. Both columns above run down to it.
+    const CH = 68, cardY = 686, colB = cardY - 16;
+    const B = C.back || {}, around = (B.around || []).filter(a => a && a.p), ph0 = (B.photos || []).slice(0, 2);
     let h = head(B, 'back'), BW = 300;
-    const rowH = 21, placesH = 18 + around.length*rowH + 4, boardH = H - placesH - 30;
-    if(hasPlan){ const pr = PG.plan(D, {x: 0, y: 0, w: 340, h: boardH - 26}); BW = Math.max(180, Math.min(340, Math.ceil(pr.used.w) + 16)); }
+    const rowH = 21, placesH = around.length ? 18 + around.length*rowH + 4 : 0;
+    // (the board's width as the reviewed layout set it, from the plan at its old height, so the Outside column keeps its width)
+    if(hasPlan){ const pr = PG.plan(D, {x: 0, y: 0, w: 340, h: (602 - Y0) - placesH - 30 - 26}); BW = Math.max(180, Math.min(340, Math.ceil(pr.used.w) + 16)); }
+    const H = colB - Y0, boardH = H - placesH - 30 - (around.length ? 0 : -12);
     const TW = W - BW - 14, rx = M + TW + 14, px = M + 10, pw = TW - 20;
-    // left: the tinted Outside column, run to the bottom of the page behind the agent card, as on the inside pages (the owner 10/31)
-    h += `<div class="tint" style="left:${M}pt;top:${Y0}pt;width:${TW}pt;height:${801 - Y0}pt"></div>` + sec(B.outside || 'Outside', 'back.outsidehead', px, Y0 + 12, pw);
-    const ns = ph0.map((c, i) => ln(`${bp}${i}`, 5)), yy = Y0 + 32, avail = Y0 + H - 10 - yy;
+    // left: the tinted Outside column, down to the card
+    h += `<div class="tint" style="left:${M}pt;top:${Y0}pt;width:${TW}pt;height:${colB + 4 - Y0}pt"></div>` + sec(B.outside || 'Outside', 'back.outsidehead', px, Y0 + 12, pw);
+    // (the column's width follows the listing's own plan: a caption takes the lines its whole text needs at that width)
+    const ns = ph0.map((c, i) => PG.need(c.text, pw, 'd') || ln(`${bp}${i}`, 5)), yy = Y0 + 32, avail = colB - 10 - yy;
     const ph = ph0.length === 1 ? avail - 6 - PG.capH(ns[0]) : Math.floor((avail - 12 - ns.reduce((a, n) => a + 6 + PG.capH(n), 0))/2); let y = yy;
     ph0.forEach((c, i) => { h += PG.photo(D, c.id, px, y, pw, ph) + cp(c, `${bp}${i}`, px, y + ph + 6, pw, ns[i]); y += ph + 6 + PG.capH(ns[i]) + 12; });
-    // right: the plan (a board as wide as the plan needs) or the room list, then the places around the house
+    // right: the plan (clear, on the paper, in a thin keyline frame as wide as the plan needs) or the room list, then the places around the house
     h += sec(hasPlan ? B.planHead || 'Floor plan' : 'The rooms', 'back.planhead', rx, Y0 + 12, BW);
     if(hasPlan){
       h += `<div class="board" style="left:${rx}pt;top:${Y0 + 28}pt;width:${BW}pt;height:${boardH}pt"></div>`;
@@ -144,9 +157,12 @@ window.brochureReady = (async function(){
       const rl = PG.roomList(D, B.rooms, 'back.floor', rx, Y0 + 30, BW, boardH - 20); h += rl.html;
       if(rl.over) issues.push({slot: 'back.rooms', kind: 'room-list-overflow'});
     }
-    const py = Y0 + 28 + boardH + 12;
-    h += sec(B.aroundHead, 'back.aroundhead', rx, py, BW) + PG.places(around, 'back.around', rx, py + 16, BW, rowH);
-    h += ContactCard.html([M, 616, W, 140], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', fine: B.footnote || ''});
+    if(around.length){ const py = colB - placesH + 4;
+      h += sec(B.aroundHead || 'Around the house', 'back.aroundhead', rx, py, BW) + PG.places(around, 'back.around', rx, py + 16, BW, rowH); }
+    h += PG.rule(M, cardY - 8, W, 'thin');
+    h += ContactCard.html([M, cardY, W, CH], Object.assign({}, A, {headshot: hs}), b, {layout: 'panel', size: 'short', fine: '', bottomGap: .5, grow: 0,
+      s: {name: 19, nameFloor: 15, phone: 13, line: 9, desigInline: true, hsW: 54, panelW: 170, rowGap: 14, logo: {wide: [136, 30], square: [32, 32], tall: [34, 34]}}});
+    h += `<div class="abs" style="left:${M}pt;top:${cardY + CH + 5}pt;width:${W}pt;height:8pt;font-size:6.5pt;line-height:8pt;color:#59636f;white-space:nowrap;overflow:hidden" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(B.footnote || 'Information deemed reliable but not guaranteed.')}</div>`;
     return h;
   }
 
@@ -166,7 +182,11 @@ window.brochureReady = (async function(){
   if(!D.fit) document.querySelectorAll('[data-cap]').forEach(PG.balance);
   issues.push(...PG.fitPhotos(D));
   ContactCard.fit(document);
+  if(window.PlanInk) PlanInk.applyAll(D, false);   // owner 11/10/2026: the listing plan's background is clear, the paper shows through
   document.body.dataset.version = D.version || `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  PG.markFits();
+  if(window.CapFit) (window.proofNotes = window.proofNotes || []).push({capFit: CapFit.run(((typeof D !== "undefined" && D.copy) || {}).extra)});
+  PG.keepFits();
   window.brochureCheck = () => PG.check(D, issues);
 })();
 </script>

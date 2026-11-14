@@ -34,14 +34,6 @@ window.brochureReady = (async function(){
   // owner 10/30 (Book 3): Outside First postcards are white front and back, footer included (these four cards only, not the fold-over or flyers)
   document.documentElement.style.setProperty('--paper', '#fff');
   const D = OF.data(), esc = OF.esc, L = D.listing || {}, A = D.agent || {}, b = D.brand || {}, P = D.piece || {};
-  // owner 11/7/2026: every back carries the set's design across the whole card, mail side included; only the postage box,
-  // the address block and the barcode strip stay clear, on a light tint. The back turns to the set's deep slate (its ink),
-  // with copper and cream type; the fronts stay white.
-  if(P.side === 'back'){ const R = document.documentElement.style;
-    [['--paper', '#1f2b2c'], ['--ink', '#f7f1e8'], ['--text', '#dcd7cd'], ['--muted', '#b9b4aa'], ['--accent', '#e08a4a']].forEach(([k, v]) => R.setProperty(k, v));
-    document.body.classList.add('pc-back');
-    const st = document.createElement('style'); st.textContent = '.pc-back .ret{color:#e6e1d8}.pc-back .pc-disc{color:#f7f1e8}';
-    document.head.appendChild(st); }
   const sold = P.card === 'sold', big = P.size === '6x11', front = P.side === 'front';
   const K = ((D.cards || {})[sold ? 'js' : 'jl']) || {};
   await OFC.boot(D, () => {
@@ -106,8 +98,8 @@ window.brochureReady = (async function(){
       h += OF.logo(D, G.cx, textBottom - 2 - LOGO, G.cw, LOGO, logoAlign);
     } else {
       // ---------------- back ----------------
-      // the design runs across the whole card (owner 11/7/2026): the deep slate field to every edge, the copper edge stripe
-      // on top up to the postage tint, the light tint under the three mail zones. Mail zones (pt, the Just Listed library's, jllib.js zones):
+      // the design runs across the whole card: a copper edge stripe on top, and a full-width tan band under the address block
+      // that the standard postcard card sits on (no white seam). Mail zones (pt, the Just Listed library's, jllib.js zones):
       // postage, address block and barcode strip stay clear.
       const B = K.back || {}, X = 22.5, mx = W - 243, colW = mx - 14 - X, ZP = [W - 96, 12, 84, 98], ZA = [W - 243, 187.5, 240, 112.5], ZB = [W - 342, 387, 342, 45];
       const bandY = 301, bandH = 84, cardY = 303, cardH = 80, bot = 292;
@@ -115,15 +107,11 @@ window.brochureReady = (async function(){
       const CARD_S = {inlineLabel: true, officeLH: 1.15, office: 9.5, name: 26, phone: 19, pad: [8, 20, 6], panelPad: [4, 14], panelGap: 5, logo: {wide: [128, 34], square: [40, 40], tall: [44, 44]}, lock: 12};
       // 6 x 9 with a headshot: the agent column is narrower, so the photo, panel and gaps give a little
       if(!big && OFC.headshot(D)) Object.assign(CARD_S, {hsW: 70, hsGap: 14, phone: 17, rowGap: 14, name: 24, panelW: 168, logo: {wide: [118, 32], square: [40, 40], tall: [44, 44]}});
-      h += `<div class="abs" data-under="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:${H + 18}pt;background:#1f2b2c"></div>`;
-      { const tint = (x, y, x2, y2) => `<div class="abs" data-under="1" style="left:${x}pt;top:${y}pt;width:${x2 - x}pt;height:${y2 - y}pt;background:#fbf6ee"></div>`;
-        h += tint(ZP[0] - 6, -9, W + 9, ZP[1] + ZP[3] + 6) + tint(ZA[0] - 6, ZA[1] - 1, W + 9, ZA[1] + ZA[3] + 4) + tint(ZB[0] - 6, ZB[1] - 2, W + 9, H + 9); }
-      window.mailZones = {postage: ZP, address: ZA, barcode: ZB};
-      h += `<div class="abs" style="left:-9pt;top:-9pt;width:${ZP[0] - 6 + 9}pt;height:14pt;background:var(--accent)"></div>`;
+      h += `<div class="abs" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:14pt;background:var(--accent)"></div>`;
       // owner 10/30: no tan band behind the contact card; white behind the brokerage footer, no highlight
       // the right side: return address (left of the postage box), the title, a rule, the street
       const rw = ZP[0] - 12 - mx, tp = 36, tl = tp*0.97, rx = W - 22.5 - mx;
-      h += `<div class="abs ret" style="left:${mx}pt;top:20pt;width:${rw}pt"><b>${esc(b.brokerage || '')}</b>${[].concat(b.returnAddress || b.address || []).flatMap(x => String(x).split('\n')).map(s => s.trim()).filter(Boolean).slice(0, 2).map(x => '<br>' + esc(x)).join('')}</div>`;
+      h += `<div class="abs ret" style="left:${mx}pt;top:20pt;width:${rw}pt"><b>${esc(b.brokerage || '')}</b>${[].concat(b.returnAddress || b.address || []).length ? '<br>' + esc([].concat(b.returnAddress || b.address).flatMap(a => String(a).split('\n')).map(x => x.trim()).filter(Boolean).join(', ')) : ''}</div>`;   // the brokerage's full return address by the postage box (owner 11/10, rule 10)
       h += `<div class="abs pc-title" style="left:${mx}pt;top:58pt;width:${rw}pt;height:${tl}pt;font-size:${tp}pt;line-height:${tl}pt" data-slot="back.status" data-lines="1">${status[0]}</div>`;
       h += `<div class="abs pc-title o" style="left:${mx}pt;top:${58 + tl}pt;width:${rw}pt;height:${tl}pt;font-size:${tp}pt;line-height:${tl}pt" data-slot="back.status2" data-lines="1">${status[1]}</div>`;
       h += `<div class="copper-rule" style="left:${mx}pt;width:${rx}pt;top:136pt"></div>`;
@@ -145,18 +133,17 @@ window.brochureReady = (async function(){
         const pw = big ? 150 : 124, gap = 6, sh = (bot - 22 - 2*gap)/3;
         (B.photos || []).slice(0, 3).forEach((c, i) => { h += OFC.photo(D, c.id, X, 22 + i*(sh + gap), pw, sh); });
         const lx = X + pw + 14, lw = colW - pw - 14, fs = big ? 14 : 11.5, lh = big ? 19 : 15.5;
-        const steps = B.steps || [];
+        const stepOpts = (B.steps || []).map(x => [].concat(x)), steps = stepOpts.map(o => o[0]);   // options: picked after layout (owner 11/10)
         const lines = steps.map(s => OFC.linesFor(`font:400 ${fs}pt/${lh}pt var(--font-body)`, s, lw - 12.5, lh));
         const cf = big ? 20 : 16, cl = big ? 24 : 20;
         const callN = OFC.linesFor(`font:700 ${cf}pt/${cl}pt var(--font-display)`, B.call || '', lw, cl);
         const callH = callN*cl, top = 22, hgt = bot - top;
         h += `<div class="abs pc-lab" style="left:${lx}pt;top:${top}pt;width:${lw}pt;height:10pt" data-slot="back.stepsLabel" data-lines="1">${esc(B.stepsLabel || "Here's how I'd start")}</div>`;
-        h += `<div class="abs pc-steps" style="left:${lx}pt;top:${top + 20}pt;width:${lw}pt;height:${hgt - 20 - callH - 12}pt;display:flex;flex-direction:column;justify-content:space-between">${steps.map((s, i) => `<div class="it" style="font:400 ${fs}pt/${lh}pt var(--font-body);color:var(--text)"><span class="bx"></span><span style="flex:1;text-wrap:balance" data-slot="back.step${i}" data-lines="${lines[i]}">${esc(s)}</span></div>`).join('')}</div>`;
+        h += `<div class="abs pc-steps" style="left:${lx}pt;top:${top + 20}pt;width:${lw}pt;height:${hgt - 20 - callH - 12}pt;display:flex;flex-direction:column;justify-content:space-between">${steps.map((s, i) => `<div class="it" style="font:400 ${fs}pt/${lh}pt var(--font-body);color:var(--text)"><span class="bx"></span><span style="flex:1" data-slot="back.step${i}" data-lines="${lines[i]}"${stepOpts[i].length > 1 ? ` data-variants='${esc(JSON.stringify(stepOpts[i])).replace(/'/g, '&#39;')}'` : ''}>${esc(s)}</span></div>`).join('')}</div>`;
         h += `<div class="abs" style="left:${lx}pt;top:${bot - callH}pt;width:${lw}pt;height:${callH}pt;font:700 ${cf}pt/${cl}pt var(--font-display);color:var(--accent)" data-slot="back.call" data-lines="${callN}">${esc(B.call || '')}</div>`;
       }
       // the standard postcard card, full width, straight on the band's color
-      { const bd = Object.assign({}, b), knock = !(b.logoOnDark || b.logoKnockout); bd.logo = b.logoOnDark || b.logoKnockout || b.logo;
-        h += `<div class="abs" style="left:0;top:0;width:0;height:0;--cc-paper:#1f2b2c;--cc-ink:#f7f1e8;--cc-muted:#c9c4ba;--cc-accent:#e08a4a;--cc-line:rgba(224,138,74,.5)">${OFC.card(Object.assign({}, D, {brand: bd}), [X, cardY, W - 2*X, cardH], Object.assign({postcard: true, fine: '', s: CARD_S}, knock ? {logoStyle: 'filter:brightness(0) invert(1)'} : {}))}</div>`; }
+      h += `<div class="abs" style="left:0;top:0;width:0;height:0;--cc-paper:#fff">${OFC.card(D, [X, cardY, W - 2*X, cardH], {postcard: true, fine: '', s: CARD_S})}</div>`;
       const fine = [(D.cards || {}).fineprint || 'Information deemed reliable but not guaranteed.', 'If your property is currently listed with a broker, please disregard this notice. It is not intended to solicit listed property.'].join(' ');
       h += `<div class="abs pc-disc" style="left:${X}pt;top:391pt;width:${ZB[0] - 12 - X}pt;height:24pt" data-slot="fineprint" data-lines="3" data-fine="1">${esc(fine)}</div>`;
       // proof guides for the mail zones (print leaves them clear)
@@ -167,7 +154,14 @@ window.brochureReady = (async function(){
         h += `<div class="mailg box" style="left:${ZB[0]}pt;top:${ZB[1]}pt;width:${ZB[2]}pt;height:${ZB[3]}pt;border-style:dashed"><div class="g" style="left:0;right:0;top:18pt;text-align:center">Barcode strip · keep clear</div></div>`;
       }
     }
-    return {html: OFC.frame(D, W, H, h), after: () => { OFC.fitWidth('.pc-addr', 24); OFC.fitWidth('.pc-name', 17); OFC.fitWidth('.pc-st', 12); }};
+    return {html: OFC.frame(D, W, H, h), after: () => { OFC.fitWidth('.pc-addr', 24); OFC.fitWidth('.pc-name', 17); OFC.fitWidth('.pc-st', 12);
+      // a line with true variants: the one that sets on one line, else the one whose last line runs 82%+ (owner 11/10)
+      document.querySelectorAll('[data-variants]').forEach(el => { let o; try { o = JSON.parse(el.dataset.variants); } catch(e){ return; } if(!Array.isArray(o)) return;
+        const fill = () => { const r = document.createRange(); r.selectNodeContents(el); const box = el.getBoundingClientRect(), rows = {};
+          [...r.getClientRects()].filter(q => q.width > .5).forEach(q => { const k = Math.round(q.top); rows[k] = Math.max(rows[k] || 0, q.right - box.left); });
+          const ks = Object.keys(rows).map(Number).sort((a, b) => a - b); return {n: ks.length, last: ks.length ? rows[ks[ks.length - 1]]/box.width : 0}; };
+        let pick = null; for(const t of o){ el.textContent = t; const f = fill(); if(f.n === 1 || f.last >= .82){ pick = t; break; } }
+        el.textContent = pick || o[0]; }); }};
   });
 })();
 </script>

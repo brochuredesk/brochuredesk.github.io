@@ -21,11 +21,11 @@
   .band{position:absolute;background:var(--dark)}
   .oh-lbl{font:600 20pt/24pt var(--font-body);letter-spacing:3pt;text-transform:uppercase;color:var(--on-dark);white-space:nowrap;overflow:hidden}
   .oh-lbl .dash{width:16pt;height:2.4pt;margin-right:10pt;vertical-align:.25em}
-  .oh-date{font:500 50pt/56pt var(--font-display);letter-spacing:-1pt;color:var(--gold);white-space:nowrap;overflow:hidden}
+  .oh-date{font:500 50pt/62pt var(--font-display);letter-spacing:-1pt;color:var(--gold);white-space:nowrap;overflow:hidden}
   .oh-time{font:600 24pt/28pt var(--font-body);color:var(--on-dark);white-space:nowrap;overflow:hidden;letter-spacing:.2pt}
   .oh-strong{font:600 10pt/13pt var(--font-body);color:var(--on-dark);text-align:right}
   .oh-note{font:400 10pt/13pt var(--font-body);color:#c4d2cc;text-align:right}
-  .addr{font:500 34pt/38pt var(--font-display);letter-spacing:-.5pt;color:var(--ink);white-space:nowrap;overflow:hidden}
+  .addr{font:500 34pt/42pt var(--font-display);letter-spacing:-.5pt;color:var(--ink);white-space:nowrap;overflow:hidden}
   .fcol{position:absolute;background:var(--dark);display:flex;flex-direction:column;justify-content:space-between;padding:14pt 16pt 12pt;overflow:hidden}
   .fcol .n{font:500 26pt/28pt var(--font-display);color:var(--on-dark);white-space:nowrap;overflow:hidden}
   .fcol .t{font:600 8pt/10pt var(--font-body);letter-spacing:1.3pt;text-transform:uppercase;color:var(--gold);white-space:nowrap;overflow:hidden}
@@ -74,7 +74,7 @@ window.brochureReady = (async function(){
     if(ls.length){ const pre = SP.eventLines(ls, 0, 0, 260, 13, 0); dy = Math.max(0, pre.h - 28); ev = SP.eventLines(ls, bx + bw - 260, 150 - pre.h + dy, 260, 13, 0).html; } }
   h += `<div class="band" style="left:${X}pt;top:30pt;width:${W}pt;height:${132 + dy}pt"></div>`;
   h += `<div class="abs oh-lbl" style="left:${bx}pt;top:42pt;width:${bw}pt;height:24pt" data-slot="oh.label" data-lines="1"><i class="dash"></i>${esc(O.label)}</div>`;
-  h += `<div class="abs oh-date" style="left:${bx - 2}pt;top:66pt;width:${bw + 2}pt;height:56pt" data-slot="oh.date" data-lines="1" data-fit="34">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-date" style="left:${bx - 2}pt;top:66pt;width:${bw + 2}pt;height:62pt" data-slot="oh.date" data-lines="1" data-fit="34">${esc(O.long)}</div>`;
   h += `<div class="abs oh-time" style="left:${bx}pt;top:122pt;width:240pt;height:28pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
   h += ev;
 
@@ -84,7 +84,7 @@ window.brochureReady = (async function(){
   const n = v => Number(v).toLocaleString('en-US');
   const pairs = SP.factPairs(L, 5);
   h += `<div class="fcol" style="left:${fx}pt;top:${top}pt;width:${fw}pt;height:${hh}pt">${pairs.map(([v, t], i) => `<div class="p"><div class="n" data-slot="oh.fact${i}.n" data-lines="1">${esc(v)}</div><div class="t" data-slot="oh.fact${i}.t" data-lines="1">${esc(t)}</div></div>`).join('')}</div>`;
-  h += `<div class="abs addr" style="left:${X - 1}pt;top:454pt;width:${W}pt;height:38pt" data-slot="address" data-lines="1" data-fit="24">${esc(L.address)}</div>`;
+  h += `<div class="abs addr" style="left:${X - 1}pt;top:454pt;width:${W}pt;height:42pt" data-slot="address" data-lines="1" data-fit="24">${esc(L.address)}</div>`;
   h += `<div class="abs kicker" style="left:${X}pt;top:493pt;width:${W}pt;height:10pt" data-slot="place" data-lines="1">${esc(SP.placeZip(L).toUpperCase())}</div>`;
 
   // three interiors, a question and its answer under each

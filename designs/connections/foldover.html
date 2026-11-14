@@ -72,51 +72,52 @@ window.brochureReady = (async function(){
     let h = `<div class="bg-field"></div>${head(B.kicker, B.title, 'back')}`;
     const bed = (B.bedrooms || []).slice(0, 2), P = B.places || [];
     const wrapOf = (html) => `<div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt">${html}</div>`;
-    const legend = (x, y, w) => { const zs = IvoryPlan.zonesOf(D.plan);
-      const spans = Object.entries(IvoryPlan.ZONES).filter(([k]) => zs.includes(k)).map(([k, z]) => `<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, var(--paper))"></i>${z.label}</span>`);
-      return spans.length ? `<div class="plan-legend" style="left:${x}pt;top:${y}pt;width:${w}pt;justify-content:center">${spans.join('')}</div>` : ''; };
     const disc = B.planDisc || 'Approximate; not to scale. Buyer to verify.';
     const fine = 'Information deemed reliable but not guaranteed; buyer to verify.';
     if(!hasPlan){
       const bath = B.bath;
-      h += `<div class="flow" style="top:100pt;bottom:170pt;gap:12pt">
+      h += `<div class="flow" style="top:100pt;bottom:150pt;gap:12pt">
           <div class="row" style="flex:1 1 0">${bed.map((c, i) => item(c, 'back.photo' + i, 4)).join('')}</div>
-          <div class="row" style="flex:none;gap:14pt">
-            <div style="flex:0 0 212pt;display:flex;min-height:150pt">${CN.photo(D, bath.photo, 'flex:1', 'back.bath')}</div>
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:7pt">
-              <div class="bathhead" data-slot="back.bath.h" data-lines="1">${esc(bath.title)}${bath.dims ? `<i>${esc(bath.dims)}</i>` : ''}</div>
-              <div class="para" data-fillto="7-3" data-slot="back.bath" data-lh="12.5" data-lead="" data-s='${sattr(bath.s)}' style="font-size:9.5pt;line-height:12.5pt"></div>
-              ${places(P, B.placesKicker, 'back.place')}
-            </div></div></div>`;
+          <div style="flex:none;height:138pt;display:flex">${widePair(Object.assign({}, bath, {photo2: null}), 'back.bath').replace('data-wmin="190" data-wmax="300"', 'data-wmin="128" data-wmax="330"')}</div></div>`;
+      // (owner 11/10/2026: the places moved down beside the narrow card; the bath's text column narrows until its sentences
+      // fill the photo's height, so no space opens under it)
     } else {
       // the plan's board fits the plan; its top is level with the photo beside it and its bottom with the last row of the page
-      const n = D.plan.levels.length, one = n === 1, img = D.plan.levels.every(l => l.kind === 'image');
+      const n = D.plan.levels.length, img = D.plan.levels.every(l => l.kind === 'image'), four = n === 4 && img && !!B.extra, one = n === 1 || four;
+      // four floors drawn long (the listing's own narrow pages): two by two in a full-height board at the left, so the three
+      // room photos keep their own column beside it (owner 11/10/2026: every page keeps its photos)
       const cap300 = img ? Math.min(...D.plan.levels.map(l => l.h)) * 72 / 300 * 0.985 : 1e9;
-      const r0 = IvoryPlan.draw(D.plan, {x: 0, y: 0, w: one ? 300 : 538, h: Math.min(one ? 440 : 250, cap300)}, {allowRotate: !img});
-      const uW = Math.ceil(r0.usedW), uH = Math.ceil(r0.usedH), BW = Math.max(uW + 28, 230), bx = 29, by = 100, REG = 522;
-      const natBH = uH + 28 + 46, BH = one ? REG : natBH;
-      const py = by + 14 + (BH - 28 - 46 - uH) / 2;       // the plan sits in the middle of the board above its legend
+      const r0 = IvoryPlan.draw(D.plan, {x: 0, y: 0, w: four ? 290 : one ? 300 : 538, h: Math.min(four ? 466 : one ? 440 : 250, four ? 1e9 : cap300)}, {allowRotate: !img});
+      const DH = 24, uW = Math.ceil(r0.usedW), uH = Math.ceil(r0.usedH), BW = Math.max(uW + 28, 230), bx = 29, by = 100, REG = 522;   // under the plan: the disclosure line only (no room-color key, owner 11/10/2026)
+      const natBH = uH + 28 + DH, BH = one ? REG : natBH;
+      const py = by + 14 + (BH - 28 - DH - uH) / 2;       // the plan sits in the middle of the board above its disclosure
       const r = IvoryPlan.draw(D.plan, {x: bx + (BW - uW) / 2, y: py, w: uW, h: uH}, {allowRotate: !img});
       window.planIssues = r.issues;
-      const board = `<div class="board" style="left:${bx}pt;top:${by}pt;width:${BW}pt;height:${BH}pt"></div>${wrapOf(r.html + legend(bx + 6, by + BH - 40, BW - 12))}
+      const board = `<div class="board" style="left:${bx}pt;top:${by}pt;width:${BW}pt;height:${BH}pt"></div>${wrapOf(r.html)}
         <div class="plan-disclosure abs" style="left:${bx + 6}pt;top:${by + BH - 20}pt;width:${BW - 12}pt;text-align:center" data-slot="back.planDisc" data-fine="1" data-lines="1">${esc(disc)}</div>`;
       const side = 554 - BW - 12, X = B.extra;
       if(one){
-        h += board + `<div class="flow" style="left:${bx + BW + 12}pt;right:29pt;top:${by}pt;bottom:170pt;gap:10pt">${bed.map((c, i) => item(c, 'back.photo' + i, 5)).join('')}${places(P, B.placesKicker, 'back.place')}</div>`;
+        h += board + `<div class="flow" style="left:${bx + BW + 12}pt;right:29pt;top:${by}pt;bottom:150pt;gap:10pt">${(four ? [...bed, B.extra] : bed).map((c, i) => item(c, 'back.photo' + i, four ? 4 : 5)).join('')}</div>`;
       } else if(side >= 190){
         // board beside a photo, then a row of photos, then the places across the foot
         h += board + `<div class="abs" style="left:${bx + BW + 12}pt;top:${by}pt;width:${side}pt;height:${BH}pt;display:flex">${item(bed[0], 'back.photo0', 4)}</div>
-          <div class="flow" style="top:${by + BH + 12}pt;bottom:170pt;gap:10pt"><div class="row" style="flex:1 1 0;gap:10pt">${item(bed[1], 'back.photo1', 4)}${X ? item(X, 'back.photo2', 4) : ''}</div>${placesH(P, B.placesKicker, 'back.place')}</div>`;
+          <div class="flow" style="top:${by + BH + 12}pt;bottom:150pt;gap:10pt"><div class="row" style="flex:1 1 0;gap:10pt">${item(bed[1], 'back.photo1', 4)}${X ? item(X, 'back.photo2', 4) : ''}</div></div>`;
       } else if(side >= 140){
         // the places and one more photo stand beside the board and end on its bottom line; two bedroom photos fill the row below
-        h += board + `<div class="abs" style="left:${bx + BW + 14}pt;top:${by}pt;width:${side - 2}pt;height:${BH}pt;display:flex;flex-direction:column;gap:9pt">${places(P, B.placesKicker, 'back.place').replace('class="places"', 'class="places narrow"')}${X ? item(X, 'back.photo2', 3) : ''}</div>
-          <div class="flow" style="top:${by + BH + 12}pt;bottom:170pt;gap:10pt"><div class="row" style="flex:1 1 0">${bed.map((c, i) => item(c, 'back.photo' + i, 3)).join('')}</div></div>`;
+        h += board + `<div class="abs" style="left:${bx + BW + 14}pt;top:${by}pt;width:${side - 2}pt;height:${BH}pt;display:flex;flex-direction:column;gap:9pt">${X ? item(X, 'back.photo2', 3) : ''}</div>
+          <div class="flow" style="top:${by + BH + 12}pt;bottom:150pt;gap:10pt"><div class="row" style="flex:1 1 0">${bed.map((c, i) => item(c, 'back.photo' + i, 3)).join('')}</div></div>`;
       } else {
-        h += board.replace(/left:29pt;top:100pt/, `left:${bx + (554 - BW) / 2}pt;top:100pt`) + `<div class="flow" style="top:${by + BH + 12}pt;bottom:170pt;gap:10pt">
-          <div class="row" style="flex:1 1 0">${bed.map((c, i) => item(c, 'back.photo' + i, 3)).join('')}</div>${placesH(P, B.placesKicker, 'back.place')}</div>`;
+        h += board.replace(/left:29pt;top:100pt/, `left:${bx + (554 - BW) / 2}pt;top:100pt`) + `<div class="flow" style="top:${by + BH + 12}pt;bottom:150pt;gap:10pt">
+          <div class="row" style="flex:1 1 0">${bed.map((c, i) => item(c, 'back.photo' + i, 4)).join('')}</div></div>`;
       }
     }
-    h += ContactCard.html([29, 632, 554, 132], Object.assign({}, A, {headshot: hsSrc}), Object.assign({}, b, {logo: b.logoOnDark || b.logo}), {layout: 'panel', fine, bottomGap: 0.5, fieldAccent: true});
+    // the foot (owner 11/10/2026, p91): the contact card runs the full width again but SHORTER top to bottom (one row: headshot,
+    // name, phone and lines, the brokerage beside them); the nearby places run across the width above it, the fine print under
+    const CY = 696, CH = 72, FY = CY - 50;
+    h += `<div class="abs" style="left:29pt;top:${FY}pt;width:554pt;height:46pt;border-top:.7pt solid var(--line);padding-top:5pt;box-sizing:border-box">${placesH(P, B.placesKicker, 'back.place')}</div>`;
+    h += ContactCard.html([29, CY, 554, CH], Object.assign({}, A, {headshot: hsSrc}), Object.assign({}, b, {logo: b.logoOnDark || b.logo}),
+      {layout: 'panel', size: 'mid', bottomGap: 0.5, grow: 0, fieldAccent: true, s: {inlineLabel: true, pad: [8, 14, 6], hsW: 60, name: 22, nameFloor: 16, phone: 14, label: 8, line: 9, rowGap: 12, panelW: 158, panelPad: [5, 12], panelGap: 3, logo: {wide: [140, 28], square: [30, 30], tall: [32, 32]}, lockDir: 'right'}});
+    h += `<div class="abs fine" style="left:29pt;top:${CY + CH + 4}pt;width:554pt;height:8pt;white-space:nowrap;font-size:6pt;line-height:8pt" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(fine)}</div>`;
     return h;
   }
 

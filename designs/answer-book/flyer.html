@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>BrochureDesk · Houston Answer Book two-sided flyer</title>
 <link rel="stylesheet" href="answer-book.css">
+<script src="../engine/planink.js"></script>
 <script src="answer-book.js"></script>
 <script src="../engine/setpieces.js"></script>
 <script src="../engine/baths.js"></script>
@@ -87,8 +88,8 @@ window.brochureReady = (async function(){
 
   // ---------- fitting words to boxes: every box a whole number of lines, the last line at least 3/4 full ----------
   const ms = document.createElement('div'); ms.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:normal;overflow:visible'; document.body.appendChild(ms);
-  const measure = (html, w, cls) => {
-    ms.className = cls; ms.style.width = w + 'pt'; ms.innerHTML = html;
+  const measure = (html, w, cls, fs) => {
+    ms.className = cls; ms.style.width = w + 'pt'; ms.style.fontSize = fs ? fs + 'pt' : ''; ms.innerHTML = html;
     const rg = document.createRange(); rg.selectNodeContents(ms);
     const rows = []; [...rg.getClientRects()].filter(r => r.width > .5).forEach(r => { const row = rows.find(x => Math.abs(x.top - r.top) < 3); if(row) row.right = Math.max(row.right, r.right); else rows.push({top: r.top, right: r.right}); });
     const box = ms.getBoundingClientRect(), last = rows.length ? rows[rows.length-1] : null;
@@ -101,12 +102,12 @@ window.brochureReady = (async function(){
     for(let m = 1; m < (1 << n); m++){ const pick = []; for(let i = 0; i < n; i++) if(m & (1 << i)) pick.push(arr[i]); out.push({m, pick}); }
     return out.sort((a, c) => (a.m & -a.m) - (c.m & -c.m) || c.pick.length - a.pick.length || a.m - c.m); };
   const lead = c => c && c.lead ? `<b>${esc(feetOnly(c.lead))}</b> ` : '';
-  const fitOne = (c, w, cls, n) => {
+  const fitOne = (c, w, cls, n, fs) => {
     // the first sentence always stays: it is the answer to the question over it
     const sents = sentences(c.text), ld = lead(c); let best = null;
     const all = subsets(sents), withFirst = all.filter(q => q.m & 1);
     for(const set of [withFirst, all]){
-      for(const {pick} of set){ const html = ld + pick.map(esc).join(' '), r = measure(html, w, cls);
+      for(const {pick} of set){ const html = ld + pick.map(esc).join(' '), r = measure(html, w, cls, fs);
         if(r.lines === n && r.last >= .75) return set === all && best ? best : {html, lines: n, last: r.last};
         if(r.lines === n && (!best || r.last > best.last)) best = {html, lines: n, last: r.last}; }
       if(best) return best;
@@ -170,9 +171,11 @@ window.brochureReady = (async function(){
     const HB0 = 58 + nRows*18 + (nRows > 4 ? 4 : 0);
     const hp = P[K.hero || 'front'] || {}, ap = (hp.w && hp.h) ? hp.w/hp.h : 1.5, bxh = hp.box ? (hp.box[3] - hp.box[1]) : 0.6;
     const heroMin = Math.max(250, Math.ceil(SW*(bxh + 0.02)/ap));
+    const FOOT = 752;   // the front has no card: everything runs down to the fine print
     let PH = 100;
-    for(const ph of [100, 94, 88, 84, 80]){ PH = ph; if(CARD_Y - 10 - capH(nC) - ph - 14 - HB0 - 14 >= heroMin) break; }
-    const photoY = CARD_Y - 10 - capH(nC) - PH;
+    // the captions end just over the fine print (owner 11/10/2026: no blank band under a caption)
+    for(const ph of [140, 130, 120, 110, 100, 94, 88, 84, 80]){ PH = ph; if(FOOT - 3 - capH(nC) - ph - 14 - HB0 - 14 >= heroMin) break; }
+    const photoY = FOOT - 3 - capH(nC) - PH;
     // the details grid: beds, baths (the half bath's 1/2 at full size), square feet, year built, and the lot size when the
     // listing has one; four rows grow to fill the column, a fifth row (lot size) shares it
     const bt = BD.bathNum(L), facts = [];
@@ -184,9 +187,19 @@ window.brochureReady = (async function(){
     const lot = SP.lotText(L); if(lot) facts.push([lot.replace(/\s+lot$/i, ''), 'Lot Size']);
     // the band: kicker, street and the grid on the left, the write-up beside it; both end on one line
     const LW = 296, wx = X + LW + 32.6, ww = X + W - wx;
-    const HB = 58 + facts.length*18 + (facts.length > 4 ? 4 : 0);
-    let wr = null, lhW = 13;
-    for(const n of [9, 8, 10, 7, 6]){ const l = (HB - 14)/n; if(l < 12.4 || l > 15.2) continue; const r = fitOne({text: K.desc}, ww, 'wr-a', n); if(r && r.last >= .75){ wr = r; lhW = l; break; } if(r && !wr){ wr = r; lhW = l; } }
+    // a street that wraps to two lines gets its second line's height (owner 11/10/2026, round 2 p8: the facts were squeezed under it)
+    const addrLines = (() => { const m = document.createElement('div'); m.className = 'addr2'; m.style.cssText = `position:absolute;visibility:hidden;width:${LW}pt;max-height:none`; m.textContent = L.address;
+      document.body.appendChild(m); const n = Math.max(1, Math.round(m.getBoundingClientRect().height / (38*96/72))); m.remove(); return Math.min(2, n); })();
+    const HB = 58 + (addrLines - 1)*38 + facts.length*18 + (facts.length > 4 ? 4 : 0);
+    let wr = null, lhW = 13, fsW = 0;
+    // the write-up fills its box top to bottom (owner 11/10/2026: no blank space under text): the type grows up to about 12%
+    // and the lines spread only within a normal leading (1.3 to 1.6 times the type), never a blank line at the foot
+    { let bestW = null;
+      for(let fs = 9.5; fs <= 10.65; fs += 0.05) for(let n = 5; n <= 12; n++){ const l = (HB - 14)/n; if(l < fs*1.3 || l > fs*1.65) continue;
+        const r = fitOne({text: K.desc}, ww, 'wr-a', n, fs); if(!r || r.last < .75) continue;
+        const score = Math.abs(l/fs - 1.42) - (r.html.length/2000); if(!bestW || score < bestW.score) bestW = {score, r, l, fs}; }
+      if(bestW){ wr = bestW.r; lhW = bestW.l; fsW = bestW.fs; } }
+    if(!wr) for(const n of [9, 8, 10, 7, 6]){ const l = (HB - 14)/n; if(l < 12.4 || l > 15.2) continue; const r = fitOne({text: K.desc}, ww, 'wr-a', n); if(r && r.last >= .75){ wr = r; lhW = l; break; } if(r && !wr){ wr = r; lhW = l; } }
     if(!wr){ wr = fitBox({text: K.desc}, ww, 'wr-a', 8, 8); lhW = (HB - 14)/8; }
     const bandY = photoY - 14 - HB, hb = bandY - 14;
     h += photo(hero, inset, inset, SW - 2*inset, hb - inset, 'front.hero');
@@ -197,15 +210,15 @@ window.brochureReady = (async function(){
     h += `<div class="vline" style="left:${X + LW + 16}pt;top:${bandY + 2}pt;height:${HB - 2}pt"></div>`;
     h += `<div class="abs" style="left:${wx}pt;top:${bandY}pt;width:${ww}pt;height:${HB}pt">
         <div class="wr-q" data-slot="front.q" data-lines="1"><i class="dash"></i>${esc(K.q || 'What kind of house is it?')}</div>
-        <div class="wr-a" data-slot="front.about" data-para="1" data-min="5" data-lines="${wr.lines}" style="height:${HB - 14}pt;line-height:${lhW.toFixed(2)}pt">${wr.html}</div></div>`;
+        <div class="wr-a" data-slot="front.about" data-para="1" data-min="5" data-lines="${wr.lines}" style="height:${HB - 14}pt;line-height:${lhW.toFixed(2)}pt${fsW ? `;font-size:${fsW.toFixed(2)}pt` : ''}">${wr.html}</div></div>`;
     trio.forEach((c, i) => { const x = X + i*(cw3 + 12);
       h += photo(c.id, x, photoY, cw3, PH, `front.photo${i}`) + qa(`front.cap${i}`, x, photoY + PH, cw3, c, capR[i], 'front.trio'); });
-    h += abCard(X, CARD_Y, W, CARD_H) + fine();
+    h += fine();   // no contact card or brokerage logo on a flyer front (owner 11/10/2026): the page runs to the fine print
   }
 
   // =============================================== BACK ===============================================
   else {
-    const B = FL.back || {}, hasPlan = !!(D.plan && D.plan.levels && D.plan.levels.length);
+    const B = FL.back || {}, hasPlan = !!(D.plan && D.plan.levels && D.plan.levels.length && FL.back);   // the plan board needs the flyer's own copy to lay out
     const BK = (hasPlan ? B.plan : B.noplan) || {};
     h += `<div class="tabx" style="left:${X}pt;top:${inset}pt">${esc(BK.tab || (hasPlan ? 'The floor plan' : 'Room by room'))}</div>`;
     h += `<div class="abs kicker" style="left:${X}pt;top:62pt;width:${W}pt;height:10pt" data-slot="back.kicker" data-lines="1">${esc(B.kicker || '')}</div>`;
@@ -338,6 +351,7 @@ window.brochureReady = (async function(){
   await SP.finish(D, SW, 792, h, issues, after);
   document.body.dataset.layout = side;
   const bc = window.brochureCheck;
+  if(window.PlanInk) PlanInk.applyAll(D, false);   // owner 11/10/2026 (p2): the listing plan's background is clear
   window.brochureCheck = () => AB.check ? bc() : bc();
 })();
 </script>

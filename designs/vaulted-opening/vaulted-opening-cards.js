@@ -174,6 +174,9 @@
     }
     return maxW;
   };
+  // a tall whole-house photo (taller than wide) gets a frame of its own shape, so the roof and the sides stay in (whole-house rule);
+  // a wide one keeps the design's minimum width
+  AT.tallMin = (D, id, h, minW) => { const p = (D.photos||{})[id] || {}; return p.w && p.h && p.h > p.w ? Math.round((h - 5)*p.w/p.h) + 5 : minW; };
   // the four facts, as the fold-over cover prints them: [big, label]
   AT.factPairs = L => { const f = [];
     if(L.beds) f.push([L.beds, L.beds == 1 ? 'Bedroom' : 'Bedrooms']);

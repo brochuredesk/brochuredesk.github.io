@@ -5,6 +5,7 @@
 <title>BrochureDesk · Midnight Residence postcard</title>
 <link rel="stylesheet" href="midnight.css">
 <script src="midnight.js"></script>
+<script src="lastfix.js"></script>
 <script src="../engine/setpieces.js"></script>
 <!--
   Midnight Residence · Just Listed and Just Sold postcards. data.piece: card "listed" | "sold", size "6x9" (trim 648 x 432 pt) |
@@ -93,7 +94,7 @@ window.brochureReady = (async function(){
     h += `<div class="abs" data-blk="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:12.5pt;background:var(--accent)"></div>`;
     // the return address beside the status line; the status over the address, a gold rule under both
     const ret = SP.returnLines(D);
-    h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:16pt;width:${rW}pt;height:32pt;text-align:${sold ? 'center' : 'right'}" data-slot="return" data-lines="3"><b>${esc(ret[0] || '')}</b>${ret.slice(1).map(r => '<br>' + esc(r)).join('')}</div>`;
+    h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:16pt;width:${rW}pt;height:32pt;text-align:${sold ? 'center' : 'right'}" data-slot="return" data-small="1" data-lines="3"><b>${esc(ret[0] || '')}</b>${ret.slice(1).map(r => '<br>' + esc(r)).join('')}</div>`;
     h += `<div class="abs kick" style="left:${X}pt;top:16pt;width:${LZ - X}pt;height:10pt" data-slot="back.status" data-lines="1">${esc(status)}</div>`;
     h += `<div class="abs bad" style="left:${X}pt;top:28pt;width:${LZ - X}pt;height:26pt" data-slot="back.address" data-lines="1">${esc(L.address)}</div>`;
     h += `<div class="rule" style="left:${X}pt;top:57pt;width:${LZ - X}pt"></div>`;
@@ -108,7 +109,7 @@ window.brochureReady = (async function(){
       if(rItem){ g += SP.photo(D, rItem.id, Z.zA[0], pTop, rW, ph, 'back.photoR'); h += cap(rItem, Z.zA[0], pTop + ph, rW, 'back.capR', 'back'); }
       const ty = pTop + ph + 21 + 4*11.5 + 14, nlb = Math.floor((Z.cardY - 6 - ty)/17);
       h += `<div class="rule" style="left:${X}pt;top:${ty - 7}pt;width:${LZ - X}pt"></div>`;
-      h += `<div class="abs ab" style="left:${X}pt;top:${ty}pt;width:${LZ - X}pt;height:${nlb*17}pt;font-size:11.5pt;line-height:17pt" data-slot="back.about" data-para="1" data-min="3" data-fillbox="1">${esc(big ? C.about11 : C.about9)}</div>`;
+      h += `<div class="abs ab" style="left:${X}pt;top:${ty}pt;width:${LZ - X}pt;height:${Z.cardY - 6 - ty}pt;font-size:11.5pt;line-height:${((Z.cardY - 6 - ty)/nlb).toFixed(2)}pt" data-slot="back.about" data-para="1" data-min="3" data-fillbox="1">${esc(big ? C.about11 : C.about9)}</div>`;
     } else {
       // two interiors, no captions; "How I'd start" beside them; what the first meeting is like under them
       const ids = C.photos || [], gap = 10, pw = (LZ - X - gap)/2, ph = 116;
@@ -130,7 +131,8 @@ window.brochureReady = (async function(){
     h += SP.mailGuides(D, Z);
   }
 
-  await SP.finish(D, W, H, h, issues);
+  if(!front && ![].concat((D.brand || {}).returnAddress || (D.brand || {}).address || []).filter(Boolean).length) issues.push({slot: 'return', kind: 'return-address-missing'});   /* every mailer back carries the brokerage's full return address (owner 11/10) */
+  await SP.finish(D, W, H, h, issues, async () => { await document.fonts.ready; if(window.LastFix) LastFix.run(document, Object.assign({}, PCall.alts || {}, C.alts || {})); });
 })();
 </script>
 </body>

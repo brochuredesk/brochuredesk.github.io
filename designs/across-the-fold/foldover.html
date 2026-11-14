@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="across-the-fold.css">
 <script src="../engine/baths.js"></script>
 <script src="../engine/baths-text.js"></script>
+<script src="../engine/planink.js"></script>
 <script src="across-the-fold.js"></script>
 <!--
   BrochureDesk · Across the Fold · 11 x 17 fold-over
@@ -79,22 +80,37 @@ window.brochureReady = (async function(){
   function back(){
     const B = C.back || {}, nl = hasPlan ? D.plan.levels.length : 1;
     let h = AF.kick(B.kicker, 'back.kicker', 24, 26, 700) + AF.title(B.title, 'back.title', 24, 36) + AF.rule(24, 72, 744);
-    const planW = 290, ph1 = 336, G = 10;   // px + pw = 564 = ContactCard panel divider
+    const planW = 290, ph1 = 384, G = 10; let chkLeft = false;   // round 3: the plan grows into the room the tall narrow card used
     if(hasPlan){
-      h += `<div class="planbox" style="left:24pt;top:84pt;width:${planW}pt;height:${ph1}pt"></div>`;
-      const pl = AF.plan(D, {x:24+8, y:84+8, w:planW-16, h:ph1-16});
+      h += `<div class="planbox${window.PlanInk && PlanInk.panel(D.plan, true) ? ' light' : ''}" style="left:24pt;top:84pt;width:${planW}pt;height:${ph1}pt"></div>`;
+      // round 3 (book p8, reviewer 11/12): the frame hugs the plans (it had empty bands above and below them) and the reading note takes
+      // the height that frees, in full lines at a readable size
+      const probe = AF.plan(D, {x:24+8, y:84+8, w:planW-16, h:ph1-16}), fh = Math.min(ph1, Math.ceil((probe.used || {h: ph1-16}).h) + 22);
+      const pl = AF.plan(D, {x:24+8, y:84+(fh-(probe.used||{h:fh-22}).h)/2, w:planW-16, h:(probe.used||{h:fh-22}).h});
+      h = h.replace(/<div class="planbox[^>]*><\/div>$/, `<div class="planbox${window.PlanInk && PlanInk.panel(D.plan, true) ? ' light' : ''}" style="left:24pt;top:84pt;width:${planW}pt;height:${fh}pt"></div>`);
       issues.push(...pl.issues); h += pl.html;
-      h += `<div class="abs body" style="left:24pt;top:424pt;width:${planW}pt;height:24pt;font-size:8.5pt;line-height:12pt;color:var(--muted)" data-slot="back.plannote" data-lines="2" data-cap="1">${esc(AF.txt(B.planNote))}</div>`;
+      const nTop = 84 + fh + 6, P2 = B.photo2;
+      h += `<div class="abs body" style="left:24pt;top:${nTop}pt;width:${planW}pt;height:24pt;font-size:8.5pt;line-height:12pt;color:var(--muted)" data-slot="back.plannote" data-lines="2" data-cap="1">${esc(AF.txt(B.planNote))}</div>`;
+      // coordinator 11/12 (book p8): the Entry strip under the plans is gone (a 3.9:1 strip and a second use of the entry photo,
+      // never in the Before); the "What comes with it" list takes that height under the plan note, its rows filling to the
+      // column's foot, and Nearby gets the right column's freed height
+      if(P2){   // only where the strip was: a plan that already fills its column (one level) keeps the list on the right
+      const Bc = B.claim || {}, its = (Bc.items||[]).slice(0,6), cTop = nTop + 24 + 12, rh = (528 - (cTop + 16)) / Math.max(its.length, 1);
+      h += AF.kick(Bc.head, 'back.claim.head', 24, cTop, planW);
+      h += `<div class="abs chk chk-left" style="left:24pt;top:${cTop+16}pt;width:${planW}pt">${its.map((t,i)=>`<div data-slot="back.claim.item${i}" data-lines="1" style="height:${rh.toFixed(1)}pt;line-height:${rh.toFixed(1)}pt;font-size:11pt;border-top:.6pt solid rgba(200,164,106,.4)">${esc(t)}</div>`).join('')}</div>`;
+      chkLeft = true; }
     } else {
-      const R = B.rooms || [], n = R.length, rh = Math.min(28, Math.floor((ph1 + 36 - 92)/Math.max(n,1)));
-      h += `<div class="roombox" style="left:24pt;top:84pt;width:${planW}pt;height:${ph1+36}pt;padding:12pt 14pt 0">
+      const R = B.rooms || [], n = R.length, rh = Math.min(30, Math.floor((528 - 84 - 92)/Math.max(n,1)));
+      h += `<div class="roombox" style="left:24pt;top:84pt;width:${planW}pt;height:${528 - 84}pt;padding:12pt 14pt 0">
         <div class="kick" style="height:10pt" data-slot="back.roomhead" data-lines="1">${esc(B.roomHead || 'Room by room')}</div>
         <div class="body" style="margin-top:7pt;height:${4*12}pt;font-size:9pt;line-height:12pt" data-slot="back.roomintro" data-lines="4" data-cap="1">${esc(AF.txt(B.roomIntro))}</div>
         <div class="rows" style="margin-top:9pt">${R.map((r,i)=>`<div style="height:${rh}pt"><span class="rn" data-slot="back.room${i}.n" data-lines="1">${esc(r[0])}</span><span class="rs" data-slot="back.room${i}.s" data-lines="1">${esc(r[1])}</span></div>`).join('')}</div></div>`;
     }
     // owner 10/29 (AF-FO): the photo column's right edge runs straight down into the card's divider (left of the brokerage)
     const px = 24 + planW + G, pw = 240, rx = px + pw + G, rw = 768 - rx;
-    const PH = Math.floor((372 - G)/2) - AF.capH(3) - 6;
+    // round 3 (owner 11/10/2026: "narrower" = SHORTER TOP TO BOTTOM): the card runs the full width at the short size under
+    // all three columns; the columns run down to just over it
+    const COL = 528 - 84, PH = Math.floor((COL - G)/2) - AF.capH(3) - 6;
     [B.photo0, B.photo1].forEach((c, i) => { const y = 84 + i*(PH + AF.capH(3) + 6 + G);
       h += AF.photo(D, c.id, px, y, pw, PH) + AF.cap(c, `back.photo${i}`, px, y + PH + 6, pw, {lines: 3, titleSize: 12.5}); });
     const Bd = B.claim || {};
@@ -102,15 +118,18 @@ window.brochureReady = (async function(){
     const cl = Bd.lines || 7;
     h += `<div class="abs body" style="left:${rx}pt;top:122pt;width:${rw}pt;height:${cl*13}pt" data-slot="back.claim.text" data-lines="${cl}" data-cap="1">${esc(AF.txt(Bd.text))}</div>`;
     const ly = 122 + cl*13 + 12;
-    h += AF.kick(Bd.head, 'back.claim.head', rx, ly, rw);
-    h += `<div class="abs chk" style="left:${rx}pt;top:${ly+16}pt;width:${rw}pt">${(Bd.items||[]).slice(0,6).map((t,i)=>`<div data-slot="back.claim.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div>`;
-    const ny = ly + 16 + 6*14 + 10;
+    if(!chkLeft){
+      h += AF.kick(Bd.head, 'back.claim.head', rx, ly, rw);
+      h += `<div class="abs chk" style="left:${rx}pt;top:${ly+16}pt;width:${rw}pt">${(Bd.items||[]).slice(0,6).map((t,i)=>`<div data-slot="back.claim.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div>`; }
+    const ny = chkLeft ? ly : ly + 16 + 6*14 + 10;
     h += AF.kick(B.nearHead || 'Nearby', 'back.nearhead', rx, ny, rw);
     // owner 10/29 voice review: four Nearby places, the rows sized to fill down to the foot of the photo column
-    const NR = Math.min(4, (B.nearby||[]).length) || 1, nrh = (84 + 372 - (ny + 14))/NR;
+    const NR = Math.min(4, (B.nearby||[]).length) || 1, nrh = (84 + COL - (ny + 14))/NR;
     h += `<div class="abs near" style="left:${rx}pt;top:${ny+14}pt;width:${rw}pt">${(B.nearby||[]).slice(0,4).map((x,i)=>`<div style="height:${nrh}pt"><span class="d" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}<small>${esc(x.u || 'mi')}</small></span><span class="p" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</span></div>`).join('')}</div>`;
-    h += AF.rule(24, 462, 744);
-    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', brokerage: true, fine: B.footnote || '', fieldAccent: true});
+    h += AF.rule(24, 532, 744);
+    // owner 11/12 (book p8): no empty band right of the email; bigger type, a wider gap and a wider brokerage panel fill the card
+    h += ContactCard.html([24, 538, 744, 64], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', size:'short', brokerage: true, fine: '', fieldAccent: true, s:{desigInline:true, rowGap:84, name:20, phone:16, label:9.5, line:11, panelW:236, logo:{wide:[180, 30], square:[30, 30], tall:[32, 32]}}});
+    if(B.footnote) h += `<div class="abs fine" style="left:24pt;top:606pt;width:744pt;height:7pt;font-size:6pt;line-height:7pt;white-space:nowrap;overflow:hidden" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(B.footnote)}</div>`;
     return h;
   }
 
@@ -136,6 +155,7 @@ window.brochureReady = (async function(){
   });
   ContactCard.fit(document);
   document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  if(window.PlanInk) PlanInk.install();
   window.brochureCheck = () => AF.check(D, issues);
 })();
 </script>

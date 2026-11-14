@@ -88,9 +88,10 @@ window.brochureReady = (async function(){
     }
     // address block
     const stats = OF.stats(L).join('  ·  ');
-    h += `<div class="abs addr" style="left:24pt;top:513pt;width:372pt;height:32pt" data-slot="front.address" data-lines="1">${esc(L.address)}</div>`;
-    h += `<div class="abs facts" style="left:24pt;top:547pt;width:372pt;height:11pt" data-slot="front.facts" data-lines="1">${esc(stats)}</div>`;
-    h += `<div class="abs rowflex" style="left:24pt;top:563pt;width:372pt;height:30pt">${K.tag ? `<span class="tag${flood && K.tagFlood ? '' : ' n'}" data-slot="front.tag" data-lines="1">${esc(K.tag)}</span>` : ''}${logoCard ? '' : `<div style="position:relative;flex:1;height:30pt">${OF.logo(D, 0, 0, 120, 30, 'flex-start')}</div>`}</div>`;
+    // owner 11/10 (p68): the address stands out: 44 pt (it steps down only when a long street needs it), the facts under it larger
+    h += `<div class="abs addr" id="coverAddr" style="left:24pt;top:512pt;width:372pt;height:48pt;font-size:44pt;line-height:48pt" data-slot="front.address" data-lines="1">${esc(L.address)}</div>`;
+    h += `<div class="abs facts" style="left:24pt;top:563pt;width:372pt;height:13pt;font-size:10pt;line-height:13pt" data-slot="front.facts" data-lines="1">${esc(stats)}</div>`;
+    h += `<div class="abs rowflex" style="left:24pt;top:579pt;width:372pt;height:14pt">${K.tag ? `<span class="tag${flood && K.tagFlood ? '' : ' n'}" data-slot="front.tag" data-lines="1">${esc(K.tag)}</span>` : ''}${logoCard ? '' : `<div style="position:relative;flex:1;height:30pt">${OF.logo(D, 0, 0, 120, 30, 'flex-start')}</div>`}</div>`;
     return h;
   }
   function row3(caps, x, y, bottom){
@@ -105,35 +106,66 @@ window.brochureReady = (async function(){
   function back(){
     const B = C.back || {};
     let h = OF.kick(B.kicker, 'back.kicker', 24, 26, 700) + OF.title(B.title, 'back.title', 24, 36) + OF.rule(24, 71, 744);
+    // owner 11/10: a much narrower agent card (sized to its content) at the bottom right; the tan band moves beside it and
+    // the plan, the floors and the photo grow into the height the full-width card used to take
+    // owner 11/10 (p71, standing rule 1): the contact block is SHORTER top to bottom and full width again (round 2's narrow card
+    // undone); the band runs full width just above it, in two short rows' height
+    const BI = ((C.back || {}).band || {}).items || [], BC = BI.slice(0, 6).some(t => String(t).length > 24) ? 2 : 3, CH2 = 70, BH = Math.max(80, 34 + Math.ceil(Math.min(6, BI.length)/BC)*18), CY2 = 590 - CH2, SY = CY2 - 10 - BH, SH = BH, BW = 744;
+    // the plan keeps the width it prints at; the photo column beside it takes what the plan leaves (no blank margin)
+    let PW = 566, noteN = 2;
+    // owner 11/12 (capfill3 review p16): the plans keep at least their old size: the plan note moves under the photo in the right
+    // column, so the plan column runs from the heading down to the band
+    if(hasPlan){ const pr = OF.plan(D, {x:24, y:84, w:566, h:SY - 10 - 84}); if(pr.used) PW = Math.max(300, Math.min(566, Math.ceil(pr.used.w) + 4)); }
+    const noteTop = SY - 12 - noteN*11;
+    const noteCW = 768 - (24 + PW + 22), noteNN = hasPlan ? OF.need(`${B.planHead || 'Reading the plan'}  ${OF.txt(B.planNote)}`, noteCW) : noteN, noteTopP = SY - 12 - noteNN*11;
     if(hasPlan){
-      const pl = OF.plan(D, {x:24, y:84, w:566, h:262});
+      const pl = OF.plan(D, {x:24, y:84, w:PW, h:SY - 10 - 84});
       issues.push(...pl.issues); h += pl.html;
-      h += `<div class="abs body" style="left:24pt;top:352pt;width:566pt;height:22pt;font-size:8.5pt;line-height:11pt" data-slot="back.plannote" data-lines="2" data-cap="1"><b style="font:700 8pt var(--font-display);letter-spacing:1.2pt;text-transform:uppercase;color:var(--accent)">${esc(B.planHead || 'Reading the plan')}&nbsp; </b>${esc(OF.txt(B.planNote))}</div>`;
+      h += `<div class="abs body" style="left:${24 + PW + 22}pt;top:${noteTopP}pt;width:${noteCW}pt;height:${noteNN*11}pt;font-size:8.5pt;line-height:11pt" data-slot="back.plannote" data-lines="${noteNN}" data-cap="1"><b style="font:700 8pt var(--font-display);letter-spacing:1.2pt;text-transform:uppercase;color:var(--accent)">${esc(B.planHead || 'Reading the plan')}&nbsp; </b>${esc(OF.txt(B.planNote))}</div>`;
     } else {
-      const fl = B.floors || [], n = fl.length;
-      h += `<div class="floors" style="left:24pt;top:86pt;width:566pt;height:288pt">${fl.map((f,i)=>{ const ln = Math.min(7, Math.max(2, Math.floor((278 - 100 - f.rooms.length*20)/14))); return `<div class="f">
+      const fl = B.floors || [], n = fl.length, FH = noteTop + noteN*11 - 86;
+      h += `<div class="floors" style="left:24pt;top:86pt;width:566pt;height:${FH}pt">${fl.map((f,i)=>{ const ln = Math.min(7, Math.max(2, Math.floor((278 - 100 - f.rooms.length*20)/14)));
+        // the room list takes the rest of the column: its rows share the height under the write-up
+        const pad = Math.max(4, Math.min(22, ((FH - 6 - 64 - 14 - 5 - ln*14 - 6 - 8) / Math.max(1, f.rooms.length) - 12.5) / 2));
+        return `<div class="f">
         <div class="n" data-slot="back.floor${i}.n" data-lines="1">${esc(f.n)}</div>
         <div class="fl" data-slot="back.floor${i}.label" data-lines="1">${esc(f.label)}</div>
         <div class="sm" data-slot="back.floor${i}.text" data-lines="${ln}" data-cap="1" style="height:${ln*14}pt">${esc(OF.txt(f.text))}</div>
-        <table>${f.rooms.map(r=>`<tr><td data-slot="back.floor${i}.room">${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</table></div>`; }).join('')}</div>`;
+        <table>${f.rooms.map(r=>`<tr><td data-slot="back.floor${i}.room" style="padding:${pad.toFixed(1)}pt 0">${esc(r[0])}</td><td style="padding:${pad.toFixed(1)}pt 0">${esc(r[1])}</td></tr>`).join('')}</table></div>`; }).join('')}</div>`;
     }
-    // right column: nearby, one photo
-    const cx = 612, cw = 156;
-    h += OF.kick('Nearby', 'back.nearhead', cx, 84, cw);
-    h += `<div class="abs nearby" style="left:${cx}pt;top:98pt;width:${cw}pt">${(B.nearby||[]).slice(0,3).map((x,i)=>`<div style="height:38pt"><div class="d" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}${x.u === '' ? '' : `<small>${esc(x.u || 'miles')}</small>`}</div><div class="p" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}</div>`;
+    // right column: nearby, one photo (taller now)
+    // owner 11/10 (rule 9): a nearby place prints only with a real distance or drive time; with none the photo takes the column
+    const near = (B.nearby || []).filter(x => /\d/.test(String(x.d || ''))), showN = near.length >= 2;
+    const cx = hasPlan ? 24 + PW + 22 : 612, cw = 768 - cx, capTop = (hasPlan ? noteTopP - 8 : noteTop + noteN*11) - OF.capH(3);
+    // reviewer 11/12 (p16): the photo keeps about its own 3:2 shape, never a thin strip. When the title leaves room, the nearby
+    // distances move up beside it (one row of three, above the rule) and the photo takes the column from the rule down.
+    const titleW = (() => { const m = document.createElement('div'); m.className = 'title one'; m.style.cssText = 'position:absolute;left:-9999pt;visibility:hidden;white-space:nowrap'; m.textContent = B.title || ''; document.body.appendChild(m); const w = m.getBoundingClientRect().width*72/96; m.remove(); return w; })();
+    const cellW = (() => { const m = document.createElement('div'); m.className = 'nearby row'; m.style.cssText = 'position:absolute;left:-9999pt;visibility:hidden';
+      m.innerHTML = near.slice(0, 3).map(x => `<div class="d" style="display:inline-block">${esc(x.d)}${x.u === '' ? '' : `<small>${esc(x.u || 'miles')}</small>`}</div><br><div class="p" style="display:inline-block">${esc(x.p)}</div><br>`).join('');
+      document.body.appendChild(m); const w = Math.max(0, ...[...m.children].filter(e => e.tagName === 'DIV').map(e => e.getBoundingClientRect().width*72/96)); m.remove(); return w; })();
+    const nearTop = showN && hasPlan && 24 + titleW + 24 <= cx && cellW + 8 <= cw/Math.min(3, near.length);
+    const py = showN && !nearTop ? 216 : 84, phh = capTop - 6 - py;
+    if(showN && nearTop){
+      h += OF.kick('Nearby', 'back.nearhead', cx, 22, cw);
+      h += `<div class="abs nearby row" style="left:${cx}pt;top:34pt;width:${cw}pt;display:flex">${near.slice(0,3).map((x,i)=>`<div style="flex:1;min-width:0"><div class="d" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}${x.u === '' ? '' : `<small>${esc(x.u || 'miles')}</small>`}</div><div class="p" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}</div>`;
+    } else if(showN){
+      h += OF.kick('Nearby', 'back.nearhead', cx, 84, cw);
+      h += `<div class="abs nearby" style="left:${cx}pt;top:98pt;width:${cw}pt">${near.slice(0,3).map((x,i)=>`<div style="height:38pt"><div class="d" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}${x.u === '' ? '' : `<small>${esc(x.u || 'miles')}</small>`}</div><div class="p" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}</div>`;
+    }
     const P = B.photo || {};
-    h += OF.photo(D, P.id, cx, 216, cw, 104);
-    h += OF.cap(P, 'back.photo', cx, 326, cw, {lines: 3, min: 3, max: 3});
-    // band
-    const Bd = B.band || {};
-    h += `<div class="band" style="left:24pt;top:388pt;width:744pt;height:68pt">
-      <div style="width:262pt;flex:none;padding:9pt 14pt 0 16pt"><div class="big" style="height:26pt;white-space:nowrap" data-slot="back.band.big" data-lines="1">${esc(Bd.big)}</div>
-        <div class="sm" style="margin-top:4pt;height:22pt" data-slot="back.band.small" data-lines="2" data-cap="1">${esc(OF.txt(Bd.small))}</div></div>
-      <div style="width:.7pt;background:rgba(31,43,44,.25);margin:10pt 0 10pt 0;flex:none"></div>
-      <div style="flex:1;padding:9pt 16pt 0 20pt;min-width:0"><div class="kick" style="height:10pt;margin-bottom:6pt" data-slot="back.band.head" data-lines="1">${esc(Bd.head)}</div>
-        <div class="grid">${(Bd.items||[]).slice(0,6).map((t,i)=>`<div data-slot="back.band.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div></div></div>`;
-    // standard contact card + footer (the one brokerage logo of the outside spread is the cover's)
-    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', brokerage: logoCard, fine: B.footnote || ''});
+    h += OF.photo(D, P.id, cx, py, cw, phh);
+    h += OF.cap(P, 'back.photo', cx, capTop, cw, {lines: 3, min: 3, max: 3});
+    // band: the claim and its note on the left, the list in three columns on the right
+    const Bd = B.band || {}, LW = 300;
+    h += `<div class="band" style="left:24pt;top:${SY}pt;width:${BW}pt;height:${SH}pt">
+      <div style="width:${LW}pt;flex:none;padding:8pt 14pt 8pt 16pt;display:flex;flex-direction:column;justify-content:center"><div class="big" style="height:26pt;white-space:nowrap" data-slot="back.band.big" data-lines="1">${esc(Bd.big)}</div>
+        <div class="sm" style="margin-top:4pt;font-size:9.5pt;line-height:13pt;height:${13*3}pt" data-slot="back.band.small" data-lines="3" data-nmin="2" data-nmax="3" data-cap="1" data-typefit="${SH - 16 - 26 - 4}">${esc(OF.txt(Bd.small))}</div></div>
+      <div style="width:.7pt;background:rgba(31,43,44,.25);margin:12pt 0 12pt 0;flex:none"></div>
+      <div style="flex:1;padding:12pt 14pt 10pt 18pt;min-width:0;display:flex;flex-direction:column"><div class="kick" style="height:10pt;margin-bottom:8pt" data-slot="back.band.head" data-lines="1">${esc(Bd.head)}</div>
+        <div class="grid" style="flex:1;grid-auto-flow:row;grid-template-columns:repeat(${BC},1fr);grid-template-rows:none;gap:6pt 14pt;align-content:space-between">${(Bd.items||[]).slice(0,6).map((t,i)=>`<div data-slot="back.band.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div></div></div>`;
+    // the standard contact card, full width and short
+    h += ContactCard.html([24, CY2, 744, CH2], Object.assign({}, A, {headshot: hs}), b, {layout: 'panel', size: 'short', brokerage: logoCard, grow: 0, s: {name: 22, nameFloor: 16, desig: 9, label: 9, phone: 16, line: 12, rowGap: 30, panelW: 190}});
+    if(B.footnote) h += `<div class="abs" style="left:24pt;top:${CY2 + CH2 + 4}pt;width:744pt;height:8pt;font-size:6pt;line-height:7.5pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(B.footnote)}</div>`;
     return h;
   }
 
@@ -142,7 +174,7 @@ window.brochureReady = (async function(){
     const T = C.top || {}, ch = (T.chapters || []).slice(0, 3), w = (744-18)/2;
     let h = OF.kick(T.kicker, 'top.kicker', 24, 26, 560) + OF.title(T.title, 'top.title', 24, 36, 600) + OF.logo(D, 588, 26, 180, 26, 'flex-end') + OF.rule(24, 71, 744);
     const lns = ch.map(c => Math.max(2, ...c.items.slice(0,2).map(it => OF.need(it.text, w))));
-    const y0 = 82, avail = 604 - y0, G = 14, fx = lns.map(n => 12 + 5 + 6 + OF.capH(n)), ph = Math.floor((avail - G*(ch.length-1) - fx.reduce((a,b)=>a+b,0))/ch.length);
+    const y0 = 82, avail = 604 - y0, G = 8, fx = lns.map(n => 12 + 5 + 6 + OF.capH(n)), ph = Math.floor((avail - G*(ch.length-1) - fx.reduce((a,b)=>a+b,0))/ch.length);
     let y = y0;
     ch.forEach((c, i) => {
       h += `<div class="abs chap" style="left:24pt;top:${y}pt;width:744pt"><div class="h" data-slot="top.ch${i}.head" data-lines="1">${esc(c.head)}</div><div class="l"></div></div>`;
@@ -160,7 +192,7 @@ window.brochureReady = (async function(){
     const T = C.bottom || {}, gs = (T.groups || []).slice(0, 4), pw = (744 - 3*14)/4, rows = Math.ceil(gs.length/2);
     let h = OF.kick(T.kicker, 'bottom.kicker', 24, 26, 600) + OF.title(T.title, 'bottom.title', 24, 36, 744) + OF.rule(24, 71, 744);
     const lns = [...Array(rows)].map((_, r) => Math.max(3, ...gs.slice(r*2, r*2+2).flatMap(g => g.items.slice(0,2).map(it => OF.need(it.text, pw)))));
-    const y0 = 82, avail = 604 - y0, G = 14, fx = lns.map(n => 12 + 5 + 6 + OF.capH(n)), ph = Math.floor((avail - G*(rows-1) - fx.reduce((a,b)=>a+b,0))/rows);
+    const y0 = 82, avail = 604 - y0, G = 8, fx = lns.map(n => 12 + 5 + 6 + OF.capH(n)), ph = Math.floor((avail - G*(rows-1) - fx.reduce((a,b)=>a+b,0))/rows);
     gs.forEach((g, i) => {
       const r = Math.floor(i/2), cI = i%2, y = y0 + fx.slice(0, r).reduce((a,b)=>a+b+ph+G, 0), gx = 24 + cI*(2*pw + 2*14);
       h += `<div class="abs chap" style="left:${gx}pt;top:${y}pt;width:${2*pw+14}pt"><div class="h" data-slot="bottom.g${i}.head" data-lines="1">${esc(g.head)}</div><div class="l"></div></div>`;
@@ -183,6 +215,17 @@ window.brochureReady = (async function(){
   document.getElementById('pages').innerHTML = html;
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
   OF.fitLogos();
+  { const a = document.getElementById('coverAddr'); if(a) for(let fs = 44; fs > 28 && a.scrollWidth > a.clientWidth + 1; fs -= 1){ a.style.fontSize = fs + 'pt'; } }
+  if(!OF.fitMode) CapFit(document.querySelectorAll('.tx[data-pool]'));   // text under a photo fills the photo's width (owner 11/8)
+  // the band's note (true sentences, fixed): the type size (9 to 12 pt) at which its last line runs 80% or more of the width
+  document.querySelectorAll('[data-typefit]').forEach(el => { const maxH = +el.dataset.typefit; let got = null;
+    const W0 = el.getBoundingClientRect().width*72/96;
+    outer: for(const wk of [1, .94, .88, .82]) for(const fs of [10.5, 11, 10, 11.5, 9.5, 12, 9]){ const lh = Math.round(fs*1.32*2)/2; el.style.width = (W0*wk) + 'pt'; el.style.fontSize = fs + 'pt'; el.style.lineHeight = lh + 'pt'; el.style.height = 'auto';
+      const [k, fill] = OF.lineFill(el); if(k >= 2 && k*lh <= maxH && fill >= .8){ got = {fs, lh, k}; break outer; } }
+    if(!got) el.style.width = '';
+    if(!got){ el.style.fontSize = '9.5pt'; el.style.lineHeight = '13pt'; const [k] = OF.lineFill(el); got = {fs: 9.5, lh: 13, k}; el.style.fontSize = '9.5pt'; }
+    el.style.fontSize = got.fs + 'pt'; el.style.lineHeight = got.lh + 'pt'; el.style.height = (got.k*got.lh) + 'pt';
+    el.dataset.lines = el.dataset.nmin = el.dataset.nmax = got.k; });
   ContactCard.fit(document);
   document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
   window.brochureCheck = () => OF.check(D, issues);

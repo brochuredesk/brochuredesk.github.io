@@ -8,6 +8,7 @@
 <script src="../engine/baths.js"></script>
 <script src="plan-and-rooms.js"></script>
 <script src="plan-and-rooms-cards.js"></script>
+<script src="lastfix.js"></script>
 <script src="../engine/agentcard.js"></script>
 <!--
   The Plan and the Rooms · Open House flyer "The Rooms, Sized" (trim 612 x 792 pt; print: 0.25 in white margin around the paper field).
@@ -29,6 +30,7 @@ window.brochureReady = (async function(){
   const esc = CN.esc, L = D.listing, PC = ((D.copy || {}).pc || {}), OHC = PC.oh || {};
   const issues = await CN.fontsReady(D);
   const O = CN.openHouse(D);
+  if(!O.long || !O.time) issues.push({slot: 'oh.when', kind: 'oh-date-time-missing'});   /* every Open House piece shows its date and time, big (owner 11/10) */
   const X = 36, W = 540;
   let h = '';
 
@@ -52,7 +54,10 @@ window.brochureReady = (async function(){
 
   // the house, whole, then the address, the place and the four facts
   const hero = (OHC.photos || [])[0] || 'front';
-  h += CN.photo(D, hero, `position:absolute;left:${X}pt;top:${144 + dy}pt;width:${W}pt;height:254pt`, 'oh.hero');
+  // the whole house always (roof to steps): the frame grows taller (up to 46 pt) when the house box needs it; the write-up below gives the room
+  const hp = (D.photos || {})[hero] || {}, needH = hp.box && hp.w && hp.h ? Math.min(300, Math.max(254, W / ((hp.w / hp.h) / Math.min(1, (hp.box[3] - hp.box[1]) + 0.025)))) : 254, ex = Math.round(needH - 254);
+  h += CN.photo(D, hero, `position:absolute;left:${X}pt;top:${144 + dy}pt;width:${W}pt;height:${254 + ex}pt`, 'oh.hero');
+  dy += ex;
   const T = 404 + dy;
   h += `<div class="abs dsp" id="addr" style="left:${X-1}pt;top:${T}pt;width:340pt;height:40pt;font-size:30pt;line-height:40pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
   h += `<div class="abs kicker" style="left:${X}pt;top:${T + 44}pt;width:340pt;height:12pt" data-slot="place" data-lines="1">${esc(CN.placeZip(L).toUpperCase())}</div>`;
@@ -76,8 +81,8 @@ window.brochureReady = (async function(){
   document.getElementById('pages').innerHTML = f.html;
   window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
   await CN.settle();
-  CN.fitLine(document.getElementById('date'), 30);
-  CN.fitLine(document.getElementById('addr'), 22);
+  { const e = document.getElementById('date'); if(e) CN.fitLine(e, 30); }
+  { const e = document.getElementById('addr'); if(e) CN.fitLine(e, 22); }
   issues.push(...CN.fitHouse(D));
   { const el = document.getElementById('ohw'), maxH = el.parentElement.clientHeight; let best = 9.5;   // the write-up takes the biggest size that fits and leaves its last line well filled
     for(let fs = 12; fs >= 9; fs -= 0.25){ el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs * 1.5) + 'pt'; if(el.scrollHeight > maxH + 0.5) continue; CN.balance(el);
@@ -86,6 +91,7 @@ window.brochureReady = (async function(){
     for(let lh = 1.5; lh <= 1.8; lh += 0.01){ el.style.lineHeight = (best * lh) + 'pt'; if(el.scrollHeight > maxH - 2){ el.style.lineHeight = (best * (lh - 0.01)) + 'pt'; break; } } }
   ContactCard.fit(document);
   window.photoPlacements = CN.placements;
+  await document.fonts.ready; if(window.LastFix) LastFix.run(document, (D.copy || {}).alts || {});   // no last line under 80% (owner 11/10)
   window.brochureCheck = () => CN.checkSingle(D, issues);
 })();
 </script>

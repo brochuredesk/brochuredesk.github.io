@@ -5,6 +5,7 @@
 <title>BrochureDesk · Across the Fold two-sided flyer</title>
 <link rel="stylesheet" href="across-the-fold.css">
 <link rel="stylesheet" href="pieces.css">
+<script src="../engine/planink.js"></script>
 <script src="across-the-fold.js"></script>
 <script src="../engine/baths.js"></script>
 <script src="../engine/setpieces.js"></script>
@@ -160,7 +161,7 @@ window.brochureReady = (async function(){
   };
 
   // ---------- the footer: rule, the shared agent card, the brokerage's office lines on the card's name and phone lines ----------
-  const FY = 664, CY = 670, CH = 84, OW = 132;
+  const FY = 686, CY = 692, CH = 62, OW = 132;   // round 3 (owner 11/10, p25: every Across the Fold back): the card a third shorter (was 84 pt), the page above grows
   const footer = fine => {
     let h = foldRule(X0, FY, CW);
     h += SP.card(D, [X0, CY, CW - OW, CH], {layout: 'panel', size: 'mid', brokerage: false, fieldAccent: true, s: {inlineLabel: true, desigInline: true, pad: [12, 10, 10], rowGap: 14, hsW: 64}});
@@ -183,7 +184,7 @@ window.brochureReady = (async function(){
     const caps = (K.caps || []).slice(0, 3), aboutB = beats(K.about);
     const capW = (CW - 28)/3;
     const nCap = commonN(caps.map(c => beats(c.text)), capW, CAPST, [3, 4, 5]) || 3;
-    const capH = CAPHEAD + nCap*12, capTop = 654 - capH;
+    const capH = CAPHEAD + nCap*12, capTop = 752 - capH;   // no contact card or brokerage logo on a flyer front (owner 11/10/2026): the page runs down to the fine print
     const hero = P[K.photo] ? K.photo : Object.keys(P)[0], hp = P[hero] || {}, ap = (hp.w && hp.h) ? hp.w/hp.h : 1.5, bx = hp.box;
     const need = w => bx ? Math.ceil(w*((bx[3] - bx[1]) + 0.03)/ap) : Math.ceil(w/ap*0.77);   // a house box keeps the whole box in frame; no box, at least 75% of the photo's height shows
     const fieldW = W - 2*I, HEAD = 80;      // the place line, the address and the fold rule take 80 pt under the hero
@@ -203,8 +204,7 @@ window.brochureReady = (async function(){
       if(pick) break; } }
     if(!pick){ const PH = 90, rowTop = capTop - 6 - PH, n = 5; pick = {mode: 'A', PH, rowTop, n, blockH: n*14, heroH: rowTop - 14 - n*14 - HEAD - 14 - I}; }
     const y0 = I + pick.heroH + 14, tagTxt = K.tag;
-    const header = () => kick(SP.placeZip(L).toUpperCase(), 'front.place', X0, y0, CW - 176)
-      + logo(XR - 156, y0 - 6, 156, 30)
+    const header = () => kick(SP.placeZip(L).toUpperCase(), 'front.place', X0, y0, CW)
       + `<div class="abs fl-addr" style="left:${X0 - 1}pt;top:${y0 + 22}pt;width:${CW + 2}pt;height:40pt" data-slot="address" data-lines="1" data-fit="22">${esc(L.address)}</div>`
       + foldRule(X0, y0 + 70, CW);
     if(pick.mode === 'A'){
@@ -223,7 +223,7 @@ window.brochureReady = (async function(){
       h += para('front.about', aboutB, X0, y0 + HEAD, CW, pick.n);
     }
     h += capRow(caps, 'front.cap', X0, pick.rowTop, CW, nCap, pick.PH, 14);
-    h += footer(K.fine);
+    h += `<div class="abs" style="left:${X0}pt;top:762pt;width:${CW}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(K.fine || 'Information deemed reliable but not guaranteed.')}</div>`;
   }
 
   // ======================================= BACK =======================================
@@ -234,22 +234,25 @@ window.brochureReady = (async function(){
     h += `<div class="abs title one" style="left:${X0}pt;top:45pt;width:372pt;height:32pt" data-slot="back.title" data-lines="1" data-fit="19">${esc(title)}</div>`;
     h += logo(XR - 156, 36, 156, 38);
     h += foldRule(X0, 82, CW);
-    const TOP = 96, BOT = 654;
+    const TOP = 96, BOT = 676;
     // the closing navy box: the big phrase and its write-up, the diamond list, Nearby
     const Hc = 150, Cy = BOT - Hc, c1 = 206, c2 = 148, gp = 18, cpad = 16, c3 = CW - 2*cpad - c1 - c2 - 2*gp;
     const paraB = beats(B.para), nP = [6, 5, 7, 4].find(n => pickN(paraB, c1, SBODYST, [n])) || 5;
     const Hu = Cy - 14 - TOP;                              // the upper block: left column and right column
     // ----- left column -----
-    let PW, boardH, leftHtml = '';
+    let PW, boardH, leftHtml = '', leftNote = false;
     if(hasPlan){
-      const probe = AF.plan(D, {x: X0 + 10, y: TOP + 10, w: 320, h: Hu - 20});
+      const probe = AF.plan(D, {x: X0 + 10, y: TOP + 10, w: 352, h: Hu - 20});
       const u = probe.used || {w: 200, h: Hu - 20};
-      PW = Math.max(176, Math.min(340, Math.ceil(u.w) + 26));
+      PW = Math.max(176, Math.min(372, Math.ceil(u.w) + 26));
       const bh = Math.ceil(u.h) + 22;
       boardH = (Hu - bh >= 150) ? bh : Hu;                 // a short board leaves room for a photo under it; else it runs the full height
+      // round 3 (book p6, reviewer 11/12): a board taller than its plans left empty bands above and below them. The board now hugs the plans
+      // and the reading note moves under it, taking the freed height in full lines (the right column then gives its room to the photos).
+      if(boardH === Hu && Hu - bh >= 40){ boardH = bh; leftNote = true; }
       const pr = AF.plan(D, {x: X0 + 10, y: TOP + 10, w: PW - 20, h: boardH - 20});
       issues.push(...pr.issues);
-      leftHtml += `<div class="planbox" style="left:${X0}pt;top:${TOP}pt;width:${PW}pt;height:${boardH}pt"></div>` + pr.html;
+      leftHtml += `<div class="planbox${window.PlanInk && PlanInk.panel(D.plan, true) ? ' light' : ''}" style="left:${X0}pt;top:${TOP}pt;width:${PW}pt;height:${boardH}pt"></div>` + pr.html;
     } else {
       PW = 250;
     }
@@ -257,9 +260,9 @@ window.brochureReady = (async function(){
     // ----- right column -----
     // the reading note (plan only) and the captioned photos stack in one column; the lines each box takes are picked together so every
     // photo stays a real frame (never a thin strip): two photos with the note, two without it, or one photo with the note
-    const allPics = (B.photos || []).slice(0, 2), noteSrc = hasPlan ? beats(PL.note) : [], kH = 14, GP = 12;
+    const allPics = (B.photos || []).slice(0, 2), noteSrc = hasPlan && !leftNote ? beats(PL.note) : [], kH = 14, GP = 12;
     const lineOpts = (bs, st) => [3, 4, 5, 6].filter(n => pickN(bs, RW, st, [n]));
-    const noteOpts = hasPlan ? [3, 4, 5, 2, 6].filter(n => pickN(noteSrc, RW, SBODYST, [n])).concat([0]) : [0];
+    const noteOpts = hasPlan && !leftNote ? [3, 4, 5, 2, 6].filter(n => pickN(noteSrc, RW, SBODYST, [n])).concat([0]) : [0];
     let best = null;
     for(const k of [2, 1]){ if(allPics.length < k) continue;
       const capOpt = allPics.slice(0, k).map(c => lineOpts(beats(c.text), CAPST));
@@ -296,7 +299,12 @@ window.brochureReady = (async function(){
       if(L1 && lbH >= 140){
         const nL = [3, 4, 5, 2].find(n => pickN(beats(L1.text), PW, CAPST, [n])) || 3, cH = CAPHEAD + nL*12, pH = lbH - cH - 6;
         h += leftHtml + ph(L1.id, X0, ly, PW, pH) + cap(L1, 'back.photoL', X0, ly + pH + 6, PW, nL, 'backL');
-      } else h += leftHtml;
+      } else {
+        h += leftHtml;
+        if(leftNote){ const ny = TOP + boardH + 12, room = TOP + Hu - ny, src = beats(PL.note), nMax = Math.floor((room - kH)/13);
+          const nL = [...Array(nMax)].map((_, i) => nMax - i).find(n => n >= 2 && pickN(src, PW, SBODYST, [n])) || 2;
+          h += kick(PL.head || 'Reading the plan', 'back.planhead', X0, ny, PW) + para('back.plannote', src, X0, ny + kH, PW, nL, {lh: 13}); }
+      }
     } else {
       const fl = NP.floors || [], nRooms = fl.reduce((a, f) => a + (f.rooms || []).length, 0), introB = beats(NP.intro);
       const inW = PW - 28, nI = [4, 3, 5].find(n => pickN(introB, inW, SBODYST, [n])) || 4;
@@ -334,10 +342,12 @@ window.brochureReady = (async function(){
         el.style.top = ((mid - el.offsetHeight/2)/k) + 'pt'; }); }
   });
   const sp = window.brochureCheck;
+  if(window.PlanInk) PlanInk.install();
   window.brochureCheck = () => {
     const out = sp();
     const logos = [...document.querySelectorAll('.logo img, .logo [data-slot="broker.name"], .cc-logo img, .cc-brkname')].filter(e => e.offsetParent);
-    if(logos.length !== 1) out.push({slot: 'logo', kind: 'logo-count', found: logos.length, want: 1});
+    const want = side === 'front' ? 0 : 1;   // no brokerage logo on a flyer front (owner 11/10/2026)
+    if(logos.length !== want) out.push({slot: 'logo', kind: 'logo-count', found: logos.length, want});
     if(window.AgentCard) out.push(...AgentCard.trec(document, [...document.querySelectorAll('.logo img')]));
     document.querySelectorAll('[data-nofit]').forEach(el => out.push({slot: el.dataset.slot, kind: 'box-not-full', lines: +el.dataset.lines, diag: el.dataset.diag}));
     return out;

@@ -8,7 +8,16 @@
 (function(){
   const SF = {}, esc = SP.esc, pt = SP.pt;
   SF.feet = t => String(t == null ? '' : t).replace(/(\d+)(?:\.\d+)?(?:'\s?\d+(?:\.\d+)?"?)?'?\s*x\s*(\d+)(?:\.\d+)?(?:'\s?\d+(?:\.\d+)?"?)?'?/g, "$1' x $2'");
-  SF.beats = x => x == null ? [] : (Array.isArray(x) ? x : (SF.feet(x).match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || []).map(s => s.trim()).filter(Boolean)).map(SF.feet);
+  // a later written sentence that restates an earlier one is left out (11/10/2026: two shared content words; the stricter
+  // one-telling-noun rule is for added lines, in capfit.js): copy never says the same thing twice
+  const DSTOP = new Set('with that this from have been over under into onto their there which where while along also each both only more most than then them they your what when will back about around beside between behind above below the and has are its for was but not you all can any out off per via one sits room'.split(' '));
+  const dwords = t => new Set((String(t || '').toLowerCase().match(/[a-z]{3,}/g) || []).filter(w => !DSTOP.has(w)));
+  // (a beat with alternatives keeps the ones that say something new; it drops out only when every one repeats)
+  const dedupe = bs => { const keep = [], ws = [], rep = w => ws.some(q => [...w].filter(x => q.has(x)).length >= 2);
+    bs.forEach((b, i) => { const alts = [].concat(b).filter(a => !i || !rep(dwords(a))); if(!alts.length) return;
+      keep.push(Array.isArray(b) ? (alts.length > 1 ? alts : alts[0]) : alts[0]); ws.push(dwords(alts.join(' '))); }); return keep; };
+  SF.capBeats = x => dedupe(SF.beats(x));   // a caption's sentences, restatements left out
+  SF.beats = x => x == null ? [] : ((Array.isArray(x) ? x : (SF.feet(x).match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || []).map(s => s.trim()).filter(Boolean)).map(SF.feet));
 
   // ---------- fitting a text to a box ----------
   const probe = document.createElement('div');

@@ -60,6 +60,10 @@ img{display:block}
 .plan-note{text-align:center;font:400 6.5pt/8pt var(--font-body);color:var(--muted);white-space:nowrap;overflow:hidden}
 .board{position:absolute;inset:0;--paper:#ffffff;--ink:#1f2b45;--text:#2a3441;--signal:#3a5f82;--muted:#4f5a6b;--accent:#3f6385}
 .planframe{position:absolute;background:#ffffff}
+/* the listing plan's board is clear (owner 11/10/2026): the midnight field shows through, a thin light rule frames it, the plan's
+   own lines go light (PlanInk) and its titles and labels keep the field's light colors */
+.board.clear{--paper:#1f2b45;--ink:#ffffff;--text:#e1e7f2;--signal:#b7c7e6;--muted:#c3cee4;--accent:#b7c7e6}
+.board.clear .planframe,.planframe.clear{background:transparent;border:.75pt solid rgba(255,255,255,.45)}
 .key{border:2.5pt solid #ffffff}
 .inset{position:absolute;right:38pt;bottom:18pt;border:2.5pt solid #fff;overflow:hidden;background:#34425f}
 .inset .ph{position:absolute;inset:0}

@@ -37,12 +37,28 @@
   const KIND = {plain: {nm: 14, lh: 12, pad: 0, gap: 2}, lead: {nm: 20, lh: 12, pad: 0, gap: 2}, black: {nm: 13, lh: 11, pad: 9, gap: 3}, side: {nm: 13, lh: 12, pad: 0, gap: 2}};
   NG.tr = slot => { const v = (NG.track || {})[slot]; return v ? `;letter-spacing:${v}pt` : ''; };
   NG.capH = (lines, kind) => { const k = KIND[kind || 'plain']; return k.pad*2 + k.nm + k.gap + lines*k.lh; };
-  NG.cap = (c, slot, x, y, w, lines, kind, rng) => {
+  // o: {fs, lh} a caption set at its own type size (the bath captions grow to fill the height of the photo beside them)
+  NG.cap = (c, slot, x, y, w, lines, kind, rng, o) => {
     const mn = rng ? rng[0] : lines, mx = rng ? rng[1] : lines;
-    c = c || {}; kind = kind || 'plain'; const k = KIND[kind];
-    return `<div class="cap k-${kind} abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${NG.capH(lines, kind)}pt">
+    c = c || {}; kind = kind || 'plain'; const k = KIND[kind], lh = (o && o.lh) || k.lh;
+    return `<div class="cap k-${kind} abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${k.pad*2 + k.nm + k.gap + lines*lh}pt">
       <div class="nm" data-slot="${slot}.name" data-lines="1"><b>${esc(c.name)}</b>${c.tag ? `<span>${esc(c.tag)}</span>` : ''}</div>
-      <div class="tx" data-slot="${slot}.text" data-lines="${lines}" data-nmin="${mn}" data-nmax="${mx}" data-cap="1" style="height:${lines*k.lh}pt${NG.tr(slot + '.text')}">${esc(NG.txt(c.text))}</div></div>`;
+      <div class="tx"${c.x ? ` data-x="${esc(JSON.stringify(c.x))}"` : ''} data-slot="${slot}.text" data-lines="${lines}" data-nmin="${mn}" data-nmax="${mx}" data-cap="1" style="height:${lines*lh}pt${o && o.fs ? `;font-size:${o.fs}pt;line-height:${lh}pt` : NG.tr(slot + '.text')}">${esc(NG.txt(c.text))}</div></div>`;
+  };
+  // the biggest type (9 to 11 pt) at which a caption fills the most of a height h in whole lines, its last line 80%+ full:
+  // {fs, lh, n} (null when no size sets it that way)
+  NG.fitTall = (text, w, h, sizes, minLast) => {
+    // round 3 (owner p111): the type (8.75 to 11 pt, eighth-point steps) and the leading (1.25 to 1.45) that set the copy in whole lines
+    // reaching the foot of the photo (90%+ of the height) with the last line at least minLast (80%) full; the best fill wins, then the bigger type
+    const m = document.createElement('div'); m.className = 'body'; document.body.appendChild(m);
+    let best = null; const ml = minLast || .8;
+    for(let fs = 11; fs >= 8.75; fs -= .125) for(const k of [1.3, 1.35, 1.25, 1.4, 1.45]){ const lh = Math.round(fs*k*8)/8, n = Math.floor(h/lh);
+      if(n*lh < h*.9) continue;
+      m.style.cssText = `position:absolute;left:-9999pt;top:0;width:${w}pt;font-size:${fs}pt;line-height:${lh}pt;height:auto;overflow:visible`;
+      m.textContent = NG.txt(text); const [kk, f] = NG.lineFill(m);
+      if(kk === n && f >= ml){ const c = {fs, lh, n, fill: n*lh/h, last: f}; const sc = c.fill*2 + Math.min(f, .95) + fs/40;
+        if(!best || sc > best.sc) best = Object.assign(c, {sc}); } }
+    m.remove(); return best;
   };
   NG.kick = (t, slot, x, y, w) => `<div class="abs kick" style="left:${x}pt;top:${y}pt;width:${w||600}pt;height:10pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
   NG.title = (t, slot, x, y, w) => `<div class="abs title one" style="left:${x}pt;top:${y}pt;width:${w||744}pt;height:32pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
@@ -57,6 +73,35 @@
     const W = pt(box.clientWidth), H = pt(box.clientHeight);
     let h = Math.min(H, W/a); img.style.height = h+'pt'; img.style.width = (h*a)+'pt';
   });
+
+  // ---------- a write-up that must fill its box (data-fillbox): whole lines that reach the box's foot ----------
+  // round 3 (owner 11/10, rules 8 and 11): the type steps (from 0.9 to 1.2 times its set size, never under 9 pt) and the leading
+  // follows (1.28 to 1.5 times the type) so the copy sets in whole lines that run to the bottom of the box, the last line 80%+ full;
+  // the copy is never cut. A box that cannot fill keeps its set type (the checks report it).
+  NG.fillBoxes = (root, sel) => (root || document).querySelectorAll(sel || '[data-fillbox]').forEach(el => NG.fillOne(el));
+  NG.fillOne = el => {
+    if(!el.textContent.trim()) return;
+    const cs = getComputedStyle(el), fs0 = parseFloat(cs.fontSize), lh0 = parseFloat(cs.lineHeight) || fs0*1.4, H = el.clientHeight;
+    const keep = [el.style.fontSize, el.style.lineHeight], min = Math.max(12, fs0*.9), max = fs0*1.2;
+    let best = null;
+    for(let n = 1; n <= 40; n++){ const lh = H/n; if(lh < min*1.28) break; if(lh > max*1.5) continue;
+      for(let fs = Math.min(max, lh/1.28); fs >= Math.max(min, lh/1.5); fs -= .25){
+        el.style.fontSize = fs + 'px'; el.style.lineHeight = lh + 'px';
+        const [k, f] = NG.lineFill(el); if(k !== n || el.scrollHeight > el.clientHeight + 1) continue;
+        const sc = (f >= .8 ? 100 : f >= .73 ? 50 : 0) + fs - Math.abs(lh/fs - 1.4)*4;
+        if(!best || sc > best.sc) best = {sc, fs, lh}; break; } }
+    if(best){ el.style.fontSize = best.fs + 'px'; el.style.lineHeight = best.lh + 'px'; } else [el.style.fontSize, el.style.lineHeight] = keep;
+  };
+
+  // a display line set as big as its box allows (up to maxPt), its lines kept whole and its last line at least 70% full where a size
+  // gives that (round 3: a short slab line fills its black block; the Just Sold call to action ends on a full line)
+  NG.fitHead = (el, maxPt, minPt, lhK, loose) => { if(!el || !el.textContent.trim()) return;
+    const box = el.parentElement, bs = getComputedStyle(box), H = el.dataset.inbox ? box.clientHeight - parseFloat(bs.paddingTop) - parseFloat(bs.paddingBottom) - 2 : el.clientHeight, W = el.clientWidth;
+    let first = null;
+    for(let f = maxPt; f >= minPt; f -= .5){ el.style.fontSize = f + 'pt'; el.style.lineHeight = (f*(lhK || 1.12)) + 'pt';
+      if(el.scrollHeight > H + 1 || el.scrollWidth > W + 1) continue;
+      const [k, fill] = NG.lineFill(el); if(!first) first = f; if(loose || k < 2 || fill >= .7){ return; } }
+    if(first){ el.style.fontSize = first + 'pt'; el.style.lineHeight = (first*(lhK || 1.12)) + 'pt'; } };
 
   // ---------- facts ----------
   const n = v => Number(v).toLocaleString('en-US');

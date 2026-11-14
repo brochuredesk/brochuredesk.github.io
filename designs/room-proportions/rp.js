@@ -176,7 +176,7 @@
      The card carries the piece's one brokerage logo. */
   RP.card = function(D, o){
     const A = D.agent || {}, hs = RP.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
-    return ContactCard.html([o.x, o.y, o.w, o.h], Object.assign({}, A, {headshot: hs}), D.brand || {}, {layout: o.layout, grow: o.grow || 0, s: o.s, bottomGap: 0.5, bandTint: !!o.bandTint});
+    return ContactCard.html([o.x, o.y, o.w, o.h], Object.assign({}, A, {headshot: hs}), D.brand || {}, {layout: o.layout, size: o.size, grow: o.grow || 0, s: o.s, bottomGap: 0.5, bandTint: !!o.bandTint});
   };
 
   // Lay out every contact card (the card's own fitting); the print checks read the cards at check time (RP.check)
@@ -504,30 +504,67 @@
     const bot = Math.max(...rects.map(q => q.top)); const last = rects.filter(q => Math.abs(q.top - bot) < 3);
     return (Math.max(...last.map(q => q.right)) - box.left) / box.width;
   };
+  // the shortest line of the box (every line, set ragged), as a share of the box width: the lines under a photo must all run 80%+ (owner 11/8)
+  RP.minLine = el => {
+    const r = document.createRange(); r.selectNodeContents(el);
+    const rects = [...r.getClientRects()].filter(q => q.width > .5 && q.height > .5), box = el.getBoundingClientRect();
+    if(!rects.length) return 0;
+    const lh = parseFloat(getComputedStyle(el).lineHeight) || 12, lines = [];
+    for(const q of rects){ const l = lines.find(x => Math.abs(x.top - q.top) < lh*0.5); if(l) l.r = Math.max(l.r, q.right); else lines.push({top: q.top, r: q.right}); }
+    return Math.min(...lines.map(l => (l.r - box.left) / box.width));
+  };
   // Fill a text box with the writer's master sentences: the longest ordered subset that sets in exactly n lines with the last
   // line at least 3/4 full (the renderer never cuts copy; a box nothing fits comes back to the writer).
+
+  // justified lines whose word gaps would open past ~2.6 spaces set ragged instead (owner 11/10: never spread words)
+  const gapsTooWide = el => {
+    const box = el.getBoundingClientRect(); if(!box.width) return false;
+    const lh = parseFloat(getComputedStyle(el).lineHeight) || 12, fs = parseFloat(getComputedStyle(el).fontSize) || 10, rows = [];
+    const prev = el.style.textAlign; el.style.textAlign = 'left';
+    const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), rg = document.createRange();
+    for(let nd = tw.nextNode(); nd; nd = tw.nextNode()){ const re = /\S+/g; let m; while((m = re.exec(nd.textContent))){ rg.setStart(nd, m.index); rg.setEnd(nd, m.index + m[0].length);
+      for(const q of rg.getClientRects()){ if(q.width < .5) continue; const w = rows.find(x => Math.abs(x.t - q.top) < lh*.5); if(w){ w.r = Math.max(w.r, q.right); w.n++; } else rows.push({t: q.top, r: q.right, n: 1}); } } }
+    el.style.textAlign = prev;
+    if(rows.length < 2) return false;
+    // each justified line's own gap (its slack over its own word count) against a normal space: past about 2x, the block sets ragged (owner 11/10 round 2: never wider than the Before)
+    // the normal space is measured in the box's own type (the space glyph plus letter and word spacing, as the print check measures it; owner 11/12)
+    const cs = getComputedStyle(el), cv = RP._cv || (RP._cv = document.createElement('canvas').getContext('2d'));
+    cv.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const sp = cv.measureText(' ').width + (parseFloat(cs.wordSpacing) || 0) + (parseFloat(cs.letterSpacing) || 0) || fs*0.26;
+    return rows.slice(0, -1).some(x => x.n > 1 && (box.right - x.r) / (x.n - 1) + sp > sp*2);
+  };
   RP.fillText = (el, sents, n) => {
     sents = sents.filter(Boolean);
-    el.style.fontSize = '';
+    el.style.fontSize = ''; el.style.textAlign = '';
     const base = parseFloat(getComputedStyle(el).fontSize) * 0.75;
     // the type may flex a little (up to 1 pt larger, 0.6 pt smaller, never under 8 pt) so a box lands on a full last line
-    const sizes = [0, .2, .4, .6, .8, -.2, -.4, 1, -.6].map(d => +(base + d).toFixed(2)).filter(z => z >= 8.0);
+    const sizes = [0, .15, .3, .45, .6, .75, .9, 1.05, 1.2, -.15, -.3, -.45, -.6].map(d => +(base + d).toFixed(2)).filter(z => z >= 8.0 && z <= base * 1.12 + .01);   // up to 12% larger (owner 11/8)
+    // a box marked data-lhguard keeps its type inside its leading (size x guard <= line height), so no line runs past the box
+    if(+el.dataset.fixsize){ sizes.length = 0; sizes.push(+el.dataset.fixsize); }   // a row of captions sets at one size (owner 11/12, capfill3 review p18)
+    const guard = +el.dataset.lhguard || 0, lhPt = parseFloat(getComputedStyle(el).lineHeight) * 0.75;
+    if(guard && lhPt){ const keep = sizes.filter(z => z * guard <= lhPt); sizes.length = 0; sizes.push(...(keep.length ? keep : [Math.max(8, +(lhPt/guard).toFixed(2))])); }
     const subsets = [];
     for(let m = (1 << sents.length) - 1; m > 0; m--) subsets.push(sents.filter((_, i) => m >> i & 1));
     subsets.sort((a, b) => b.join(' ').length - a.join(' ').length);
-    let best = null;
-    for(const z of sizes){
-      el.style.fontSize = z + 'pt';
-      for(const s of subsets){
+    let best = null, ok80 = null, ok75 = null;
+    // the longest run of sentences first, at any of the sizes (owner 11/10/2026: never drop a sentence a size step would keep)
+    for(const s of subsets){
+      for(const z of sizes){
+        el.style.fontSize = z + 'pt';
         el.textContent = s.join(' ');
         const k = RP.lineCount(el);
         if(k > n) continue;
-        const fill = RP.lastFill(el);
-        if(k === n && fill >= 0.75) return true;
+        const fill = Math.min(RP.lastFill(el), RP.minLine(el));   // every line, not only the last
+        if(k === n && fill >= 0.9){ el.style.textAlign = 'justify'; if(gapsTooWide(el)) el.style.textAlign = 'left'; return true; }   // owner 11/8: text under a photo runs the photo's width, last line 90%+ if it can
+        if(k === n && fill >= 0.8 && !ok80) ok80 = {s, z};
+        if(k === n && fill >= 0.75 && RP.lastFill(el) >= 0.8 && !ok75) ok75 = {s, z};   // the last line always reaches 80% (owner 11/10)
         const score = (k === n ? 1 : 0) * 10 + fill - Math.abs(n - k) * 2 - Math.abs(z - base) * 0.1;
         if(!best || score > best.score) best = {s, score, z};
       }
+      if(ok80) break;   // a longer run that sets at 80%+ beats a shorter one at 90%
     }
+    if(ok80){ el.style.fontSize = ok80.z + 'pt'; el.textContent = ok80.s.join(' '); el.style.textAlign = 'justify'; if(gapsTooWide(el)) el.style.textAlign = 'left'; return true; }
+    if(ok75){ el.style.fontSize = ok75.z + 'pt'; el.textContent = ok75.s.join(' '); return true; }
     if(best){ el.style.fontSize = best.z + 'pt'; el.textContent = best.s.join(' '); }
     return false;
   };
@@ -547,11 +584,50 @@
     }
     RP.fillText(el, sents, nMax); return false;
   };
-  RP.fillAll = () => document.querySelectorAll('[data-sents]').forEach(el => {
-    let s; try { s = JSON.parse(el.dataset.sents); } catch(e){ return; }
-    const n = +el.dataset.fill || +el.dataset.lines || 3;
-    RP.fillBest(el, s, n, +el.dataset.fillmin || n);
-  });
+  // no phrase twice on one piece (owner 11/10/2026, rule 7): a sentence that repeats four words in a row already printed on the
+  // piece is left out of a box's pool, but only when the box still fills without it (its other true lines)
+  RP.fillAll = () => {
+    const SW = new Set('a an the and of to in on with at by its it is are or for from this that as up'.split(' '));
+    const sh = t => { const w = String(t).toLowerCase().match(/[a-z0-9']+/g) || [], o = []; for(let i = 0; i + 4 <= w.length; i++){ const g = w.slice(i, i + 4); if(g.filter(x => !SW.has(x)).length >= 2) o.push(g.join(' ')); } return o; };
+    const seen = new Set();
+    document.querySelectorAll('[data-slot]').forEach(el => { if(el.dataset.sents || el.querySelector('[data-slot]')) return; sh(el.textContent).forEach(g => seen.add(g)); });
+    document.querySelectorAll('[data-sents]').forEach(el => {
+      let s; try { s = JSON.parse(el.dataset.sents); } catch(e){ return; }
+      const n = +el.dataset.fill || +el.dataset.lines || 3, mn = +el.dataset.fillmin || n;
+      const keep = s.filter(x => !sh([].concat(x)[0]).some(g => seen.has(g)));
+      el._pool = s;
+      if(keep.length && keep.length < s.length && RP.fillBest(el, keep, n, mn)) el._pool = keep; else RP.fillBest(el, s, n, mn);
+      sh(el.textContent).forEach(g => seen.add(g));
+    });
+    // captions side by side set at one type size (owner 11/12, capfill3 review p18: two sizes in one row): the largest size
+    // from the row's own sizes at which every caption of the row still fills its lines, else the row stays as it was
+    const rows = new Map(); RP._eq = RP._eq || 0;
+    document.querySelectorAll('.cap .b[data-sents]').forEach(el => { const c = el.closest('.cap'); if(!c || !el._pool) return; const par = c.parentElement; if(!par._eqid) par._eqid = ++RP._eq; const k = Math.round(c.offsetTop/3) + '|' + par._eqid; (rows.get(k) || rows.set(k, []).get(k)).push(el); });
+    // a size change must not bring a phrase that already prints elsewhere on the piece (or in a neighbor caption) back
+    const repeats = g => { const others = new Set(); document.querySelectorAll('[data-slot]').forEach(el => { if(g.includes(el) || el.querySelector('[data-slot]')) return; sh(el.textContent).forEach(x => others.add(x)); });
+      const own = new Set(); return g.some(e => sh(e.textContent).some(x => { if(others.has(x) || own.has(x)) return true; return false; }) || (sh(e.textContent).forEach(x => own.add(x)), false)); };
+    rows.forEach(g => {
+      if(g.length < 2) return;
+      const zs = g.map(e => parseFloat(getComputedStyle(e).fontSize)*.75);
+      if(Math.max(...zs) - Math.min(...zs) < .06) return;
+      const keepState = g.map(e => ({e, z: e.style.fontSize, t: e.textContent, a: e.style.textAlign, h: e.style.height, d: e.dataset.lines}));
+      const hi = Math.max(...zs), cands = []; for(let z = hi; z >= 8 - 1e-6; z -= .1) cands.push(+z.toFixed(2));
+      for(const z of cands){
+        g.forEach(e => { e.dataset.fixsize = z; });
+        if(g.every(e => { const n = +e.dataset.fill || +e.dataset.lines || 3; return RP.fillText(e, e._pool, n); }) && !repeats(g)){ g.forEach(e => { e.style.fontSize = z + 'pt'; }); return; } }
+      g.forEach(e => { delete e.dataset.fixsize; });
+      keepState.forEach(k => { k.e.style.fontSize = k.z; k.e.textContent = k.t; k.e.style.textAlign = k.a; k.e.style.height = k.h; k.e.dataset.lines = k.d; });
+    });
+    // a row of captions keeps one text setting (reviewer6 p17): if any caption in the row is set ragged, the justified ones set ragged too
+    rows.forEach(g => { if(g.length < 2) return; const just = e => /justify/.test(getComputedStyle(e).textAlign);
+      if(g.some(e => !just(e)) && g.some(just)) g.forEach(e => { e.style.textAlign = 'left'; e.style.textAlignLast = 'left'; }); });
+    // a room name and its size that run past a narrow frame tighten (to 8 pt at least) instead of being cut off
+    document.querySelectorAll('.cap .t').forEach(t => { let z = parseFloat(getComputedStyle(t).fontSize)*.75; const i = t.querySelector('i');
+      if(t.scrollWidth > t.clientWidth + .5 && i) i.style.marginLeft = '3pt';
+      while(t.scrollWidth > t.clientWidth + .5 && z > 8){ z -= .2; t.style.fontSize = z + 'pt'; if(i) i.style.fontSize = z + 'pt'; }
+      // still too wide at 8 pt: the size goes on its own line under the name (the caption below moves down one line)
+      if(t.scrollWidth > t.clientWidth + .5 && i){ t.style.whiteSpace = 'normal'; t.style.height = 'auto'; i.style.display = 'block'; i.style.marginLeft = '0'; } });
+  };
 
   // The fact bar's values (five at most): beds, baths, living area, built, then lot or stories.
   RP.stats = L => {
@@ -580,7 +656,19 @@
 
   // Scale boxes: rooms drawn true to scale with their sizes, labels above each box. ft per inch picked so the row fits.
   // Returns {html, ftPerIn, count, w, h}. Box list: living rooms first, then the primary, the bedrooms, then outdoor rooms.
-  RP.scaleBoxes = (D, W, H, maxN) => {
+  RP.scaleBoxes = (D, W, H, maxN, rows, fixed) => {
+    // rows 2: the same rooms at one scale in two rows (a tall strip), so the boxes print larger
+    if(rows === 2){
+      const n = RP.scaleBoxes(D, W, 84, maxN).count; if(n < 4) return RP.scaleBoxes(D, W, H, maxN);
+      for(const fpi of [6, 8, 10, 12, 16, 20, 24, 30, 36, 48]){
+        const s = 72 / fpi, half = Math.ceil(n/2);
+        const a = RP.scaleBoxes(D, W, H/2, n, 0, {fpi, skip: 0, take: half}), b = RP.scaleBoxes(D, W, H/2, n, 0, {fpi, skip: half, take: n - half});
+        if(a.count === half && b.count === n - half)
+          return {html: `<div class="abs" style="left:0;top:0;width:${W}pt;height:${H/2}pt">${a.html}</div><div class="abs" style="left:0;top:${H/2}pt;width:${W}pt;height:${H/2}pt">${b.html}</div>`, ftPerIn: fpi, count: n, w: Math.max(a.w, b.w), h: H, scale: s};
+      }
+      return RP.scaleBoxes(D, W, H, maxN);
+    }
+    const fix = fixed || null;
     const L = D.listing || {}, rooms = (L.rooms || []).map(r => Object.assign({sz: RP.size(r.size)}, r)).filter(r => r.sz && !/bath|closet|utility|laundry|hall|entry/i.test(r.name));
     const rank = r => /living|family|great/i.test(r.name) ? 0 : /primary|master/i.test(r.name) ? 1 : /kitchen/i.test(r.name) ? 2 : /dining/i.test(r.name) ? 3 : /^bed/i.test(r.name) ? 4 : /study|office|flex/i.test(r.name) ? 5 : /breakfast|nook/i.test(r.name) ? 6 : 8;
     const lab = r => r.name.replace(/^Living$/i, 'Living Room').replace(/^Breakfast$/i, 'Breakfast Nook').replace(/^Covered Structure$/i, 'Covered Structure');
@@ -590,23 +678,28 @@
       return {name, w: r.sz[0], d: r.sz[1], out: /covered|patio|porch|deck|terrace/i.test(r.name), i, rk: rank(r)};
     }).sort((a, b) => a.rk - b.rk || a.i - b.i).slice(0, maxN || 7);
     list = list.sort((a, b) => b.w*b.d - a.w*a.d);
+    if(fix) list = list.slice(fix.skip, fix.skip + fix.take);
     const est = (t, w) => t.length * w * 0.52;
-    for(const fpi of [8, 10, 12, 16, 20, 24, 30, 36, 48]){
+    for(const fpi of fix ? [fix.fpi] : [8, 10, 12, 16, 20, 24, 30, 36, 48]){
       const s = 72 / fpi, gap = 16;
-      for(let n = list.length; n >= Math.min(3, list.length); n--){
+      for(let n = list.length; n >= (fix ? list.length : Math.min(3, list.length)); n--){
         const sub = list.slice(0, n), it = sub.map(r => ({r, bw: r.w*s, bh: r.d*s, lw: Math.max(est(r.name, 8.2), est(RP.dimsText(r.w, r.d), 8.2)) + 2}));
         const tot = it.reduce((a, x) => a + Math.max(x.bw, x.lw), 0) + gap*(n - 1), tall = Math.max(...it.map(x => x.bh)) + 22;
         if(tot <= W && tall <= H){
           const g2 = n > 1 ? Math.min(46, gap + (W - tot) / (n - 1)) : gap, tot2 = tot - gap*(n - 1) + g2*(n - 1);
-          let x = Math.max(0, (W - tot2) / 2), html = '';
+          let x = Math.max(0, (W - tot2) / 2), html = '', rects = '';
           const baseY = H;   // boxes sit on a common baseline at the bottom of the area
+          // the boxes are a drawing (one SVG, the room outlines to scale); each label sits over its own box
+          const hatch = `<pattern id="sbh" patternUnits="userSpaceOnUse" width="3.4" height="3.4" patternTransform="rotate(45)"><rect width="3.4" height="3.4" fill="#fff"/><rect width=".6" height="3.4" fill="rgba(22,37,43,.14)"/></pattern>`;
           it.forEach(q => {
             const cw = Math.max(q.bw, q.lw);
-            const bx = x + (cw - q.bw) / 2, by = baseY - q.bh;
-            html += `<div class="sbl" style="left:${x}pt;top:${by - 21}pt;width:${cw}pt;text-align:${cw > q.bw ? 'left' : 'left'}" data-slot="scale.${esc(q.r.name)}">${esc(q.r.name)}<span>${esc(RP.dimsText(q.r.w, q.r.d))}</span></div>`;
-            html += `<div class="sb${q.r.out ? ' out' : (q.r.name.startsWith('Primary') ? ' alt' : '')}" style="left:${x}pt;top:${by}pt;width:${q.bw.toFixed(2)}pt;height:${q.bh.toFixed(2)}pt"></div>`;
+            const by = baseY - q.bh;
+            html += `<div class="sbl" style="left:${x}pt;top:${by - 21}pt;width:${cw}pt;height:19.2pt" data-slot="scale.${esc(q.r.name)}">${esc(q.r.name)}<span>${esc(RP.dimsText(q.r.w, q.r.d))}</span></div>`;
+            const fill = q.r.out ? 'url(#sbh)' : (q.r.name.startsWith('Primary') ? 'color-mix(in srgb, var(--accent) 14%, #fff)' : 'rgba(255,255,255,.7)');
+            rects += `<rect x="${(x + .45).toFixed(2)}" y="${(by + .45).toFixed(2)}" width="${(q.bw - .9).toFixed(2)}" height="${(q.bh - .9).toFixed(2)}" style="fill:${fill};stroke:var(--ink);stroke-width:.9"/>`;
             x += cw + g2;
           });
+          html = `<svg class="sbsvg" viewBox="0 0 ${W} ${H}" style="position:absolute;left:0;top:0;width:${W}pt;height:${H}pt;overflow:visible"><defs>${hatch}</defs>${rects}</svg>` + html;
           return {html, ftPerIn: fpi, count: n, w: tot, h: tall, scale: s};
         }
       }

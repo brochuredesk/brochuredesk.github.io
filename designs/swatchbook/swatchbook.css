@@ -132,7 +132,7 @@ img{display:block}
 
 /* Open House flyers */
 .oh-label{font:700 22pt/26pt var(--font-body);letter-spacing:3pt;text-transform:uppercase;color:var(--gold);white-space:nowrap;overflow:hidden}
-.oh-date{font-family:var(--font-display);font-weight:500;letter-spacing:-.6pt;color:#fff;white-space:nowrap;overflow:hidden}
+.oh-date{font-family:var(--font-display);font-weight:500;letter-spacing:-.6pt;color:#fff;white-space:nowrap;overflow:visible}   /* Manrope descenders run past a 46 pt line: never clip them */
 .oh-time{font-family:var(--font-body);font-weight:700;color:#fff;white-space:nowrap;overflow:hidden}
 .oh-opts{display:flex;flex-direction:column;gap:3pt;align-items:flex-end}
 .oh-opt{display:flex;gap:8pt;align-items:baseline;white-space:nowrap;max-width:100%}
@@ -149,3 +149,18 @@ img{display:block}
 .spage .cc{--cc-paper:var(--navy);--cc-ink:#fff;--cc-muted:#e7ebf3;--cc-accent:var(--gold);--cc-line:rgba(255,255,255,.42)}
 .spage .cc .cc-fine{font-size:6.5pt;line-height:8pt;color:#e7ebf3}
 .panel.backside .cc .cc-fine{font-size:6.5pt;line-height:8pt;color:#e7ebf3}
+/* the backs' short card: the name's descenders keep clear of its box (owner 11/10 short card) */
+.cc.sw-short .cc-nameblock{padding-bottom:2.5pt}
+/* owner 11/10 standing rule: the plan prints on a clear background, the navy field showing through (templates/ivory/planink.js turns a
+   line-only plan's lines light); a plan with colored rooms keeps a light panel. On the field the floor names and the note read light. */
+.planwrap.onfield .plan-level{color:var(--gold)}
+.planwrap.onfield .plan-disclosure{color:var(--on-navy-soft)}
+.planwrap.onfield .plan-legend{color:#fff}
+
+/* the plan's side room lists (owner 11/12 review p35/p37): fill the dark field beside a tall plan */
+.plan-side{display:flex;flex-direction:column;justify-content:space-between}
+.plan-side .ps-h{font:600 9pt/11pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--gold);white-space:nowrap;overflow:hidden;padding-bottom:5pt;border-bottom:.8pt solid var(--gold)}
+.plan-side .ps-r{flex:1 1 0;display:flex;flex-direction:column;justify-content:center;border-bottom:.6pt solid rgba(255,255,255,.22)}
+.plan-side .ps-r:last-child{border-bottom:0}
+.plan-side .ps-n{font:600 10.5pt/13pt var(--font-body);color:var(--on-navy);white-space:nowrap;overflow:hidden}
+.plan-side .ps-d{font:500 15pt/18pt var(--font-display);color:var(--gold);white-space:nowrap;overflow:hidden;margin-top:1pt}

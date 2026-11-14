@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>BrochureDesk · The Four Windows fold-over</title>
 <link rel="stylesheet" href="four-windows.css">
+<script src="../engine/planink.js"></script>
 <script src="four-windows.js"></script>
 <!--
   BrochureDesk · The Four Windows · 11 x 17 fold-over
@@ -45,9 +46,9 @@ window.brochureReady = (async function(){
     h += `<div class="abs body" style="left:24pt;top:520pt;width:480pt;height:${il*13}pt" data-slot="front.intro" data-lines="${il}" data-cap="1">${esc(FW.txt(K.intro))}</div>`;
     // right: around the house, then the key sizes
     const sp = (K.specs || []).slice(0, 3), ol = K.outroLines || 6;
-    h += FW.kick(K.outroHead || 'Around the house', 'front.outrohead', 524, 424, 244);
-    h += `<div class="abs body" style="left:524pt;top:441pt;width:244pt;height:${ol*13}pt" data-slot="front.outro" data-lines="${ol}" data-cap="1">${esc(FW.txt(K.outro))}</div>`;
-    h += `<div class="specs abs" style="left:524pt;top:${588 - sp.length*23}pt;width:244pt">${sp.map((r,i)=>`<div><span class="l" data-slot="front.spec${i}.l" data-lines="1">${esc(r.l)}</span><span class="v" data-slot="front.spec${i}.v" data-lines="1">${esc(r.v)}</span></div>`).join('')}</div>`;
+    h += FW.kick(K.outroHead || 'Around the house', 'front.outrohead', 515, 424, 253);
+    h += `<div class="abs body" style="left:515pt;top:441pt;width:253pt;height:${ol*13}pt;text-align:justify" data-slot="front.outro" data-lines="${ol}" data-cap="1">${esc(FW.txt(K.outro))}</div>`;
+    h += `<div class="specs abs" style="left:515pt;top:${588 - sp.length*23}pt;width:253pt">${sp.map((r,i)=>`<div><span class="l" data-slot="front.spec${i}.l" data-lines="1">${esc(r.l)}</span><span class="v" data-slot="front.spec${i}.v" data-lines="1">${esc(r.v)}</span></div>`).join('')}</div>`;
     return h;
   }
 
@@ -60,15 +61,20 @@ window.brochureReady = (async function(){
       const x = 24 + i*(w + 10);
       h += FW.photo(D, c.id, x, 82, w, H1) + FW.cap(c, `back.out${i}`, x, 82 + H1 + 6, w, {lines: 4});
     });
-    const y2 = 345, R2 = 113;
+    // a narrow contact card at the foot with the nearby list beside it (owner 11/10/2026, standing rule for every back): the two
+    // detail pairs take the full width the list used to share
+    const y2 = 345, R2 = 113, pw2 = (744 - 14)/2, dpw = 168;
     (B.details || []).slice(0, 2).forEach((c, i) => {
-      const x = 24 + i*(278 + 14);
-      h += FW.photo(D, c.id, x, y2, 118, R2) + FW.cap(c, `back.det${i}`, x + 128, y2, 150, {lines: 8});
+      const x = 24 + i*(pw2 + 14);
+      h += FW.photo(D, c.id, x, y2, dpw, R2) + FW.cap(c, `back.det${i}`, x + dpw + 10, y2, pw2 - dpw - 10, {});
     });
-    const nx = 608, nw = 160, N = (B.nearby || []).slice(0, 5);
-    h += FW.kick(B.nearHead || 'Around the house', 'back.nearhead', nx, y2, nw);
-    h += `<div class="abs near" style="left:${nx}pt;top:${y2 + 15}pt;width:${nw}pt">${N.map((x,i)=>`<div style="display:flex;align-items:baseline;height:19.5pt;border-top:.6pt solid var(--line);padding-top:2pt">${x.d ? `<div class="d" style="width:58pt;flex:none" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}${x.u ? `<small>${esc(x.u)}</small>` : ''}</div>` : '<div style="width:8pt;flex:none;height:5pt;width:5pt;background:var(--accent);margin-right:8pt;align-self:center"></div>'}<div class="p" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}</div>`;
-    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', fine: B.footnote || '', fieldAccent: true, bottomGap: 0.5});
+    // round 3 (owner 11/10/2026: "narrower" = SHORTER TOP TO BOTTOM): the card runs the full width at the short size (64 pt,
+    // was 136 pt); the nearby list becomes one row across the page over it
+    const N = (B.nearby || []).slice(0, 5), cw5 = 744/Math.max(N.length, 1);
+    h += FW.kick(B.nearHead || 'Around the house', 'back.nearhead', 24, 468, 744);
+    h += `<div class="abs near" style="left:24pt;top:${468 + 15}pt;width:744pt;display:flex">${N.map((x,i)=>`<div style="width:${cw5}pt;flex:none;border-top:.6pt solid var(--line);padding:4pt 10pt 0 0;box-sizing:border-box">${x.d ? `<div class="d" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}${x.u ? `<small>${esc(x.u)}</small>` : ''}</div>` : ''}<div class="p" data-slot="back.near${i}.p" data-lines="1" style="white-space:nowrap;overflow:hidden">${esc(x.p)}</div></div>`).join('')}</div>`;
+    h += ContactCard.html([24, 536, 744, 66], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', size:'short', fine: '', fieldAccent: true, bottomGap: 0.5});
+    if(B.footnote) h += `<div class="abs fine" style="left:24pt;top:${536 + 66 + 2}pt;width:744pt;height:7pt;font-size:6pt;line-height:7pt;white-space:nowrap;overflow:hidden" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(B.footnote)}</div>`;
     return h;
   }
 
@@ -101,10 +107,10 @@ window.brochureReady = (async function(){
     const T = C.bottom || {};
     let h = FW.kick(T.kicker, 'bottom.kicker', 24, 26, 600) + FW.title(T.title, 'bottom.title', 24, 36, 744) + FW.rule(24, 71, 744);
     const H1 = 224, H2 = 134, pw = 436, tw = 144, y0 = 82;
-    h += FW.photo(D, T.big.id, 24, y0, pw, H1) + FW.cap(T.big, 'bottom.big', 24, y0 + H1 + 6, pw, {lines: 4, lg: true});
+    h += FW.photo(D, T.big.id, 24, y0, pw, H1) + FW.cap(T.big, 'bottom.big', 24, y0 + H1 + 6, pw, {lines: 5, lg: true});   // as many lines as the two tall captions beside it (owner rule: a caption row runs even)
     T.tall.slice(0, 2).forEach((c, i) => { const x = 24 + pw + 10 + i*(tw + 10);
-      h += FW.photo(D, c.id, x, y0, tw, H1) + FW.cap(c, `bottom.tall${i}`, x, y0 + H1 + 6, tw, {lines: 5}); });
-    const y1 = y0 + H1 + 6 + FW.capH(5) + 10, w3 = (744 - 20)/3;
+      h += FW.photo(D, c.id, x, y0, tw, H1) + FW.cap(c, `bottom.tall${i}`, x, y0 + H1 + 6, tw, {lines: 6}); });   // the small type runs six lines to end level with the big caption's five (owner 11/10: no blank under a caption)
+    const y1 = y0 + H1 + 6 + Math.max(FW.capH(6), FW.capH(5, true)) + 10, w3 = (744 - 20)/3;
     T.row.slice(0, 3).forEach((c, i) => { const x = 24 + i*(w3 + 10);
       h += FW.photo(D, c.id, x, y1, w3, H2) + FW.cap(c, `bottom.row${i}`, x, y1 + H2 + 6, w3, {lines: 4}); });
     return h;
@@ -124,6 +130,7 @@ window.brochureReady = (async function(){
   FW.fitLogos();
   ContactCard.fit(document);
   document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  if(window.PlanInk) PlanInk.applyAll(D, true);   // owner 11/10/2026 (p2): the listing plan's background is clear
   window.brochureCheck = () => FW.check(D, issues);
 })();
 </script>

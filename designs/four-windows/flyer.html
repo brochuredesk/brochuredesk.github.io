@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>BrochureDesk · The Four Windows two-sided flyer</title>
 <link rel="stylesheet" href="four-windows.css">
+<script src="../engine/planink.js"></script>
 <script src="four-windows.js"></script>
 <script src="../engine/setpieces.js"></script>
 <script src="../engine/baths.js"></script>
@@ -46,8 +47,8 @@
   .fx-gr .l{font:700 8.5pt/12pt var(--font-display);letter-spacing:1pt;text-transform:uppercase;color:var(--accent);white-space:nowrap}
   .fx-gr .v{font:800 14pt/16pt var(--font-display);color:#fff;white-space:nowrap}
   .fx-gr .end{position:absolute;left:0;right:0;height:.7pt;background:var(--line)}
-  .fx-wl{font:700 8pt/12pt var(--font-display);letter-spacing:1.2pt;text-transform:uppercase;color:#1c5d4a;white-space:nowrap;overflow:hidden}
-  .fx-wn{font-size:9pt;line-height:12pt;color:#34484a;overflow:hidden}
+  .fx-wl{font:700 8pt/12pt var(--font-display);letter-spacing:1.2pt;text-transform:uppercase;color:#8fd3b8;white-space:nowrap;overflow:hidden}
+  .fx-wn{font-size:9pt;line-height:12pt;color:#dbe9e3;overflow:hidden}   /* light: the plan window is clear on the green field (owner 11/10, p2) */
   .fx-szn{font-size:9pt;line-height:12pt;color:var(--text);overflow:hidden;border-top:.5pt solid var(--line);padding-top:7pt}
   .fx-sz{position:absolute;border:.8pt solid var(--accent)}
   .fx-sz .hd{position:absolute;left:12pt;right:12pt;font:700 8.5pt/10pt var(--font-display);letter-spacing:1.6pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden}
@@ -97,7 +98,7 @@ window.brochureReady = (async function(){
     const ls = SP.lineBoxes(meas), bw = meas.getBoundingClientRect().width, last = ls[ls.length - 1];
     const r = {k: ls.length, fill: last ? (last.r - last.l)/bw : 0}; memo.set(k, r); return r; };
   const fitText = (bts, w, font, n, lo) => {
-    lo = lo || 0.74; bts = bts.filter(x => x != null && (!Array.isArray(x) || x.length));
+    lo = lo || 0.82; bts = bts.filter(x => x != null && (!Array.isArray(x) || x.length));
     if(!bts.length) return null;
     let list = [''];
     bts.forEach((bt, i) => { const v = [].concat(bt).filter(Boolean), opts = i === 0 ? v : [null, ...v], nxt = [];
@@ -116,7 +117,7 @@ window.brochureReady = (async function(){
     }
     // the rough draft (D.preview): its preview lines can't hit an exact fit, and the order page refits them to each box after
     // layout (PreviewTools.fitPreview), so take the combination nearest the target length instead of failing the layout.
-    // Never on a paid piece: print files carry no preview text.
+    // Never on a paid piece: print files carry no preview text. (lineup ecd08a80, carried)
     if(!best && D.preview && list.length) return {t: list[0], sc: 0, fill: 0, near: true};
     return best;
   };
@@ -165,6 +166,7 @@ window.brochureReady = (async function(){
 
   // ======================================= FRONT =======================================
   if(side === 'front'){
+    const FBOT = 752;   // no contact card or brokerage logo on a flyer front (owner 11/10/2026): the page runs down to the fine print
     const K = FL.front || {}, CF = C.front || {};
     const heroId = (K.photo && P[K.photo]) ? K.photo : (CF.photo || Object.keys(P)[0]);
     const capsSrc = (K.caps && K.caps.length ? K.caps : []).slice(0, 3);
@@ -193,14 +195,14 @@ window.brochureReady = (async function(){
     outer: for(const ph of [104, 100, 96, 92, 88, 84]){
       for(const capN of [4, 3]){
         const cw = (CW - 28)/3, ok = capsSrc.length && capsSrc.every(c => can(beats(c.text), cw, FONT.cap, capN)); if(!ok) continue;
-        const rowH = ph + 6 + capH(capN, false), rowTop = BOT - rowH, blockBottom = rowTop - 14;
+        const rowH = ph + 6 + capH(capN, false), rowTop = FBOT - rowH, blockBottom = rowTop - 14;
         for(const n of [7, 6, 5, 8]){
           const blockH = 14 + ah + 5 + 10 + n*LH, by = blockBottom - blockH, hh = by - 14 - TOP;
           if(hh >= heroMin && can(introB, LW, FONT.wr, n)){ pick = {ph, capN, rowTop, n, blockH, by, hh, blockBottom}; break outer; }
         }
       }
     }
-    if(!pick){ const ph = 84, capN = 3, rowTop = BOT - (ph + 6 + capH(capN)), n = 5, blockH = 14 + ah + 5 + 10 + n*LH, blockBottom = rowTop - 14, by = blockBottom - blockH;
+    if(!pick){ const ph = 84, capN = 3, rowTop = FBOT - (ph + 6 + capH(capN)), n = 5, blockH = 14 + ah + 5 + 10 + n*LH, blockBottom = rowTop - 14, by = blockBottom - blockH;
       pick = {ph, capN, rowTop, n, blockH, by, hh: by - 14 - TOP, blockBottom}; issues.push({slot: 'front', kind: 'no-layout', detail: 'the write-up or captions do not fit with a whole-house hero'}); }
     if(pick.hh > heroMax){ const extra = pick.hh - heroMax; pick.hh = heroMax; pick.ph += Math.floor(extra/2); pick.rowTop -= Math.floor(extra/2); pick.blockBottom = pick.rowTop - 14; pick.by = pick.blockBottom - pick.blockH; pick.hh = pick.by - 14 - TOP; }
     const {by, hh, n} = pick;
@@ -211,10 +213,8 @@ window.brochureReady = (async function(){
     const ruleY = by + 14 + ah + 5;
     h += hair(X0, ruleY, LW);
     h += `<div class="abs fx-wr" style="left:${X0}pt;top:${ruleY + 10}pt;width:${LW}pt;height:${n*LH}pt" data-slot="front.about" data-para="1" data-min="${n}" data-nobal="1" data-fillbox="1" data-lines="${n}">${esc(text(introB, LW, FONT.wr, n, 'front.about'))}</div>`;
-    // the logo, then the details grid down to the write-up's last line
-    const lh0 = 34;
-    h += logoHTML(RX, by - 2, RW, lh0, 'flex-start');
-    const gTop = by + lh0 + 10, gh = pick.blockBottom - gTop, rh = gh/rows.length, vsz = Math.max(11, Math.min(15, rh*0.6));
+    // the details grid, from the kicker line down to the write-up's last line (no logo on the front; owner 11/13, Four Windows flyer front book)
+    const gTop = by, gh = pick.blockBottom - gTop, rh = gh/rows.length, vsz = Math.max(11, Math.min(15, rh*0.6));
     h += `<div class="abs fx-gr" style="left:${RX}pt;top:${gTop}pt;width:${RW}pt;height:${gh}pt">` +
       rows.map((r, i) => `<div class="r" style="top:${(i*rh).toFixed(2)}pt;height:${rh.toFixed(2)}pt"><span class="l" data-slot="front.grid${i}.l" data-lines="1">${esc(r[0])}</span><span class="v" style="font-size:${vsz.toFixed(1)}pt" data-slot="front.grid${i}.v" data-lines="1">${r[1]}</span></div>`).join('') +
       `<div class="end" style="top:${gh}pt"></div></div>`;
@@ -222,7 +222,7 @@ window.brochureReady = (async function(){
     const cw = (CW - 28)/3;
     capsSrc.forEach((c, i) => { const x = X0 + i*(cw + 14);
       h += phHTML(c.photo || c.id, x, pick.rowTop, cw, pick.ph, `front.photo${i}`) + capHTML(c, `front.cap${i}`, x, pick.rowTop + pick.ph + 6, cw, pick.capN, false, 'front.caps'); });
-    h += foot();
+    h += `<div class="abs" style="left:${X0}pt;top:762pt;width:${CW}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc((FL.fineprint) || 'Information deemed reliable but not guaranteed.')}</div>`;
   }
 
   // ======================================= BACK =======================================
@@ -290,6 +290,7 @@ window.brochureReady = (async function(){
     pair.forEach((c, i) => { const x = X0 + i*(pw2 + 10);
       h += phHTML(c.photo || c.id, x, y, pw2, pick.hB, `back.pair${i}`) + capHTML(c, `back.pair${i}`, x, y + pick.hB + 6, pw2, pick.nB, false, 'back.pair'); });
     y += pick.hB + 6 + capH(pick.nB, false) + 12;
+    h += hair(X0, y - 6, LCW);   // a hairline closes the photo rows over the nearby list (owner 11/10/2026: no blank band under a caption)
     h += nearHTML(nearby, X0, y, LCW, 18, nearHead);
     h += plHTML;
     h += foot(B.fine);
@@ -306,6 +307,7 @@ window.brochureReady = (async function(){
   };
   await SP.finish(D, 612, 792, h, issues, after);
   const prev = window.brochureCheck;
+  if(window.PlanInk) PlanInk.applyAll(D, true);   // owner 11/10/2026 (p2): the listing plan's background is clear
   window.brochureCheck = () => prev().concat(window.AgentCard ? AgentCard.trec(document, [...document.querySelectorAll('.logo img')]) : []);
 })();
 </script>

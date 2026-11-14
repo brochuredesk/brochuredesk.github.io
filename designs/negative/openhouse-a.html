@@ -5,6 +5,7 @@
 <title>BrochureDesk · Architectural Negative open house flyer · Black Block</title>
 <link rel="stylesheet" href="negative.css">
 <script src="negative.js"></script>
+<script src="lastfix.js"></script>
 <script src="../engine/setpieces.js"></script>
 <!--
   Architectural Negative · Open House flyer a "Black Block" (trim 612 x 792 pt; print: 0.25 in white margin around the paper).
@@ -41,6 +42,7 @@ window.brochureReady = (async function(){
   const issues = await SP.ready(D);
   document.body.dataset.mode = D.mode || 'email';
   const O = SP.openHouse(D), X = 36, W = 540;
+  if(!O.long || !O.time) issues.push({slot: 'oh.when', kind: 'oh-date-time-missing'});   /* every Open House piece shows its date and time, big (owner 11/10) */
   let h = '';
 
   // the event on a black block; the optional lines sit right of the time and push the block (and the photo) down
@@ -72,7 +74,7 @@ window.brochureReady = (async function(){
   h += SP.card(D, [X, 668, W, 90], {layout: 'panel', fieldAccent: true});
   h += `<div class="abs" style="left:${X}pt;top:765pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
 
-  await SP.finish(D, 612, 792, h, issues);
+  await SP.finish(D, 612, 792, h, issues, async () => { await document.fonts.ready; NG.fillBoxes(); if(window.LastFix) LastFix.run(document, Object.assign({}, PC.alts || {}, C.alts || {})); });
 })();
 </script>
 </body>

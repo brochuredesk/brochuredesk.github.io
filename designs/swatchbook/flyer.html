@@ -5,8 +5,11 @@
 <title>BrochureDesk · Swatchbook two-sided flyer</title>
 <link rel="stylesheet" href="swatchbook.css">
 <script src="swatchbook.js"></script>
+<script src="capfit.js"></script>
 <script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
 <script src="plan.js"></script>
+<script src="../engine/planink.js"></script>
+<script src="../engine/planrooms.js"></script>
 <script src="../engine/baths.js"></script>
 <script src="../engine/agentcard.js"></script>
 <!--
@@ -99,10 +102,11 @@ window.brochureReady = (async function(){
     if(L.yearBuilt) rows.push(['Built in', String(L.yearBuilt)]);
     const lot = String(L.lotSize || '').replace(/\s*lot$/i, '').replace(/Sq Ft/i, 'sq ft');
     const grid = rows.slice(0, lot ? 4 : 5); if(lot) grid.push(['Lot size', lot]);
+    // owner 11/10/2026: no contact block and no brokerage logo on the flyer front; the photo row runs down to the fine print
     const n = FF.lines || 7, blockH = 18 + n*14.5, LW = 306, HH = FF.heroH || 232;
     h += `<div class="kicker abs" style="left:${X}pt;top:30pt;width:${Wd}pt;height:12pt" data-slot="front.location" data-lines="1">${esc(FF.location || (L.neighborhood + '  ·  ' + SW.place(L)))}</div>`;
     h += `<div class="fl-street" id="street" style="left:${X}pt;top:46pt;width:${Wd}pt;height:46pt;font-size:40pt;line-height:46pt" data-slot="front.address" data-lines="1">${esc(L.address)}</div>`;
-    h += `<div class="flow" style="left:${X}pt;right:${X}pt;top:100pt;bottom:${792-646}pt;gap:14pt">
+    h += `<div class="flow" style="left:${X}pt;right:${X}pt;top:100pt;bottom:${792-752}pt;gap:14pt">
         <div style="flex:none;position:relative;height:${HH}pt">${SW.heroHtml(D, FF.hero || 'front', 0, 0, Wd, HH, 'front.hero', FF.side)}</div>
         <div style="flex:none;height:${blockH}pt;display:flex;gap:24pt">
           <div style="width:${LW}pt;flex:none"><div class="fl-sub" style="height:18pt;padding-top:1pt" data-slot="front.head" data-lines="1">${esc(FF.head || 'The house')}</div>${para(FF.intro, 'front.about', n, 14.5, 'intro')}</div>
@@ -115,23 +119,26 @@ window.brochureReady = (async function(){
   // ======================================= BACK =======================================
   else {
     const hasPlan = !!D.plan, T = (hasPlan ? FB.plan : FB.noplan) || {};
-    h += `<div class="kicker abs" style="left:${X}pt;top:30pt;width:420pt;height:12pt" data-slot="back.kicker" data-lines="1">${esc(T.kicker)}</div>`;
+    h += `<div class="kicker abs" style="left:${X}pt;top:30pt;width:${Wd}pt;height:12pt" data-slot="back.kicker" data-lines="1">${esc(T.kicker)}</div>`;
     h += `<div class="title abs" style="left:${X}pt;top:44pt;width:${Wd}pt;height:32pt" data-slot="back.title" data-lines="1">${esc(T.title)}</div>`;
     let flowTop, body = '';
     const P = (hasPlan ? FB.photos : FB.photosNoplan) || [];
     if(hasPlan){
       const planTop = 88, Hp = FB.planH || 240;
-      const r = IvoryPlan.draw(D.plan, {x: X + 12, y: planTop + 8, w: Wd - 24, h: Hp - 4}, {allowRotate: true});
+      const pbox = {x: X + 12, y: planTop + 8, w: Wd - 24, h: Hp - 4}, r = IvoryPlan.draw(D.plan, pbox, {allowRotate: true});
       window.planIssues = r.issues;
       const ly = planTop + Hp + 4;
-      h += `<div class="abs" style="left:${X}pt;top:${planTop}pt;width:${Wd}pt;height:${ly + 11 + 9 - planTop}pt;background:#fff"></div><div class="panel" style="left:0;top:0"><div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt;--paper:#fff">${r.html}</div></div>`;
+      // owner 11/10 standing rule: the plan's background goes clear on the navy (light lines, PlanInk); a colored-room plan keeps a light panel
+      const panelBg = !!(window.PlanInk && PlanInk.panel(D, true));
+      h += `${panelBg ? `<div class="abs" style="left:${X}pt;top:${planTop}pt;width:${Wd}pt;height:${ly + 11 + 9 - planTop}pt;background:#fff"></div>` : ''}<div class="panel" style="left:0;top:0"><div class="abs planwrap${panelBg ? '' : ' onfield'}" style="left:0;top:0;width:612pt;height:792pt;--paper:${panelBg ? '#fff' : 'transparent'}">${r.html}</div></div>`;
       const zs = IvoryPlan.zonesOf(D.plan);
       const leg = Object.entries(IvoryPlan.ZONES).filter(([k]) => zs.includes(k))
         .map(([k, z]) => `<span><i style="background:color-mix(in srgb, ${z.fill} ${Math.round(z.op*100)}%, var(--paper))"></i>${z.label}</span>`);
       if(zs.includes('outdoor')) leg.push(`<span><i style="background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--accent) 35%, var(--paper)) 0 .6pt, var(--paper) .6pt 2.8pt)"></i>Outdoor</span>`);
       const note = (D.plan.source || 'The listing floor plan, placed as given.') + ' Sizes are approximate.' + ((r.angle === 90 || r.angle === 270) ? ' Turned on its side.' : '');
-      h += `<div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt;--paper:#fff"><div class="plan-legend" style="left:${X + 12}pt;top:${ly}pt">${leg.join('')}</div>
+      h += `<div class="abs planwrap${panelBg ? '' : ' onfield'}" style="left:0;top:0;width:612pt;height:792pt;--paper:${panelBg ? '#fff' : 'transparent'}"><div class="plan-legend" style="left:${X + 12}pt;top:${ly}pt">${leg.join('')}</div>
             <div class="plan-disclosure" style="left:${X + 270}pt;width:${Wd - 282}pt;top:${ly + 1}pt" data-slot="back.plannote" data-lines="1" data-fine="1">${esc(note)}</div></div>`;
+      if(!panelBg) h += SW.planSides(D, r, pbox, FB.planRooms || ((D.sw || {}).back || {}).planRooms, 12);
       flowTop = ly + 11 + 9 + 14;
       body = `<div class="row" style="flex:1 1 0;gap:14pt">${P.map((c, i) => item(c, 'back.photo'+i, FB.planLines || 4, 1, 'big')).join('')}</div>`;
     } else {
@@ -154,11 +161,13 @@ window.brochureReady = (async function(){
         <div class="row" style="flex:1 1 0;gap:14pt">${P.map((c, i) => item(c, 'back.photo'+i, P.length > 2 ? 4 : 5, 1, 'big')).join('')}</div>`;
     }
     const near = (FB.nearby || (S.back || {}).nearby || []).slice(0, 3);
-    const compact = hasPlan && (FB.planH || 0) >= 260;
+    const compact = false;   // owner 11/10: the shorter contact card leaves room for the full-size nearby row
     const nearHTML = `<div class="near${compact ? ' compact' : ''}" style="margin-top:${compact ? 2 : 6}pt"><div style="display:contents">${near.map((x, i) => `<div class="c"><div class="d" data-slot="back.near${i}.dist" data-lines="1">${esc(x.dist)}</div><div class="p" data-slot="back.near${i}.place" data-lines="1">${esc(x.place)}</div></div>`).join('')}</div></div>`;
-    h += `<div class="flow onnavy" style="left:${X}pt;right:${X}pt;top:${flowTop}pt;bottom:${792-646}pt;gap:12pt">${body}${nearHTML}</div>`;
+    // owner 11/10/2026 (rule 1): a full-width contact card, shorter top to bottom, with the brokerage logo inside; the nearby row and
+    // everything above grow into the room it frees
+    h += `<div class="flow onnavy" style="left:${X}pt;right:${X}pt;top:${flowTop}pt;bottom:${792-SW.CARD_Y+12}pt;gap:12pt">${body}${nearHTML}</div>`;
+    h += SW.card([X, SW.CARD_Y, Wd, SW.CARD_H], A, hsSrc, b);
   }
-  h += ContactCard.html([X, 656, Wd, 98], Object.assign({}, A, {headshot: hsSrc}), Object.assign({}, b, {logo: b.logoOnDark || b.logo}), {layout: 'panel', size: 'mid', postcard: true, fine: '', bottomGap: 0.5, fieldAccent: true});
   h += `<div class="abs" style="left:${X}pt;top:762pt;width:${Wd}pt;height:8pt;font-size:6.5pt;line-height:8pt;color:var(--on-navy-soft);white-space:nowrap;overflow:hidden;text-align:center" data-slot="fineprint" data-lines="1" data-fine="1">Information deemed reliable but not guaranteed; buyer to verify.</div>`;
   const f = SW.frame(D, 612, 792, h);
   document.getElementById('pages').innerHTML = f.html;
@@ -166,10 +175,14 @@ window.brochureReady = (async function(){
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
   const st = document.getElementById('street'); if(st){ let fs = 40; while(st.scrollWidth > st.clientWidth + 1 && fs > 30){ fs -= 1; st.style.fontSize = fs + 'pt'; } }
   document.querySelectorAll('.plan-room span').forEach(e => { e.textContent = feet(e.textContent); });   // a drawn plan's sizes print in feet too
-  SW.fill();
+  await Promise.all([...document.fonts].filter(f => f.status !== 'loaded').map(f => f.load().catch(() => {}))); await document.fonts.ready; SW.fill();   // measure with the real fonts (owner 11/10: never shorter)
   SW.fitLogos();
+  await Promise.all([...document.fonts].filter(f => f.status !== 'loaded').map(f => f.load().catch(() => {}))); await document.fonts.ready; await new Promise(r => setTimeout(r, 60)); SW.fill(); CapFit.run(document.querySelectorAll('.cap .a'));
+  SW.boxFit(document.querySelectorAll('.fbox .wi .t')); document.querySelectorAll('.fbox .wh .h').forEach(h => SW.headFit(h));
   ContactCard.fit(document);
+  if(window.PlanInk && D.plan) PlanInk.applyAll(D, true);   // the plan sits on the navy field
   issues.push(...SW.focus(D));
+  SW.lastFix();   // owner 11/10: no last line under 80% (a small type step, same words)
   window.brochureCheck = () => SW.check(D, (window.planIssues || []).concat(issues));
   window.photoPlacements = SW.placements;
 })();

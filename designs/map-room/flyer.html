@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <title>BrochureDesk · The Map Room two-sided flyer</title>
 <link rel="stylesheet" href="map-room.css">
+<script src="../engine/planink.js"></script>
+<script src="../engine/planrooms.js"></script>
 <script src="map-room.js"></script>
 <script src="../engine/setpieces.js"></script>
 <script src="../engine/baths.js"></script>
@@ -155,15 +157,16 @@ window.brochureReady = (async function(){
 
   // ======================================= FRONT =======================================
   if(side === 'front'){
+    const FBOT = 752;   // no contact card or brokerage logo on a flyer front (owner 11/10/2026): the page runs down to the fine print
     const K = FL.front || {}, caps = (K.caps || []).slice(0, 3), stack = (K.stack || []).slice(0, 2), heroId = K.hero || 'hero';
     const GAP = 12, CAPW = (CW - 2*GAP)/3, LW = 352, RX = X0 + LW + 10, RW = X0 + CW - RX;
     const capN = commonN(caps.map(c => c.text), CAPW, CAPSTYLE, [3, 4, 5]) || 3;
     let pick = null;
     outer: for(const PH of [104, 100, 96, 92, 108, 88]) for(const N of [7, 8, 6, 9]){
-      const capTop = BOT - capH(capN) - 6 - PH, wb = capTop - 14, HH = wb - N*14 - 120;
-      if(HH >= 232 && HH <= 266 && commonN([K.intro], LW, BODYSTYLE, [N])){ pick = {PH, N, capTop, wb, HH}; break outer; }
+      const capTop = FBOT - capH(capN) - 6 - PH, wb = capTop - 14, HH = wb - N*14 - 120;
+      if(HH >= 232 && HH <= 360 && commonN([K.intro], LW, BODYSTYLE, [N])){ pick = {PH, N, capTop, wb, HH}; break outer; }
     }
-    if(!pick){ const PH = 96, N = 7, capTop = BOT - capH(capN) - 6 - PH, wb = capTop - 14; pick = {PH, N, capTop, wb, HH: wb - N*14 - 120}; }
+    if(!pick){ const PH = 96, N = 7, capTop = FBOT - capH(capN) - 6 - PH, wb = capTop - 14; pick = {PH, N, capTop, wb, HH: wb - N*14 - 120}; }
     const {PH, N, capTop, wb, HH} = pick, sh = (HH - 10)/2;
     let ph = SP.photo(D, heroId, X0, 36, LW, HH, 'front.hero');
     stack.forEach((id, i) => { ph += SP.photo(D, id, RX, 36 + i*(sh + 10), RW, sh, 'front.stack' + i); });
@@ -173,14 +176,13 @@ window.brochureReady = (async function(){
     h += `<div class="abs fl-addr" style="left:${X0 - 1}pt;top:${AB + 14}pt;width:${LW + 2}pt;height:40pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
     h += MR.rule(X0, AB + 60, LW);
     h += para('front.about', K.intro, X0, AB + 72, LW, N, {fill: true});
-    h += logo(RX, AB - 2, RW, 34, 'flex-start');
-    h += detailGrid(RX, AB + 42, RW, wb - (AB + 42));
+    h += detailGrid(RX, AB, RW, wb - AB);
     // three captioned photos
     let row = '', cw = CAPW;
     caps.forEach((c, i) => { const x = X0 + i*(cw + GAP); row += SP.photo(D, c.id, x, capTop, cw, PH, 'front.cap' + i); });
     h += `<div class="abs" data-gapcheck="front.row" style="left:0;top:0">${row}</div>`;
     caps.forEach((c, i) => { h += cap(c, `front.cap${i}`, X0 + i*(cw + GAP), capTop + PH + 6, cw, capN, 'front'); });
-    h += footer();
+    h += `<div class="abs fl-fine" style="left:${X0}pt;top:762pt;width:${CW}pt;height:8pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(fine)}</div>`;
   }
 
   // ======================================= BACK =======================================
@@ -190,7 +192,10 @@ window.brochureReady = (async function(){
     h += logo(X0 + CW - 150, 22, 150, 30, 'flex-end');
     h += `<div class="abs title one" style="left:${X0}pt;top:50pt;width:${CW - 160}pt;height:34pt" data-slot="back.title" data-lines="1" data-fit="20">${esc(V.title || '')}</div>`;
     h += MR.rule(X0, 84, CW);
-    const floors = (B.floors || []).map(f => ({label: f.label, rooms: f.rooms.map(r => [r[0], r[1]])}));
+    const floors0 = (B.floors || []).map(f => ({label: f.label, rooms: f.rooms.map(r => [r[0], r[1]])}));
+    // beside the plan, the room sizes are the plan's own names and sizes (owner 11/13/2026, captions round 3 Q2); floor i of the list
+    // reads floor i of the plan
+    const floors = hasPlan && window.PlanRooms ? floors0.map((f, i) => ({label: f.label, rooms: (floors0.length === (D.plan.levels || []).length ? PlanRooms.floor(D, f.rooms.map(r => ({name: r[0], size: r[1]})), i) : PlanRooms.match(D, f.rooms.map(r => ({name: r[0], size: r[1]})))).map(q => [q.name, q.size])})) : floors0;
     const stripY = BOT - STRIP_H;
 
     if(hasPlan){
@@ -252,6 +257,7 @@ window.brochureReady = (async function(){
     pending.length = 0;
   };
   await SP.finish(D, 612, 792, h, issues, after);
+  if(window.PlanInk) PlanInk.applyAll(D, false);   // owner 11/10/2026 (p2): the listing plan's background is clear
 })();
 </script>
 </body>

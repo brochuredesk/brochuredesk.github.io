@@ -5,6 +5,9 @@
 <title>Midnight Residence fold-over</title>
 <link rel="stylesheet" href="midnight.css">
 <script src="midnight.js"></script>
+<script src="lastfix.js"></script>
+<script src="capfit.js"></script>
+<script src="../engine/planink.js"></script>
 <!--
   Midnight Residence · 11 x 17 fold-over
   11 x 17 sheet folded once across the middle: four landscape 11 x 8.5 panels (792 x 612 pt), 0.125 in (9 pt) bleed.
@@ -61,8 +64,10 @@ window.brochureReady = (async function(){
   // ================= BACK =================
   function back(){
     const B = C.back || {};
-    let h = MN.kick(B.kicker, 'back.kicker', 24, 26, 700) + MN.title(B.title, 'back.title', 24, 36) + MN.rule(24, 71, 744);
-    const y0 = 82, H = 374, bw = B.boardW;
+    // owner 11/10/2026 (round 3, rule 1): the contact card runs the full width along the foot, only shorter top to bottom (two rows),
+    // with the brokerage logo inside it (no logo by the title); the plan, the photos and the right column end on the card's rule
+    let h = MN.kick(B.kicker, 'back.kicker', 24, 26, 744) + MN.title(B.title, 'back.title', 24, 36, 744) + MN.rule(24, 71, 744);
+    const CARD_Y = 528, CARD_H = 62, y0 = 82, H = CARD_Y - 14 - y0, HR = H, bw = B.boardW;
     const mx = 24 + bw + G, cw = Math.floor((744 - bw - 2*G)/2), rx = mx + cw + G;
     const caps = (list, x, w, slot) => {   // two photos stacked, each with its caption
       const n = Math.max(...list.map((c, i) => mn(`${slot}${i}`)), ...list.map(c => MN.need(c.text, w)));
@@ -72,7 +77,8 @@ window.brochureReady = (async function(){
     };
     // left: the plan on a white board, or two more photos
     if(hasPlan){
-      h += `<div class="board" style="left:24pt;top:${y0}pt;width:${bw}pt;height:${H}pt"></div>`;
+      const lightPanel = window.PlanInk ? PlanInk.panel(D, true) : true;   // a colored-room plan keeps its light panel; a line plan sits on the field in a gold hairline frame
+      h += `<div class="board${lightPanel ? '' : ' clear'}" style="left:24pt;top:${y0}pt;width:${bw}pt;height:${H}pt"></div>`; if(!lightPanel) document.body.classList.add('plan-clear');
       const pl = MN.plan(D, {x: 24 + 10, y: y0 + 10, w: bw - 20, h: H - 10 - 20});
       issues.push(...pl.issues); h += pl.html;
       h += `<div class="abs" style="left:24pt;top:${y0 + H - 15}pt;width:${bw}pt;height:8pt"><div class="pnote" style="top:0" data-slot="back.plannote" data-fine="1" data-lines="1">${esc(B.planNote || 'Approximate; not to scale.')}</div></div>`;
@@ -88,10 +94,10 @@ window.brochureReady = (async function(){
     const PL = B.paraLines || (noAround ? 6 : 5), used = 18 + 28 + PL*13 + (noAround ? 0 : 14 + around.length*15 + 6);
     const ph = mid.ph, capH3 = MN.capH(n3);
     // with no Around list the photo runs taller, so the column still fills to the card
-    const phR = noAround ? Math.floor(H - capH3 - 6 - used - 2*8) : ph;
+    const phR = noAround ? Math.floor(HR - capH3 - 6 - used - 2*8) : Math.max(60, Math.floor(HR - capH3 - 6 - used - 3*8));
     h += MN.photo(D, P.id, rx, y0, cw, phR) + MN.cap(P, 'back.photo2', rx, y0 + phR + 6, cw, {lines: n3, min: mn('back.photo2'), max: mn('back.photo2')});
     let y = y0 + phR + 6 + capH3;
-    const gap = noAround ? 8 : Math.floor((y0 + H - y - used + 6)/3) ;
+    const gap = noAround ? 8 : Math.floor((y0 + HR - y - used + 6)/3) ;
     y += gap;
     h += MN.kick(B.head, 'back.head', rx, y, cw) + MN.rule(rx, y + 12, cw);
     y += 18;
@@ -104,8 +110,10 @@ window.brochureReady = (async function(){
       h += `<div class="abs around" style="left:${rx}pt;top:${y + 14}pt;width:${cw}pt">${around.map((x, i) => `<div class="r"><div class="d" data-slot="back.around${i}.d" data-lines="1">${esc(x.d)}${x.u === '' || x.u == null ? '' : `<small>${esc(x.u)}</small>`}</div><div class="p" data-slot="back.around${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}</div>`;
     }
     // standard contact card + footer, in the set's colors
-    h += MN.rule(24, 462, 744);
-    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', fine: B.footnote || ''});
+    h += MN.rule(24, CARD_Y - 7, 744);
+    h += ContactCard.html([24, CARD_Y, 744, CARD_H], Object.assign({}, A, {headshot: hs}), b, {layout: 'panel', size: 'short', bottomGap: .5, grow: 0,
+      s: {name: 22, nameFloor: 16, desigInline: true, wrap: false, phone: 15, line: 10, office: 10, hsW: 52, hsGap: 16, pad: [7, 16, 6], rowGap: 22, panelW: 210, panelPad: [4, 10], panelGap: 2, officeLH: 1.15, logo: {wide: [150, 27], square: [30, 30], tall: [32, 32]}}});
+    h += `<div class="abs" style="left:24pt;top:${CARD_Y + CARD_H + 4}pt;width:744pt;height:8pt;font-size:6pt;line-height:8pt;color:#c3cad8;white-space:nowrap;overflow:hidden" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(B.footnote || 'Information deemed reliable but not guaranteed.')}</div>`;
     return h;
   }
 
@@ -161,6 +169,8 @@ window.brochureReady = (async function(){
   document.getElementById('pages').innerHTML = html;
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
   MN.fitLogos();
+  if(window.PlanInk) PlanInk.applyAll(D, true);   // owner 11/10 (standing rule): the plan's background clear, light lines on the navy field
+  await document.fonts.ready; CapFit.run(document.querySelectorAll('.cap .tx[data-cap]')); if(window.LastFix) LastFix.run(document, C.alts || {}); CapFit.noWide(document.querySelectorAll('.cap .tx[data-cap]'));
   ContactCard.fit(document);
   document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
   window.brochureCheck = () => MN.check(D, issues);

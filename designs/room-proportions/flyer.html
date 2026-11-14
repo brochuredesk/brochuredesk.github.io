@@ -41,6 +41,11 @@
   .tick{position:absolute;width:.8pt;height:7pt;background:var(--ink)}
   .tickn{position:absolute;font:400 8pt/9pt var(--font-body);color:var(--ink);text-align:center;width:30pt;white-space:nowrap}
   .fl-title{font-size:34pt;line-height:40pt;font-weight:500}
+  .ftable{display:flex;flex-direction:column}
+  [data-slot="back.read"]{font-size:11pt}   /* the fitter starts from the box's own size */
+  .ftable .fr{flex:1;display:flex;justify-content:space-between;align-items:center;border-top:.6pt solid var(--line);font:400 10.6pt/13pt var(--font-body);color:var(--muted)}
+  .ftable .fr:last-child{border-bottom:.6pt solid var(--line)}
+  .ftable .fr b{font-weight:700;color:var(--ink);white-space:nowrap}
 </style>
 </head>
 <body data-mode="email">
@@ -71,8 +76,7 @@ RP.whenFonts(function(){
   };
   const photo = (id, x, y, w, h) => RP.pframe(D, id, `left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt`);
   const fine = esc(C.fineprint || 'Information deemed reliable but not guaranteed; buyer to verify. Room sizes are approximate, from the listing.');
-  const cardAndFine = () => RP.card(D, {x: 36, y: 664, w: 540, h: 92})
-    + `<div class="abs" style="left:36pt;top:764pt;width:540pt;font-size:6pt;line-height:8pt;height:8pt;white-space:nowrap;color:var(--muted)" data-slot="fineprint" data-lines="1" data-fine="1">${fine}</div>`;
+  const fineOnly = () => `<div class="abs" style="left:36pt;top:764pt;width:540pt;font-size:6pt;line-height:8pt;height:8pt;white-space:nowrap;color:var(--muted)" data-slot="fineprint" data-lines="1" data-fine="1">${fine}</div>`;
   // the details grid: gold-square rows; the lot size is the fifth line when the listing has one, otherwise the four lines grow to fill
   const gridRows = () => {
     const r = [], bn = BD.baths(L);
@@ -87,27 +91,44 @@ RP.whenFonts(function(){
   };
   const stack = (rows, x, y, w, h) => `<div class="stack-f" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt">${rows.map((s, i) => `<div class="r" data-slot="front.stat${i}" data-lines="1"><b></b><span>${s}</span></div>`).join('')}</div>`;
 
+  // the flyer's copy: data.companion.flyer when the writer gives it; otherwise the package's own true sentences (the
+  // fold-over's intro and cover lines, its photo captions and its "Reading the plan" lines), so no box ever prints empty
+  const R = (D.copy || {}).rp || {}, Tx = id => (R.text || {})[id] || {t: '', s: []};
+  const items = RP.rooms(D).filter(i => P[i.id] && P[i.id].src);
+  const frontItem = items.filter(i => i.kind === 'front').sort((a, c) => (RP.fullHouse(D, c.id) - RP.fullHouse(D, a.id)) || a.order - c.order)[0];
+  const inner = items.filter(i => i.kind !== 'front' && i.kind !== 'outdoor' && Tx(i.id).s.length)
+    .sort((a, c) => a.pr - c.pr || a.order - c.order);
+  // one photo per kind of room first (living, kitchen, primary...), the rest after
+  const seenK = {}, ranked = inner.map(i => { seenK[i.kind] = (seenK[i.kind] || 0) + 1; return Object.assign({}, i, {pr2: i.pr + 3*(seenK[i.kind] - 1)}); })
+    .sort((a, c) => a.pr2 - c.pr2 || a.order - c.order);
+  const asCap = i => ({photo: i.id, t: Tx(i.id).t, s: Tx(i.id).s});
+  const fbFront = {hero: frontItem && frontItem.id, about: [].concat(R.intro || [], ((C.postcard || {}).back) || []).slice(0, 8), caps: ranked.slice(0, 3).map(asCap)};
+  const fbBack = {read: R.read || [], row: ranked.slice(3).filter(i => i.sz).slice(0, 3).map(asCap)};
+  if(fbBack.row.length < 3) fbBack.row = fbBack.row.concat(ranked.slice(3).filter(i => !i.sz)).slice(0, 3).map(c => c.photo ? c : asCap(c));
+  const BOT = 756;   // owner 11/10/2026: no contact block on the front, a narrow one on the back; the content runs to the fine print
+
   let h = '', after = () => {};
 
   // ======================================= FRONT =======================================
   if(side === 'front'){
-    const K = FL.front || {}, caps = (K.caps || []).slice(0, 3);
+    const K = FL.front || fbFront, caps = (K.caps || []).slice(0, 3);
     caps.forEach(c => { c.id = c.photo || c.id; });
     const heroId = K.hero || Object.keys(P)[0], hp = P[heroId] || {}, ap = (hp.w && hp.h) ? hp.w/hp.h : 1.5, bx = hp.box;
     const place = [L.neighborhood, RP.placeZip(L)].filter(Boolean).join(' · ');
     const rows = gridRows();
     const cw = (CW - 2*GAP)/3;
-    const N = RP.bestN(caps.map(c => ({s: sents(c.s), w: cw})), 4), capH = RP.capH(N);
+    const N = RP.bestN(caps.map(c => ({s: sents(c.s), w: cw})), 5), capH = RP.capH(N);
     // the whole house must fit its frame: a frame this wide shows 1/ratio of the photo's height
     const heroMin = bx ? Math.ceil(CW*((bx[3] - bx[1]) + 0.03)/ap) : 0, tall = heroMin > 275;
     if(!tall){
       // ---- A: the house across the top, address under it, the write-up and the grid side by side, three captioned photos, the card
+      // owner 11/10/2026: no contact block and no logo on the front; the house, the photo row and the write-up grow into the room
       let pick = null;
-      for(const ph of [104, 100, 96, 92, 88]){
-        const rowTop = 650 - capH - 6 - ph, heroH = Math.max(heroMin, 250), blockTop = 36 + heroH + 84, blockH = rowTop - 14 - blockTop;
-        if(blockH >= 96){ pick = {ph, rowTop, heroH, blockTop, blockH}; break; }
+      for(const ph of [150, 144, 138, 132, 126, 120, 112, 104]){
+        const rowTop = BOT - capH - 6 - ph, heroH = Math.max(heroMin, 296), blockTop = 36 + heroH + 84, blockH = rowTop - 14 - blockTop;
+        if(blockH >= 104){ pick = {ph, rowTop, heroH, blockTop, blockH}; break; }
       }
-      if(!pick){ const ph = 88, rowTop = 650 - capH - 6 - ph, heroH = Math.max(heroMin, 240); pick = {ph, rowTop, heroH, blockTop: 36 + heroH + 84, blockH: rowTop - 14 - (36 + heroH + 84)}; }
+      if(!pick){ const ph = 104, rowTop = BOT - capH - 6 - ph, heroH = Math.max(heroMin, 260); pick = {ph, rowTop, heroH, blockTop: 36 + heroH + 84, blockH: rowTop - 14 - (36 + heroH + 84)}; }
       const {ph, rowTop, heroH, blockTop, blockH} = pick, end = 36 + heroH, LW = 318, GX = X0 + LW + 24, GW = X0 + CW - GX;
       h += photo(heroId, 36, 36, CW, heroH);
       h += `<div class="abs fl-place" style="left:36pt;top:${end + 12}pt;width:540pt;height:10pt" data-slot="front.place" data-lines="1">${esc(place)}</div>`;
@@ -119,7 +140,7 @@ RP.whenFonts(function(){
       after = () => document.querySelectorAll('.fl-addr').forEach(el => { let z = 46; while(el.scrollWidth > el.clientWidth + 1 && z > 34){ z -= 1; el.style.fontSize = z + 'pt'; } });
     } else {
       // ---- B: a tall, narrow house stands in a left column; the address, the grid and the write-up fill the column beside it
-      const ph = 100, rowTop = 650 - capH - 6 - ph, HH = rowTop - 14 - 36, HW = 300, RX = X0 + HW + 20, RW = X0 + CW - RX;
+      const ph = 132, rowTop = BOT - capH - 6 - ph, HH = rowTop - 14 - 36, HW = 300, RX = X0 + HW + 20, RW = X0 + CW - RX;
       h += photo(heroId, 36, 36, HW, HH);
       h += `<div class="abs fl-place" style="left:${RX}pt;top:36pt;width:${RW}pt;height:10pt" data-slot="front.place" data-lines="1">${esc(place)}</div>`;
       // the address wraps at 36 pt; if that leaves a short last line (the owner's 3/4 rule, 11/2/2026), it steps down until it sits on one line
@@ -132,53 +153,121 @@ RP.whenFonts(function(){
       { const f0 = lastFill(36); if(f0.n > 1 && f0.k < .75){ for(let f = 35; f >= 26; f--){ if(lastFill(f).n === 1){ afs = f; break; } } } }
       const aH = RP.measure(addrAt(afs), RW - 6), alh = afs*7/6;
       h += `<div class="abs fl-addr" style="left:${RX - 1}pt;top:52pt;width:${RW + 1}pt;height:${aH + 2}pt;font-size:${afs}pt;line-height:${alh}pt;white-space:normal" data-slot="front.street" data-lines="${Math.round(aH/alh)}">${esc(L.address)}</div>`;
-      const gTop = 52 + aH + 16, gH = rows.length*25;
+      // the write-up takes the lines its text sets in (a line to spare for larger type); the grid's rows grow into the rest
+      const gTop = 52 + aH + 16, kA = Math.max(3, Math.round(RP.measure(`<div style="font-size:12pt;line-height:15pt">${esc(sents(K.about).join(' '))}</div>`, RW)/15));
+      // the line count the whole write-up fills (every line 80%+), tried on a hidden copy of the box
+      let nA = kA + 1;
+      { const pr = document.createElement('div'); pr.className = 'body'; pr.dataset.lhguard = '1.24';
+        pr.style.cssText = `position:absolute;left:-9999pt;top:0;visibility:hidden;width:${RW}pt;line-height:15pt`; document.body.appendChild(pr);
+        const all = sents(K.about).join(' ').length; let bestLen = -1;
+        for(const q of [kA, kA + 1, kA - 1, kA + 2, kA - 2]){ if(q < 3) continue; const ok = RP.fillText(pr, sents(K.about), q), len = pr.textContent.length;
+          if(ok && len >= all){ nA = q; break; } if(ok && len > bestLen){ bestLen = len; nA = q; } }
+        pr.remove(); }
+      let wH = nA*15 + 2, gH = 36 + HH - gTop - 14 - wH;
+      if(gH > rows.length*44){ gH = rows.length*44; wH = 36 + HH - gTop - 14 - gH; }
+      if(gH < rows.length*25){ gH = rows.length*25; wH = 36 + HH - gTop - 14 - gH; }
       h += stack(rows, RX, gTop, RW, gH);
-      const wTop = gTop + gH + 14, wH = 36 + HH - wTop, n = Math.floor((wH - 2)/14.4), lh = (wH - 2)/n;
-      h += sentBox('front.about', RX, wTop, RW, n, lh, 10.5, K.about, `color:var(--ink);height:${wH}pt`);
+      const wTop = gTop + gH + 14, n = Math.max(nA, Math.floor((wH - 2)/15)), lh = (wH - 2)/n;
+      h += sentBox('front.about', RX, wTop, RW, n, lh, 10.5, K.about, `color:var(--ink);height:${wH}pt`).replace('data-fill=', `data-lhguard="1.24" data-fillmin="${Math.max(3, nA)}" data-fill=`);
       caps.forEach((c, i) => { const x = X0 + i*(cw + GAP); h += photo(c.id, x, rowTop, cw, ph) + capHTML(c, x, rowTop + ph + 6, cw, N); });
     }
-    h += cardAndFine();
+    h += fineOnly();
   }
 
   // ======================================= BACK =======================================
   else {
-    const B = FL.back || {}, row = (B.row || []).slice(0, 3);
-    h += `<div class="abs kick" style="left:36pt;top:36pt;width:540pt;height:10pt" data-slot="back.kicker" data-lines="1">${esc(B.kicker || L.address)}</div>`;
-    h += `<div class="abs display fl-title" style="left:35pt;top:50pt;width:541pt;height:40pt" data-slot="back.title" data-lines="1">${esc(B.title || 'Floor Plan')}</div>`;
-    h += `<div class="abs" style="left:36pt;top:94pt;width:540pt;height:1pt;background:var(--ink);opacity:.55"></div>`;
-    const PY = 106, ZMAX = 228;
-    // the plan at one scale: a narrower plan frame leaves "Reading the plan" a wider column; a wide, short plan frames itself to its height
-    let TW = 190, PW = CW - TW - 18, run = RPPlan.draw(D.plan, {x: X0, y: PY, w: PW, h: ZMAX}, {allowRotate: true});
-    if(run.usedH < 0.8*ZMAX){ PW = 360; TW = CW - PW - 18; run = RPPlan.draw(D.plan, {x: X0, y: PY, w: PW, h: ZMAX}, {allowRotate: true}); }
-    const Z = Math.min(ZMAX, Math.max(150, Math.ceil(run.usedH) + 6));
-    // the plan sits centered in a box of its own height
-    run = RPPlan.draw(D.plan, {x: X0, y: PY, w: PW, h: Z}, {allowRotate: true, angle: run.angle});
-    planIssues.push(...run.issues); h += run.html.replace(/(\d+)\s*x\s*(\d+)(?![\d'])/g, "$1' x $2'"); document.body.dataset.planAngle = run.angle;
-    // Reading the plan: the same top and bottom edge as the plan
-    const RX = X0 + PW + 18, n = Math.floor((Z - 21)/15), lh = (Z - 21)/n;
-    h += `<div class="abs read-k" style="left:${RX}pt;top:${PY}pt;width:${TW}pt;height:13pt" data-slot="back.readk" data-lines="1">Reading the plan</div>`;
-    h += sentBox('back.read', RX, PY + 21, TW, n, lh, 11, B.read, `color:var(--ink);height:${Z - 21}pt`);
-    // the room photos' frames follow their rooms' shapes
+    const B = FL.back || fbBack, row = (B.row || []).slice(0, 3);
+    // owner 11/10/2026 (rule 1 of the 11-09 reply): the card runs the full width at the foot again, SHORTER top to bottom
+    // (72 pt, was 92 before round 2); the title and the home's facts run the full width; the plan, the scale strip and the
+    // photos take the rest
+    const CH = 108, CBH = 72, BOTb = 764 - 8 - CBH - 12, SH = 88;
+    // the room photos' frames follow their rooms' shapes (at the bottom, down to the fine print)
     row.forEach(c => { c.id = c.photo || c.id; });
     const ratio = c => RP.frameRatio(byId[c.id] || {}), sumR = row.reduce((a, c) => a + ratio(c), 0);
-    const RH = Math.max(120, Math.min(150, (CW - 2*GAP)/sumR)), rw = row.map(c => ratio(c)*RH), extra = (CW - rw.reduce((a, c) => a + c, 0))/(row.length - 1);
-    const rn = RP.bestN(row.map((c, i) => ({s: sents(c.s), w: rw[i]})), 4), rcH = RP.capH(rn);
-    const rowTop = 650 - rcH - 6 - RH;
-    // rooms drawn to one scale (the strip takes the height between the plan and the photos)
+    const RH = Math.max(120, Math.min(156, (CW - 2*GAP)/sumR)), rw = row.map(c => ratio(c)*RH), extra = (CW - rw.reduce((a, c) => a + c, 0))/(row.length - 1);
+    const rn = RP.bestN(row.map((c, i) => ({s: sents(c.s), w: rw[i]})), 5), rcH = RP.capH(rn);
+    const rowTop = BOTb - rcH - 6 - RH;
+    // reviewer 11/12 (p17): the plans may print turned a quarter; "Reading the plan" then names the sides as they print
+    // (the writer describes the plan upright: street at the bottom)
+    const turnRead = ang => { const M = {90: {bottom:'left', right:'bottom', top:'right', left:'top'}, 180: {bottom:'top', top:'bottom', left:'right', right:'left'}, 270: {bottom:'right', right:'top', top:'left', left:'bottom'}}[ang];
+      if(!M) return B.read;
+      const side = d => d === 'top' || d === 'bottom' ? `${d} edge` : `${d} side`;
+      // one pass, so a side already turned is never turned twice
+      return (B.read || []).map(t => String(t).replace(/\bat the (bottom|top) of (each|the) (floor|plan)|\b(up|along|on|down) the (right|left) side\b/g,
+        (m, d, e, f, v, d2) => d ? `along the ${side(M[d])} of ${e} ${f}` : `${v === 'up' ? 'along' : v} the ${side(M[d2])}`)); };
+    const readText = sents(B.read).join(' '), readHz = (w, z) => RP.measure(`<div class="body" style="font-size:${z}pt;line-height:${(z*1.36).toFixed(2)}pt;color:var(--ink)">${esc(readText)}</div>`, w), readH = w => readHz(w, 11);
+    // the facts under the title, gold squares between them (never one at a line's end)
+    const st = RP.stats(L), fW = t => (() => { const m = document.createElement('span'); m.className = 'facts'; m.style.cssText = 'position:absolute;left:-9999pt;display:inline-flex;border:0'; m.innerHTML = `<span class="f">${esc(t)}</span>`; document.body.appendChild(m); const w = m.getBoundingClientRect().width*.75; m.remove(); return w; })();
+    const wrapFacts = W => { const fl = []; st.forEach(t => { const cur = fl[fl.length - 1], w = fW(t); if(cur && cur.w + 25 + w <= W) { cur.t.push(t); cur.w += 25 + w; } else fl.push({t: [t], w}); }); return fl; };
+    const fTop = 98;
+    // reviewer 11/12 (p17): the plans never print smaller than the round 2 Before. "Reading the plan" may move up into the header,
+    // beside the title and facts (where the card sat before 11/10), so the plans run across the page at full size. That header
+    // is used when it prints the plans larger than the other arrangements.
+    const LWH = 250, HX = 36 + LWH + 20, HW = 576 - HX;
+    const head = (() => { const fl = wrapFacts(LWH), fStep = fl.length > 2 ? 16 : 24, leftB = fTop + fl.length*fStep;
+      for(const z of [11, 10.5, 10, 9.5]){ const lh = +(z*1.36).toFixed(2), n = Math.round(readHz(HW, z)/lh), rightB = 36 + 21 + n*lh;
+        const HB = Math.ceil(Math.max(leftB, rightB) + 4), PY = HB + 12, Zx = rowTop - 10 - (24 + SH) - 10 - PY;
+        if(rightB <= leftB + 8 || z === 9.5){ const r = RPPlan.draw(D.plan, {x: X0, y: PY, w: CW, h: Zx}, {allowRotate: true}); return {fl, fStep, z, lh, n, HB, PY, Zx, r, area: r.usedW*r.usedH}; } } })();
+    const fl0 = wrapFacts(CW), fStep0 = fl0.length > 2 ? 16 : 24, HB0 = fTop + fl0.length*fStep0 + 4, PY0 = HB0 + 12, ZMAX0 = rowTop - 10 - (24 + SH) - 10 - PY0;
+    let best = null;
+    const consider = o => { if(!best || o.score > best.score) best = o; };
+    for(let pw = 120; pw <= CW - 18 - 180; pw += 6){
+      const r = RPPlan.draw(D.plan, {x: X0, y: PY0, w: pw, h: ZMAX0}, {allowRotate: true});
+      const PW = Math.min(pw, Math.ceil(r.usedW) + 2), TW = CW - PW - 18, need = 21 + readH(TW);
+      const Z = Math.min(ZMAX0, Math.max(Math.ceil(r.usedH) + 4, need));
+      const blank = (Z - r.usedH)*PW + Math.max(0, Z - need)*TW + (ZMAX0 - Z)*CW + Math.max(0, need - Z)*TW*2;
+      consider({mode: 'side', PW, TW, Z, angle: r.angle, area: r.usedW*r.usedH, score: r.usedW*r.usedH - blank});
+    }
+    { const need = 21 + readH(CW), Zp = ZMAX0 - 12 - need;
+      if(Zp > 120){ const r = RPPlan.draw(D.plan, {x: X0, y: PY0, w: CW, h: Zp}, {allowRotate: true});
+        const blank = (CW - r.usedW)*r.usedH + (Zp - r.usedH)*CW;
+        consider({mode: 'across', PW: CW, TW: CW, Z: Math.ceil(r.usedH) + 2, need, angle: r.angle, area: r.usedW*r.usedH, score: r.usedW*r.usedH - blank}); } }
+    const useHead = head && head.Zx > 120 && head.area > best.area*1.15;
+    const LWh = useHead ? LWH : CW, fl = useHead ? head.fl : fl0, fStep = useHead ? head.fStep : fStep0;
+    h += `<div class="abs kick" style="left:36pt;top:36pt;width:${LWh}pt;height:10pt" data-slot="back.kicker" data-lines="1">${esc(B.kicker || L.address)}</div>`;
+    h += `<div class="abs display fl-title" style="left:35pt;top:50pt;width:${LWh + 1}pt;height:40pt" data-slot="back.title" data-lines="1">${esc(B.title || 'Floor Plan')}</div>`;
+    fl.map(o => o.t).forEach((ln, k) => { h += `<div class="abs facts" style="left:36pt;top:${fTop + k*fStep}pt;width:${LWh}pt;height:${fStep - 2}pt;border:0;justify-content:flex-start;gap:10pt">${ln.map((t, i) => `<span class="f" data-slot="back.stat${k}.${i}" data-lines="1">${esc(t)}</span>${i < ln.length - 1 ? '<span class="sq"></span>' : ''}`).join('')}</div>`; });
+    h += RP.card(D, {x: 36, y: 764 - 8 - CBH, w: 540, h: CBH, layout: 'panel', size: 'mid', s: {inlineLabel: true, pad: [8, 14, 6], hsW: 58, name: 22, nameFloor: 16, phone: 14, label: 8, line: 9, rowGap: 12, panelW: 160, panelPad: [5, 12], panelGap: 3, logo: {wide: [140, 28], square: [30, 30], tall: [32, 32]}, lockDir: 'right'}});
+    const HB = useHead ? head.HB : HB0;   // the rule closes up under the header (the card no longer sets the header's height)
+    h += `<div class="abs" style="left:36pt;top:${HB}pt;width:540pt;height:1pt;background:var(--ink);opacity:.55"></div>`;
+    const PY = HB + 12;
+    if(useHead){
+      h += `<div class="abs read-k" style="left:${HX}pt;top:36pt;width:${HW}pt;height:13pt" data-slot="back.readk" data-lines="1">Reading the plan</div>`;
+      h += sentBox('back.read', HX, 57, HW, head.n, head.lh, head.z, turnRead(head.r.angle), `color:var(--ink);height:${(HB - 4 - 57).toFixed(1)}pt`).replace('data-fill=', `data-lhguard="1.24" data-fillmin="${Math.max(2, head.n - 1)}" data-fill=`);
+      best = {mode: 'head', PW: CW, TW: HW, Z: Math.ceil(head.r.usedH) + 2, angle: head.r.angle};
+    }
+    const ZMAX = rowTop - 10 - (24 + SH) - 10 - PY;
+    const {mode, PW, TW} = best;
+    let Z = best.Z, RX, RY, RHt;
+    const run = RPPlan.draw(D.plan, {x: X0, y: PY, w: PW, h: Z}, {allowRotate: true, angle: best.angle});
+    planIssues.push(...run.issues); h += run.html.replace(/(\d+)\s*x\s*(\d+)(?![\d'])/g, "$1' x $2'"); document.body.dataset.planAngle = run.angle;
+    if(mode === 'side'){ RX = X0 + PW + 18; RY = PY; RHt = Z; }
+    else if(mode === 'across'){ RX = X0; RY = PY + Z + 12; RHt = ZMAX - Z - 12; Z = ZMAX; }
+    if(mode !== 'head'){
+    // Reading the plan: as many lines as its text sets in, spread to the column's height
+    // (a line to spare so a larger size can fill it; the fitter may close up to a line under what the text sets in)
+    const k = Math.max(2, Math.round((readH(TW) + 2)/15)), n = (k + 1)*14 <= RHt - 21 ? k + 1 : k, lh = Math.min(16.5, (RHt - 21)/n);
+    h += `<div class="abs read-k" style="left:${RX}pt;top:${RY}pt;width:${TW}pt;height:13pt" data-slot="back.readk" data-lines="1">Reading the plan</div>`;
+    h += sentBox('back.read', RX, RY + 21, TW, n, lh, 11, turnRead(run.angle), `color:var(--ink);height:${RHt - 21}pt`).replace('data-fill=', `data-lhguard="1.24" data-fillmin="${Math.max(2, k - 1)}" data-fill=`);
+    }
+    // rooms drawn to one scale (the strip between the plan and the photos)
     const sTop = PY + Z + 10, sH = rowTop - 10 - sTop - 24;
-    const sb = RP.scaleBoxes(D, CW, sH, 7);
+    // the boxes as large as the strip allows while every room still shows
+    const full = RP.scaleBoxes(D, CW, SH + 8, 7).count;
+    // never taller than the strip itself, so the boxes keep 10 pt clear of the photos (reviewer3 p17)
+    let sbH = Math.min(SH + 8, sH); for(let q = sH; q > SH + 8; q -= 4){ if(RP.scaleBoxes(D, CW, q, 7).count >= full){ sbH = q; break; } }
+    const sb = RP.scaleBoxes(D, CW, sbH, 7);
     h += `<div class="hair" style="left:36pt;width:540pt;top:${PY + Z + 5}pt;background:var(--ink);opacity:.4"></div>`;
     h += `<div class="abs scale-k" style="left:36pt;top:${sTop}pt;width:420pt;height:12pt" data-slot="scale.k" data-lines="1">Rooms drawn to one scale: 1 inch = ${sb.ftPerIn} feet</div>`;
     const bw = 72, bx0 = 576 - bw - 34, by = sTop + 7;
     h += `<div class="abs" style="left:${bx0}pt;top:${by}pt;width:${bw}pt;height:5pt;border:.8pt solid var(--ink);border-top:0"></div>`;
     const tk = sb.ftPerIn % 4 ? 2 : 4;
-    for(let k = 0; k <= tk; k++) h += `<div class="tick" style="left:${bx0 + bw*k/tk}pt;top:${by - 7}pt"></div><div class="tickn" style="left:${bx0 + bw*k/tk - 15}pt;top:${by + 8}pt">${Math.round(sb.ftPerIn*k/tk)}</div>`;
+    for(let q = 0; q <= tk; q++) h += `<div class="tick" style="left:${bx0 + bw*q/tk}pt;top:${by - 7}pt"></div><div class="tickn" style="left:${bx0 + bw*q/tk - 15}pt;top:${by + 8}pt">${Math.round(sb.ftPerIn*q/tk)}</div>`;
     h += `<div class="abs" style="left:${bx0 + bw + 8}pt;top:${by + 8}pt;font:400 8pt/9pt var(--font-body);color:var(--ink)">feet</div>`;
-    h += `<div class="abs" style="left:36pt;top:${sTop + 24}pt;width:540pt;height:${sH}pt">${sb.html}</div>`;
+    h += `<div class="abs" style="left:36pt;top:${sTop + 24 + Math.max(0, sH - sbH)/2}pt;width:540pt;height:${sbH}pt">${sb.html}</div>`;
     let x = X0;
     row.forEach((c, i) => { h += photo(c.id, x, rowTop, rw[i], RH) + capHTML(c, x, rowTop + RH + 6, rw[i], rn); x += rw[i] + extra; });
-    h += cardAndFine();
+    h += fineOnly();
   }
 
   const f = RP.frame(D, 612, 792, `<div class="panel" style="position:absolute;left:0;top:0;width:612pt;height:792pt">${h}</div>`);

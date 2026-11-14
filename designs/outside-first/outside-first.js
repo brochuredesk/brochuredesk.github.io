@@ -47,7 +47,7 @@
     const lines = o.lines || OF.need(c.text, w), mn = o.min || lines, mx = o.max || lines;
     return `<div class="cap abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${12 + lines*11}pt">
       <div class="nm" data-slot="${slot}.name" data-lines="1"><b style="font-weight:700">${esc(c.name)}</b>${c.tag ? `<span>${esc(c.tag)}</span>` : ''}</div>
-      <div class="tx" data-slot="${slot}.text" data-lines="${lines}" data-nmin="${mn}" data-nmax="${mx}" data-cap="1" style="height:${lines*11}pt">${esc(OF.txt(c.text))}</div></div>`;
+      <div class="tx" data-slot="${slot}.text" data-lines="${lines}" data-nmin="${mn}" data-nmax="${mx}" data-cap="1"${c.id && (c.pool || OF.pool(c.id)) && !OF.fitMode ? ` data-pool='${esc(JSON.stringify(c.pool || OF.pool(c.id))).replace(/'/g, '&#39;')}'` : ''}${c.keep && !OF.fitMode ? ` data-keep='${esc(JSON.stringify(c.keep)).replace(/'/g, '&#39;')}'` : ''} style="height:${lines*11}pt">${esc(/^(back|front)\./.test(slot) ? OF.noRepeat(String(OF.txt(c.text)).match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || []).map(x => x.trim()).join(' ') : OF.txt(c.text))}</div></div>`;   // covers and backs: never a repeated line (owner 11/10, rule 7)
   };
   OF.kick = (t, slot, x, y, w) => `<div class="abs kick" style="left:${x}pt;top:${y}pt;width:${w||600}pt;height:10pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
   OF.title = (t, slot, x, y, w) => `<div class="abs title one" style="left:${x}pt;top:${y}pt;width:${w||744}pt;height:32pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
@@ -171,6 +171,81 @@
     if(window.AgentCard) issues.push(...AgentCard.trec(document, [...document.querySelectorAll('.logo img')]));
     return issues;
   };
+  // ---------- text under a photo fills the photo's width (owner 11/8/2026) ----------
+  // A caption with a data-pool (true lines about its photo, the existing ones first) is re-set from that pool: the sentences that set in exactly
+  // its box's lines with every line (set ragged) at least 90% of the width, else 80%; type up to 12% larger when that is what it takes; then justified.
+  // A caption that cannot fill keeps its text, left aligned. Never shortened to meet the rule: it only gets fuller or larger.
+  window.CapFit = window.CapFit || function(els){
+    const stat = el => { const r = document.createRange(); r.selectNodeContents(el); const box = el.getBoundingClientRect(), lh = parseFloat(getComputedStyle(el).lineHeight) || 12, rows = [];
+      for(const q of r.getClientRects()){ if(q.width < .5 || q.height < .5) continue; const l = rows.find(x => Math.abs(x.top - q.top) < lh*.5); if(l) l.r = Math.max(l.r, q.right); else rows.push({top: q.top, r: q.right}); }
+      return {n: rows.length, min: rows.length ? Math.min(...rows.map(x => (x.r - box.left)/box.width)) : 0}; };
+    // the widest justified word gap over a normal space (the printchecks measure): a pick whose gaps run past 2x is passed over for one that sets tighter (owner 11/10 round 2: never spread words)
+    const gapRatio = el => { const cs = getComputedStyle(el), fs = parseFloat(cs.fontSize) || 10, c = document.createElement('canvas').getContext('2d'); c.font = `${cs.fontStyle} ${cs.fontWeight} ${fs}px ${cs.fontFamily}`;
+      const normal = c.measureText(' ').width + (parseFloat(cs.wordSpacing) || 0) + (parseFloat(cs.letterSpacing) || 0), by = {}, tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), rg = document.createRange();
+      for(let n = tw.nextNode(); n; n = tw.nextNode()){ const t = n.textContent; for(let i = 0; i < t.length; i++){ if(t[i] !== ' ') continue; rg.setStart(n, i); rg.setEnd(n, i + 1); const q = rg.getBoundingClientRect(); if(q.width > 0) (by[Math.round(q.top)] = by[Math.round(q.top)] || []).push(q.width); } }
+      const ks = Object.keys(by).map(Number).sort((a, b) => a - b).slice(0, -1); let w = 0; for(const k of ks) w = Math.max(w, ...by[k]); return w / normal; };
+    const tight = el => { const ta = el.style.textAlign; el.style.textAlign = 'justify'; const g = gapRatio(el); el.style.textAlign = ta; return g <= 2.0; };
+    for(const el of els){
+      let pool; try { pool = JSON.parse(el.dataset.pool || '[]'); } catch(e){ continue; }
+      pool = (/^(back|front)\./.test(el.dataset.slot || '') ? OF.noRepeat(pool.filter(Boolean)) : pool.filter(Boolean)).slice(0, 10); const n = +el.dataset.fitn || +el.dataset.lines || 0;
+      if(!pool.length || !n) continue;
+      const t0 = el.textContent, fs0 = parseFloat(getComputedStyle(el).fontSize), k = pool.length;
+      let keepMask = 0; try { (JSON.parse(el.dataset.keep || '[]')).forEach(x => { const i = pool.indexOf(x); if(i >= 0) keepMask |= 1 << i; }); } catch(e){}
+      // never shorter (owner 11/10): no pick may hold less text than the caption's own copy
+      const minLen = +el.dataset.minlen || t0.trim().length;
+      el.style.fontSize = ''; el.textContent = pool.join(' ');
+      const s0 = stat(el), all = pool.join(' ').length, cpl0 = all/Math.max(.5, s0.n - 1 + Math.max(.3, s0.min));
+      let got = null, ok80 = null;
+      for(const pass of [0, 1]){ if(got || ok80) break;   // the written lead first, then a pool set without it
+      for(const need of [1, 0]){ if(got || ok80) break;   // a tight set first (word gaps under 2x), then any set that fills
+      for(const z of [1, 1.03, 1.06, 1.09, 1.12]){
+        el.style.fontSize = (fs0*z) + 'px';
+        const cpl = cpl0/z, cands = [];
+        for(let m = 1; m < (1 << k); m++){
+          if((m & keepMask) !== keepMask) continue;   // a caption's own pool lists the sentences it must keep (data-keep): a pick is always a superset
+          if(!pass && !(m & 1)) continue;   // first pass: the first line (the existing lead) stays
+          const pick = pool.filter((_, i) => m >> i & 1), len = pick.join(' ').length;
+          if(len < minLen) continue;
+          if(keepMask ? (len >= cpl*(n - 1 + .5) && len <= cpl*(n + .3)) : (len >= cpl*(n - 1 + .8) && len <= cpl*(n + .05))) cands.push({pick, d: Math.abs(len - cpl*(n - .06))});
+        }
+        cands.sort((a, b) => a.d - b.d);
+        for(const c of cands.slice(0, 160)){
+          el.textContent = c.pick.join(' '); const s = stat(el);
+          if(s.n !== n) continue;
+          if(s.min >= .9 && (!need || tight(el))){ got = c; break; }
+          if(s.min >= .8 && !ok80 && (!need || tight(el))) ok80 = c;
+        }
+        if(got) break;
+        if(ok80){ got = ok80; break; }
+      }
+      }
+      }
+      if(got){ el.textContent = got.pick.join(' '); el.style.textAlign = 'justify'; el.dataset.capfit = 'ok';
+        // a pick that fills only with justified gaps past 2.6x a normal space sets ragged instead (owner, round 3: wide gaps set ragged;
+        // its ragged lines already passed the 80%/90% fill above)
+        if(gapRatio(el) > 2.6){ el.style.textAlign = 'left'; el.dataset.ragged = '1'; } }
+      else { el.textContent = t0; el.style.fontSize = ''; el.style.textAlign = ''; el.dataset.capfit = 'no'; }
+    }
+  };
+
+
+  // the true lines about a photo (companion.capPool: the existing lines first, then more) become optional sentences of its caption (owner 11/8: text under a photo fills its width)
+  OF.extendPools = D => { const P = (D.companion || {}).capPool || {}; if(!Object.keys(P).length) return D;
+    const split = t => String(t).match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || [];
+    const walk = o => { if(Array.isArray(o)) o.forEach(walk); else if(o && typeof o === 'object'){
+      if(o.id && typeof o.text === 'string' && P[o.id] && !o.__ext){ const e = split(o.text).length; o.__min = o.text.trim().length; o.text = P[o.id].slice(0, Math.max(e, 0) + 3).join(' '); o.__ext = 1; }
+      Object.values(o).forEach(walk); } };
+    walk(D.copy || {}); return D; };
+  // owner 11/10 (rule 7): no phrase repeats inside a caption: a sentence that shares two content words side by side (small words
+  // skipped), three content words, or its opening two words with an earlier one is left out (flyer captions; inside panels as approved)
+  OF.cwords = t => (String(t).toLowerCase().match(/[a-z0-9']+/g) || []).filter(x => /\d/.test(x) || (x.length >= 4 && !/^(with|from|that|this|they|there|their|into|onto|over|under|along|beside|each|just|also|have|sits|runs|room|rooms|floor|house|home)$/.test(x)));
+  OF.noRepeat = arr => { const out = [], pairs = new Set(), kept = [], opens = new Set();
+    arr.forEach(x => { const v = Array.isArray(x) ? x[0] : x, w = OF.cwords(v), p = []; for(let i = 0; i + 1 < w.length; i++) p.push(w[i] + ' ' + w[i + 1]);
+      const o = (String(v).toLowerCase().match(/[a-z0-9']+/g) || []).slice(0, 2).join(' '), c = new Set(w.filter(z => !/^(deck|yard)$/.test(z)).map(z => /\d/.test(z) ? z : z.slice(0, 4)));   // word stems: fence / fenced / fencing
+      if(opens.has(o) || p.some(q => pairs.has(q)) || kept.some(k => { const sh = [...c].filter(z => k.has(z)); return sh.length >= 2; })) return;
+      out.push(x); p.forEach(q => pairs.add(q)); kept.push(c); opens.add(o); });
+    return out; };
+  OF.pool = id => ((((OF.data().companion || {}).capPool) || {})[id]) || null;
   window.OF = OF;
 })();
 

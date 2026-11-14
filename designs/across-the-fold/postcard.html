@@ -59,7 +59,7 @@ window.brochureReady = (async function(){
   if(front){
     // ---------- front ----------
     const pw = big ? 500 : 410, ph = sold ? 314 : 326, cx = pw + 20, cw = W - M - cx;
-    h += SP.photo(D, C.hero || 'front', -9, -9, pw + 9, ph + 9, 'front.hero');
+    h += SP.photo(D, C.hero || ['front', 'hero', 'cover', 'exterior'].find(k => (D.photos || {})[k]) || 'front', -9, -9, pw + 9, ph + 9, 'front.hero');
     if(!sold && SP.floodStated(L.description)) h += `<div class="abs" style="left:${big ? 22 : 18}pt;top:${ph - 30}pt"><span class="ctag" data-slot="front.tag" data-lines="1">Never flooded</span></div>`;
     const sfs = big ? 54 : 48, slh = big ? 52 : 50, rt = big ? 142 : 140, afs = big ? 26 : 22, alh = afs + 3, pfs = big ? 11 : 8.5;
     h += `<div class="abs kick" style="left:${cx}pt;top:22pt;width:${cw}pt;height:10pt" data-slot="front.kick" data-lines="1">${esc(sold ? 'Recently sold' : 'New on the market')}</div>`;
@@ -101,6 +101,7 @@ window.brochureReady = (async function(){
     const Z = SP.mail(W), X = M, LZ = Z.zA[0] - 12, rW = Z.zP[0] - 12 - Z.zA[0], pTop = 56, lw = LZ - X;
     h += `<div class="abs" data-blk="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:13pt;background:var(--navy2);border-bottom:1.4pt solid var(--gold)"></div>`;
     const ret = SP.returnLines(D);
+    if(ret.length < 3) issues.push({slot: 'address.return', kind: 'return-address-missing', detail: 'the brokerage street and city line are missing from the return address (brand.returnAddress); owner 11/10/2026 rule 10'});   // every mailer back: the full return address (owner 11/10/2026, rule 10)
     h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:16pt;width:${rW}pt;height:32pt;text-align:right"><b data-slot="return0" data-lines="1" style="display:block">${esc(ret[0] || '')}</b>${ret.slice(1).map((r, i) => `<span data-slot="return${i + 1}" data-lines="1" style="display:block">${esc(r)}</span>`).join('')}</div>`;
     h += `<div class="abs bst" style="left:${X}pt;top:16pt;width:${LZ - X}pt;height:28pt"><span class="s" data-slot="back.status.s">${esc(status)}</span><span class="a" data-slot="back.status.a">${esc(L.address)}</span></div>`;
     h += `<div class="rule" style="left:${X}pt;top:47pt;width:${LZ - X}pt"></div>`;
@@ -117,15 +118,17 @@ window.brochureReady = (async function(){
       h += `<div class="abs ab" style="left:${X}pt;top:${ty}pt;width:${lw}pt;height:${nl*lh}pt;font-size:${fs}pt;line-height:${lh}pt" data-slot="back.about" data-para="1" data-min="3" data-fillbox="1">${esc(big ? C.about11 : C.about9)}</div>`;
     } else {
       // three interiors, no captions; "How I'd start" under them in two columns, four steps at 6x9 and six at 6x11
-      const ids = C.photos || [], gap = 10, pw = (lw - gap)/2, ph = big ? 112 : 108;
+      const ids = (C.photos && C.photos.length ? C.photos : Object.keys(D.photos || {}).filter(id => !/front|exterior|street|aerial|plan/i.test(id + ' ' + ((D.photos[id] || {}).tags || '')))).slice(0, 3), gap = 10, pw = (lw - gap)/2, ph = big ? 112 : 108;
       ids.slice(0, 2).forEach((id, i) => { g += SP.photo(D, id, X + i*(pw + gap), pTop, pw, ph, 'back.photo' + i); });
       if(ids[2]) g += SP.photo(D, ids[2], Z.zA[0], pTop, rW, ph, 'back.photoR');
       const ky = pTop + ph + 12;
       h += `<div class="abs kick" style="left:${X}pt;top:${ky}pt;width:${lw}pt;height:10pt" data-slot="sold.stepsLabel" data-lines="1">${esc(C.stepsLabel || 'How I’d start')}</div>`;
-      const st = (big ? C.steps11 : C.steps9) || [], rowsN = Math.ceil(st.length/2), sy = ky + 16, sfs = big ? 13.5 : 11;
+      const STEPS = big ? ['Walk your home with you.', 'Pull recent sales nearby.', 'Give you a written price range.', 'Point out what to fix first.', 'Talk through your timing.', 'Answer every question you have.'] : ['Walk through your home with you and hear your plans.', 'Pull recent sales on your street and the blocks nearby.', 'Give you a price range in writing, at no cost to you.', 'Talk through timing that works for you and your move.'];   // sample defaults when the writer gives none (one line each at 6 x 11, two at 6 x 9)
+      const st = ((big ? C.steps11 : C.steps9) || STEPS).slice(0, big ? 6 : 4), rowsN = Math.ceil(st.length/2), sy = ky + 16, sfs = big ? 13.5 : 12.5;   // 6 x 9 steps a size up so the column fills (no blank under the last step)
       const callH = big ? 0 : 26, sh = Z.cardY - 10 - sy - callH;
       h += `<div class="abs stp" style="left:${X}pt;top:${sy}pt;width:${lw}pt;height:${sh}pt;grid-template-rows:repeat(${rowsN},1fr);grid-auto-flow:row">${st.map((s, i) => `<div class="it" style="font-size:${sfs}pt;line-height:${sfs + 4}pt"><i style="margin-top:${(sfs + 4)/2 - 1}pt"></i><span data-slot="sold.step${i}" data-lines="2">${esc(s)}</span></div>`).join('')}</div>`;
-      if(!big) h += `<div class="abs" style="left:${X}pt;top:${Z.cardY - 10 - callH + 4}pt;width:${lw}pt;height:22pt;font:400 17pt/22pt var(--font-display);color:var(--gold);white-space:nowrap;overflow:hidden" data-slot="sold.call" data-lines="1">${esc(C.call || 'Call or text me anytime.')}</div>`;
+      if(!big) h += AF.rule(X, Z.cardY - 10 - callH + 1, lw);   // a hairline closes the steps over the call line (owner 11/10/2026: no blank band under text)
+      if(!big) h += `<div class="abs" style="left:${X}pt;top:${Z.cardY - 10 - callH + 5}pt;width:${lw}pt;height:22pt;font:400 17pt/22pt var(--font-display);color:var(--gold);white-space:nowrap;overflow:hidden" data-slot="sold.call" data-lines="1">${esc(C.call || 'Call or text me anytime.')}</div>`;
     }
     h += `<div class="abs" data-gapcheck="back.photos" style="left:0;top:0">${g}</div>`;
     const sl = C.slab || {};
@@ -137,7 +140,7 @@ window.brochureReady = (async function(){
 
   // the step list (two columns): a longer list or a longer step closes its line spacing, then steps its type down, never under 8 pt
   const fitSteps = async () => document.querySelectorAll('.stp').forEach(el => {
-    const its = [...el.children]; let f = parseFloat(getComputedStyle(its[0]).fontSize)*72/96;
+    const its = [...el.children]; if(!its.length) return; let f = parseFloat(getComputedStyle(its[0]).fontSize)*72/96;
     const set = () => its.forEach(i => { i.style.fontSize = f + 'pt'; i.style.lineHeight = (f + 3) + 'pt'; });
     while(el.scrollHeight > el.clientHeight + 0.5 && f > 8){ f -= 0.25; set(); }
   });

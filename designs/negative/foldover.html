@@ -5,6 +5,9 @@
 <title>BrochureDesk · Architectural Negative fold-over</title>
 <link rel="stylesheet" href="negative.css">
 <script src="negative.js"></script>
+<script src="lastfix.js"></script>
+<script src="capfit.js"></script>
+<script src="../engine/planink.js"></script>
 <!--
   BrochureDesk · Architectural Negative · 11 x 17 fold-over
   11 x 17 sheet folded once across the middle: four landscape 11 x 8.5 panels (792 x 612 pt), 0.125 in (9 pt) bleed.
@@ -50,37 +53,58 @@ window.brochureReady = (async function(){
     h += NG.photo(D, st[0], sx + 6, 72, 801 - sx - 6, (phH - 6)/2) + NG.photo(D, st[1], sx + 6, 72 + (phH - 6)/2 + 6, 801 - sx - 6, (phH - 6)/2);
     const f = NG.facts(L);
     h += `<div class="facts" style="left:24pt;top:${factsY}pt;width:744pt;height:40pt">${f.map((x, i) => fact(x.v, x.l, i)).join('')}</div>`;
-    h += NG.kick(K.introHead || 'About the house', 'front.introhead', 24, textTop - 15, 744) + para('front.intro', K.intro, 24, textTop, 744, Ln, 10, 14);
+    h += NG.kick(K.introHead || 'About the house', 'front.introhead', 24, textTop - 15, 744) + para('front.intro', K.intro, 24, textTop, 744, Ln, 10, 14).replace('data-slot="front.intro"', 'data-slot="front.intro" data-justify="1"').replace(';line-height:14pt', ';line-height:14pt;text-align:justify;text-align-last:left');   // round 3 rule 5: every line runs the full width
     return h;
   }
 
   // ================= BACK =================
   function back(){
     const B = C.back || {}, R = B.right || {};
-    let h = NG.kick(B.kicker, 'back.kicker', 24, 26, 700) + NG.title(B.title, 'back.title', 24, 36) + NG.rule(24, 71, 744);
-    const nb = LN.back, bph = 182 - 6 - NG.capH(nb, 'plain'), bpitch = 182 + 8;
+    // owner 11/10/2026 (round 3, p115): the contact card runs the full width again, only shorter top to bottom (two rows), with the
+    // brokerage logo inside it (no logo by the title); everything above grows into the room it gives back
+    let h = NG.kick(B.kicker, 'back.kicker', 24, 26, 744) + NG.title(B.title, 'back.title', 24, 36, 744) + NG.rule(24, 71, 744);
+    const CARD_Y = 528, CARD_H = 64, BOT = CARD_Y - 14, BLK = (BOT - 84 - 8)/2;
+    const nb = LN.back, bph = BLK - 6 - NG.capH(nb, 'plain'), bpitch = BLK + 8;
     (B.left || []).slice(0, 2).forEach((c, i) => { const y = 84 + i*bpitch;
       h += NG.photo(D, c.id, 24, y, 226, bph) + NG.cap(c, `back.left${i}`, 24, y + bph + 6, 226, nb, 'plain', rg('back')); });
     // center: the agent's plan as given; with no plan, two more photos
     if(hasPlan){
-      const pl = NG.plan(D, {x:258, y:84, w:270, h:346});
+      const pl = NG.plan(D, {x:258, y:84, w:270, h:BOT - 84 - 28});
       issues.push(...pl.issues); h += pl.html;
-      h += `<div class="abs body" style="left:258pt;top:436pt;width:270pt;height:22pt;font-size:8.5pt;line-height:11pt${NG.tr('back.plannote')}" data-slot="back.plannote" data-lines="2" data-cap="1">${esc(NG.txt(B.planNote))}</div>`;
+      h += `<div class="abs body" style="left:258pt;top:${BOT - 22}pt;width:270pt;height:22pt;font-size:8.5pt;line-height:11pt${NG.tr('back.plannote')}" data-slot="back.plannote" data-lines="2" data-cap="1">${esc(NG.txt(B.planNote))}</div>`;
     } else {
+      const nc = Math.max(3, LN.center || 3);
       (B.center || []).slice(0, 2).forEach((c, i) => { const y = 84 + i*bpitch;
-        const cph = 182 - 6 - NG.capH(3, 'plain');
-        h += NG.photo(D, c.id, 258, y, 270, cph) + NG.cap(c, `back.center${i}`, 258, y + cph + 6, 270, 3, 'plain'); });
+        const cph = BLK - 6 - NG.capH(nc, 'plain');
+        h += NG.photo(D, c.id, 258, y, 270, cph) + NG.cap(c, `back.center${i}`, 258, y + cph + 6, 270, nc, 'plain'); });
     }
-    // right: a front angle, the improvements headline and paragraph, the places nearby
-    const cx = 536, cw = 232, ph = R.photoH || 154, hy = 84 + ph + 6, ty = hy + 24, ky = ty + (R.textLines || 4)*12 + 10;
+    // right: a back angle, the improvements headline and paragraph, the places nearby; the type and the photo share the column's
+    // height (the biggest type that still leaves the photo at least 4/5 of the column's width tall), so the column ends on the card's rule
+    const cx = 536, cw = 232;
+    const meas = (t, fs, lh) => { const m = document.createElement('div'); m.className = 'body';
+      m.style.cssText = `position:absolute;left:-9999pt;top:0;width:${cw}pt;font-size:${fs}pt;line-height:${lh}pt;height:auto;overflow:visible`;
+      m.textContent = NG.txt(t); document.body.appendChild(m); const r = NG.lineFill(m); m.remove(); return r; };
+    const nearH = 38, nN = (R.nearby || []).slice(0, 3).length;
+    let lay = null;
+    for(const [fs, lh] of [[10.5, 14.5], [10, 14], [9.5, 13], [9, 12]]){
+      const [tl, tf] = meas(R.text, fs, lh), [al, af] = R.aroundText ? meas(R.aroundText, fs, lh) : [0, 1];
+      const aH = R.aroundText ? al*lh : nN*nearH, ph = BOT - 84 - 6 - 24 - tl*lh - 10 - 14 - aH;
+      const c = {fs, lh, tl, al, ph, ok: tf >= .8 && af >= .8};
+      if(!lay || (c.ph >= cw*.8 && (c.ok || !lay.ok || lay.ph < cw*.8))) lay = c;
+      if(c.ph >= cw*.8 && c.ok) break;
+    }
+    const {fs: rfs, lh: rlh, tl, al, ph} = lay, hy = 84 + ph + 6, ty = hy + 24, ky = ty + tl*rlh + 10;
     h += NG.photo(D, R.photo, cx, 84, cw, ph);
     h += `<div class="abs hl" style="left:${cx}pt;top:${hy}pt;width:${cw}pt;height:20pt" data-slot="back.head" data-lines="1">${esc(R.head)}</div>`;
-    const tl = R.textLines || 4; h += para('back.text', R.text, cx, ty, cw, tl, 9, 12);
+    h += para('back.text', R.text, cx, ty, cw, tl, rfs, rlh);
     h += NG.kick(R.aroundHead || 'Around the neighborhood', 'back.nearhead', cx, ky, cw);
-    if(R.aroundText){ const al = Math.floor((456 - (ky + 14))/12); h += para('back.around', R.aroundText, cx, ky + 14, cw, al, 9, 12); }
-    else h += `<div class="abs nearby" style="left:${cx}pt;top:${ky + 14}pt;width:${cw}pt">${(R.nearby||[]).slice(0,3).map((x,i)=>`<div style="height:38pt"><div class="d${x.u === '' ? ' nm' : ''}" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}${x.u === '' ? '' : `<small>${esc(x.u || 'miles')}</small>`}</div><div class="p" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}</div>`;
-    // standard contact card and footer; it carries the one brokerage logo of the outside spread
-    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', brokerage: true, fine: B.footnote || ''});
+    if(R.aroundText) h += para('back.around', R.aroundText, cx, ky + 14, cw, al, rfs, rlh);
+    else h += `<div class="abs nearby" style="left:${cx}pt;top:${ky + 14}pt;width:${cw}pt">${(R.nearby||[]).slice(0,3).map((x,i)=>`<div style="height:${nearH}pt"><div class="d${x.u === '' ? ' nm' : ''}" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}${x.u === '' ? '' : `<small>${esc(x.u || 'miles')}</small>`}</div><div class="p" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}</div>`;
+    // the standard contact card across the full width, two rows, carrying the one brokerage logo of the outside spread
+    h += NG.rule(24, CARD_Y - 7, 744);
+    h += ContactCard.html([24, CARD_Y, 744, CARD_H], Object.assign({}, A, {headshot: hs}), b, {layout: 'panel', size: 'short', bottomGap: .5, grow: 0,
+      s: {name: 22, nameFloor: 16, desigInline: true, wrap: false, phone: 15, line: 10, office: 10, hsW: 52, hsGap: 16, pad: [7, 16, 6], rowGap: 22, panelW: 210, panelPad: [4, 10], panelGap: 2, officeLH: 1.15, logo: {wide: [150, 27], square: [30, 30], tall: [32, 32]}}});
+    h += `<div class="abs" style="left:24pt;top:${CARD_Y + CARD_H + 4}pt;width:744pt;height:8pt;font-size:6pt;line-height:8pt;white-space:nowrap;overflow:hidden" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(B.footnote || 'Information deemed reliable but not guaranteed.')}</div>`;
     return h;
   }
 
@@ -89,10 +113,10 @@ window.brochureReady = (async function(){
     const T = C.top || {}, ls = (T.leads || []).slice(0, 2), sm = (T.smalls || []).slice(0, 4);
     let h = NG.kick(T.kicker || `${L.address} / ${T.kickerWord}`, 'top.kicker', 24, 26, 560) + NG.title(T.title, 'top.title', 24, 36, 560) + NG.logo(D, 588, 26, 180, 26, 'flex-end') + NG.rule(24, 71, 744);
     const w = (744 - 8)/2;
-    const Hs = 118, cl = NG.capH(LN.lead, 'lead'), cs = NG.capH(LN.small, 'black'), H1 = 604 - 82 - 6 - cl - 10 - Hs - cs;
+    const Hs = 118, cl = NG.capH(LN.lead, 'lead'), cs = NG.capH(LN.small, 'black'), H1 = 604 - 82 - 6 - cl - 5 - Hs - cs;   // the lead captions sit 5 pt over the small photos (textbox-underfull: no slack under them)
     ls.forEach((c, i) => { const x = 24 + i*(w + 8);
       h += NG.photo(D, c.id, x, 82, w, H1) + NG.cap(c, `top.lead${i}`, x, 82 + H1 + 6, w, LN.lead, 'lead', rg('lead')); });
-    const sw = (744 - 3*6)/4, sy = 82 + H1 + 6 + cl + 10;
+    const sw = (744 - 3*6)/4, sy = 82 + H1 + 6 + cl + 5;
     sm.forEach((c, i) => { const x = 24 + i*(sw + 6);
       h += NG.photo(D, c.id, x, sy, sw, Hs) + NG.cap(c, `top.small${i}`, x, sy + Hs, sw, LN.small, 'black', rg('small')); });
     return h;
@@ -107,7 +131,9 @@ window.brochureReady = (async function(){
     h += `<div class="pblock" style="left:352pt;top:82pt;width:168pt;height:${A_}pt"><div class="pn" data-slot="bottom.primary.name" data-lines="1">${esc(P.name)}</div><div class="pd" data-slot="bottom.primary.tag" data-lines="1">${esc(P.tag)}</div><div class="pr"></div><div class="tx" data-slot="bottom.primary.text" data-lines="10" data-cap="1" style="height:150pt${NG.tr('bottom.primary.text')}">${esc(NG.txt(P.text))}</div></div>`;
     const bh = (A_ - 8)/2;
     bs.forEach((c, i) => { const y = 82 + i*(bh + 8);
-      h += NG.photo(D, c.id, 528, y, 96, bh) + NG.cap(c, `bottom.bath${i}`, 632, y, 136, LN.bath, 'side', rg('bath')); });
+      // owner 11/10/2026 (round 3, p114): each bath caption runs nearly to the foot of its photo, in bigger type when the copy allows
+      const ft = NG.fitTall(c.text, 136, bh - 15 - 2, null, .84) || NG.fitTall(c.text, 136, bh - 15 - 2, null, .8) || NG.fitTall(c.text, 136, bh - 15 - 2, null, .6);
+      h += NG.photo(D, c.id, 528, y, 96, bh) + (ft ? NG.cap(c, `bottom.bath${i}`, 632, y, 136, ft.n, 'side', null, ft) : NG.cap(c, `bottom.bath${i}`, 632, y, 136, LN.bath, 'side', rg('bath'))); });
     const w = (744 - 12)/3, y0 = 82 + A_ + 8, ph = 604 - NG.capH(LN.row, 'plain') - 6 - y0;
     rw.forEach((c, i) => { const x = 24 + i*(w + 6);
       h += NG.photo(D, c.id, x, y0, w, ph) + NG.cap(c, `bottom.row${i}`, x, y0 + ph + 6, w, LN.row, 'plain', rg('row')); });
@@ -126,7 +152,9 @@ window.brochureReady = (async function(){
   document.getElementById('pages').innerHTML = html;
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
   NG.fitLogos();
+  if(window.PlanInk) PlanInk.applyAll(D, false);   // owner 11/10 (standing rule): the plan's background clear, its own lines in the ink
   ContactCard.fit(document);
+  await document.fonts.ready; CapFit.run(document.querySelectorAll('.cap .tx[data-cap]'), el => el.closest('.cap').clientWidth); if(window.LastFix) LastFix.run(document, C.alts || {}); CapFit.noWide(document.querySelectorAll('.cap .tx[data-cap]'));
   document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
   window.brochureCheck = () => NG.check(D, issues);
 })();

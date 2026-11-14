@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="chronicle.css">
 <script src="chronicle.js"></script>
 <script src="chronicle-plan.js"></script>
+<script src="../engine/planink.js"></script>
 <!--
   The Modern Chronicle · 11 x 17 fold-over, a four-page book
   11 x 17 sheet laid 17 wide, folded once down the middle: four upright 8.5 x 11 pages, 0.125 in (9 pt) bleed, 0.25 in safe zone.
@@ -19,6 +20,7 @@
 -->
 </head>
 <body>
+<script src="capfit.js"></script>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
 
@@ -109,9 +111,20 @@ window.brochureReady = (async function(){
   // ================= BACK: the plan or the rooms, outdoors, places, closing paragraph, the card =================
   function back(){
     const B = C.back || {}, pl = B.places || [], out = [B.big, ...(B.small || [])], nl = levels.length;
-    const multi = hasPlan && nl > 1, T = 84, BOT = 624, PLACES_H = 70;
-    // the closing paragraph keeps its natural height at the bottom right; everything above it takes the rest
-    const clH = AT.linesNeeded('art', B.closing || '', 290, 12.8) * 12.8, clTop = BOT - clH, aboveR = clTop - 8;
+    // the contact block runs the full width but short top to bottom (owner 11/10, p54 and rule 1: "narrower" = shorter); above it a
+    // band holds the places at the left and the closing write-up, under its own heading, at the right; the plan and photos run down to the band
+    const multi = hasPlan && nl > 1, T = 84, PLACES_H = 70, bandY = CARD.Y - 12 - PLACES_H, BOT = bandY - 12, aboveR = BOT;
+    const PLW = 236, clX = 24 + PLW + 18, clW = 588 - clX;
+    // the closing write-up fills its space (owner 11/10, p54): the whole closing, then, while it runs short, true lines about the
+    // outside of the house (or a place the closing names) from photos not on this page, never one that repeats what this page says
+    // or leans on another sentence ("It ...")
+    const k3 = t => new Set((String(t).toLowerCase().match(/[a-z]{3,}/g) || []).filter(q => !/^(the|and|with|for|its|are|has|was|from|that|this|into|over|under|along|each|which|there|their|room|house|one|two|off|out|all|but|not|both|than|then)$/.test(q)));
+    const onPage = out.map(o => o.photo), closing0 = String(B.closing || '').trim();
+    const outside = id => /\b(front|exterior|rear|yard|aerial|elevation)\b/i.test(id + ' ' + (((D.photos || {})[id] || {}).tags || ''));
+    const cands = [closing0]; { const have = k3([closing0, ...out.map(o => o.body), ...(B.rooms || []).map(r => r.body)].join(' ')); let cur = closing0;
+      Object.entries(C.extra || {}).forEach(([id, ls]) => { if(onPage.includes(id) || !(outside(id) || new RegExp('\\b' + id + '\\b', 'i').test(closing0))) return;
+        (ls || []).forEach(x => { x = String(x).trim(); if(cands.length > 3 || !x || /^(it|they|this|these|that|those|its)\b/i.test(x) || /virtual|staged|spacious|nestled|boasts/i.test(x)) return;
+          if([...k3(x)].some(q => have.has(q))) return; cur += ' ' + x; cands.push(cur); k3(x).forEach(q => have.add(q)); }); }); }
     let html = '';
     const planBox = (bx, by, bw, bh, planArgs) => {
       const plan = AtlasPlan.draw(D.plan, planArgs, {allowRotate: true});
@@ -127,17 +140,20 @@ window.brochureReady = (async function(){
       // the board closes up around the drawn plan; the photos below take the room
       const maxH = nl >= 4 ? 296 : nl === 3 ? 280 : 270;
       const probe = AtlasPlan.draw(D.plan, {x: 34, y: T + 24, w: 544, h: maxH - 54}, {allowRotate: true});
-      const bh = Math.min(maxH, Math.round(probe.usedH + 54 + 4));
+      let bh = Math.min(maxH, Math.round(probe.usedH + 42 + 4));   // (no room-color legend row now)
       // a narrow plan (three or four floors stacked) gets a board closed up around it, and the floor-by-floor write-up takes the width that is left
-      const secs = B.rooms || [], narrow = secs.length && probe.usedW + 44 < 564 - 150;
-      const bw = narrow ? Math.round(probe.usedW + 44) : 564;
+      // (the listing's own plan is wider than a drawing was: with floor write-ups the board is held to 400 pt so they keep their column)
+      const secs = B.rooms || [], narrow = !!secs.length;
+      const bw = narrow ? Math.min(400, Math.max(300, Math.round(probe.usedW + 44))) : 564;
+      if(narrow){ const p2 = AtlasPlan.draw(D.plan, {x: 34, y: T + 24, w: bw - 20, h: maxH - 54}, {allowRotate: true}); bh = Math.min(maxH, Math.round(p2.usedH + 42 + 4)); }
       html += planBox(24, T, bw, bh, {x: 34, y: T + 24, w: bw - 20, h: bh - 54});
       if(narrow) html += `<div class="rooms narrow abs" style="left:${24 + bw + 14}pt;top:${T}pt;width:${564 - bw - 14}pt;height:${bh}pt;display:flex;flex-direction:column;justify-content:space-between;gap:6pt">${secs.map((sc, i) => `<div class="sec" style="flex:1 1 auto">
           <div class="h" data-slot="back.room${i}.h" data-lines="1">${esc(sc.label)}</div>
           <div class="a" data-slot="back.room${i}.a" data-para="1" data-min="2">${esc(sc.body)}</div></div>`).join('')}</div>`;
-      html += `<div class="flow row" style="flex-direction:row;top:${T + bh + 8}pt;height:${Math.min(aboveR, BOT - PLACES_H - 8) - (T + bh + 8)}pt;gap:8pt">${out.map((it, i) => item(it, `back.out.${'abc'[i]}`)).join('')}</div>`;
+      const rT = T + bh + 8;
+      html += `<div class="flow row" style="flex-direction:row;top:${rT}pt;height:${aboveR - rT}pt;gap:8pt">${out.map((it, i) => item(it, `back.out.${'abc'[i]}`)).join('')}</div>`;
     } else {
-      const leftH = BOT - PLACES_H - 8 - T;
+      const leftH = BOT - T;
       if(hasPlan){
         const probe = AtlasPlan.draw(D.plan, {x: 30, y: T + 26, w: 250, h: leftH - 54}, {allowRotate: true});
         const bh = Math.min(leftH, Math.round(probe.usedH + 54 + 4));
@@ -151,14 +167,22 @@ window.brochureReady = (async function(){
           <div class="a" data-slot="back.room${i}.a" data-para="1" data-min="2" style="flex:none;font-size:9pt;line-height:12.6pt">${esc(s.body)}</div></div>`).join('')}</div>`;
       }
       html += `<div class="flow" style="left:298pt;right:24pt;top:${T}pt;height:${aboveR - T}pt;gap:8pt">
-        <div class="item" style="flex:1.12 1 0">${AT.photo(D, out[0].photo, '', 'back.out.a')}${cap(out[0], 'back.out.a')}</div>
+        <div class="item" style="flex:1.12 1 0">${AT.photo(D, out[0].photo, '', 'back.out.a')}${cap(Object.assign({}, out[0], {body: [out[0].body, out[0].more].filter(Boolean).join(' ')}), 'back.out.a')}</div>
         ${out.length > 1 ? row(out.slice(1), 'back.small', '1 1 0') : ''}</div>`;
     }
-    html += `<div class="places abs" style="left:24pt;top:${BOT - PLACES_H}pt;width:262pt;height:${PLACES_H}pt"><div class="sect" data-slot="back.placesTitle" data-lines="1">${esc(B.placesTitle || 'Nearby')}</div>
+    html += `<div class="places abs" id="bplaces" style="left:24pt;top:${bandY}pt;width:${PLW}pt;height:${PLACES_H}pt"><div class="sect" data-slot="back.placesTitle" data-lines="1">${esc(B.placesTitle || 'Nearby')}</div>
       <div class="rows" style="margin-top:3pt">${pl.slice(0, 4).map((p, i) => `<div class="r" style="height:14pt"><div class="p" data-slot="back.place${i}" data-lines="1">${esc(p.name)}</div><div class="d" data-slot="back.dist${i}" data-lines="1">${esc(p.miles)}</div></div>`).join('')}</div></div>
-      <div class="art abs" data-slot="back.closing" data-para="1" data-min="2" data-closing="1" style="left:298pt;top:${clTop}pt;width:290pt;height:${clH}pt;font-size:9pt;line-height:12.8pt">${esc(B.closing)}</div>`;
-    return `${head(B.kicker, B.title, 'back')}${html}${AT.card(D, [24, 628, 564, 140], C.footnote || '')}`;
+      <div class="abs" id="bclose" style="left:${clX}pt;top:${bandY}pt;width:${clW}pt;height:${PLACES_H}pt"><div class="sect" data-slot="back.closingTitle" data-lines="1">${esc(B.closingTitle || 'About the house')}</div>
+      <div class="art c10" data-slot="back.closing" data-para="1" data-min="2" data-closing="${PLACES_H - 13}" data-cands="${esc(JSON.stringify(cands))}" style="margin-top:3pt;width:${clW}pt;text-align:justify;text-align-last:left">${esc(B.closing)}</div></div>`;
+    return `${head(B.kicker, B.title, 'back')}${html}${cardFoot()}`;
   }
+  // the contact block, full width and short (owner 11/10/2026, rule 1): name and REALTOR(R) over phone, email and website, the
+  // brokerage's panel at its right; the fine print on one line under it
+  const CARD = {H: 66, Y: 742 - 66};
+  const cardFoot = () => { const A = D.agent || {}, hs = AT.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
+    return ContactCard.html([24, CARD.Y, 564, CARD.H], Object.assign({}, A, {headshot: hs}), D.brand || {}, {layout: 'panel', size: 'short', bottomGap: .5, grow: 0,
+        s: {name: 19, nameFloor: 15, phone: 13, line: 9, desigInline: true, hsW: 52, panelW: 160, rowGap: 14, logo: {wide: [132, 30], square: [32, 32], tall: [34, 34]}}})
+      + `<div class="abs fine" style="left:24pt;top:747pt;width:564pt;height:9pt;white-space:nowrap" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(C.footnote || 'Information deemed reliable but not guaranteed.')}</div>`; };
 
   const panels = {front: cover(), left: left(), right: right(), back: back()};
   const panel = h => `<div class="panel">${h}</div>`;
@@ -170,19 +194,42 @@ window.brochureReady = (async function(){
     for(const id of ['front','left','right','back']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
   }
   document.getElementById('pages').innerHTML = html;
+  if(window.PlanInk) PlanInk.applyAll(D, false);   // owner 11/10/2026: the listing plan's background is clear, its lines in the design's ink
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
 
   // ---------- layout passes ----------
   document.querySelectorAll('#addr').forEach(el => {
     for(let fs = 40; fs >= 26; fs -= 1){ el.style.fontSize = fs + 'pt'; if(AT.textWidth(el) <= 340) break; }
   });
-  const hl = document.querySelector('.lede'); if(hl){ for(let fs = 24; fs >= 16; fs -= 1){ hl.style.fontSize = fs + 'pt'; hl.style.lineHeight = (fs * 1.18) + 'pt'; if(AT.lines(hl) <= 2) break; } }
+  // the headline's box holds its letters whole (owner 11/10, p51: the "p" of "pizza" was cut off): the line step leaves room for the
+  // descenders and the box is exactly its lines tall, never a fixed height that clips the second line
+  // (one line, or two whose second line runs 80%+ of the column: the largest size from 30 down to 15 pt that sets it so, owner 11/10)
+  const hl = document.querySelector('.lede'); if(hl){ let fs = 24, pick = null, two = null;
+    for(let z = 30; z >= 15; z -= .25){ hl.style.fontSize = z + 'pt'; hl.style.lineHeight = (z * 1.18) + 'pt'; const ls = AT.lineBoxes(hl), w = hl.getBoundingClientRect().width;
+      if(ls.length === 1 && z <= 24){ pick = z; break; }
+      if(ls.length === 2){ const f = (ls[1].r - ls[1].l)/w; if(f >= .82){ pick = z; break; } if(!two && z <= 24) two = z; } }
+    fs = pick || two || 16; hl.style.fontSize = fs + 'pt';
+    const lh = Math.round(fs * 1.27 * 4)/4; hl.style.lineHeight = lh + 'pt'; hl.style.height = (AT.lines(hl) * lh) + 'pt'; hl.style.marginBottom = '6pt'; }
   document.querySelectorAll('.row').forEach(r => AT.fitRow([...r.children].map(it => it.querySelector(':scope > .cap .a'))));
   document.querySelectorAll('.cap:not(.item > .cap) .a').forEach(a => AT.fitLines(a, AT.lineBoxes(a).length));
-  document.querySelectorAll('.item').forEach(it => { if(it.parentElement.classList.contains('row')) return; const a = it.querySelector(':scope > .cap .a'); if(a) AT.fitLines(a, AT.lineBoxes(a).length); });
+  // a caption alone under its photo keeps the photo's full width (never narrowed) and ends on a full line: the smallest size from
+  // 8.5 to 10.5 pt whose last line runs 82%+ (owner 11/10)
+  document.querySelectorAll('.item').forEach(it => { if(it.parentElement.classList.contains('row')) return; const a = it.querySelector(':scope > .cap .a'); if(!a) return;
+    a.style.maxWidth = ''; let ok = false;
+    for(let z = 8.5; z <= 10.51; z += .125){ a.style.fontSize = z + 'pt'; a.style.lineHeight = (z*1.35) + 'pt'; const ls = AT.lineBoxes(a), w = a.getBoundingClientRect().width;
+      if(ls.length < 2 || (ls[ls.length-1].r - ls[ls.length-1].l)/w >= .82){ ok = true; break; } }
+    if(!ok){ a.style.fontSize = ''; a.style.lineHeight = ''; AT.fitLines(a, AT.lineBoxes(a).length); } });
   // the room-by-room list: paragraphs set in their lines, and the rows spread so the column runs to its bottom
   document.querySelectorAll('.rooms').forEach(R => {
-    R.querySelectorAll('.sec .a').forEach(a => AT.fitLines(a, AT.lineBoxes(a).length));
+    // (each floor's write-up keeps the column's full width, owner 11/8 and 11/10 rule 5: never a narrowed box; its size moves from
+    // 8.5 to 12 pt until its lines run full, ragged 85%+ and the last 80%+, then it is justified)
+    R.querySelectorAll('.sec .a').forEach(a => { a.style.maxWidth = ''; let best = null;
+      for(const fs of [9.5, 9.75, 9.25, 10, 10.25, 9, 10.5, 10.75, 11, 11.25, 11.5, 11.75, 12, 8.75, 8.5]){ a.style.fontSize = fs + 'pt'; a.style.lineHeight = (fs*1.4) + 'pt'; a.style.textAlign = 'left';
+        const ls = AT.lineBoxes(a), w = a.getBoundingClientRect().width; if(ls.length < 2) continue;
+        const q = Math.min((ls[ls.length-1].r - ls[ls.length-1].l)/w, ...ls.slice(0, -1).map(l => (l.r - l.l)/w - .05));
+        if(!best || q > best.q + .01) best = {fs, q}; if(q >= .8) break; }
+      if(best){ a.style.fontSize = best.fs + 'pt'; a.style.lineHeight = (best.fs*1.4) + 'pt'; }
+      a.style.textAlign = 'justify'; a.style.textAlignLast = 'left'; });
     const rows = [...R.querySelectorAll('.rr')], H = R.clientHeight, gaps = 8 * 96 / 72 * (R.children.length - 1);
     const nat = [...R.children].reduce((t, c) => t + c.offsetHeight, 0);
     const inc = Math.max(0, Math.min(10 * 96 / 72, (H - nat - gaps) / rows.length - 0));
@@ -215,7 +262,44 @@ window.brochureReady = (async function(){
     }
   }
   document.querySelectorAll('[data-box]:not([data-adapt] [data-box])').forEach(el => AT.fitBox(el, pt(el.getBoundingClientRect().height), +el.dataset.lo, +el.dataset.hi, 1.4));
-  document.querySelectorAll('[data-closing]').forEach(el => AT.fitLines(el, AT.lineBoxes(el).length));
+  // the closing keeps its full column, justified (no narrowed box, owner 11/8): the size from 9.5 to 11.5 pt whose last line runs 80%+,
+  // its foot on the card's foot
+  // (owner 11/10, p54: a clear heading, bigger type, fills its space): the largest size from 13 down to 9.5 pt that fits under its
+  // heading with a full last line, then the line step opens (up to 1.6 x) so it runs to the band's foot, level with the places
+  document.querySelectorAll('[data-closing]').forEach(el => { let pick = null; const room = +el.dataset.closing;
+    let cands = [el.textContent]; try { cands = JSON.parse(el.dataset.cands || '[]').filter(Boolean); } catch(e){} if(!cands.length) cands = [el.textContent];
+    // (a short closing gets fuller lines by giving the places a wider column: the split moves, the closing keeps its whole column)
+    const PLc = document.getElementById('bplaces'), CLc = document.getElementById('bclose'), x0 = 24, x1 = 588;
+    const split = plw => { if(!PLc || !CLc) return; PLc.style.width = plw + 'pt'; CLc.style.left = (x0 + plw + 18) + 'pt'; CLc.style.width = (x1 - x0 - plw - 18) + 'pt'; el.style.width = CLc.style.width; };
+    for(const plw of [236, 256, 276, 296]) { split(plw);
+    for(const t of cands){ el.textContent = t;
+      for(let fs = 13; fs >= 9.49; fs -= .25){ el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs*1.38) + 'pt';
+        const ls = AT.lineBoxes(el), w = el.getBoundingClientRect().width, f = ls.length ? (ls[ls.length-1].r - ls[ls.length-1].l)/w : 0, hh = pt(el.getBoundingClientRect().height);
+        if(hh > room + .5 || ls.length < 2) continue;
+        const sc = (f >= .8 ? 2 : 0) + Math.min(1, hh/room)*1.5 + fs/40;
+        if(!pick || sc > pick.sc) pick = {sc, fs, t, plw, ok: f >= .8 && hh >= room*.88}; }
+      if(pick && pick.ok) break; }
+    if(pick && pick.ok) break; }
+    if(pick) split(pick.plw);
+    if(pick) el.textContent = pick.t;
+    const fs = pick ? pick.fs : 9.5; el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs*1.38) + 'pt';
+    const n = AT.lineBoxes(el).length; if(n) el.style.lineHeight = Math.min(fs*1.6, Math.max(fs*1.38, room/n)) + 'pt'; });
+  // the floor-by-floor write-ups beside a narrow plan fill their column: the type grows (9 to 14 pt) while every section still fits
+  document.querySelectorAll('.rooms.narrow').forEach(R => { const H = R.clientHeight, as = [...R.querySelectorAll('.sec .a')];
+    const fits = () => [...R.children].reduce((t, c) => t + c.scrollHeight, 0) + 6*96/72*(R.children.length - 1) <= H - 2;
+    // (one size for every floor: the largest from 14 down to 9 pt at which every section fits and every write-up's lines run full,
+    // measured ragged, last line 80%+, so justifying never opens wide word gaps; owner 11/10 rules 5 and 8)
+    const fill = a => { a.style.textAlign = 'left'; const ls = AT.lineBoxes(a), w = a.getBoundingClientRect().width; if(ls.length < 2) return 0;
+      return Math.min((ls[ls.length-1].r - ls[ls.length-1].l)/w, ...ls.slice(0, -1).map(l => (l.r - l.l)/w - .05)); };
+    [...R.children].forEach(c => c.style.flex = 'none');
+    let best = null, first = null, top = null;
+    for(let fs = 14; fs >= 9; fs -= .125){ as.forEach(a => { a.style.maxWidth = ''; a.style.fontSize = fs + 'pt'; a.style.lineHeight = (fs*1.4) + 'pt'; });
+      if(!fits()) continue; if(first == null) first = fs; const q = Math.min(...as.map(fill));
+      if(q >= .8){ best = fs; break; } if(!top || q > top.q) top = {fs, q}; if(fs < first - 3) break; }
+    const f0 = best || (top && top.fs) || first || 9; as.forEach(a => { a.style.fontSize = f0 + 'pt'; a.style.lineHeight = (f0*1.4) + 'pt'; });
+    // (a write-up still ending short moves a hair, a quarter point at most, to end full)
+    as.forEach(a => { if(fill(a) >= .8) return; for(const d of [-.125, .125, -.25, .25]){ a.style.fontSize = (f0 + d) + 'pt'; if(fits() && fill(a) >= .8) return; } a.style.fontSize = f0 + 'pt'; });
+    as.forEach(a => { a.style.textAlign = 'justify'; a.style.textAlignLast = 'left'; }); });
   issues.push(...AT.fitPhotos(D));
   issues.push(...AT.fitReport());
   window.proofNotes.push({paragraphs: [...document.querySelectorAll('[data-para]')].map(el => {
@@ -223,9 +307,14 @@ window.brochureReady = (async function(){
     return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length};
   })});
   ContactCard.fit(document);
+  if(window.CapFit) (window.proofNotes = window.proofNotes || []).push({capFit: CapFit.run(((typeof D !== "undefined" && D.copy) || {}).extra)});
+  AT.gapGuard();
   window.brochureCheck = () => AT.check(D, issues);
   window.photoPlacements = AT.placements;
 })();
+
+// a piece that fails to build reports it (the render then fails its checks) instead of hanging until the renderer times out
+if(window.brochureReady && window.brochureReady.catch) window.brochureReady.catch(e => { console.error(e); window.brochureCheck = () => [{slot: 'page', kind: 'render-error', detail: String(e && e.message || e)}]; });
 </script>
 </body>
 </html>

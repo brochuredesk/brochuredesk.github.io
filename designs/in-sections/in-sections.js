@@ -80,19 +80,56 @@
   PG.places = (list, slot, x, y, w, rowH, cls) => `<div class="abs places ${cls||''}" style="left:${x}pt;top:${y}pt;width:${w}pt">${(list||[]).map((p, i) => `<div class="r" style="height:${rowH}pt"><div class="p" data-slot="${slot}${i}.p" data-lines="1">${esc(p.p)}</div><div class="d" data-slot="${slot}${i}.d" data-lines="1">${esc(p.d)}${p.u ? ` ${esc(p.u)}` : ''}</div></div>`).join('')}</div>`;
 
 
+  // a paragraph measured off the page: {lines, last (the last line's share of the width)}
+  PG.measure = (text, w, fs, lh) => {
+    let ms = PG._ms; if(!ms){ ms = PG._ms = document.createElement('div'); ms.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:normal;font-family:var(--font-body);font-weight:400'; document.body.appendChild(ms); }
+    ms.style.width = w + 'pt'; ms.style.fontSize = fs + 'pt'; ms.style.lineHeight = lh + 'pt'; ms.textContent = text;
+    const rg = document.createRange(); rg.selectNodeContents(ms); const rows = [];
+    [...rg.getClientRects()].filter(r => r.width > .5).forEach(r => { const row = rows.find(x => Math.abs(x.top - r.top) < lh*.5); if(row) row.right = Math.max(row.right, r.right); else rows.push({top: r.top, right: r.right}); });
+    const box = ms.getBoundingClientRect(), last = rows.length ? rows[rows.length - 1] : null;
+    // the widest word gap justifying would open on a line above the last, in normal spaces (word-gap-wide fails past 3.5)
+    let gap = 1; if(rows.length > 1){ const node = ms.firstChild, re = /\S+/g, r2 = document.createRange(), cnt = rows.map(() => 0); let m;
+      while(node && (m = re.exec(node.nodeValue))){ r2.setStart(node, m.index); r2.setEnd(node, m.index + m[0].length); const q = r2.getBoundingClientRect(); if(q.width <= .5) continue;
+        const k = rows.findIndex(x => Math.abs(x.top - q.top) < lh*.5*96/72 + 2); if(k >= 0) cnt[k]++; }
+      const sp = fs*0.26*96/72; rows.slice(0, -1).forEach((r, i) => { if(cnt[i] > 1) gap = Math.max(gap, (sp + (box.width - (r.right - box.left))/(cnt[i] - 1))/sp); }); }
+    return {lines: rows.length, last: last && box.width ? Math.min(1, (last.right - box.left)/box.width) : 0, gap};
+  };
+  // a write-up set to fill its width (owner 11/9 p35, rules 5 and 8): the whole text, never shorter; the type moves between fsLo and fsHi
+  // until the last line runs 90%+ of the width (then every line is justified to the edge), at most maxLines lines. Prefers type near fsT.
+  PG.fitPara = (text, w, o) => { o = o || {}; const lr = o.lr || 1.42, lo = o.fsLo || 10, hi = o.fsHi || 12.5, T = o.fsT || hi, ml = o.maxLines || 99, mh = o.maxH || 1e9; let best = null;
+    for(let fs = lo; fs <= hi + 1e-6; fs += 0.125){ const lh = Math.round(fs*lr*4)/4, m = PG.measure(text, w, fs, lh); if(m.lines > ml || m.lines*lh > mh || !m.lines) continue;
+      const sc = (m.last >= .9 ? 2 : m.last >= .82 ? 1.6 : -2) + (m.gap <= 3.2 ? 1 : 0) + m.last - Math.abs(fs - T)/3; if(!best || sc > best.sc) best = {sc, fs, lh, lines: m.lines, last: m.last, gap: m.gap}; }
+    return best; };
+  // a fitted paragraph box: justified, the last line run to the edge too when it is 90%+ full
+  PG.paraFit = (text, slot, x, y, w, f, cls) => `<div class="abs ${cls||'body'}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${f.lines*f.lh}pt;font-size:${f.fs}pt;line-height:${f.lh}pt;text-align:justify;text-align-last:${f.last >= .9 ? 'justify' : 'left'}" data-slot="${slot}" data-lines="${f.lines}" data-para="1" data-pf="${f.fs}">${esc(text)}</div>`;
+  // CapFit (the shared caption fitter) treats a write-up near a photo as that photo's caption; a fitted paragraph keeps its own fit
+  PG.keepFits = () => document.querySelectorAll('[data-pf]').forEach(el => { if(el.__pfText == null) return; el.textContent = el.__pfText; el.style.fontSize = el.dataset.pf + 'pt'; el.style.letterSpacing = ''; el.style.textAlign = 'justify'; el.style.textAlignLast = el.__pfLast; if(window.CapFit && CapFit.gapsTooWide(el)){ el.style.textAlign = 'left'; el.style.textAlignLast = 'left'; } });
+  PG.markFits = () => document.querySelectorAll('[data-pf]').forEach(el => { el.__pfText = el.textContent; el.__pfLast = el.style.textAlignLast; });
+
   // a caption's small detail drops out when name and detail do not fit one line
   PG.fitTags = () => document.querySelectorAll('.cap .nm').forEach(el => { if(el.scrollWidth > el.clientWidth + 1){ const sp = el.querySelector('span'); if(sp) sp.style.display = 'none'; } });
   // the floor-by-floor room list with real writing (the back's no-plan fill): blocks [{label, rooms [[name, size]], text}]
+  // (owner 11/9, rules 5 and 8: each floor's write-up keeps its whole text, justified, its last line 90%+ where the type allows; one
+  // type size for every floor, the largest that fits the column, so the write-ups fill the height instead of leaving gaps between floors)
   PG.roomList = (D, blocks, slot, x, y, w, h) => {
-    blocks = blocks || []; const lh = 13, rowH = 15, headH = 20, ns = blocks.map((b, i) => PG.lines(D, `${slot}${i}`, 3));
-    const used = blocks.reduce((a, b, i) => a + headH + b.rooms.length*rowH + 6 + ns[i]*lh, 0);
-    const gap = blocks.length > 1 ? Math.max(8, (h - used)/(blocks.length - 1)) : 0; let yy = y, out = '';
+    blocks = blocks || []; let rowH = 15; const headH = 20, txt = blocks.map(b => PG.txt(b.text)), nRows = blocks.reduce((a, b) => a + b.rooms.length, 0);
+    const fixed = blocks.reduce((a, b) => a + headH + b.rooms.length*rowH + 6, 0) + 10*Math.max(0, blocks.length - 1);
+    // each floor's write-up takes the type (9.5 to 12.5 pt, near a common size) that fills its last line; the common size steps down
+    // until all of them fit the column
+    let fits = null;
+    for(let T = 11.5; T >= 9.25 - 1e-6; T -= 0.25){ const fl = txt.map(t => PG.fitPara(t, w, {fsLo: Math.max(9, T - 1), fsHi: Math.min(12.5, T + 1), fsT: T, lr: 1.4}));
+      if(fl.some(f => !f)) continue; const used = fixed + fl.reduce((a, f) => a + f.lines*f.lh, 0);
+      if(used > h) continue; const ok = fl.every(f => f.last >= .85); if(!fits || (ok && !fits.ok)) fits = {fl, used, ok}; if(ok) break; }
+    if(!fits){ const fl = txt.map(t => PG.fitPara(t, w, {fsLo: 8.5, fsHi: 9.5, lr: 1.36})); fits = {fl, used: fixed + fl.reduce((a, f) => a + (f ? f.lines*f.lh : 0), 0), ok: false}; }
+    // the height left over goes first to taller room rows (up to 23 pt), then to the space between the floors
+    if(nRows && h > fits.used){ const add = Math.min(8, (h - fits.used)*0.7/nRows); rowH += add; fits.used += add*nRows; }
+    const gap = blocks.length > 1 ? Math.max(10, (h - fits.used + 10*(blocks.length - 1))/(blocks.length - 1)) : 0; let yy = y, out = '';
     blocks.forEach((b, i) => {
       out += `<div class="abs rl-h" style="left:${x}pt;top:${yy}pt;width:${w}pt;height:${headH - 4}pt" data-slot="${slot}${i}.head" data-lines="1">${esc(b.label)}</div>`; yy += headH;
-      b.rooms.forEach((r, k) => { out += `<div class="abs rl-r" style="left:${x}pt;top:${yy}pt;width:${w}pt;height:${rowH}pt"><span data-slot="${slot}${i}.r${k}.n" data-lines="1">${esc(r[0])}</span><i data-slot="${slot}${i}.r${k}.s" data-lines="1" data-optional="1">${esc(r[1] || '')}</i></div>`; yy += rowH; });
-      yy += 6; out += PG.para(b.text, `${slot}${i}`, x, yy, w, ns[i], lh, 'body', 9.5); yy += ns[i]*lh + gap;
+      b.rooms.forEach((r, k) => { out += `<div class="abs rl-r" style="left:${x}pt;top:${yy}pt;width:${w}pt;height:${rowH}pt;line-height:${rowH + 1}pt;font-size:${rowH > 18 ? 10.5 : 9.5}pt"><span data-slot="${slot}${i}.r${k}.n" data-lines="1">${esc(r[0])}</span><i data-slot="${slot}${i}.r${k}.s" data-lines="1" data-optional="1">${esc(r[1] || '')}</i></div>`; yy += rowH; });
+      yy += 6; const f = fits.fl[i]; if(f){ out += PG.paraFit(txt[i], `${slot}${i}`, x, yy, w, f); yy += f.lines*f.lh; } yy += gap;
     });
-    return {html: out, over: used > h + 1, used};
+    return {html: out, over: fits.used > h + 1, used: fits.used};
   };
 
 
@@ -126,9 +163,11 @@
   // ---------- floor plan: the agent's own drawing, placed as given ----------
   // plan.levels: [{name, photo, w, h}] (px of a clear-background cut). Every level at one scale. One level: no label; two or
   // more: labeled by floor. The drawing turns a quarter turn when that prints it a third larger or more (never redrawn).
+  PG.planOK = D => !!(D.plan && (D.plan.levels || []).some(l => l.kind === 'image' && l.src));
   PG.plan = (D, box) => {
-    const P = D.plan; if(!P || !P.levels || !P.levels.length) return {html:'', issues:[], used:null};
-    const lv = P.levels.map(l => Object.assign({}, l, {src: l.src || PG.src(D, l.photo)})), GAP = 22, LAB = lv.length > 1 ? 14 : 0, issues = [];
+    // (owner 11/10/2026: only the listing's own plan image is ever placed; a level that is not one draws nothing)
+    const P = D.plan, lv0 = ((P && P.levels) || []).filter(l => l.kind === 'image' && l.src); if(!lv0.length) return {html:'', issues:[], used:null};
+    const lv = lv0.map(l => Object.assign({}, l)), GAP = 22, LAB = lv.length > 1 ? 14 : 0, issues = [];
     const layout = (ang, cols) => {
       const side = ang === 90, sz = lv.map(l => side ? {w:l.h, h:l.w} : {w:l.w, h:l.h}), rows = Math.ceil(lv.length/cols);
       const grid = [...Array(rows)].map((_, r) => lv.map((l, i) => i).filter(i => Math.floor(i/cols) === r));

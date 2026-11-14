@@ -50,8 +50,8 @@
     for(const q of rects){ const l = lines.find(x => Math.abs(x.top - q.top) < lh*0.5); if(l){ l.l = Math.min(l.l,q.left); l.r = Math.max(l.r,q.right); } else lines.push({top:q.top,l:q.left,r:q.right}); }
     lines.sort((a,b)=>a.top-b.top);
     const box = el.getBoundingClientRect().width;
-    const last = lines[lines.length-1];
-    return {n: lines.length, fill: last ? (last.r-last.l)/box : 0};
+    // fill = the shortest line of the box (every line set ragged counts, not only the last): text under a photo runs the photo's width (owner 11/8/2026)
+    return {n: lines.length, fill: lines.length ? Math.min(...lines.map(x => (x.r-x.l)/box)) : 0};
   };
   CN.textWidth = el => { const r = document.createRange(); r.selectNodeContents(el); return pt(r.getBoundingClientRect().width); };
   const html = (lead, sents) => (lead ? `<b>${esc(lead)}</b> ` : '') + esc(sents.join(' '));
@@ -59,16 +59,19 @@
   // Returns {pick, fill} (fewest sentences first), or null with el.dataset.diag saying how close the pool came.
   // a sentence may also run without its trailing clause (", with ...", ", under ...", ", beside ...", " and ..."): same fact, shorter
   const trim = t => {
+    if(typeof t !== 'string') return null;   // a missing sentence (no copy for this box) never stops the page
     const m = [...t.matchAll(/, (?:with|under|beside|over|set|just|where|which) |, and /g)].pop();
     if(m && m.index >= 38) return t.slice(0, m.index) + '.';
     const a = [...t.matchAll(/ and /g)];
-    if(a.length === 1 && a[0].index >= 48 && !/^(?:A|An|The)\s[^,]*\sand\s/.test(t.slice(0, a[0].index + 5))) return t.slice(0, a[0].index) + '.';
+    // never cut inside a clause that has not finished ("..., where high ceilings." is half a sentence; reviewer 11/12 p28;
+    // ", with the kitchen." drops the rest of a list: reviewer4 p25)
+    if(a.length === 1 && a[0].index >= 48 && !/^(?:A|An|The)\s[^,]*\sand\s/.test(t.slice(0, a[0].index + 5)) && !/,\s(?:where|which|who|that|when|while|as|with|under|beside|over|past|near|just)\s[^,.]*$/.test(t.slice(0, a[0].index))) return t.slice(0, a[0].index) + '.';
     return null;
   };
   const variants = alts => { const out = alts.slice(); const t = trim(alts[0]); if(t && !out.includes(t)) out.push(t); return out; };
   const pickFor = (el, T) => {
     // each sentence is a string, or a list of ways to say the same fact at different lengths (only one is ever used)
-    const S = JSON.parse(el.dataset.s).map(x => variants([].concat(x))), lead = el.dataset.lead || '', n = Math.min(S.length, 12);
+    const S = JSON.parse(el.dataset.s).map(x => [].concat(x).filter(v => typeof v === 'string')).filter(a => a.length).map(variants), lead = el.dataset.lead || '', n = Math.min(S.length, 12);
     let best = null, near = null, hi = null, lo = null;
     const full = S.map(a => a[0]);
     el.innerHTML = html(lead, full); const A = CN.lines(el), allLen = (lead ? lead.length + 1 : 0) + full.join(' ').length, cpl = allLen / Math.max(.5, A.n - 1 + A.fill);
@@ -82,8 +85,8 @@
       if(L.n === T - 1 && (!lo || L.fill > lo.fill)) lo = {fill: L.fill};
       if(L.n !== T) return;
       if(!near || L.fill > near.fill) near = {pick, fill: L.fill};
-      if(L.fill < 0.76) return;
-      const score = (L.fill >= 0.8 ? 1000 : 500) - pick.length * 10 + L.fill;   // the fewest, fullest sentences that fill the box; the last line well filled
+      if(L.fill < 0.8) return;
+      const score = (L.fill >= 0.9 ? 1000 : 500) - pick.length * 10 + L.fill;   // the fewest, fullest sentences that fill the box; the last line well filled
       if(!best || score > best.score) best = {score, pick, fill: L.fill};
     };
     const walk = (m, i, acc) => {
@@ -98,20 +101,63 @@
     return null;
   };
   const LH = 12.5, CAPPAD = 5;
+
+  // justified lines whose word gaps would open past 2x a normal space set ragged instead (owner 11/10, 11/12: never spread words)
+  const gapsTooWide = el => {
+    const r = document.createRange(); r.selectNodeContents(el); const box = el.getBoundingClientRect(); if(!box.width) return false;
+    const lh = parseFloat(getComputedStyle(el).lineHeight) || 12, fs = parseFloat(getComputedStyle(el).fontSize) || 10, rows = [];
+    const prev = el.style.textAlign; el.style.textAlign = 'left';
+    for(const q of r.getClientRects()){ if(q.width < .5) continue; const w = rows.find(x => Math.abs(x.t - q.top) < lh*.5); if(w){ w.r = Math.max(w.r, q.right); } else rows.push({t: q.top, l: q.left, r: q.right}); }
+    el.style.textAlign = prev;
+    if(rows.length < 2) return false;
+    // words on each line, counted word by word (a line of three long words must not be averaged with its roomier neighbours)
+    const wc = rows.map(() => 0), tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for(let n = tw.nextNode(); n; n = tw.nextNode()) for(const m of n.textContent.matchAll(/\S+/g)){
+      const w = document.createRange(); w.setStart(n, m.index); w.setEnd(n, m.index + m[0].length);
+      const q = w.getClientRects()[0]; if(!q) continue; const k = rows.findIndex(x => Math.abs(x.t - q.top) < lh*.5); if(k >= 0) wc[k]++; }
+    // the normal space measured in the box's own type (the space glyph plus letter and word spacing, as the print check measures it);
+    // a line whose own gap would pass 2x that space sets the block ragged (owner 11/12: never spread words)
+    const cs = getComputedStyle(el), cv = CN._cv || (CN._cv = document.createElement('canvas').getContext('2d'));
+    cv.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const sp = cv.measureText(' ').width + (parseFloat(cs.wordSpacing) || 0) + (parseFloat(cs.letterSpacing) || 0) || fs*0.26;
+    const right = box.right - (parseFloat(cs.paddingRight) || 0) - (parseFloat(cs.borderRightWidth) || 0);
+    return rows.slice(0, -1).some((x, k) => wc[k] > 1 && (right - x.r) / (wc[k] - 1) + sp > sp*1.6);   // 1.6x (reviewer6 p26/p28: ~1.7x still read loose)
+  };
+  CN.gapsTooWide = gapsTooWide;
+  CN.raggedPass = () => document.querySelectorAll('[data-s], [data-slot]').forEach(el => { if(el.querySelector('[data-slot]')) return; if(getComputedStyle(el).textAlign === 'justify' && gapsTooWide(el)) el.style.textAlign = 'left'; });
   CN.fill = () => {
     const issues = [];
     const caps = [...document.querySelectorAll('.cap .a[data-s]')], rest = [...document.querySelectorAll('[data-s]')].filter(e => !caps.includes(e));
+    // no phrase twice on one piece (owner 11/10/2026, rule 7): a pool sentence that repeats four words in a row already printed
+    // anywhere on the piece is left out of that box's pool (its other true lines fill it)
+    const SW = new Set('a an the and of to in on with at by its it is are or for from this that as up'.split(' '));
+    const sh = t => { const w = String(t).toLowerCase().match(/[a-z0-9']+/g) || [], o = []; for(let i = 0; i + 4 <= w.length; i++){ const g = w.slice(i, i + 4); if(g.filter(x => !SW.has(x)).length >= 2) o.push(g.join(' ')); } return o; };
+    const seen = new Set();
+    document.querySelectorAll('[data-slot]').forEach(el => { if(el.dataset.s || el.querySelector('[data-slot]')) return; sh(el.textContent).forEach(g => seen.add(g)); });
+    const prune = el => { let S; try { S = JSON.parse(el.dataset.s); } catch(e){ return; }
+      const keep = S.map(x => { const vs = [].concat(x).filter(v => typeof v === 'string'), ok = vs.filter(v => !sh(v).some(g => seen.has(g))); return ok.length ? (Array.isArray(x) ? ok : x) : null; }).filter(Boolean);
+      if(!(keep.length >= 2 || (keep.length && S.length < 2)) || keep.length === S.length) return;
+      // keep the shorter pool only when it still fills the box (else the box keeps its true lines and fills)
+      const old = el.dataset.s, T = +el.dataset.lines || 1; el.dataset.s = JSON.stringify(keep);
+      if(!pickFor(el, T)) el.dataset.s = old; delete el.__near; };
+    const note = el => sh(el.textContent).forEach(g => seen.add(g));
     const settle = (el, T) => {   // T lines: the best set, else the nearest and a report
-      const lead = el.dataset.lead || '', b = pickFor(el, T);
-      if(b){ el.innerHTML = html(lead, b.pick); delete el.dataset.diag; }
-      else el.innerHTML = html(lead, el.__near ? el.__near.pick : JSON.parse(el.dataset.s).map(x => [].concat(x)[0]));
+      const lead = el.dataset.lead || '';
+      let b = pickFor(el, T);
+      // no set fills every line at this size: the type may grow (up to 12%, owner 11/8) until one does (never spread words)
+      if(!b){ const fs0 = parseFloat(getComputedStyle(el).fontSize), inl = el.style.fontSize, near0 = el.__near;
+        for(const z of [1.03, 1.06, 1.09, 1.12]){ el.style.fontSize = (fs0*z) + 'px'; b = pickFor(el, T); if(b) break; }
+        if(!b){ el.style.fontSize = inl; el.__near = near0 || el.__near; } }
+      if(b){ el.innerHTML = html(lead, b.pick); delete el.dataset.diag; el.style.textAlign = 'justify'; if(gapsTooWide(el)) el.style.textAlign = 'left'; }
+      else el.innerHTML = html(lead, el.__near ? el.__near.pick : JSON.parse(el.dataset.s).map(x => [].concat(x)[0]).filter(v => typeof v === 'string'));
       el.dataset.lines = T; return !!b;
     };
-    rest.forEach(el => settle(el, +el.dataset.lines || 1));
+    rest.forEach(el => { prune(el); settle(el, +el.dataset.lines || 1); note(el); });
     // photo captions shrink to what their sentences honestly fill (never padded): the photo takes the room. The captions in one row share a line count when they can.
     const groups = new Map();
     caps.forEach(el => { const g = el.closest('.row') || el; (groups.get(g) || groups.set(g, []).get(g)).push(el); });
     groups.forEach(els => {
+      els.forEach(prune);
       const max = Math.max(...els.map(e => +e.dataset.lines));
       let chosen = null;
       for(let T = max; T >= 2 && !chosen; T--) if(els.every(e => pickFor(e, T))) chosen = T;
@@ -126,13 +172,14 @@
           for(let t = max; t >= 2 && !T; t--){ if(pickFor(e, t)) T = t; else if(e.__near && (!bestNear || e.__near.fill > bestNear.fill)) bestNear = {t, fill: e.__near.fill}; }
           if(!T) T = bestNear ? bestNear.t : 2;
         }
-        settle(e, T);
+        settle(e, T); note(e);
       });
       const h = Math.max(...els.map(e => +e.dataset.lines));
       els.forEach(e => { const lh = +e.dataset.lh || LH; e.style.height = (+e.dataset.lines * lh) + 'pt'; });
       const lh0 = +els[0].dataset.lh || LH;
       
     });
+    CN.raggedPass();
     return issues;
   };
 
@@ -285,22 +332,32 @@
       if(b){ el.innerHTML = html(lead, b.pick); return; }
     }
     // nothing fills a count honestly: the shortest lead sentence alone, set at the lines it takes
-    const first = JSON.parse(el.dataset.s).map(x => [].concat(x))[0].slice().sort((a, b) => a.length - b.length)[0];
+    const first = ((JSON.parse(el.dataset.s).map(x => [].concat(x).filter(v => typeof v === 'string'))[0]) || ['']).slice().sort((a, b) => a.length - b.length)[0] || '';
     el.innerHTML = html(lead, [first]); el.style.height = 'auto'; el.dataset.lines = Math.max(1, CN.lines(el).n);
   });
   // text beside a photo: the text column takes the narrowest width at which the sentences fill the photo's height exactly
   // (then the photo takes the rest); when no width fills it, the text sets a line shorter and the photo keeps its height
-  CN.fitPairs = () => document.querySelectorAll('.pair[data-wmin]').forEach(p => {
+  CN.fitPairs = () => { CN.fitPairs1(); CN.raggedPass(); };
+  CN.fitPairs1 = () => document.querySelectorAll('.pair[data-wmin]').forEach(p => {
     const bt = p.querySelector('.btxt'), pw = p.querySelector('.pw'), a = bt.querySelector('[data-s]'), hd = bt.querySelector('.h');
     const lh = +a.dataset.lh || 14, lead = a.dataset.lead || '', thin = bt.querySelector('.thin') ? 96 : 0, H = p.clientHeight * 0.75 - thin, headH = hd.offsetHeight * 0.75 + 4;
     const Tmax = Math.floor((H - headH) / lh + 0.02), wmin = +p.dataset.wmin, wmax = +p.dataset.wmax;
     a.style.flex = 'none';
+    // first: the text fills the photo's full height, type and leading up to 12% larger (owner 11/10/2026: no idle band
+    // under the write-up; never spread words, never fewer true lines)
+    { const fs0 = parseFloat(getComputedStyle(a).fontSize);
+      for(const z of [1, 1.04, 1.08, 1.12]){ const lz = lh*z, T = Math.floor((H - headH) / lz + 0.02); if(T < 2) continue;
+        a.style.fontSize = (fs0*z) + 'px'; a.style.lineHeight = lz + 'pt'; a.dataset.lh = lz;
+        for(let w = wmin; w <= wmax; w += 6){ bt.style.flex = `0 0 ${w}pt`; pw.style.flex = '1 1 0'; a.dataset.lines = T; a.style.height = (T * lz) + 'pt';
+          const b = pickFor(a, T); if(b){ a.innerHTML = html(lead, b.pick); return; } } }
+      a.style.fontSize = ''; a.style.lineHeight = ''; a.dataset.lh = lh; }
     for(let T = Tmax; T >= 2; T--){
       for(let w = wmin; w <= wmax; w += 6){
         bt.style.flex = `0 0 ${w}pt`; pw.style.flex = '1 1 0';
         a.dataset.lines = T; a.style.height = (T * lh) + 'pt';
         const b = pickFor(a, T);
-        if(b){ a.innerHTML = html(lead, b.pick); return; }
+        if(b){ a.innerHTML = html(lead, b.pick);
+          return; }
       }
     }
     bt.style.flex = `0 0 ${wmax}pt`;

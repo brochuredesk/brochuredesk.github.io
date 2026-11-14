@@ -6,8 +6,12 @@
 <link rel="stylesheet" href="plan-and-rooms.css">
 <script src="../engine/baths.js"></script>
 <script src="plan-and-rooms.js"></script>
+<script src="capfit.js"></script>
 <script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
 <script src="plan.js"></script>
+<script src="../engine/planink.js"></script>
+<script src="../engine/planrooms.js"></script>
+<script src="lastfix.js"></script>
 <script src="../engine/agentcard.js"></script>
 <!--
   The Plan and the Rooms · 11 x 17 book-fold brochure
@@ -65,17 +69,29 @@ window.brochureReady = (async function(){
     const B = K.back || {};
     let h = head(B.kicker, B.title, 'back'), k = 0;
     const cell = (c, n) => c.under ? item(c, 'back.photo' + (k++), 4) : pair(c, 'back.photo' + (k++), n === 1 ? [190, 290] : [100, 150], 'tight', 14);
-    h += `<div class="flow" style="top:100pt;bottom:170pt;gap:10pt">${B.rows.map((r, ri) => `<div class="row" style="flex:${(B.flex || [])[ri] || 1} 1 0;gap:16pt">${r.map(c => cell(c, r.length)).join('')}</div>`).join('')}</div>`;
+    // owner 11/10/2026 (p121, round 3 rule 1): the contact card runs the full width, shorter top to bottom (two rows), with the brokerage
+    // logo inside it; every row of photos and write-ups above grows into the freed room (the last row back across the page)
+    const CARDH = 66, CY = 757 - CARDH, short = {grow: 0, size: 'short', bottomGap: 0.5, layout: 'panel', s: {name: 20, nameFloor: 15, desigInline: true, wrap: false, phone: 13.5, line: 9.5, office: 9.5,
+      hsW: 50, hsGap: 14, pad: [6, 14, 5], panelW: 160, panelPad: [5, 8], logo: {wide: [140, 30], square: [32, 32], tall: [34, 34]}}};
+    h += `<div class="flow" id="backflow" style="top:100pt;bottom:${810 - (CY - 20)}pt;gap:10pt">${B.rows.map((r, ri) => `<div class="row" style="flex:${(B.flex || [])[ri] || 1} 1 0;gap:16pt">${r.map(c => cell(c, r.length)).join('')}</div>`).join('')}</div>`;
+    h += ContactCard.html([29, CY, 554, CARDH], Object.assign({}, A, {headshot: hsSrc}), b, short);
     const fine = 'Information deemed reliable but not guaranteed; buyer to verify.';
-    h += ContactCard.html([29, 632, 554, 132], Object.assign({}, A, {headshot: hsSrc}), b, {layout: 'panel', fine, bottomGap: 0.5});
+    h += `<div class="abs" style="left:29pt;top:${CY - 14}pt;width:554pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(fine)}</div>`;   // the fine print runs just above the card
     return h;
   }
 
   // ================= INSIDE LEFT =================
   function left(){
-    const I = K.left || {}, hasPlan = !!D.plan, rooms = I.rooms || [], LP = I.photos || [];
+    const I0 = K.left || {}, hasPlan = !!D.plan, LP = I0.photos || [];
+    // the plan's own room names and sizes in the room list beside the plan (owner 11/13/2026, captions round 3 Q2); a room the plan
+    // calls something else takes the plan's name in the notes and in "How the rooms connect" too
+    const PRm = hasPlan && window.PlanRooms ? PlanRooms.match(D, (I0.rooms || []).map(r => ({name: r.n, size: r.d || ''}))) : null;
+    const rn = x => !PRm ? x : Array.isArray(x) ? x.map(rn) : typeof x === 'string' ? PlanRooms.rename(x, PRm) : x;
+    const rooms = PRm ? (I0.rooms || []).map((r, i) => Object.assign({}, r, {n: PRm[i].name, d: PRm[i].size, s: rn(r.s)})) : (I0.rooms || []);
+    const I = PRm ? Object.assign({}, I0, {rooms, connect: rn(I0.connect)}) : I0;
     const MAINY = 100;
-    let h = head(I.kicker, I.title, 'left');
+    const kickL = hasPlan ? I.kicker : (I.kickerNoPlan || 'The rooms and their sizes'), titleL = hasPlan ? I.title : (I.titleNoPlan || 'Every Room, With Its Size');   // no plan: the title never promises a drawing
+    let h = head(kickL, titleL, 'left');
     const wrapOf = html => `<div class="abs planwrap" style="left:0;top:0;width:612pt;height:792pt">${html}</div>`;
     const dis = I.planDisc || 'Approximate; not to scale. Buyer to verify.';
     const legend = (x, y, w) => { const zs = IvoryPlan.zonesOf(D.plan);
@@ -89,8 +105,10 @@ window.brochureReady = (async function(){
       const BH = uH + 8 + 46;
       return {BH, html: `<div class="board" style="left:${x}pt;top:${y}pt;width:${BW}pt;height:${BH}pt"></div>${wrapOf(r.html + legend(x, y + BH - 40, BW))}
         <div class="plan-disclosure abs" style="left:${x}pt;top:${y + BH - 20}pt;width:${BW}pt;text-align:center" data-slot="left.planDisc" data-fine="1" data-lines="1">${esc(dis)}</div>`}; };
-    const note = (r, i, nl, lh) => `<div class="rs" data-fillto="${nl || 3}-1" data-slot="left.room${i}.note" data-lh="${lh || 14}" data-lead="" data-s='${sattr(r.s)}'></div>`;
-    const rowsList = (x, top, w, height, notes, stack) => { const rh = (height - 17) / Math.max(1, rooms.length), big = rh > 62, lh = big ? 16 : 14, nl = Math.max(1, Math.min(4, Math.floor(stack ? (rh - 5 - (big ? 18 : 15) - 3) / lh : (rh - 8) / lh))); return `<div class="sk abs" style="left:${x}pt;top:${top}pt;width:${w}pt" data-slot="left.listKicker" data-lines="1">Room dimensions</div>
+    const note = (r, i, nl, lh) => `<div class="rs" data-fillto="${nl || 3}-1" data-slot="left.room${i}.note" data-lh="${lh || 14}" data-lead="" data-s='${sattr(r.s)}' style="line-height:${lh || 14}pt;font-size:${Math.min(11, Math.max(9, (lh || 14)/1.4)).toFixed(2)}pt"></div>`;
+    // stacked rows: the note's lines and line height are set so name and note fill the row (owner 11/10/2026, round 3: no blank space)
+    const rowsList = (x, top, w, height, notes, stack) => { const rh = (height - 17) / Math.max(1, rooms.length), big = rh > 62, A = rh - 5 - (big ? 18 : 15) - 4;
+      const nl = stack ? Math.max(1, Math.min(5, Math.floor(A / 12.6))) : Math.max(1, Math.min(4, Math.floor((rh - 8) / (big ? 16 : 14)))), lh = stack ? Math.min(16.5, A / nl) : (big ? 16 : 14); return `<div class="sk abs" style="left:${x}pt;top:${top}pt;width:${w}pt" data-slot="left.listKicker" data-lines="1">Room dimensions</div>
       <div class="rlist${stack ? ' stack' : ''}${big ? ' big' : ''} abs" style="left:${x}pt;top:${top + 17}pt;width:${w}pt;height:${height - 17}pt">${rooms.map((r, i) => `<div class="rr"><div class="rh"><div class="rn" data-slot="left.room${i}.n" data-lines="1">${esc(r.n)}</div>${r.d ? `<div class="rd" data-slot="left.room${i}.d" data-lines="1">${esc(r.d)}</div>` : ''}</div>${notes && r.s ? note(r, i, nl, lh) : ''}</div>`).join('')}</div>`; };
     const connectBlock = (x, top, w, hh, fill) => `<div class="abs" style="left:${x}pt;top:${top}pt;width:${w}pt;${hh ? `height:${hh}pt;` : ''}display:flex;flex-direction:column"><div class="sk" data-slot="left.connectKicker" data-lines="1" style="margin-bottom:6pt">How the rooms connect</div>
           <div class="para" data-fillto="${fill}" data-slot="left.connect" data-lh="14" data-lead="" data-s='${sattr(I.connect)}'></div></div>`;
@@ -111,7 +129,7 @@ window.brochureReady = (async function(){
         else if(rem >= 90) h += connectBlock(bx, MAINY + pb.BH + 14, BW, rem, `${Math.floor((rem - 17) / 14)}-3`) + placesAt(PLACES_TOP);
         else {
           // the plan is tall: shrink it so the connect paragraph sits under the list and plan
-          h = head(I.kicker, I.title, 'left');
+          h = head(kickL, titleL, 'left');
           const MB = 618, r1 = measure(372 - 16, MB - MAINY - 54), uW = Math.ceil(r1.usedW), uH = Math.ceil(r1.usedH), BW1 = uW + 16, bx1 = 583 - BW1, pb1 = place(bx1, MAINY, uW, uH, BW1);
           h += rowsList(29, MAINY, bx1 - 29 - 18, MB - MAINY, true, true) + pb1.html + connectBlock(29, MB + 14, 554, 0, '5-3') + placesAt(PLACES_TOP);
         }
@@ -129,7 +147,13 @@ window.brochureReady = (async function(){
         if(pick){
           const bx = 29, pb = place(bx, MAINY, pick.uW, pick.uH, pick.BW), top = MAINY + pb.BH + 12;
           h += pb.html + connectBlock(bx + pick.BW + 18, MAINY, pick.cw, pb.BH, `${Math.floor((pb.BH - 17) / 14)}-3`);
-          if(hasNotes) h += rowsList(29, top, 554, MB2 - top, true);
+          if(hasNotes && LP.length){
+            // the room sizes stacked at the left, the listing's own photos with their captions at the right (round 3: no blank space)
+            const LW = 300, PX = 29 + LW + 18;
+            h += rowsList(29, top, LW, MB2 - top, true, true)
+              + `<div class="abs" style="left:${PX}pt;top:${top}pt;width:${583 - PX}pt;height:${MB2 - top}pt;display:flex;flex-direction:column;gap:10pt">${LP.slice(0, 2).map((c, i) => item(c, 'left.photo' + i, 4)).join('')}</div>`;
+          }
+          else if(hasNotes) h += rowsList(29, top, 554, MB2 - top, true);
           else {
             const half = Math.ceil(n / 2), ord = [...rooms.slice(0, half), ...rooms.slice(half)];
             const cell = (r, i) => `<div class="lr"><div class="ln" data-slot="left.room${i}.n" data-lines="1">${esc(r.n)}</div>${r.d ? `<div class="ld" data-slot="left.room${i}.d" data-lines="1">${esc(r.d)}</div>` : ''}</div>`;
@@ -152,7 +176,7 @@ window.brochureReady = (async function(){
         h += connectBlock(29, MB + 14, 554, 0, '5-3') + placesAt(PLACES_TOP);
         }
       }
-    } else if(LP.length && rooms.length <= 7){
+    } else if(LP.length && rooms.length <= 10){
       // no plan: the room sizes and "How the rooms connect" at the left, two photos in the plan's place at the right
       const MB2 = PLACES_TOP - 18, CH = 100, LW = 330, PX = 29 + LW + 18;
       h += rowsList(29, MAINY, LW, MB2 - MAINY - CH - 14, true, true) + connectBlock(29, MB2 - CH, LW, CH, `${Math.floor((CH - 17) / 14)}-3`)
@@ -170,11 +194,84 @@ window.brochureReady = (async function(){
     const R = K.right || {};
     let k = 0;
     return `${head(R.kicker, R.title, 'right')}
-      <div class="flow" style="top:100pt;bottom:26pt;gap:10pt">
+      <div class="flow" id="rightflow" style="top:100pt;bottom:26pt;gap:10pt">
         ${R.pairs.map(c => pair(c, 'right.photo' + (k++), [230, 330], '', 14, 1.2)).join('')}
         ${[0, 1].map(r => `<div class="row" style="flex:1.8 1 0;gap:10pt">${R.grid.slice(r*2, r*2 + 2).map(c => item(c, 'right.photo' + (k++), 3)).join('')}</div>`).join('')}
       </div>`;
   }
+
+
+  // ---------- write-ups beside photos fill to the photo's foot (owner 11/10/2026, p121) ----------
+  // Every pair (photo left, write-up right) sets ALL its true sentences (never shorter); the row's height and each write-up's column width
+  // and type (up to 12% bigger) are chosen so the write-up runs from the photo's top to 90-100% of its height. Rows of pairs share the
+  // panel's height; a row of captioned photos (the inside right page's grid) takes what the pairs leave. The photo never turns tall and
+  // skinny (at most 1.75 : 1) or thin.
+  const solveRows = flow => {
+    if(!flow) return;
+    const P = v => v*72/96, GAP = 10, SC = [1, 1.04, 1.08, 1.12], TALL = 1.75;
+    const rows = [...flow.children], fr = flow.getBoundingClientRect(), gapR = parseFloat(getComputedStyle(flow).rowGap) || 0;
+    const T = P(fr.height) - P(gapR)*(rows.length - 1);
+    const cellsOf = r => r.matches('.pair') ? [r] : [...r.children];
+    const info = rows.map(r => ({r, cells: cellsOf(r), pairs: cellsOf(r).filter(c => c.matches('.pair')), H0: P(r.getBoundingClientRect().height)}));
+    const prof = new Map();
+    // each pair: for every type scale, the write-up's height at each column width (all sentences, the longest way of saying each)
+    for(const I of info) for(const c of I.pairs){
+      const bt = c.querySelector('.btxt'), a = bt.querySelector('[data-s]'), hd = bt.querySelector('.h'), pw = c.querySelector('.pw');
+      const S = JSON.parse(a.dataset.s).map(x => [].concat(x)[0]), lead = a.dataset.lead || ''; hd.style.flex = 'none';
+      a.innerHTML = (lead ? `<b>${CN.esc(lead)}</b> ` : '') + CN.esc(S.join(' '));
+      a.style.flex = 'none'; a.style.height = 'auto'; a.style.overflow = 'visible';
+      const cw = P(c.getBoundingClientRect().width), wmax = Math.min(+c.dataset.wmax + 60, cw - GAP - 60), out = [];
+      for(const sc of SC){ a.style.fontSize = (10*sc) + 'pt'; a.style.lineHeight = (14*sc) + 'pt';
+        for(let w = 92; w <= wmax; w += 3){ bt.style.flex = `0 0 ${w}pt`; pw.style.flex = '1 1 0';
+          const L = CN.lines(a), h = P(bt.getBoundingClientRect().top - bt.getBoundingClientRect().top) + P(hd.getBoundingClientRect().height) + 3 + 1 + L.n*14*sc;
+          out.push({sc, w, h, n: L.n, fill: L.fill}); } }
+      prof.set(c, {cw, out, a, bt, pw, S, lead});
+    }
+    // a pair holds height H when some width and scale set its write-up 90-100% of H, the last line 3/4 full, the photo not too tall
+    const fit = (c, H, scale) => { const p = prof.get(c), I0 = fitMin.get(c) || {}; let best = null;
+      for(const o of p.out){ if(scale && o.sc !== scale) continue; if(o.h > H - 1 || o.h < 0.93*H || o.fill < (I0.minFill || 0.82)) continue; const phw = p.cw - GAP - o.w; if(phw < H/TALL || phw < 60 || phw > 3*H) continue;
+        const sc = (o.h/H)*10 - (o.w > +c.dataset.wmax + 30 ? 1 : 0); if(!best || sc > best.sc) best = Object.assign({sc}, o); }
+      return best; };
+    // the write-ups side by side in one row share one type size
+    const rowFit = (I, H) => { let best = null;
+      for(const k of SC){ const fs = I.pairs.map(c => fit(c, H, k)); if(fs.some(f => !f)) continue; const m = Math.min(...fs.map(f => f.sc)) - k*2; if(!best || m > best.m) best = {m, fs}; }
+      if(!best){ const fs = I.pairs.map(c => fit(c, H)); if(fs.every(f => f)) best = {m: -9, fs}; }   // no shared size: each write-up its own (within 12%)
+      return best; };
+    const fitMin = new Map();
+    const feas = (I, H) => !!rowFit(I, H);
+    const elastic = info.filter(I => !I.pairs.length);
+    let Hs;
+    if(elastic.length){
+      // pairs keep their height when it fills, else the nearest height that does; the grid rows take the rest
+      Hs = info.map(I => { if(!I.pairs.length) return null; let best = null;
+        for(let H = 60; H <= 520; H += 1) if(feas(I, H) && (best === null || Math.abs(H - I.H0) < Math.abs(best - I.H0))) best = H;
+        return best === null ? I.H0 : best; });
+      const rest = T - Hs.filter(h => h !== null).reduce((a, b) => a + b, 0), fl = elastic.map(I => +I.r.style.flexGrow || 1), F = fl.reduce((a, b) => a + b, 0);
+      let k = 0; Hs = Hs.map((h, i) => h === null ? rest*fl[k++]/F : h);
+    } else {
+      // rows of pairs share the whole height: every split (2 pt steps) with each row able to fill, nearest the designed shares
+      const opts = info.map(I => { let o = []; for(let H = 60; H <= T; H += 2) if(feas(I, H)) o.push(H);
+        if(!o.length && I.pairs.length){ I.pairs.forEach(c => fitMin.set(c, {minFill: .6})); for(let H = 60; H <= T; H += 2) if(feas(I, H)) o.push(H); }
+        return o; });
+      // the split nearest the designed shares, by dynamic programming over the running total (2 pt steps)
+      let dp = new Map([[0, {dev: 0, acc: []}]]);
+      opts.forEach((o, i) => { const nx = new Map();
+        dp.forEach((v, sum) => o.forEach(H => { const s2 = sum + H; if(s2 > T + 3) return; const dev = v.dev + Math.abs(H - info[i].H0);
+          const cur = nx.get(s2); if(!cur || dev < cur.dev) nx.set(s2, {dev, acc: v.acc.concat(H)}); }));
+        dp = nx; });
+      let best = null; dp.forEach((v, sum) => { const d = Math.abs(sum - T); if(d > 3) return; const sc = v.dev + d*50; if(!best || sc < best.dev) best = {dev: sc, acc: v.acc}; });
+      Hs = best ? best.acc.map((h, i) => i === info.length - 1 ? h + (T - best.acc.reduce((a, b) => a + b, 0)) : h) : info.map(I => I.H0);
+      if(!best) flow.dataset.solve = 'short';
+    }
+    info.forEach((I, i) => { I.r.style.flex = `0 0 ${Hs[i]}pt`; I.r.style.height = Hs[i] + 'pt';
+      const rf = I.pairs.length ? rowFit(I, Hs[i]) : null;
+      I.pairs.forEach((c, j) => { const p = prof.get(c), f = rf && rf.fs[j];
+        const o = f || p.out.filter(o => o.sc === 1 && o.h <= Hs[i] && p.cw - GAP - o.w >= Hs[i]/TALL).sort((x, y) => y.h - x.h)[0] || p.out[0];
+        if(!f) flow.dataset.solve = 'short'; 
+        p.a.style.fontSize = (10*o.sc) + 'pt'; p.a.style.lineHeight = (14*o.sc) + 'pt'; p.bt.style.flex = `0 0 ${o.w}pt`; p.pw.style.flex = '1 1 0';
+        p.a.style.height = (o.n*14*o.sc) + 'pt'; p.a.dataset.lines = o.n; p.a.dataset.lh = 14*o.sc;
+        p.a.dataset.s0 = p.a.dataset.s; delete p.a.dataset.s; c.removeAttribute('data-wmin'); }); });
+  };
 
   const panels = {front: cover(), back: back(), left: left(), right: right()};
   const panel = h => `<div class="panel">${h}</div>`;
@@ -186,12 +283,40 @@ window.brochureReady = (async function(){
     for(const id of ['front','left','right','back']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
   }
   document.getElementById('pages').innerHTML = html;
+  if(window.PlanInk) PlanInk.applyAll(D, false);   // owner 11/10 round 2: the plan's background clear on the white paper; lines and colored rooms as the listing has them
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
   document.querySelectorAll('#street').forEach(st => { let fs = 44; while(st.scrollWidth > st.clientWidth + 1 && fs > 30){ fs -= 1; st.style.fontSize = fs + 'pt'; } });
-  CN.fitTexts();
+  await Promise.all([...document.fonts].filter(f => f.status !== 'loaded').map(f => f.load().catch(() => {}))); await document.fonts.ready; CN.fitTexts();   // measure with the real fonts (owner 11/10: never shorter)
+  document.querySelectorAll('#backflow, #rightflow').forEach(solveRows);
   CN.fitPairs();
   CN.fill();
+  // "How the rooms connect" in a box of set height: all its sentences, the type up to 12% bigger and the leading opened so the
+  // paragraph reaches the foot of its box (round 3: no blank space; never shorter)
+  document.querySelectorAll('[data-slot="left.connect"]').forEach(el => { const box = el.parentElement; if(!box.style.height) return;
+    const keep = [el.innerHTML, el.style.cssText], k = box.querySelector('.sk'), H = (box.clientHeight - k.offsetHeight)*72/96 - 6;
+    const S = (el.dataset.s ? JSON.parse(el.dataset.s) : []).map(x => [].concat(x)[0]); if(!S.length) return;
+    el.innerHTML = CN.esc(S.join(' ')); el.style.height = 'auto'; el.style.flex = 'none'; let ok = false;
+    for(let sc = 1.12; sc >= 0.999 && !ok; sc -= .02){ el.style.fontSize = (10*sc) + 'pt'; el.style.lineHeight = (14*sc) + 'pt'; const n = CN.lines(el).n;
+      if(n*14*sc <= H){ const lh = Math.min(H/n - .1, 14*sc*1.3); el.style.lineHeight = lh + 'pt'; el.style.height = (n*lh) + 'pt'; el.dataset.lines = n; ok = true; } }
+    if(!ok){ el.innerHTML = keep[0]; el.style.cssText = keep[1]; const n = CN.lines(el).n, lh0 = parseFloat(getComputedStyle(el).lineHeight)*72/96;   // the fitted sentences, the leading opened to the box's foot
+      if(n > 1){ const lh = Math.min(H/n - .1, lh0*1.36); if(lh > lh0){ el.style.lineHeight = lh + 'pt'; el.style.height = (n*lh) + 'pt'; }
+        const spare = H - n*Math.max(lh, lh0) - 1; if(spare > 0){ box.style.top = (parseFloat(box.style.top) + spare) + 'pt'; box.style.height = (parseFloat(box.style.height) - spare) + 'pt'; } } } });   // the block sits on its foot line, as tall as its text
+  // the room notes in stacked rows: the most of the room's sentences that fit (in order, the first always), the leading opened so name and
+  // note fill the row (never shorter than the fitted note); a full last line (80%+, owner 11/10) first, else the fullest last line
+  document.querySelectorAll('.rlist.stack .rr').forEach(rr => { const el = rr.querySelector('.rs'), hd = rr.querySelector('.rh'); if(!el || !el.dataset.s) return;
+    const keep = [el.innerHTML, el.style.cssText], A = (rr.clientHeight - hd.offsetHeight)*72/96 - 5 - 3, fs = parseFloat(getComputedStyle(el).fontSize)*72/96, kept = el.textContent.length;
+    const S = JSON.parse(el.dataset.s).map(x => [].concat(x)[0]); el.style.height = 'auto';
+    let best = null;
+    for(let k = S.length; k >= 1; k--){ const t = S.slice(0, k).join(' '); if(t.length < kept) break; el.innerHTML = CN.esc(t);
+      for(const f of [fs*1.12, fs*1.1, fs*1.08, fs*1.06, fs*1.04, fs*1.02, fs, fs*.98, fs*.96, fs*.94, fs*.92, fs*.9, fs*.88].filter(f => f >= 9.25)){ el.style.fontSize = f + 'pt'; el.style.lineHeight = (f*1.28) + 'pt'; const L = CN.lines(el), n = L.n;
+        if(n*f*1.28 > A) continue;
+        const sc = (n === 1 || L.fill >= .82 ? 250 : 0) + Math.min(1, n*f*1.75/A)*1000 + t.length*0.2 + f*0.5;   /* fills the row, full last line, most copy */
+        if(!best || sc > best.sc) best = {sc, t, f, n}; } }
+    if(best){ el.innerHTML = CN.esc(best.t); el.style.fontSize = best.f + 'pt'; const lh = Math.min(A/best.n - .1, best.f*2); el.style.lineHeight = lh + 'pt'; el.style.height = (best.n*lh) + 'pt'; el.dataset.lines = best.n; }
+    else { el.innerHTML = keep[0]; el.style.cssText = keep[1]; } });
+  await document.fonts.ready; if(window.LastFix) LastFix.run(document, (D.copy || {}).alts || {});   // no last line under 80% (owner 11/10)
   ContactCard.fit(document);
+  await Promise.all([...document.fonts].filter(f => f.status !== 'loaded').map(f => f.load().catch(() => {}))); await document.fonts.ready; CapFit.run(document.querySelectorAll('.cap .a, .para[data-slot="front.house"]'));
   issues.push(...CN.focus(D));
   window.brochureCheck = () => CN.check(D, (window.planIssues||[]).concat(issues));
   window.photoPlacements = CN.placements;

@@ -5,6 +5,7 @@
 <title>BrochureDesk · Midnight Residence open house flyer · Gold Invitation</title>
 <link rel="stylesheet" href="midnight.css">
 <script src="midnight.js"></script>
+<script src="lastfix.js"></script>
 <script src="../engine/setpieces.js"></script>
 <!--
   Midnight Residence · Open House flyer a "Gold Invitation" (trim 612 x 792 pt; print: 0.25 in white margin around the navy field).
@@ -44,6 +45,7 @@ window.brochureReady = (async function(){
   const issues = await SP.ready(D);
   document.body.dataset.mode = D.mode || 'email';
   const O = SP.openHouse(D), X = 40, W = 532;
+  if(!O.long || !O.time) issues.push({slot: 'oh.when', kind: 'oh-date-time-missing'});   /* every Open House piece shows its date and time, big (owner 11/10) */
   let h = '';
 
   // the event, centered
@@ -68,12 +70,15 @@ window.brochureReady = (async function(){
   // a centered write-up between two interiors
   const ps = (C.photos || []).slice(0, 2), pw = 118, ty = 590, hh = 64, tx = X + pw + 18;
   h += `<div class="abs ab" style="left:${tx}pt;top:${ty}pt;width:${W - 2*pw - 36}pt;height:${hh}pt" data-slot="oh.blurb" data-para="1" data-min="4" data-fillbox="1">${esc(C.text || '')}</div>`;
-  h += `<div class="abs" data-gapcheck="oh.photos" style="left:0;top:0">${ps.map((id, i) => SP.photo(D, id, i ? X + W - pw : X, ty, pw, hh, 'oh.photo' + i)).join('')}</div>`;
+  // round 3 (rule 6): every photo gets a caption; the two interiors carry what they show (the listing's photo notes) under them
+  const rn = id => { const t = String(((D.photos || {})[id] || {}).tags || '').split(',').map(x => x.trim()).filter(Boolean).slice(0, 3).join(', '); return t.charAt(0).toUpperCase() + t.slice(1); }, ph2 = hh - 24;
+  h += `<div class="abs" data-gapcheck="oh.photos" style="left:0;top:0">${ps.map((id, i) => SP.photo(D, id, i ? X + W - pw : X, ty, pw, ph2, 'oh.photo' + i)).join('')}</div>`;
+  h += ps.map((id, i) => `<div class="abs" style="left:${i ? X + W - pw : X}pt;top:${ty + ph2 + 3}pt;width:${pw}pt;height:21pt;font:600 8.5pt/10.5pt var(--font-body);color:var(--muted);text-align:${i ? 'right' : 'left'};overflow:hidden" data-slot="oh.photo${i}.cap" data-lines="2">${esc(rn(id))}</div>`).join('');
 
   h += SP.card(D, [X, 668, W, 90], {layout: 'panel', fieldAccent: true});
   h += `<div class="abs" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
 
-  await SP.finish(D, 612, 792, h, issues);
+  await SP.finish(D, 612, 792, h, issues, async () => { await document.fonts.ready; if(window.LastFix) LastFix.run(document, Object.assign({}, PC.alts || {}, C.alts || {})); });
 })();
 </script>
 </body>

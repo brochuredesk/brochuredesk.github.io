@@ -52,10 +52,10 @@ window.brochureReady = (async function(){
 
   // the house, with the fold-over's gold-boxed tag. A tall house (its box needs more height than the usual frame) takes a
   // taller frame, and the place line moves onto the address row to give the height back.
-  const ph0 = (D.photos || {})[C.hero || 'front'] || {}, bx = ph0.box;
+  const heroId = C.hero || ['front', 'hero', 'cover', 'exterior'].find(k => (D.photos || {})[k]) || 'front', ph0 = (D.photos || {})[heroId] || {}, bx = ph0.box;
   const need = (bx && ph0.w && ph0.h) ? W/(ph0.w/ph0.h)*(bx[3] - bx[1] + 0.012) : 0;
   const tall = need > 268 - dy, hh = tall ? Math.min(312, Math.ceil(need)) : 268 - dy, hb = 168 + dy + hh;
-  h += SP.photo(D, C.hero || 'front', X, 168 + dy, W, hh, 'oh.hero');
+  h += SP.photo(D, heroId, X, 168 + dy, W, hh, 'oh.hero');
   if(SP.floodStated(L.description)) h += `<div class="abs" style="left:${X + 12}pt;top:${hb - 29}pt"><span class="ctag" data-slot="oh.tag" data-lines="1">Never flooded</span></div>`;
 
   // the address

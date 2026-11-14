@@ -67,7 +67,7 @@
 <div id="pages"></div>
 <script>
 window.brochureReady = (async function(){
-  const D = OF.data(), esc = OF.esc;
+  const D = OF.extendPools(OF.data()), esc = OF.esc;
   await OFC.boot(D, () => {
     const L = D.listing || {}, C = D.copy || {}, FL = (D.companion || {}).flyer || {}, P = D.photos || {};
     const side = (D.piece || {}).side === 'back' ? 'back' : 'front';
@@ -80,6 +80,9 @@ window.brochureReady = (async function(){
     const feetOnly = t => String(t == null ? '' : t).replace(/(\d+)(?:\.\d+)?(?:'\s?\d+(?:\.\d+)?"?)?'?\s*x\s*(\d+)(?:\.\d+)?(?:'\s?\d+(?:\.\d+)?"?)?'?/g, "$1' x $2'");
     const split = s => (feetOnly(s).match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || []).map(x => x.trim()).filter(Boolean);
     const beats = x => x == null ? [] : Array.isArray(x) ? x.map(b => Array.isArray(b) ? b.map(feetOnly) : feetOnly(b)) : split(x);
+    const capBeats = x => OF.noRepeat(beats(x));   // captions: no repeated line (owner 11/10, rule 7)
+    // the back's one photo also takes the rest of its true lines (companion.capPool) when its own text cannot fill its lines
+    const phBeats = c => OF.noRepeat(beats(c.text).concat(((OF.pool(c.id) || [])).filter(x => !String(c.text).includes(x)).slice(0, 6)));
     const firstOf = b => [].concat(b)[0];
     // the smallest of the candidate line counts that every box in the list can fill (last line 3/4 full)
     const commonN = (lists, w, style, ns) => { for(const n of ns){ if(lists.every(b => OFC.pickN(b, w, style, [n]))) return n; } return null; };
@@ -101,26 +104,44 @@ window.brochureReady = (async function(){
 
     // ---------- shared pieces ----------
     const fine = (side === 'back' && hasPlan ? 'Information deemed reliable but not guaranteed. Room sizes are approximate, from the listing\'s floor plan.' : 'Information deemed reliable but not guaranteed.');
-    const cardAndFine = txt => OFC.card(D, [X0, 652, CW, 104], {layout: 'panel'}) +
-      `<div class="copper-rule" style="left:${X0}pt;width:${CW}pt;top:646pt"></div>` +
-      `<div class="abs fl-fine" style="left:${X0}pt;top:760pt;width:${CW}pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(txt || fine)}</div>`;
+    const fineLine = txt => `<div class="abs fl-fine" style="left:${X0}pt;top:760pt;width:${CW}pt" data-slot="fineprint" data-lines="1" data-fine="1">${esc(txt || fine)}</div>`;
+    // owner 11/10: the back's agent card is narrow (sized to its content: name, cell, email and website stacked, the brokerage
+    // below); the tan band sits beside it, and the plan, the floors and the photos grow into the freed height
+    const CDW = 244, BDW = CW - CDW - 14;
+    // the band's note: the line count and type size (8.5 to 11 pt) at which its true sentences fill every line
+    const bandFit = B => { const sb = beats(B.small);
+      for(const w of [BDW - 30, BDW - 44, BDW - 58]) for(const [fs, lh] of [[8.5, 11], [9.5, 12.5], [10, 13], [10.5, 13.5], [11, 14]]) for(const n of [3, 4, 2]){ if(OFC.pickN(sb, w, `font-size:${fs}pt;line-height:${lh}pt`, [n])) return {n, fs, lh, w}; }
+      return {n: 3, fs: 8.5, lh: 11, w: BDW - 30}; };
+    // owner 11/10 (p66, standing rule 1): the contact block is SHORTER top to bottom and full width again (round 2's narrow card
+    // beside the band undone); the band runs full width above it (claim and write-up left, items in three columns right)
+    const CARDH = 70, BLW = 250;
+    const wideFit = B => { const sb = beats(B.small); for(const w of [BLW - 30, BLW - 44, BLW - 58]) for(const [fs, lh] of [[11.5, 14.5], [11, 14], [10.5, 13.5], [10, 13], [9.5, 12.5], [9, 11.5]]) for(const n of [4, 3, 2]){ if(OFC.pickN(sb, w, `font-size:${fs}pt;line-height:${lh}pt`, [n])) return {n, fs, lh, w}; } return {n: 3, fs: 9.5, lh: 12.5, w: BLW - 30}; };
+    const stripH = B => { const f = wideFit(B), rows = Math.ceil(Math.min(6, (B.items || []).length)/2); return Math.max(38 + f.n*f.lh + 2, 30 + rows*16 + 2) + 4 + CARDH; };
+    const bandWide = (B, x, y, w, h) => { const items = (B.items || []).slice(0, 6), rows = Math.ceil(items.length/2), f = wideFit(B), rx = BLW + 14, rw = w - rx - 15;
+      return `<div class="bandx" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt">
+        <div class="abs big" style="left:15pt;top:10pt;width:${BLW - 30}pt;height:24pt" data-slot="back.band.big" data-lines="1">${esc(B.big)}</div>
+        ${OFC.para('back.band.small', beats(B.small), 15, 38, f.w, f.n, f.fs, f.lh).replace('data-slot="back.band.small"', 'data-slot="back.band.small" data-ragged="1"')}
+        <div class="abs" style="left:${BLW}pt;top:12pt;width:.8pt;height:${h - 24}pt;background:var(--accent);opacity:.5"></div>
+        <div class="abs kick" style="left:${rx}pt;top:12pt;width:${rw}pt;height:10pt" data-slot="back.band.head" data-lines="1">${esc(B.head)}</div>
+        <div class="abs grid" style="left:${rx}pt;top:30pt;width:${rw}pt;grid-template-columns:repeat(2,1fr);grid-auto-flow:row;grid-template-rows:repeat(${rows},16pt);gap:0 12pt">${items.map((t, i) => `<div data-slot="back.band.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div></div>`; };
+    const cardStrip = (SY, SH) => OFC.card(D, [X0, 756 - CARDH, CW, CARDH], {layout: 'panel', size: 'short', grow: 0}) +
+      `<div class="copper-rule" style="left:${X0}pt;width:${CW}pt;top:${SY - 7}pt"></div>`;
     // a captioned row: photos of one height, captions of one line count
     const capRow = (items, slot, x, y, w, n, ph, gap) => {
       const cw = (w - gap*(items.length - 1))/items.length; let h = '';
       items.forEach((c, i) => { const cx = x + i*(cw + gap);
-        h += OFC.photo(D, c.id, cx, y, cw, ph) + OFC.cap(c, `${slot}${i}`, cx, y + ph + 6, cw, n, beats(c.text)); });
+        h += OFC.photo(D, c.id, cx, y, cw, ph) + OFC.cap(c, `${slot}${i}`, cx, y + ph + 6, cw, n, capBeats(c.text)); });
       return h;
     };
     // the tan band with the red claim (same as the fold-over's back)
-    const band = (B, y, h) => {
-      const items = (B.items || []).slice(0, 6), rows = Math.ceil(items.length/2), lw = 232, sw = lw - 30, sb = beats(B.small);
-      const ok = [3, 2, 4].find(n => OFC.pickN(sb, sw, CAPS, [n])) || 3;
-      return `<div class="bandx" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${h}pt">
-        <div class="abs big" style="left:16pt;top:9pt;width:${sw}pt;height:24pt" data-slot="back.band.big" data-lines="1">${esc(B.big)}</div>
-        ${OFC.para('back.band.small', sb, 16, 37, sw, ok, 8.5, 11)}
-        <div style="margin-left:${lw}pt;width:.7pt;background:rgba(31,43,44,.25);margin-top:10pt;margin-bottom:10pt;flex:none"></div>
-        <div style="flex:1;padding:9pt 14pt 0 18pt;min-width:0"><div class="kick" style="height:10pt;margin-bottom:5pt" data-slot="back.band.head" data-lines="1">${esc(B.head)}</div>
-          <div class="grid" style="grid-template-rows:repeat(${rows},auto)">${items.map((t, i) => `<div data-slot="back.band.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div></div></div>`;
+    const band = (B, x, y, w, h) => {
+      const items = (B.items || []).slice(0, 6), rows = Math.ceil(items.length/2), sw = w - 30, sb = beats(B.small);
+      const bf = bandFit(B), sTop = 38, hTop = sTop + bf.n*bf.lh + 9, iTop = hTop + 15, pitch = Math.min(16, (h - 8 - iTop)/Math.max(1, rows));
+      return `<div class="bandx" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt">
+        <div class="abs big" style="left:15pt;top:10pt;width:${sw}pt;height:24pt" data-slot="back.band.big" data-lines="1">${esc(B.big)}</div>
+        ${OFC.para('back.band.small', sb, 15, sTop, bf.w, bf.n, bf.fs, bf.lh)}
+        <div class="abs kick" style="left:15pt;top:${hTop}pt;width:${sw}pt;height:10pt" data-slot="back.band.head" data-lines="1">${esc(B.head)}</div>
+        <div class="abs grid" style="left:15pt;top:${iTop}pt;width:${sw}pt;grid-template-rows:repeat(${rows},${pitch.toFixed(1)}pt);gap:0 12pt">${items.map((t, i) => `<div data-slot="back.band.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div></div>`;
     };
     const nearbyHTML = (list, x, y, w, pitch, horizontal) => {
       const a = (list || []).slice(0, 3);
@@ -128,6 +149,15 @@ window.brochureReady = (async function(){
         return `<div class="abs nb" style="left:${px}pt;top:${py}pt;width:${horizontal ? w/3 - 10 : w}pt;height:${pitch - 2}pt"><div class="d" data-slot="back.near${i}.d" data-lines="1">${esc(q.d)}${q.u === '' ? '' : `<small>${esc(q.u || 'miles')}</small>`}</div><div class="p" data-slot="back.near${i}.p" data-lines="1">${esc(q.p)}</div></div>`; }).join('');
     };
 
+    // the back's one photo caption: the line count, then (only when it must) type up to 12% larger, at which its true sentences fill
+    // every line without holding less than its own copy (never shorter, owner 11/10)
+    const photoCapFit = (c, w, ns) => {
+      for(const [fs, lh] of [[8.5, 11], [8.75, 11.25], [9, 11.5], [9.25, 12], [9.5, 12.25]]) for(const n of ns){
+        if(OFC.pickN(phBeats(c), w, `font-size:${fs}pt;line-height:${lh}pt`, [n], c.__min)) return {n, fs, lh}; }
+      return {n: ns[0], fs: 8.5, lh: 11}; };
+    const sizedCap = (c, x, y, w, f) => OFC.cap(c, 'back.photo', x, y, w, f.n, phBeats(c))
+      .replace(`height:${12 + f.n*11}pt">`, `height:${12 + f.n*f.lh}pt">`)
+      .replace(`style="height:${f.n*11}pt"></div>`, `style="height:${f.n*f.lh}pt;font-size:${f.fs}pt;line-height:${f.lh}pt"></div>`);
     let h = '', after = () => {};
 
     // ======================================= FRONT =======================================
@@ -141,17 +171,20 @@ window.brochureReady = (async function(){
       // the hero: a whole-house photo across the field; it takes the height the rest leaves it, never less than the house needs
       const hp = P[heroId] || {}, hw = W - 2*I, ap = (hp.w && hp.h) ? hp.w/hp.h : 1.5, bx = hp.box;
       const heroMin = Math.max(258, bx ? Math.ceil(hw*((bx[3] - bx[1]) + 0.035)/ap) : 0);
-      // pick the photo row's height and the write-up's line count from the room the hero needs
+      // owner 11/10: no agent card and no logo on the front; the photos, the write-up and the captions take its room.
+      // The hero keeps its own shape at most (a taller frame would crop the house's sides); the write-up runs as many true
+      // lines as it has, the captions as many as all three can fill, and the row of photos takes the rest.
+      const RB = 752, heroNat = hw/ap, heroMax = bx ? Math.min(heroNat*1.04, hw/(ap*((bx[2] - bx[0]) + 0.06))) : heroNat;
+      const capN = commonN(capsSrc.map(c => capBeats(c.text)), (CW - 28)/3, CAPS, [5, 4, 3, 2]) || 3, capH = 12 + capN*11;
       let pick = null;
-      outer: for(const ph of [104, 98, 92, 86, 80]){
-        const capN = commonN(capsSrc.map(c => beats(c.text)), (CW - 28)/3, CAPS, [3, 4, 2]) || 3;
-        const capH = 12 + capN*11, rowTop = 640 - capH - 6 - ph, blockBottom = rowTop - 14;
-        for(const n of [6, 5, 7, 4, 8]){
-          const blockH = 62 + n*14, heroH = blockBottom - blockH - 14 - 14 - I;
-          if(heroH >= heroMin && OFC.pickN(introB, LW, BODY, [n])){ pick = {ph, capN, capH, rowTop, n, blockH, blockBottom, heroH}; break outer; }
-        }
+      for(const n of [10, 9, 8, 7, 6, 5, 4]){
+        if(!OFC.pickN(introB, LW, BODY, [n])) continue;
+        const blockH = 62 + n*14, room = RB - capH - 6 - 14 - blockH - 28 - I;   // hero + photo row share this
+        const ph = Math.max(112, Math.min(190, room - heroMax)), heroH = room - ph;
+        if(heroH < heroMin) continue;
+        const rowTop = RB - capH - 6 - ph; pick = {ph, capN, capH, rowTop, n, blockH, blockBottom: rowTop - 14, heroH}; break;
       }
-      if(!pick){ const ph = 80, capN = 3, capH = 45, rowTop = 640 - capH - 6 - ph, n = 4, blockH = 62 + n*14, blockBottom = rowTop - 14; pick = {ph, capN, capH, rowTop, n, blockH, blockBottom, heroH: blockBottom - blockH - 28 - I}; }
+      if(!pick){ const ph = 112, n = 4, blockH = 62 + n*14, rowTop = RB - capH - 6 - ph; pick = {ph, capN, capH, rowTop, n, blockH, blockBottom: rowTop - 14, heroH: rowTop - 14 - blockH - 28 - I}; }
       const hh = pick.heroH;
       // keep the house centered in the frame (the roof is never lost)
       if(bx && hp.w){ const af = hw/hh, v = Math.min(1, ap/af); if(v < 1){ const cy = (bx[1] + bx[3])/2, y0 = Math.min(Math.max(cy - v/2, 0), 1 - v); P[heroId].focusY = +(y0/(1 - v)*100).toFixed(1); } }
@@ -168,7 +201,7 @@ window.brochureReady = (async function(){
         `<div class="end" style="top:${gh}pt"></div></div>`;
       // three captioned outdoor photos
       h += capRow(capsSrc, 'front.cap', X0, pick.rowTop, CW, pick.capN, pick.ph, 14);
-      h += cardAndFine();
+      h += fineLine();
       after = () => OFC.fitWidth('.fl-addr2', 20);
     }
 
@@ -182,41 +215,48 @@ window.brochureReady = (async function(){
       const TOP = I + 74;
       // from the bottom: card, row of three captioned rooms, the band, then the plan (or floors) takes what is left
       const rowSrc = (B.row && B.row.length ? B.row : (C.bottom ? [].concat(...(C.bottom.groups || []).map(g => g.items || [])).slice(0, 3).map(it => ({id: it.id, name: it.name, tag: it.tag, text: split(it.text)})) : [])).slice(0, 3);
-      const nearby = B.nearby || CB.nearby || [];
+      const nearby = (B.nearby || CB.nearby || []).filter(q => /\d/.test(String(q.d || '')));   // owner 11/10 (rule 9): a real distance or drive time, else the place does not print
       const phSrc = B.photo || (CB.photo ? Object.assign({}, CB.photo, {text: split(CB.photo.text)}) : null);
       const bandSrc = Object.assign({}, CB.band || {}, B.band || {});
-      const bandH = 80, rowN = commonN(rowSrc.map(c => beats(c.text)), (CW - 28)/3, CAPS, [3, 4, 2]) || 3;
-      let rowPh = 92, rowTop = 640 - (12 + rowN*11) - 6 - rowPh, bandTop = rowTop - 12 - bandH;
-      const emitBottom = () => band(bandSrc, bandTop, bandH) + capRow(rowSrc, 'back.row', X0, rowTop, CW, rowN, rowPh, 14);
+      // from the bottom: the strip (band beside the narrow card), the row of three captioned rooms, then the plan (or floors)
+      const SH = stripH(bandSrc), SY = 756 - SH, RB = SY - 14;      // RB: the bottom of the row's captions
+      const rowN = commonN(rowSrc.map(c => capBeats(c.text)), (CW - 28)/3, CAPS, [3, 4, 2]) || 3;
+      let rowPh = 104, rowTop = RB - (12 + rowN*11) - 6 - rowPh, bandTop = rowTop;    // bandTop: the top of what sits under the plan
+      const emitBottom = () => bandWide(bandSrc, X0, SY, CW, SH - CARDH - 4) + cardStrip(SY, SH) + capRow(rowSrc, 'back.row', X0, rowTop, CW, rowN, rowPh, 14);
       if(hasPlan){
         const PL = B.plan || {}, noteSrc = beats(PL.note || CB.planNote);
-        const noteN = 2, noteTop = bandTop - 10 - (12 + noteN*11), planBottom = noteTop - 8, AH = bandTop - 10 - TOP;
-        const probe = OF.plan(D, {x: X0, y: TOP, w: 384, h: planBottom - TOP});
-        const wide = !!(probe.used && probe.used.h < 0.78*(planBottom - TOP));
+        const noteN = 2;
+        let noteTop = bandTop - 14 - (12 + noteN*11), planBottom = noteTop - 8, AH = bandTop - 14 - TOP;
+        let probe = OF.plan(D, {x: X0, y: TOP, w: 384, h: planBottom - TOP});
+        const wide = D.plan.levels.length === 1 && !!(probe.used && probe.used.h < 0.78*(planBottom - TOP));
+        // a plan that is as wide as its box but not as tall gives the spare height to the row of photos (no blank band)
+        const slack = wide || !probe.used ? 0 : Math.floor(planBottom - TOP - probe.used.h - 2);
+        if(slack > 4){ rowPh += slack; rowTop -= slack; bandTop = rowTop; noteTop -= slack; planBottom -= slack; AH -= slack;
+          probe = OF.plan(D, {x: X0, y: TOP, w: 384, h: planBottom - TOP}); }
         if(!wide){
           // the plan at one scale on the left; Nearby and one photo in a column beside it
           const PW = 384, RX = X0 + PW + 18, RW = X0 + CW - RX;
           issues.push(...probe.issues); h += probe.html;
           h += `<div class="abs fb-h" style="left:${X0}pt;top:${noteTop}pt;width:${PW}pt;height:12pt;white-space:nowrap" data-slot="back.planhead" data-lines="1">${esc(PL.head || 'Reading the plan')}</div>`;
           h += OFC.para('back.plannote', noteSrc, X0, noteTop + 12, PW, noteN, 8.5, 11, 'color:var(--text)');
-          h += OF.kick('Nearby', 'back.nearhead', RX, TOP, RW);
-          h += nearbyHTML(nearby, RX, TOP + 14, RW, 36, false);
-          const nbEnd = TOP + 14 + 36*Math.min(3, nearby.length) + 4;
+          if(nearby.length >= 2){ h += OF.kick('Nearby', 'back.nearhead', RX, TOP, RW); h += nearbyHTML(nearby, RX, TOP + 14, RW, 36, false); }
+          const nbEnd = nearby.length >= 2 ? TOP + 14 + 36*Math.min(3, nearby.length) + 4 : TOP + 2;
           if(phSrc){
-            const cn = [4, 3, 5].find(n => OFC.pickN(beats(phSrc.text), RW, CAPS, [n])) || 4, capH = 12 + cn*11, py = nbEnd, phh = noteTop + 12 + noteN*11 - capH - 6 - py;
-            h += OFC.photo(D, phSrc.id, RX, py, RW, phh) + OFC.cap(phSrc, 'back.photo', RX, py + phh + 6, RW, cn, beats(phSrc.text));
+            const f = photoCapFit(phSrc, RW, [4, 3, 5, 6]), capH = 12 + f.n*f.lh, py = nbEnd, phh = noteTop + 12 + noteN*11 - capH - 6 - py;
+            h += OFC.photo(D, phSrc.id, RX, py, RW, phh) + sizedCap(phSrc, RX, py + phh + 6, RW, f);
           }
         } else {
           // a wide plan (one story): it stands upright at the left, and the column beside it holds Nearby, the photo and the note
-          const PW = 170, RX = X0 + PW + 22, RW = X0 + CW - RX, noteN2 = 3, nTop = TOP + AH - (12 + noteN2*11);
+          // one level: the plan stands at its own shape in a column as wide as it needs at the full height (turned when that prints it larger)
+          const lv0 = D.plan.levels[0], a0 = (lv0.w || 1)/(lv0.h || 1), PW = Math.round(Math.max(150, Math.min(250, AH*(a0 < 1 ? a0 : 1/a0))));
+          const RX = X0 + PW + 22, RW = X0 + CW - RX, noteN2 = 3, nTop = TOP + AH - (12 + noteN2*11);
           const pl = OF.plan(D, {x: X0, y: TOP, w: PW, h: AH}); issues.push(...pl.issues); h += pl.html;
-          h += OF.kick('Nearby', 'back.nearhead', RX, TOP, RW);
-          h += nearbyHTML(nearby, RX, TOP + 14, RW, 36, true);
+          if(nearby.length >= 2){ h += OF.kick('Nearby', 'back.nearhead', RX, TOP, RW); h += nearbyHTML(nearby, RX, TOP + 14, RW, 36, true); }
           h += `<div class="abs fb-h" style="left:${RX}pt;top:${nTop}pt;width:${RW}pt;height:12pt;white-space:nowrap" data-slot="back.planhead" data-lines="1">${esc(PL.head || 'Reading the plan')}</div>`;
           h += OFC.para('back.plannote', noteSrc, RX, nTop + 12, RW, noteN2, 8.5, 11, 'color:var(--text)');
           if(phSrc){
-            const cn = [2, 3, 1].find(n => OFC.pickN(beats(phSrc.text), RW, CAPS, [n])) || 2, capH = 12 + cn*11, py = TOP + 58, phh = nTop - 8 - capH - 6 - py;
-            h += OFC.photo(D, phSrc.id, RX, py, RW, phh) + OFC.cap(phSrc, 'back.photo', RX, py + phh + 6, RW, cn, beats(phSrc.text));
+            const f = photoCapFit(phSrc, RW, [2, 3, 1]), capH = 12 + f.n*f.lh, py = nearby.length >= 2 ? TOP + 58 : TOP + 2, phh = nTop - 8 - capH - 6 - py;
+            h += OFC.photo(D, phSrc.id, RX, py, RW, phh) + sizedCap(phSrc, RX, py + phh + 6, RW, f);
           }
         }
         h += emitBottom();
@@ -224,7 +264,7 @@ window.brochureReady = (async function(){
         // no plan: floor-by-floor room lists, then a Nearby strip, the band and the row of rooms
         const FLR = (C.back && C.back.floors) || [], FW = ((B.noplan || {}).floors || B.floors || []);
         const nF = FLR.length || 1, G = 18, cw = (CW - G*(nF - 1))/nF, head = 5 + 40 + 2 + 12 + 8, P0 = 22, st = 'font-size:10pt;line-height:14pt';
-        const PAGE_FLOORS = (640 - TOP - (38 + 12 + bandH + 12 + (12 + rowN*11) + 6) - 12) - 80;   // the tallest the floors block may be
+        const NBH = nearby.length >= 2 ? 50 : 0, PAGE_FLOORS = (RB - TOP - (NBH + (12 + rowN*11) + 6) - 12) - 80;   // the tallest the floors block may be
         const cols = FLR.map((f, i) => { const rooms = f.rooms || [], twoCol = nF === 1, rn = twoCol ? Math.ceil(rooms.length/2) : rooms.length, lw = twoCol ? 250 : cw;
           const src = beats((FW[i] || {}).text || f.text);
           const cap = Math.floor((twoCol ? PAGE_FLOORS - head : PAGE_FLOORS - head - 6 - rn*P0)/14);
@@ -232,13 +272,14 @@ window.brochureReady = (async function(){
           return {f, i, rooms, twoCol, rn, lw, src, nfit}; });
         // the block is as tall as the longest column needs; the rest of the page's height goes to the row of photos
         const nat = Math.max(...cols.map(c => c.twoCol ? head + c.nfit*14 : head + 6 + c.nfit*14 + c.rn*P0));
-        const total = 640 - TOP - (38 + 12 + bandH + 12 + (12 + rowN*11) + 6) - 12;     // floors + photo row share this
-        const Ht = Math.max(nat, total - 140), Hs = Math.min(Ht, total - 80);
+        const total = RB - TOP - (NBH + (12 + rowN*11) + 6) - 12;     // floors + photo row share this
+        // owner 11/10: the room the full-width card gave up goes to the row of photos first (up to 190 pt tall), not to a gap in the floors
+        const RMAX = NBH ? 190 : 240;   // no Nearby strip (rule 9): the row of photos takes its height, not the floors
+        const Ht = Math.max(nat, total - RMAX), Hs = Math.min(Ht, total - 80);
         const Hf = Math.max(Hs, nat);
-        rowPh = Math.max(80, Math.min(160, total - Hf)); rowTop = 640 - (12 + rowN*11) - 6 - rowPh; bandTop = rowTop - 12 - bandH;
-        const nbY = bandTop - 12 - 38;
-        h += OF.kick('Nearby', 'back.nearhead', X0, nbY - 2, 90);
-        h += nearbyHTML(nearby, X0 + 74, nbY, CW - 74, 38, true);
+        rowPh = Math.max(80, Math.min(RMAX, total - Hf)); rowTop = RB - (12 + rowN*11) - 6 - rowPh; bandTop = rowTop;
+        const nbY = rowTop - 12 - 38;
+        if(nearby.length >= 2){ h += OF.kick('Nearby', 'back.nearhead', X0, nbY - 2, 90); h += nearbyHTML(nearby, X0 + 74, nbY, CW - 74, 38, true); }
         cols.forEach(c => {
           const {f, i, rooms, twoCol, rn, lw, src} = c, x = X0 + i*(cw + G);
           let n = 2; const nmax = twoCol ? Math.floor((Hf - head)/14) : Math.floor((Hf - head - 6 - rn*P0)/14);
@@ -246,7 +287,7 @@ window.brochureReady = (async function(){
           const pitch = twoCol ? (Hf - head)/rn : 22;
           const tbl = rr => `<table>${rr.map((r, j) => `<tr style="height:${pitch.toFixed(2)}pt"><td data-slot="back.floor${i}.room${j}" data-lines="1"${r[1] ? '' : ' colspan="2" style="text-align:left"'}>${esc(r[0])}</td>${r[1] ? `<td data-slot="back.floor${i}.size${j}" data-lines="1">${esc(feetOnly(r[1]))}</td>` : ''}</tr>`).join('')}</table>`;
           h += `<div class="fb" style="left:${x}pt;top:${TOP}pt;width:${cw}pt;height:${Hf}pt"><div class="n" data-slot="back.floor${i}.n" data-lines="1">${esc(f.n)}</div><div class="fl" data-slot="back.floor${i}.label" data-lines="1">${esc(f.label)}</div>`;
-          const para = OFC.para(`back.floor${i}.text`, src, 0, 0, lw, n, 10, 14, 'position:relative;color:var(--text)').replace('class="abs body"', 'class="body"');
+          const para = OFC.para(`back.floor${i}.text`, src, 0, 0, lw, n, 10, 14, 'position:relative;color:var(--text)').replace('class="abs body"', 'class="body"').replace('data-slot=', 'data-ragged="1" data-slot=');   // set ragged: no wide justified gaps (owner 11/10)
           if(twoCol){
             h += `<div style="position:absolute;left:0;top:${head}pt;width:${lw}pt">${para}</div><div style="position:absolute;left:${lw + 22}pt;top:${head}pt;width:${cw - lw - 22}pt">${tbl(rooms)}</div>`;
           } else {
@@ -256,9 +297,9 @@ window.brochureReady = (async function(){
         });
         h += emitBottom();
       }
-      h += cardAndFine(B.fine);
+      h += fineLine(B.fine);
     }
-    return {html: OFC.frame(D, W, H, h), after, issues};
+    return {html: OFC.frame(D, W, H, h), after, issues, logos: side === 'front' ? 0 : 1};
   });
 })();
 </script>

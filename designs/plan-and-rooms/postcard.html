@@ -8,6 +8,8 @@
 <script src="../engine/baths.js"></script>
 <script src="plan-and-rooms.js"></script>
 <script src="plan-and-rooms-cards.js"></script>
+<script src="capfit.js"></script>
+<script src="lastfix.js"></script>
 <script src="../engine/agentcard.js"></script>
 <!--
   The Plan and the Rooms · Just Listed and Just Sold postcards. data.piece: card "listed" | "sold", size "6x9" (trim 648 x 432 pt)
@@ -92,11 +94,14 @@ window.brochureReady = (async function(){
         // 6x9 back (The owner 11/1): the big write-up where the room table was, and a small room table at the foot of the right column
         h += `<div class="abs kicker" style="left:${X}pt;top:${T0}pt;width:${lw}pt;height:12pt" data-slot="about.label" data-lines="1">${esc(PC.aboutLabel || 'The house')}</div>`;
         h += `<div class="abs ptxt" id="jlw" style="left:${X}pt;top:${T0 + 17}pt;width:${lw}pt;height:${BOT - T0 - 17}pt;font-size:10pt;line-height:14.5pt" data-slot="about" data-para="1" data-min="3" data-nobal="1">${esc(PC.aboutBig || PC.about9)}</div>`;
-        const r = PC.right, lst = PC.list || [], tbH = lst.length > 7 ? 14 + lst.length * 11.8 : 14 + lst.length * 13, pitch = (tbH - 14) / Math.max(1, lst.length), mf = pitch >= 12.5 ? 9 : 8.5;
-        h += CN.photo(D, r.photo, `position:absolute;left:${rx}pt;top:${T0}pt;width:${rw}pt;height:90pt`, 'back.photoR');
+        const r = PC.right || (PC.pairs || [])[0] || PC.front && PC.front[0] || {}, lst = PC.list || [], long = lst.length > 9, tbH = long ? BOT - T0 : lst.length > 7 ? 14 + lst.length * 11.8 : 14 + lst.length * 13, pitch = (tbH - 14) / Math.max(1, lst.length), mf = pitch >= 12.5 ? 9 : 8.5;
+        // a long room list (more than nine rooms) takes the whole right column, with no photo squeezed above it (round 3: no thin photos)
+        if(!long) h += CN.photo(D, r.photo, `position:absolute;left:${rx}pt;top:${T0}pt;width:${rw}pt;height:90pt`, 'back.photoR');
         h += lst.length > 7 ? `<div class="abs" id="capR" style="left:${rx}pt;top:${T0 + 90}pt;width:${rw}pt;height:0"></div>` : `<div class="abs cap2" id="capR" style="left:${rx}pt;top:${T0 + 90}pt;width:${rw}pt"><div class="h" data-slot="back.capR.title" data-lines="1">${esc(r.title)}</div></div>`;
         h += CN.roomList(rx, BOT - tbH, rw, tbH, lst.map(x => Object.assign({}, x, {s: ''})), PC.listLabel || 'Room dimensions', 'back.list').replace('class="abs rd', 'class="abs rd mini').replace('style="', `id="jlt" style="--mf:${mf}pt;`);
       } else {
+        // 6x11 back: the room list (every room's size, a line on where it sits) at the left, as the design notes say (round 3: no blank column)
+        h += CN.roomList(X, T0, lw, BOT - T0, PC.list || [], PC.listLabel || 'Room dimensions', 'back.list').replace('class="abs rd', 'class="abs rd b11l');
         const pairs = PC.pairs || [], rh = (BOT - T0 - 8)/2, pw = 112;
         pairs.forEach((c, i) => { const y = T0 + i*(rh + 8);
           h += `<div class="pr2" style="left:${rx}pt;top:${y}pt;width:${rw}pt;height:${rh}pt"><div class="pw" style="width:${pw}pt;height:${rh}pt">${CN.photo(D, c.photo, 'position:absolute;inset:0', 'back.photo' + i)}</div>
@@ -120,7 +125,7 @@ window.brochureReady = (async function(){
       h += ContactCard.html([X, cardY, cwid, cardH], Object.assign({}, A, {headshot: hs}), b, {postcard: true, fine: '', s: {inlineLabel: !hs || big, logo: {wide: [156, 36], square: [44, 44], tall: [46, 46]}}}); }
     const fine = [PCall.fineprint || 'Information deemed reliable but not guaranteed.', 'If your property is currently listed with a broker, please disregard this notice. It is not intended to solicit listed property.'].join(' ');
     const fineW = zB[0] - 10 - X;
-    h += `<div class="abs" style="left:${X}pt;top:${420 - 22.5}pt;width:${fineW}pt;height:22.5pt;font-size:6pt;line-height:7.5pt;color:var(--ink);opacity:.75;overflow:hidden;display:flex;align-items:flex-end" data-slot="fineprint" data-lines="3" data-fine="1"><span>${esc(fine)}</span></div>`;
+    h += `<div class="abs" style="left:${X}pt;bottom:${H - 420}pt;width:${fineW}pt;max-height:22.5pt;font-size:6pt;line-height:7.5pt;color:var(--ink);opacity:.75;overflow:hidden" data-slot="fineprint" data-lines="3" data-fine="1">${esc(fine)}</div>`;   /* the box is as tall as its lines (bottom-aligned) */
     const V = D.mailVendor || {}, guide = (D.mode || 'email') !== 'print';
     if(guide) h += `<div class="mailg stamp" data-z="1" style="left:${zP[0]}pt;top:${zP[1]}pt;width:${zP[2]}pt;height:${zP[3]}pt">Postage<br><span style="text-transform:none">mail vendor</span></div>
       <div class="mailg" data-z="1" style="left:${zA[0]}pt;top:${zA[1]}pt;width:${zA[2]}pt;height:${zA[3]}pt">${[0,1,2,3].map(i => `<div class="aline" style="left:22pt;right:22pt;top:${24 + i*17.25}pt"></div>`).join('')}<div class="guide" style="left:22pt;top:97pt">${esc(V.name ? 'Address block · ' + V.name : 'Address block · mail vendor')}</div></div>
@@ -154,16 +159,35 @@ window.brochureReady = (async function(){
     if(document.getElementById('jlt')){
       const tb = document.getElementById('jlt'), cp = document.getElementById('capR'), capH = pt(cp.getBoundingClientRect().height), tT = parseFloat(tb.style.top), phh = tT - 9 - window.__geo.T0 - capH;
       document.querySelectorAll('[data-slot-photo="back.photoR"]').forEach(e => { e.style.height = phh + 'pt'; });
-      cp.style.top = (window.__geo.T0 + phh) + 'pt';
-      const el = document.getElementById('jlw'), maxH = pt(el.getBoundingClientRect().height); let best = 9;
-      for(let fs = 12; fs >= 9; fs -= 0.25){ el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs * 1.45) + 'pt'; if(el.scrollHeight > el.clientHeight + 0.5) continue; CN.balance(el);
-        const ls = CN.lineBoxes(el), last = ls[ls.length - 1]; if(ls.length > 1 && (last.r - last.l)/el.getBoundingClientRect().width < .78) continue; best = fs; break; }
-      el.style.fontSize = best + 'pt'; el.style.lineHeight = (best * 1.45) + 'pt'; CN.balance(el);
-      for(let lh = 1.45; lh <= 1.75; lh += 0.01){ el.style.lineHeight = (best * lh) + 'pt'; if(el.scrollHeight > el.clientHeight - 1){ el.style.lineHeight = (best * (lh - 0.01)) + 'pt'; break; } }
+      if(document.querySelector('[data-slot-photo="back.photoR"]')) cp.style.top = (window.__geo.T0 + phh) + 'pt'; else cp.style.display = 'none';
+      // the write-up fills its column: the biggest type whose last line runs 80%+, the leading opened to the column's foot (owner 11/10)
+      const el = document.getElementById('jlw'), H = el.clientHeight; let best = null;
+      const lines = () => CN.lineBoxes(el), lastOK = () => { const ls = lines(), L = ls[ls.length - 1]; return ls.length < 2 || (L.r - L.l)/el.getBoundingClientRect().width >= .82; };
+      for(let fs = 12.5; fs >= 9; fs -= 0.1){ el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs*1.4) + 'pt'; if(el.scrollHeight > H + .5) continue;
+        const n = lines().length, lh = Math.min(fs*1.9, (H*72/96)/n - .1); el.style.lineHeight = lh + 'pt';
+        const fill = n*lh/(H*72/96), ok = lastOK(), sc = (ok ? 2 : 0) + (fill >= .92 ? 1 : fill) + fs/100;
+        if(!best || sc > best.sc) best = {sc, fs, lh}; if(ok && fill >= .92) break; }
+      if(best){ el.style.fontSize = best.fs + 'pt'; el.style.lineHeight = best.lh + 'pt'; }
     } else
     setBottom('jlp', 'jlk', 'capR', '[data-slot-photo="back.photoR"]');
     setBottom('mp', 'mk', null, '[data-slot-photo^="back.photo"]');
   }
+  // the Just Sold front's note to the neighbors fills its box: the type steps up (at most 12%) while every line still fits, then the
+  // leading opens until the last line reaches the foot of the box
+  { const el = document.getElementById('note');
+    if(el){ const fs0 = parseFloat(getComputedStyle(el).fontSize)*72/96, lh0 = parseFloat(getComputedStyle(el).lineHeight)*72/96, H = el.clientHeight;
+      const n0 = CN.nl(el); let k = 1;
+      for(let s = 1.01; s <= 1.12; s += .01){ el.style.fontSize = (fs0*s) + 'pt'; el.style.lineHeight = (lh0*s) + 'pt'; if(CN.nl(el) !== n0 || CN.nl(el)*lh0*s*96/72 > H) break; k = s; }
+      el.style.fontSize = (fs0*k) + 'pt'; let lh = lh0*k;
+      const n = CN.nl(el), room = H*72/96;
+      if(n > 1) lh = Math.max(lh, Math.min(fs0*k*1.7, room/n - .2));   // the lines share the box's height (no line box past its foot)
+      el.style.lineHeight = lh + 'pt'; } }
+  // the seller list's rows fill their height: names and notes step up together (at most 12%) while every row still holds its lines
+  document.querySelectorAll('.rd.svc').forEach(box => { const rows = [...box.querySelectorAll('.lr')], els = [...box.querySelectorAll('.lr .n, .lr .s')];
+    const base = els.map(e => [parseFloat(getComputedStyle(e).fontSize)*72/96, parseFloat(getComputedStyle(e).lineHeight)*72/96]); let k = 1;
+    const set = s => els.forEach((e, i) => { e.style.fontSize = (base[i][0]*s) + 'pt'; e.style.lineHeight = (base[i][1]*s) + 'pt'; });
+    for(let s = 1.01; s <= 1.12; s += .01){ set(s); if(rows.some(r => r.scrollHeight > r.clientHeight + .5)) break; k = s; }
+    set(k); });
   issues.push(...CN.fitHouse(D));
   document.querySelectorAll('[data-para]:not([data-nobal])').forEach(el => CN.balance(el));
   document.querySelectorAll('.cap2 .a').forEach(el => CN.balance(el));
@@ -182,12 +206,25 @@ window.brochureReady = (async function(){
   { const cs = [...document.querySelectorAll('.cap2 .a')]; if(cs.length){ const base = cs.map(c => CN.nl(c));
     for(let s = 9; s <= 10; s += .5){ cs.forEach(c => { c.style.fontSize = s + 'pt'; c.style.lineHeight = (s*1.28) + 'pt'; });
       if(cs.some((c, i) => CN.nl(c) !== base[i] || c.scrollHeight > c.clientHeight + 1)){ const p = s - .5; cs.forEach(c => { c.style.fontSize = p + 'pt'; c.style.lineHeight = (p*1.28) + 'pt'; }); break; } } } }
+  // photo-left / text-right rows (6 x 11 back): the photo's width and the type (up to about 12% bigger) are set so the write-up runs
+  // to the foot of its photo (owner 11/10/2026, p121 carried to every write-up beside a photo)
+  document.querySelectorAll('.pr2').forEach(p => { const a = p.querySelector('.bt .a'), pw = p.querySelector('.pw'); if(!a) return;
+    const P = p.getBoundingClientRect(), H = P.height, w0 = parseFloat(pw.style.width); let best = null;
+    for(let w = w0; w <= w0 + 80; w += 2) for(let fs = 10; fs <= 11.5; fs += .125){ pw.style.width = w + 'pt'; a.style.fontSize = fs + 'pt'; a.style.lineHeight = (fs*1.35) + 'pt';
+      a.style.height = 'auto'; const b = a.getBoundingClientRect().bottom - P.top; if(b > H - 1) continue;
+      const ls = CN.lineBoxes(a), L = ls[ls.length - 1], ok = L && (L.r - L.l)/a.getBoundingClientRect().width >= .82, f = b/H + (ok ? 1 : 0);   /* no short last line first */
+      if(!best || f > best.f + .005 || (Math.abs(f - best.f) <= .005 && fs < best.fs)) best = {w, fs, f}; }
+    if(best){ pw.style.width = best.w + 'pt'; a.style.fontSize = best.fs + 'pt'; a.style.lineHeight = (best.fs*1.35) + 'pt'; } else { pw.style.width = w0 + 'pt'; a.style.fontSize = ''; a.style.lineHeight = ''; } });
+  // the front's room captions: every line toward the photo's full width (justified only while word gaps stay small; owner 11/8)
+  if(front && !sold && window.CapFit){ await document.fonts.ready; CapFit.run(document.querySelectorAll('.cap2 .a')); }
+  await document.fonts.ready; if(window.LastFix) LastFix.run(document, (D.copy || {}).alts || {});   // no last line under 80% (owner 11/10)
   ContactCard.fit(document);
   window.proofNotes = [{paragraphs: [...document.querySelectorAll('[data-para]')].map(el => { const ls = CN.lineBoxes(el), w = el.getBoundingClientRect().width, last = ls[ls.length-1];
     return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, wPt: Math.round(pt(w))}; })}];
   window.photoPlacements = CN.placements;
+  if(!front && ![].concat((D.brand || {}).returnAddress || (D.brand || {}).address || []).filter(Boolean).length) issues.push({slot: 'return', kind: 'return-address-missing'});   /* every mailer back carries the brokerage's full return address (owner 11/10) */
   window.brochureCheck = () => CN.checkSingle(D, issues);
-})();
+})().catch(e => { console.error(e); window.brochureCheck = () => CN.check(CN.data(), [{slot: 'page', kind: 'render-error', detail: String(e && e.message || e)}]); });   /* a script error reports, never hangs the render */
 </script>
 </body>
 </html>

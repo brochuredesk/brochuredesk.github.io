@@ -25,7 +25,7 @@
   .cc{--cc-paper:#f4f1e9;--cc-ink:#22383a;--cc-muted:#5b6b6c;--cc-accent:#3b5c59;--cc-line:rgba(34,56,58,.28)}
   .ph.abs{position:absolute;min-height:0}
   .st{font:500 40pt/44pt var(--font-display);letter-spacing:.4pt;text-transform:uppercase;color:var(--gold);overflow:hidden}
-  .ad{font:500 21pt/24pt var(--font-display);letter-spacing:-.2pt;color:var(--ink);overflow:hidden}
+  .ad{font:500 21pt/27pt var(--font-display);letter-spacing:-.2pt;color:var(--ink);overflow:hidden}
   .ab{font-size:10pt;line-height:14pt;color:var(--text)}
   .hq{font:600 9.5pt/12pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
   .cq{font:600 8.5pt/11pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
@@ -63,8 +63,8 @@ window.brochureReady = (async function(){
   if(front){
     // ---------- front ----------
     const pw = big ? 500 : 410, ph = 310, cx = pw + 20, cw = W - M - cx;
-    h += SP.photo(D, C.hero || 'front', -9, -9, pw + 9, ph + 9, 'front.hero');
-    h += `<div class="pcall" style="left:${cx - 4}pt;top:-9pt;width:${W - cx + 4 + 9}pt;height:${9 + 150}pt;padding:0 ${M + 9 - 4}pt 0 14pt"><div class="q" data-slot="front.q" data-lines="1"><i class="dash"></i>${esc(sold ? "What happened?" : "What's new?")}</div>
+    h += SP.photo(D, C.hero || ['front', 'hero', 'cover', 'exterior'].find(k => (D.photos || {})[k]) || 'front', -9, -9, pw + 9, ph + 9, 'front.hero');
+    h += `<div class="pcall" style="left:${cx - 4}pt;top:-9pt;width:${W - cx + 4 + 9}pt;height:${9 + 150}pt;padding:0 ${M + 9 - 4}pt 0 14pt"><div class="q dq" data-slot="front.q" data-lines="1">${esc(sold ? "What happened?" : "What's new?")}</div>
       <div class="st" style="margin-top:8pt;height:${big ? 108 : 88}pt${big ? ';font-size:50pt;line-height:54pt' : ''}" data-slot="status" data-lines="2">${esc(status.split(' ')[0])}<br>${esc(status.split(' ')[1])}</div></div>`;
     // the address and the bullets are sized to fill the right column (owner 10/30): the street on one line at the largest size
     // that fits the column, the bullets by how many there are (the lot size is a bullet when the listing has one)
@@ -79,7 +79,7 @@ window.brochureReady = (async function(){
     const bFs = (big ? 0.5 : 0) + (nb >= 5 ? 12.5 : 14.5), bLh = nb >= 5 ? (big ? 16 : 15.5) : (big ? 19.5 : 19);
     const tail = !sold
       ? `<div class="fl" style="--bf:${bFs}pt;--bl:${bLh}pt">${sts.map((t, i) => `<div data-slot="front.fact${i}" data-lines="1">${esc(t)}</div>`).join('')}</div>`
-      : `<div><div style="font:500 ${big ? '26pt/30pt' : '19pt/22pt'} var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden" data-slot="agent.name" data-lines="1" data-fit="14">${esc(A.name || '')}</div>
+      : `<div><div style="font:500 ${big ? '26pt/34pt' : '19pt/26pt'} var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden" data-slot="agent.name" data-lines="1" data-fit="14">${esc(A.name || '')}</div>
          <div style="font:600 ${big ? '19pt/24pt' : '14pt/18pt'} var(--font-body);color:var(--kicker);letter-spacing:.4pt;white-space:nowrap;overflow:hidden" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div></div>`;
     h += `<div class="abs" style="left:${cx}pt;top:168pt;width:${cw}pt;height:${ph - 168 - 9}pt;display:flex;flex-direction:column;justify-content:space-between">
       <div><div class="ad" style="${sold && !big ? '' : adStack ? `font-size:${adFs}pt;line-height:${adFs + 3}pt;text-wrap:balance` : `font-size:${adFs}pt;line-height:${adFs + 4}pt;white-space:nowrap`}" data-slot="address" data-lines="2"${sold && !big ? '' : ` data-size0="${adLow}"`}>${esc(L.address)}</div><div class="kicker" style="margin-top:5pt;height:10pt" data-slot="place" data-lines="1">${esc(SP.placeZip(L).toUpperCase())}</div></div>${tail}</div>`;
@@ -87,9 +87,29 @@ window.brochureReady = (async function(){
       const pl = document.querySelector('[data-slot="place"]'), fl = document.querySelector('.fl'); if(!pl || !fl) return;
       SP.trimRows(fl, () => (fl.getBoundingClientRect().top - pl.getBoundingClientRect().bottom)*72/96 >= 8);
     });
+    // The dark callout holds a question and the status. When the agent's own fonts leave it more than 20% empty top to bottom
+    // (a display font with a shorter line box), the status steps up (up to 20%, as far as the column allows) and the rest of
+    // the room goes between the question and the status, so the text still fills the box. Boxes already full are left alone.
+    SP.afterAddress(() => {
+      const box = document.querySelector('.pcall:not([data-blk])'); if(!box || !AB.fontSwapped()) return;
+      const q = box.querySelector('.q'), st = box.querySelector('.st'); if(!q || !st) return;
+      const ext = () => { const r = document.createRange(); r.selectNodeContents(box); const rs = [...r.getClientRects()].filter(x => x.width > .5 && x.height > .5); return {t: Math.min(...rs.map(x => x.top)), b: Math.max(...rs.map(x => x.bottom))}; };
+      const cs = getComputedStyle(box), inner = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      // the same measure the print check takes: each line's box grows to its line height, the text's top to bottom against the box
+      const rects = []; { const tw = document.createTreeWalker(box, NodeFilter.SHOW_TEXT); for(let n = tw.nextNode(); n; n = tw.nextNode()){ if(!n.textContent.trim()) continue; const r = document.createRange(); r.selectNodeContents(n); const st = getComputedStyle(n.parentElement), lh = parseFloat(st.lineHeight) || parseFloat(st.fontSize) * 1.2; for(const x of r.getClientRects()) if(x.width > .5 && x.height > .5){ const k = Math.max(0, (lh - x.height) / 2); rects.push({t: x.top - k, b: x.bottom + k, lh: Math.max(lh, x.height)}); } } }
+      const top0 = box.getBoundingClientRect().top + parseFloat(cs.paddingTop), used = Math.max(...rects.map(x => x.b)) - Math.min(...rects.map(x => x.t));
+      if(used / inner >= 0.9 || inner - used < .75 * Math.max(...rects.map(x => x.lh))) return;
+      let e = ext();
+      const inW = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), f0 = parseFloat(getComputedStyle(st).fontSize);
+      const widest = () => { const r = document.createRange(); r.selectNodeContents(st); return Math.max(...[...r.getClientRects()].map(x => x.width)); };
+      const lh0 = parseFloat(getComputedStyle(st).lineHeight), h0 = st.getBoundingClientRect().height; let kk = 1;
+      for(let k = 1.02; k <= 1.2001; k += .02){ st.style.fontSize = (f0 * k) + 'px'; st.style.lineHeight = (lh0 * k) + 'px'; st.style.height = (h0 * k) + 'px'; if(widest() > inW * 0.98) break; kk = k; }
+      st.style.fontSize = (f0 * kk) + 'px'; st.style.lineHeight = (lh0 * kk) + 'px'; st.style.height = (h0 * kk) + 'px';
+      box.style.paddingTop = '18pt'; box.style.paddingBottom = '12pt'; box.style.justifyContent = 'space-between';
+    });
     const nl = sold ? 3 : 4, lh = 16, fs = big ? 12.5 : 12, qy = ph + 16;
     h += `<div class="abs" style="left:${M}pt;top:${ph + 6}pt;width:${W - 2*M}pt;height:0;border-top:.6pt solid var(--line)"></div>`;
-    h += `<div class="abs hq" style="left:${M}pt;top:${qy}pt;width:${W - 2*M}pt;height:12pt" data-slot="front.aq" data-lines="1"><i class="dash"></i>${esc(C.frontQ || '')}</div>`;
+    h += `<div class="abs hq dq" style="left:${M}pt;top:${qy}pt;width:${W - 2*M}pt;height:12pt" data-slot="front.aq" data-lines="1">${esc(C.frontQ || '')}</div>`;
     h += `<div class="abs ab" style="left:${M}pt;top:${qy + 17}pt;width:${W - 2*M}pt;height:${nl*lh}pt;font-size:${fs}pt;line-height:${lh}pt" data-slot="${sold ? 'front.sold' : 'front.about'}" data-para="1" data-min="${nl}" data-fillbox="1">${esc(big ? C.front11 : C.front9)}</div>`;
     if(sold) h += `<div class="abs" style="left:${M}pt;top:${qy + 17 + nl*lh + 8}pt;width:${W - 2*M}pt;height:24pt;font:500 20pt/24pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden" data-slot="sold.cta" data-lines="1" data-fit="13">${esc(C.cta || 'Thinking about selling? Let’s talk.')}</div>`;
   } else {
@@ -98,6 +118,7 @@ window.brochureReady = (async function(){
     // the section tabs hang from the top edge: status, street, place (6x11 only)
     h += `<div class="pt-tabs" style="left:${X}pt;width:${LZ - X}pt"><div class="tab on fx" data-slot="back.status" data-lines="1">${esc(status)}</div><div class="tab" data-slot="back.addr" data-lines="1">${esc(L.address)}</div>${big ? `<div class="tab" data-slot="back.place" data-lines="1">${esc(SP.placeZip(L))}</div>` : ''}</div>`;
     const ret = SP.returnLines(D);
+    if(ret.length < 3) issues.push({slot: 'address.return', kind: 'return-address-missing', detail: 'the brokerage street and city line are missing from the return address (brand.returnAddress); owner 11/10/2026 rule 10'});   // every mailer back: the full return address (owner 11/10/2026, rule 10)
     h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:12pt;width:${rW}pt;height:32pt${sold ? ';text-align:right' : ''}" data-slot="return" data-lines="3"><b>${esc(ret[0] || '')}</b>${ret.slice(1).map(r => '<br>' + esc(r)).join('')}</div>`;
     const cap = (c, x, y, w, slot) => `<div class="abs cq" style="left:${x}pt;top:${y + 7}pt;width:${w}pt;height:11pt" data-slot="${slot}.q" data-lines="1"><i class="dash"></i>${esc(c.q)}</div>
       <div class="abs ca" style="left:${x}pt;top:${y + 20}pt;width:${w}pt;height:46pt" data-slot="${slot}" data-cap="1" data-row="back" data-para="1" data-min="3">${esc(c.a)}</div>`;

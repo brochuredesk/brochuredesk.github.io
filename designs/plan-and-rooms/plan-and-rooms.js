@@ -66,7 +66,7 @@
     return null;
   };
   const variants = alts => { const out = alts.slice(); const t = trim(alts[0]); if(t && !out.includes(t)) out.push(t); return out; };
-  const pickFor = (el, T) => {
+  const pickFor = (el, T, minFill) => {
     // each sentence is a string, or a list of ways to say the same fact at different lengths (only one is ever used)
     const S = JSON.parse(el.dataset.s).map(x => variants([].concat(x))), lead = el.dataset.lead || '', n = Math.min(S.length, 12);
     let best = null, near = null, hi = null, lo = null;
@@ -82,8 +82,8 @@
       if(L.n === T - 1 && (!lo || L.fill > lo.fill)) lo = {fill: L.fill};
       if(L.n !== T) return;
       if(!near || L.fill > near.fill) near = {pick, fill: L.fill};
-      if(L.fill < 0.76) return;
-      const score = (L.fill >= 0.8 ? 1000 : 500) - pick.length * 10 + L.fill;   // the fewest, fullest sentences that fill the box; the last line well filled
+      if(L.fill < (minFill || 0.82)) return;   // the last line at least 80% of the box (owner 11/8/2026: text under a photo fills its width)
+      const score = (L.fill >= 0.9 ? 1000 : 500) + pick.join(' ').length + L.fill;   // the most copy that fills the box (never shorter, owner 11/10); the last line well filled
       if(!best || score > best.score) best = {score, pick, fill: L.fill};
     };
     const walk = (m, i, acc) => {
@@ -102,7 +102,7 @@
     const issues = [];
     const caps = [...document.querySelectorAll('.cap .a[data-s]')], rest = [...document.querySelectorAll('[data-s]')].filter(e => !caps.includes(e));
     const settle = (el, T) => {   // T lines: the best set, else the nearest and a report
-      const lead = el.dataset.lead || '', b = pickFor(el, T);
+      const lead = el.dataset.lead || '', b = pickFor(el, T, el.__loose || 0);
       if(b){ el.innerHTML = html(lead, b.pick); delete el.dataset.diag; }
       else el.innerHTML = html(lead, el.__near ? el.__near.pick : JSON.parse(el.dataset.s).map(x => [].concat(x)[0]));
       el.dataset.lines = T; return !!b;
@@ -113,14 +113,18 @@
     caps.forEach(el => { const g = el.closest('.row') || el; (groups.get(g) || groups.set(g, []).get(g)).push(el); });
     groups.forEach(els => {
       const max = Math.max(...els.map(e => +e.dataset.lines));
-      let chosen = null;
-      for(let T = max; T >= 2 && !chosen; T--) if(els.every(e => pickFor(e, T))) chosen = T;
+      let chosen = null, loose = false;
+      // never shorter (owner 11/10/2026): the line count (full fill first, else 3/4 fill, then CapFit justifies) that keeps the most copy
+      const total = (T, mf) => { let n = 0; for(const e of els){ const b = pickFor(e, T, mf); if(!b) return -1; n += b.pick.join(' ').length; } return n; };
+      let best = null;
+      for(let T = max; T >= 2; T--) for(const mf of [0.82, 0.76, 0.7]){ const n = total(T, mf); if(n > 0 && (!best || n > best.n + 6)) best = {T, n, loose: mf < 0.8 ? mf : false}; }
+      if(best){ chosen = best.T; loose = best.loose; }
       // no count every caption fills well: the most lines every caption can set exactly, last lines shorter
       // (captions side by side always share a line count; CaptionRow sends any row that still differs back to the writer)
       for(let T = max; T >= 2 && !chosen; T--) if(els.every(e => pickFor(e, T) || e.__near)) chosen = T;
       els.forEach(e => {
         const lead = e.dataset.lead || '';
-        let T = chosen;
+        let T = chosen; e.__loose = loose;
         if(!T){   // no common count: this one alone, at the count it fills best (or comes closest to)
           let bestNear = null;
           for(let t = max; t >= 2 && !T; t--){ if(pickFor(e, t)) T = t; else if(e.__near && (!bestNear || e.__near.fill > bestNear.fill)) bestNear = {t, fill: e.__near.fill}; }
@@ -281,7 +285,7 @@
     const [hi, lo] = el.dataset.fillto.split('-').map(Number), lh = +el.dataset.lh || 14, lead = el.dataset.lead || '';
     for(let T = hi; T >= lo; T--){
       el.dataset.lines = T; el.style.height = (T * lh) + 'pt';
-      const b = pickFor(el, T);
+      const b = pickFor(el, T) || pickFor(el, T, 0.76);   // the most lines first; a 3/4 last line before dropping a line (owner 11/10)
       if(b){ el.innerHTML = html(lead, b.pick); return; }
     }
     // nothing fills a count honestly: the shortest lead sentence alone, set at the lines it takes
@@ -295,14 +299,17 @@
     const lh = +a.dataset.lh || 14, lead = a.dataset.lead || '', H = p.clientHeight * 0.75, headH = hd.offsetHeight * 0.75 + 4;
     const Tmax = Math.floor((H - headH) / lh + 0.02), wmin = +p.dataset.wmin, wmax = +p.dataset.wmax;
     a.style.flex = 'none';
+    // the line count and column width that keep the most copy (never shorter, owner 11/10/2026)
+    let best = null;
     for(let T = Tmax; T >= 2; T--){
       for(let w = wmin; w <= wmax; w += 6){
         bt.style.flex = `0 0 ${w}pt`; pw.style.flex = '1 1 0';
         a.dataset.lines = T; a.style.height = (T * lh) + 'pt';
-        const b = pickFor(a, T);
-        if(b){ a.innerHTML = html(lead, b.pick); return; }
+        const b = pickFor(a, T) || pickFor(a, T, 0.76);
+        if(b){ const L = b.pick.join(' ').length; if(!best || L > best.L + 6) best = {T, w, pick: b.pick, L}; }
       }
     }
+    if(best){ bt.style.flex = `0 0 ${best.w}pt`; pw.style.flex = '1 1 0'; a.dataset.lines = best.T; a.style.height = (best.T * lh) + 'pt'; a.innerHTML = html(lead, best.pick); return; }
     bt.style.flex = `0 0 ${wmax}pt`;
     const first = JSON.parse(a.dataset.s).map(x => [].concat(x))[0].slice().sort((u, v) => u.length - v.length)[0];
     a.innerHTML = html(lead, [first]); a.style.height = 'auto'; a.dataset.lines = Math.max(1, CN.lines(a).n);

@@ -20,6 +20,7 @@
 -->
 </head>
 <body data-mode="email">
+<script src="capfit.js"></script>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
 <script>
@@ -44,25 +45,25 @@ window.brochureReady = (async function(){
   h += `<div class="hr1" style="top:${166 + dy}pt;left:${X}pt;right:${X}pt"></div>`;
 
   // the whole house in its keyline frame, the address and facts beside it
-  const hy = 182 + dy, hh = 262 - dy, hx = X + 5, hw = AT.houseW(D, hero, hh, 330, 400), cx = hx + hw + 26, cw = X + W - cx;
+  const hy = 182 + dy, hh = 262 - dy, hx = X + 5, hw = AT.houseW(D, hero, hh, AT.tallMin(D, hero, hh, 330), 400), cx = hx + hw + 26, cw = X + W - cx;
   h += `<div class="kf" style="left:${hx - 5}pt;top:${hy - 5}pt;width:${hw + 10}pt;height:${hh + 10}pt"></div>`;
   h += AT.photo(D, hero, `position:absolute;left:${hx}pt;top:${hy}pt;width:${hw}pt;height:${hh}pt`, 'oh.hero', 'hero key');
   const f = AT.factPairs(L);
-  let fs = 28, k = 9; while(fs > 20 && (k = AT.linesNeeded('dsp', L.address, cw, fs + 3)) > 3) fs -= 1;
-  h += `<div class="abs" style="left:${cx}pt;top:${hy - 2}pt;width:${cw}pt;height:${hh + 4}pt;display:flex;flex-direction:column;justify-content:space-between">
+  let fs = 28, k = 9; while(fs > 20 && (k = AT.linesNeeded('dsp', L.address, cw - 6, fs + 3)) > 3) fs -= 1;   // (a little narrower than the column: the display face sets wider than the measure)
+  h += `<div class="abs" id="ohcol" style="left:${cx}pt;top:${hy - 2}pt;width:${cw}pt;height:${hh + 4}pt;display:flex;flex-direction:column;justify-content:space-between">
     <div>${L.neighborhood ? `<div class="kicker" data-slot="oh.hood" data-lines="1">${esc(L.neighborhood)}</div>` : ''}
-      <div class="dsp" style="margin-top:5pt;font-size:${fs}pt;line-height:${fs + 3}pt;white-space:normal;height:${k*(fs + 3)}pt;letter-spacing:-.3pt" data-slot="address" data-lines="${k}">${esc(L.address)}</div>
+      <div class="dsp" id="ohaddr" style="margin-top:5pt;font-size:${fs}pt;line-height:${fs + 3}pt;white-space:normal;height:${k*(fs + 3)}pt;letter-spacing:-.3pt" data-slot="address" data-lines="${k}">${esc(L.address)}</div>
       <div class="kicker" style="margin-top:7pt" data-slot="place" data-lines="1">${esc(AT.placeZip(L).toUpperCase())}</div></div>
     ${OHC.about && AT.linesNeeded('ptxt', OHC.about, cw, 13.5)*13.5 <= hh + 4 - (10 + 5 + k*(fs + 3) + 17) - f.length*25 - 14 ? `<div class="ptxt" style="font-size:9.5pt;line-height:13.5pt" data-slot="oh.about" data-para="1" data-min="4">${esc(OHC.about)}</div>` : '<div></div>'}
     <div class="fc">${f.map((p, i) => `<div data-slot="oh.fact${i}" data-lines="1"><b>${AT.halfy(p[0])}</b><span>${esc(p[1])}</span></div>`).join('')}</div></div>`;
 
   // two rooms from the inside
-  const rooms = OHC.rooms || [], ids = (OHC.photos || []).slice(1, 3), gap = 26, pw = (W - 10 - gap)/2, ky = hy + hh + 16, ry = ky + 17, rph = 108;
+  const rooms = OHC.rooms || [], ids = (OHC.photos || []).slice(1, 3), gap = 26, pw = (W - 10 - gap)/2, ky = hy + hh + 16, ry = ky + 17, rph = 96;
   h += `<div class="abs kicker" style="left:${X}pt;top:${ky}pt;width:${W}pt;height:10pt" data-slot="oh.inside" data-lines="1">${esc(PC.insideLabel || 'A look inside')}</div>`;
   ids.forEach((id, i) => { const c = rooms[i] || {}, x = X + 5 + i*(pw + gap);
     h += `<div class="kf" style="left:${x - 5}pt;top:${ry - 5}pt;width:${pw + 10}pt;height:${rph + 10}pt"></div>`;
     h += AT.photo(D, id, `position:absolute;left:${x}pt;top:${ry}pt;width:${pw}pt;height:${rph}pt`, 'oh.room' + i, 'room key');
-    h += `<div class="abs cap2" style="left:${x - 4}pt;top:${ry + rph + 6}pt;width:${pw + 8}pt"><div class="h" data-slot="oh.room${i}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a jt" data-slot="oh.room${i}.body" data-para="1" data-min="2" data-lines="3">${esc(c.a)}</div></div>`; });
+    h += `<div class="abs cap2" style="left:${x - 4}pt;top:${ry + rph + 6}pt;width:${pw + 8}pt"><div class="h" data-slot="oh.room${i}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a jt" style="height:49pt" data-slot="oh.room${i}.body" data-para="1" data-min="2" data-lines="4">${esc(c.a)}</div></div>`; });
 
   h += AT.cardBox(D, [X, 662, W, 94], {layout: 'panel'});
   h += `<div class="abs fine" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;white-space:nowrap" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
@@ -72,10 +73,34 @@ window.brochureReady = (async function(){
   window.pieceSize = {W: fr.W, H: fr.H, bleed: fr.bleed};
   await AT.settle();
   document.querySelectorAll('#date').forEach(el => AT.fitLine(el, 40));
+  // the street address never hides a word: when it wraps past the lines it was given, its box takes one more line (up to three),
+  // then the type steps down
+  { const ad = document.getElementById('ohaddr'); if(ad){ const lh = parseFloat(getComputedStyle(ad).lineHeight);
+      for(let i = 0; i < 12 && ad.scrollHeight > ad.clientHeight + 1; i++){
+        const k = Math.round(ad.clientHeight/lh); if(k < 3){ ad.style.height = ((k + 1)*lh*72/96) + 'pt'; ad.dataset.lines = k + 1; }
+        else { const f = parseFloat(getComputedStyle(ad).fontSize)*72/96 - 1; ad.style.fontSize = f + 'pt'; ad.style.lineHeight = (f + 3) + 'pt'; ad.style.height = (3*(f + 3)) + 'pt'; } }
+      { const h0 = ad.style.height; ad.style.height = 'auto'; const n = Math.max(1, Math.round(ad.scrollHeight/parseFloat(getComputedStyle(ad).lineHeight))); ad.style.height = 'auto'; ad.dataset.lines = n; } } }   // (auto: the shared address fit may still drop the street suffix and close it up)
+
+  // no blank space in the column beside the house (owner, standing rule): the write-up's type grows (up to 12 pt) into the room the
+  // column has, then the fact rows open up; a tall house photo leaves the most room
+  { const col = document.getElementById('ohcol'), ab = col && col.querySelector('[data-slot="oh.about"]');
+    const spare = () => { const j = col.style.justifyContent; col.style.justifyContent = 'flex-start'; const r = col.getBoundingClientRect(), last = col.lastElementChild.getBoundingClientRect(); col.style.justifyContent = j; return (r.bottom - last.bottom)*72/96; };
+    if(col){
+      if(ab){ ab.style.marginTop = '6pt';
+        const lastOf = () => { const ls = AT.lineBoxes(ab), w = ab.getBoundingClientRect().width; if(!ls.length) return 0; const f = ls.map(q => (q.r - q.l)/w);
+          return Math.min(...f.slice(0, -1), 1) >= .86 ? f[f.length-1] : 0; };   // (ragged lines 86%+, so justifying opens no wide gaps)
+        const set = (fs, ls) => { ab.style.fontSize = fs + 'pt'; ab.style.lineHeight = (fs*1.42) + 'pt'; ab.style.letterSpacing = ls + 'em'; };
+        let best = null;   // the largest size (9.5 to 12 pt) that fits the column with a full last line
+        for(let fs = 12; fs >= 9.5 && !best; fs -= .125) for(const ls of [0, .006, -.006, .012, -.012]){ set(fs, ls); if(spare() >= 4 && lastOf() >= .82){ best = [fs, ls]; break; } }
+        if(best){ set(...best); ab.style.textAlign = 'justify'; ab.style.textAlignLast = 'left'; }
+        else { ab.style.fontSize = '9.5pt'; ab.style.lineHeight = '13.5pt'; ab.style.letterSpacing = ab.style.marginTop = ''; } }
+      const rows = [...col.querySelectorAll('.fc div')], sp = spare() - 8;
+      if(rows.length && sp > 4){ const add = Math.min(10, sp/(rows.length*2)); rows.forEach(r => { r.style.paddingTop = (4 + add) + 'pt'; r.style.paddingBottom = (3 + add) + 'pt'; }); } } }
   issues.push(...AT.fitHouse(D));
   // the room write-ups run the full width of the photos above them (justified, no narrowing): the copy is sized to fill
   ContactCard.fit(document);
   window.photoPlacements = AT.placements;
+  if(window.CapFit) (window.proofNotes = window.proofNotes || []).push({capFit: CapFit.run(((typeof D !== "undefined" && D.copy) || {}).extra)});
   window.brochureCheck = () => AT.checkSingle(D, issues);
 })();
 </script>

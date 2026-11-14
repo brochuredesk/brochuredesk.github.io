@@ -5,6 +5,7 @@
 <title>BrochureDesk · The Red Line postcard</title>
 <link rel="stylesheet" href="red-line.css">
 <script src="../engine/baths.js"></script>
+<script src="red-line.js"></script>
 <script src="../engine/setpieces.js"></script>
 <!--
   The Red Line · Just Listed and Just Sold postcards. data.piece: card "listed" | "sold", size "6x9" (trim 648 x 432 pt) |
@@ -41,11 +42,8 @@
   .steps.b li{font-size:11pt;line-height:14pt}
   .steps li:before{content:"";position:absolute;left:0;top:4pt;width:5pt;height:5pt;background:var(--accent)}
   .board{position:absolute;background:var(--accent)}
-  .bigb{font:700 15pt/17pt var(--font-display);letter-spacing:.3pt;text-transform:uppercase;color:#fff;overflow:hidden}
+  .bigb{font:700 15pt/19pt var(--font-display);letter-spacing:.3pt;text-transform:uppercase;color:#fff;overflow:hidden}
   .cta{font:700 17pt/20pt var(--font-display);color:var(--ink);overflow:hidden}
-  /* the back (owner 11/7/2026): charcoal over the whole card; the red rail, the red rules and the red board carry the set */
-  body.pc-back{--paper:#1b1b1d;--ink:#ffffff;--text:#dcdcdc;--muted:#b4b6b8;--accent:#e2353a}
-  body.pc-back .cc{--cc-paper:#1b1b1d;--cc-ink:#ffffff;--cc-muted:#c4c6c8;--cc-accent:#ef5a5e;--cc-line:rgba(226,53,58,.6)}
 </style>
 </head>
 <body data-mode="email">
@@ -74,7 +72,7 @@ window.brochureReady = (async function(){
   if(front){
     // ---------- front ----------
     const RW = 44, ph = 296, pw = big ? 512 : 400, cx = RW + pw + 16, cw = W - M - cx;
-    h += `<div class="rail" style="left:-9pt;top:-9pt;width:${RW + 9}pt;height:${H + 18}pt"><div class="stv" data-slot="front.street" data-lines="1" style="left:${9 + (RW - 34)/2}pt;bottom:30pt;width:34pt;height:${H + 18 - 60}pt">${esc(L.address)}</div></div>`;
+    h += `<div class="rail" style="left:-9pt;top:-9pt;width:${RW + 9}pt;height:${H + 18}pt"><div class="stv" data-slot="front.street" data-lines="1" style="left:9pt;bottom:30pt;width:${RW}pt;line-height:${RW}pt;height:${H + 18 - 60}pt">${esc(L.address)}</div></div>`;
     h += SP.photo(D, C.hero || 'front', RW, -9, pw, ph + 9, 'front.hero');
     const sfs = big ? 54 : 46, rt = big ? 38 + 2*sfs + 8 : 38 + 2*sfs + 8;
     h += `<div class="abs kick" style="left:${cx}pt;top:22pt;width:${cw}pt;height:11pt;font-size:${big ? 10 : 8.5}pt" data-slot="front.kick" data-lines="1">${esc(sold ? 'Recently sold' : 'New on the market')}</div>`;
@@ -88,7 +86,7 @@ window.brochureReady = (async function(){
     } else {
       const nfs = big ? 30 : 26;
       h += `<div class="abs" style="left:${cx}pt;top:${ft + 2}pt;width:${cw}pt;height:${bot - ft - 2}pt;display:flex;flex-direction:column;justify-content:space-between;border-top:1.2pt solid var(--accent);padding-top:8pt">
-        <div style="font:700 ${nfs}pt/${nfs + 2}pt var(--font-display);color:var(--ink);overflow:hidden" data-slot="agent.name" data-lines="2">${esc(A.name || '')}</div>
+        <div style="font:700 ${nfs}pt/${Math.round(nfs*1.25)}pt var(--font-display);color:var(--ink);overflow:hidden" data-slot="agent.name" data-lines="2">${esc(A.name || '')}</div>
         ${A.nar ? `<div class="kick" style="font-size:${big ? 10 : 8.5}pt" data-slot="agent.desig" data-lines="1">REALTOR®</div>` : ''}
         <div><div class="kick" style="font-size:${big ? 10 : 8.5}pt" data-slot="agent.phoneLabel" data-lines="1">Call / Text</div>
         <div style="font:700 ${big ? 22 : 19}pt/${big ? 28 : 24}pt var(--font-display);color:var(--accent);letter-spacing:.3pt;white-space:nowrap;overflow:hidden" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div></div></div>`;
@@ -104,8 +102,6 @@ window.brochureReady = (async function(){
   } else {
     // ---------- back ----------
     const Z = SP.mail(W), X = 30, LZ = Z.zA[0] - 12, rW = Z.zP[0] - 12 - Z.zA[0], pTop = 56;
-    document.body.classList.add('pc-back');
-    h += SP.backField(W, H, '#1b1b1d') + SP.mailTint(Z, W, H, {color: '#f6f5f3'});
     h += `<div class="rail" style="left:-9pt;top:-9pt;width:21pt;height:${H + 18}pt"></div>`;
     const ret = SP.returnLines(D);
     h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:16pt;width:${rW}pt;height:32pt;text-align:right"><b data-slot="return0" data-lines="1" style="display:block">${esc(ret[0] || '')}</b>${ret.slice(1).map((r, i) => `<span data-slot="return${i + 1}" data-lines="1" style="display:block">${esc(r)}</span>`).join('')}</div>`;
@@ -141,12 +137,23 @@ window.brochureReady = (async function(){
     // the red board under the postage box, bleeding off the right edge
     const sl = C.slab || {};
     h += `<div class="board" data-blk="1" style="left:${Z.zP[0]}pt;top:${Z.zP[1] + Z.zP[3] + 8}pt;width:${W - Z.zP[0] + 9}pt;height:${Z.zA[1] - Z.zP[1] - Z.zP[3] - 16}pt;padding:6pt 18pt 6pt 10pt;display:flex;flex-direction:column;justify-content:center"><div class="bigb" data-slot="slab.big" data-lines="3">${esc(sl.big || '')}</div></div>`;
-    h += `<div class="rule" style="left:${X}pt;top:${Z.cardY - 4}pt;width:${Z.zA[0] - 12 - X}pt;height:2.2pt"></div>`;
-    h += SP.postCard(D, Z, W, {x: X - 6, dark: true});
+    h += `<div class="rule" style="left:${X}pt;top:${Z.cardY - 4}pt;width:${W - M - X}pt;height:2.2pt"></div>`;
+    h += SP.postCard(D, Z, W, {x: X - 6});
     h += SP.fine(D, X, 396, Z.zB[0] - 12 - X, 'var(--text)');
     h += SP.mailGuides(D, Z);
   }
 
+  // the board's line: the largest size (15 pt down to 10) whose lines, descenders included, sit inside the board (owner 11/10: every letter shows)
+  const after0 = after;
+  after = async () => { if(after0) await after0();
+    document.querySelectorAll('.bigb').forEach(el => { const bd = el.parentElement; let fs = 15;
+      const fits = () => { const r = el.getBoundingClientRect(), q = bd.getBoundingClientRect(); return el.scrollHeight <= el.clientHeight + 1 && r.bottom <= q.bottom - 4 && r.top >= q.top + 4; };
+      el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs*1.25) + 'pt';
+      while(!fits() && fs > 10){ fs -= .5; el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs*1.25) + 'pt'; } }); };
+  const after1 = after; after = async () => { if(after1) await after1(); document.querySelectorAll('[data-slot="back.about"]').forEach(el => { const cs = getComputedStyle(el), f0 = parseFloat(cs.fontSize), r = parseFloat(cs.lineHeight)/f0; let best = 1;
+      for(let z = 1.01; z <= 1.121; z += .01){ el.style.fontSize = f0*z + 'px'; el.style.lineHeight = f0*z*r + 'px'; if(el.scrollHeight <= el.clientHeight + 1) best = z; else break; }
+      el.style.fontSize = f0*best + 'px'; el.style.lineHeight = f0*best*r + 'px'; });   // the Just Listed write-up takes type up to 112% while it fits its box
+    if(window.LastFit) LastFit([...document.querySelectorAll('[data-slot]')].filter(e => !e.querySelector('[data-slot]') && !/(^|\.)(kicker|title|head|headline|name|label|status|return\d*|t|h|nm)$|^(agent|broker|cc|slab|fine)|^sold\.(step|svc)/i.test(e.dataset.slot))); };   // no last line under 80% (owner 11/10)
   await SP.finish(D, W, H, h, issues, after);
 })();
 </script>

@@ -173,7 +173,7 @@
   AT.roomList = (x, y, w, hh, rooms, label, slot, o) => {
     o = o || {};
     const rh = (hh - 15) / Math.max(1, rooms.length), notes = o.notes !== false && rh >= 30 && rooms.some(r => r.s), dense = rh < 18, roomy = !notes && rh >= 24;
-    return `<div class="abs rd${dense ? ' dense' : ''}${roomy ? ' roomy' : ''}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hh}pt">${label ? `<div class="k" data-slot="${slot}.k" data-lines="1">${esc(label)}</div>` : '<div class="k">&nbsp;</div>'}` +
+    return `<div class="abs rd${dense ? ' dense' : ''}${rh < 14.5 ? ' xdense' : ''}${roomy ? ' roomy' : ''}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hh}pt">${label ? `<div class="k" data-slot="${slot}.k" data-lines="1">${esc(label)}</div>` : '<div class="k">&nbsp;</div>'}` +
       rooms.map((r, i) => `<div class="lr"><div class="t"><span class="n" data-slot="${slot}${i}.n" data-lines="1">${esc(r.n)}</span><span class="z" data-slot="${slot}${i}.d" data-lines="1">${esc(AT.dm(r.d))}</span></div>${notes && r.s ? `<div class="s" data-slot="${slot}${i}.s" data-lines="1">${esc(r.s)}</div>` : ''}</div>`).join('') + `</div>`;
   };
 })();

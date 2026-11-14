@@ -24,10 +24,6 @@
 -->
 <style>
   .cc{--cc-paper:#ffffff;--cc-ink:#1d3557;--cc-muted:#5b6b82;--cc-accent:#1f6391;--cc-line:rgba(29,53,87,.22)}
-  /* the back (owner 11/7/2026): the navy of the fold-over's headings runs over the whole card, under a faint map grid */
-  body.pc-back{--paper:#1d3557;--ink:#ffffff;--text:#d9e3ef;--muted:#b7c6d8;--accent:#8fc0e6;--line:rgba(143,192,230,.35)}
-  body.pc-back .cc{--cc-paper:#1d3557;--cc-ink:#ffffff;--cc-muted:#c4d2e3;--cc-accent:#8fc0e6;--cc-line:rgba(143,192,230,.45)}
-  .mgrid{position:absolute;inset:0;background-image:linear-gradient(rgba(143,192,230,.10) .6pt,transparent .6pt),linear-gradient(90deg,rgba(143,192,230,.10) .6pt,transparent .6pt);background-size:36pt 36pt;background-position:9pt 9pt}
   .st{font:400 46pt/48pt var(--font-display);letter-spacing:-.8pt;color:var(--ink);overflow:hidden}
   .ad{font:400 22pt/25pt var(--font-display);letter-spacing:-.2pt;color:var(--ink);overflow:hidden}
   .ab{font-size:10.5pt;line-height:15pt;color:var(--text)}
@@ -107,16 +103,14 @@ window.brochureReady = (async function(){
   } else {
     // ---------- back ----------
     const Z = SP.mail(W), X = M, LZ = Z.zA[0] - 12, rW = Z.zP[0] - 12 - Z.zA[0], pTop = 56;
-    document.body.classList.add('pc-back');
-    // the navy field and its map grid over the whole card, the light tint under the mail zones, a pale-blue edge along the top
-    h += SP.backField(W, H, '#1d3557', '<div class="mgrid"></div>') + SP.mailTint(Z, W, H, {color: '#f4f7fb'});
-    h += `<div class="abs" data-under="1" style="left:-9pt;top:-9pt;width:${Z.zP[0] - 6 + 9}pt;height:13pt;background:var(--accent)"></div>`;
+    h += `<div class="abs" data-blk="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:13pt;background:var(--ink)"></div>`;
     const ret = SP.returnLines(D);
+    if(ret.length < 3) issues.push({slot: 'address.return', kind: 'return-address-missing', detail: 'the brokerage street and city line are missing from the return address (brand.returnAddress); owner 11/10/2026 rule 10'});   // every mailer back: the full return address (owner 11/10/2026, rule 10)
     h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:16pt;width:${rW}pt;height:32pt;text-align:right" data-slot="return" data-lines="3"><b>${esc(ret[0] || '')}</b>${ret.slice(1).map(r => '<br>' + esc(r)).join('')}</div>`;
     h += `<div class="abs bst" style="left:${X}pt;top:16pt;width:${LZ - X}pt;height:28pt" data-slot="back.status" data-lines="1"><span class="s">${esc(status)}</span><span class="a">${esc(L.address)}</span></div>`;
     h += `<div class="rule" style="left:${X}pt;top:47pt;width:${LZ - X}pt"></div>`;
     const cap = (c, x, y, w, slot, row) => `<div class="abs cap" style="left:${x}pt;top:${y + 4}pt;width:${w}pt"><div class="nm" style="font-size:12pt;line-height:13pt;height:13pt" data-slot="${slot}.t" data-lines="1">${esc(c.t)}</div><div class="sz" style="font-size:8.5pt;line-height:10pt;height:10pt" data-slot="${slot}.sz" data-lines="1">${esc(c.sz || '')}</div></div>
-      <div class="abs ctx" style="left:${x}pt;top:${y + 27}pt;width:${w}pt" data-slot="${slot}" data-cap="1" data-row="${row}" data-para="1" data-min="3">${esc(c.a)}</div>`;
+      <div class="abs ctx" style="left:${x}pt;top:${y + 27}pt;width:${w}pt" data-slot="${slot}" data-cap="1" data-row="${row}" data-para="1" data-min="3">${esc((big && c.a11) || (!big && c.a9) || c.a)}</div>`;
     let g = '';
     if(!sold){
       const bk = C.back || [], n = big ? 4 : 3, items = bk.slice(0, n), rItem = bk[4], gap = 10, ph = 64;
@@ -124,27 +118,51 @@ window.brochureReady = (async function(){
       items.forEach((c, i) => { const x = X + i*(pw + gap); g += SP.photo(D, c.id, x, pTop, pw, ph, 'back.photo' + i); h += cap(c, x, pTop + ph, pw, 'back.cap' + i, 'back'); });
       if(rItem){ g += SP.photo(D, rItem.id, Z.zA[0], pTop, rW, ph, 'back.photoR'); h += cap(rItem, Z.zA[0], pTop + ph, rW, 'back.capR', 'back'); }
       const ty = pTop + ph + 27 + 3*11.5 + 12;
-      h += `<div class="abs ab" style="left:${X}pt;top:${ty}pt;width:${LZ - X}pt;height:${Math.floor((Z.cardY - 8 - ty)/15)*15}pt;font-size:11pt" data-slot="back.about" data-para="1" data-min="3" data-fillbox="1">${esc(big ? C.about11 : C.about9)}</div>`;
+      h += `<div class="abs ab" style="left:${X}pt;top:${ty}pt;width:${LZ - X}pt;height:${Math.floor((Z.cardY - 8 - ty)/15)*15}pt;font-size:11pt" data-slot="back.about" data-para="1" data-min="3" data-fillbox="1" data-fillto="${Z.cardY - 6}">${esc(big ? C.about11 : C.about9)}</div>`;
     } else {
       const ids = C.photos || [], gap = 10, pw = (LZ - X - gap)/2, ph = 118;
       ids.slice(0, 2).forEach((id, i) => { g += SP.photo(D, id, X + i*(pw + gap), pTop, pw, ph, 'back.photo' + i); });
       h += `<div class="abs kick" style="left:${Z.zA[0]}pt;top:${pTop}pt;width:${rW}pt;height:10pt" data-slot="sold.stepsLabel" data-lines="1">${esc(C.stepsLabel || "How I'd start")}</div>`;
       h += `<div class="abs steps" style="left:${Z.zA[0]}pt;top:${pTop + 16}pt;width:${rW}pt;height:${Z.zP[1] + Z.zP[3] + 66 - pTop - 16}pt" data-fitlist="8" data-fitmax="${Z.zA[1] - 6 - pTop - 16}">${(C.steps || []).map((s, i) => `<div class="it" data-slot="sold.step${i}" data-lines="2">${esc(s)}</div>`).join('')}</div>`;
       const my = pTop + ph + 12;
-      h += `<div class="abs kick" style="left:${X}pt;top:${my}pt;width:${LZ - X}pt;height:10pt" data-slot="sold.meetLabel" data-lines="1">${esc(C.meetLabel || 'When we meet')}</div>`;
-      h += `<div class="abs ab" style="left:${X}pt;top:${my + 15}pt;width:${LZ - X}pt;height:60pt" data-slot="sold.meet" data-para="1" data-min="3" data-fillbox="1">${esc(big ? C.meet11 : C.meet9)}</div>`;
-      h += `<div class="abs" style="left:${X}pt;top:${my + 81}pt;width:${LZ - X}pt;height:22pt;font:400 17pt/22pt var(--font-display);color:var(--accent);white-space:nowrap;overflow:hidden" data-slot="sold.call" data-lines="1">${esc(C.call || 'Call or text me anytime.')}</div>`;
+      // "When we meet" runs down to the contact card: the call line follows the text, and the text takes the biggest type (up to about
+      // 12% over 10.5 pt) that still fits, so no blank band sits under it (owner 11/10/2026: no blank space under text)
+      h += `<div class="abs" data-meetbox="1" style="left:${X}pt;top:${my}pt;width:${LZ - X}pt;height:${Z.cardY - 6 - my}pt;display:flex;flex-direction:column">
+        <div class="kick" style="flex:none;height:10pt" data-slot="sold.meetLabel" data-lines="1">${esc(C.meetLabel || 'When we meet')}</div>
+        <div class="ab" style="flex:none;margin-top:5pt" data-slot="sold.meet" data-para="1" data-min="3">${esc(big ? C.meet11 : C.meet9)}</div>
+        <div style="flex:none;margin-top:6pt;padding-top:4pt;border-top:.75pt solid var(--line);height:22pt;box-sizing:content-box;font:400 17pt/22pt var(--font-display);color:var(--accent);white-space:nowrap;overflow:hidden" data-slot="sold.call" data-lines="1">${esc(C.call || 'Call or text me anytime.')}</div></div>`;
     }
     h += `<div class="abs" data-gapcheck="back.photos" style="left:0;top:0">${g}</div>`;
     // the pale-blue board under the postage box, bleeding off the right edge
     const sl = C.slab || {};
-    h += `<div class="abs" data-blk="1" style="left:${Z.zP[0]}pt;top:${Z.zP[1] + Z.zP[3] + 8}pt;width:${W - Z.zP[0] + 9}pt;height:${Z.zA[1] - Z.zP[1] - Z.zP[3] - 16}pt;background:#eef3f8;border-left:2.5pt solid var(--accent);padding:6pt 21pt 6pt 9pt;display:flex;flex-direction:column;justify-content:center"><div class="bigb" style="color:#1d3557;text-align:center" data-slot="slab.big" data-lines="3">${esc(sl.big || '')}</div></div>`;
-    h += SP.postCard(D, Z, W, {dark: true});
+    h += `<div class="abs" data-blk="1" style="left:${Z.zP[0]}pt;top:${Z.zP[1] + Z.zP[3] + 8}pt;width:${W - Z.zP[0] + 9}pt;height:${Z.zA[1] - Z.zP[1] - Z.zP[3] - 16}pt;background:var(--band);border-left:2.5pt solid var(--accent);padding:6pt 10pt 6pt 9pt;display:flex;flex-direction:column;justify-content:center"><div class="bigb" data-slot="slab.big" data-lines="3">${esc(sl.big || '')}</div></div>`;
+    h += SP.postCard(D, Z, W);
     h += SP.fine(D, X, 396, Z.zB[0] - 12 - X, 'var(--text)');
     h += SP.mailGuides(D, Z);
   }
 
-  await SP.finish(D, W, H, h, issues);
+  await SP.finish(D, W, H, h, issues, async () => {
+    // the write-up under the photo row starts just under the longest caption and runs to the contact card: the biggest type that
+    // fits (up to about 12% over 11 pt), then the leading opens a little so the last line sits on the card (owner 11/10/2026)
+    document.querySelectorAll('[data-fillto]').forEach(el => {
+      const px = 96/72, caps = [...document.querySelectorAll('.cap, .ctx')];
+      const top = caps.length ? Math.max(...caps.map(c => c.offsetTop + c.offsetHeight)) / px + 9 : el.offsetTop / px;
+      const Hb = +el.dataset.fillto - top; el.style.top = top + 'pt'; el.style.height = 'auto';
+      const tall = () => el.getBoundingClientRect().height / px;
+      let best = 11;
+      for(let fs = 11; fs <= 12.31; fs += .125){ el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs * 1.36) + 'pt'; if(tall() <= Hb + .5) best = fs; else break; }
+      el.style.fontSize = best + 'pt'; el.style.lineHeight = (best * 1.36) + 'pt';
+      const n = Math.round(tall() / (best * 1.36)); if(n) el.style.lineHeight = Math.min(best * 1.6, Hb / n) + 'pt';
+      el.style.height = Hb + 'pt';
+    });
+    document.querySelectorAll('[data-meetbox]').forEach(box => {
+      const t = box.querySelector('[data-slot="sold.meet"]'); if(!t) return;
+      const fits = () => box.scrollHeight <= box.clientHeight + .5;
+      let best = 10.5;
+      for(let fs = 10.5; fs <= 11.76; fs += .125){ t.style.fontSize = fs + 'pt'; t.style.lineHeight = (Math.round(fs * 1.43 * 4) / 4) + 'pt'; if(fits()) best = fs; else break; }
+      t.style.fontSize = best + 'pt'; t.style.lineHeight = (Math.round(best * 1.43 * 4) / 4) + 'pt';
+    });
+  });
 })();
 </script>
 </body>

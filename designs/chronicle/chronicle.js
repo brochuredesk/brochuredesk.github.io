@@ -103,7 +103,7 @@
   // ---------- floor plan facts ----------
   // A design built around the plan: it needs a plan that lists rooms (owner 10/28).
   // A level lists rooms either as drawn rooms (L.rooms) or, for the agent's own plan image, by the room names printed on it (L.roomNames).
-  const listsRooms = l => (l.rooms||[]).length || (l.kind === 'image' && (l.roomNames||[]).length);
+  const listsRooms = l => l.kind === 'image' && !!l.src;   // the listing's own plan image only; never a drawing from room sizes (owner 11/10/2026)
   AT.planOK = D => !!(D.plan && (D.plan.levels||[]).some(listsRooms));
   AT.levels = D => ((D.plan && D.plan.levels) || []).filter(l => !l.inset && listsRooms(l));
   const footprint = L => L.kind === 'image' ? (L.feet ? L.feet.w*L.feet.d : L.w*L.h) : (L.rooms||[]).filter(r => r.kind !== 'outdoor').reduce((a, r) => a + r.w*r.d, 0);
@@ -258,6 +258,12 @@
 
   // ---------- contact card ----------
   // The standard Right panel card, with and without a headshot. The card carries the spread's one brokerage logo.
+  // the narrow card for a back (owner 11/10/2026): the headshot (or stripe) beside the agent's lines stacked, the brokerage on a band below
+  AT.cardNarrow = function(D, box, fine, s){
+    const A = D.agent || {}, hs = AT.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
+    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, {layout:'band', size:'band', fine: fine || '', bottomGap: 0.5, grow: 0,
+      s: Object.assign({name: 20, nameFloor: 15, phone: 14, line: 9, hsW: 66, bandH: 36}, s || {})});
+  };
   AT.card = function(D, box, fine){
     const A = D.agent || {}, hs = AT.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
     return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, {layout:'panel', fine: fine || '', bottomGap: 0.5});
@@ -314,8 +320,44 @@
       if(a > 3.2 || a < 0.55) issues.push({slot, photo:el.dataset.photo, kind:'photo-frame-too-thin', ratio:+a.toFixed(2)});
     });
     if(window.AtlasPlan) issues.push(...AtlasPlan.check());
+    issues.push(...AT.clipChecks());
     return issues;
   };
+  // justified text never opens wide word gaps (owner 11/10, rule 8): a justified block whose ragged lines would have to stretch a word
+  // gap past about 0.6 em is set flush left instead (its lines already run 80%+ of the width)
+  AT.gapGuard = () => { document.querySelectorAll('#pages *').forEach(el => { if(el.closest('.cc') || !el.textContent.trim()) return;
+      const cs = getComputedStyle(el); if(cs.textAlign !== 'justify' || el.children.length) return;
+      const keep = el.style.textAlign; el.style.textAlign = 'left';
+      const n = el.firstChild, w = el.getBoundingClientRect().width, fs = parseFloat(cs.fontSize), rg = document.createRange(), rows = [];
+      if(!n || n.nodeType !== 3){ el.style.textAlign = keep; return; }
+      const re = /\S+/g; let m; while((m = re.exec(n.textContent))){ rg.setStart(n, m.index); rg.setEnd(n, m.index + m[0].length); const r = rg.getBoundingClientRect(); if(r.width < .5) continue;
+        const row = rows.find(x => Math.abs(x.t - r.top) < fs*.5); if(row){ row.r = Math.max(row.r, r.right); row.k++; } else rows.push({t: r.top, l: r.left, r: r.right, k: 1}); }
+      const left = el.getBoundingClientRect().left;
+      const worst = Math.max(0, ...rows.slice(0, -1).map(x => x.k > 1 ? (left + w - x.r)/(x.k - 1)/fs : 9));
+      el.style.textAlign = worst > .6 ? 'left' : keep; if(worst > .6) el.dataset.gapGuard = worst.toFixed(2); }); };
+  // every letter shows in full (owner 11/10, p51 "pizza"): a line of text whose glyph box (ascent to descent) runs past the edge of a
+  // box that clips it (overflow hidden) has its tops or descenders cut off. Photos, panels and the page frames are left out.
+  AT.clipChecks = () => { const out = [], seen = new Set();
+    const tw = document.createTreeWalker(document.getElementById('pages') || document.body, NodeFilter.SHOW_TEXT);
+    for(let n = tw.nextNode(); n; n = tw.nextNode()){ if(!n.textContent.trim()) continue;
+      const host = n.parentElement; if(!host || host.closest('.cc')) continue;
+      const rg = document.createRange(); rg.selectNodeContents(n);
+      const rects = [...rg.getClientRects()].filter(r => r.width > .5); if(!rects.length) continue;
+      for(let a = host; a && a !== document.body; a = a.parentElement){
+        if(['page', 'half', 'sheet', 'ph', 'panel'].some(c => a.classList.contains(c))) break;
+        const cs = getComputedStyle(a); if(cs.overflowY === 'visible' && cs.overflowX === 'visible') continue;
+        const q = a.getBoundingClientRect(), top = q.top + a.clientTop, bot = top + a.clientHeight;
+        // the ink, not the font's box: the canvas measures how far this text's letters really reach above and below the line
+        const hs = getComputedStyle(host); AT._cx = AT._cx || document.createElement('canvas').getContext('2d');
+        AT._cx.font = `${hs.fontStyle} ${hs.fontWeight} ${hs.fontSize} ${hs.fontFamily}`;
+        const t = hs.textTransform === 'uppercase' ? n.textContent.toUpperCase() : n.textContent, m = AT._cx.measureText(t.trim());
+        const dB = m.fontBoundingBoxDescent - m.actualBoundingBoxDescent, dT = m.fontBoundingBoxAscent - m.actualBoundingBoxAscent;
+        const cut = rects.find(r => r.top < bot - 1 && r.bottom > top + 1 && (r.bottom - dB > bot + .5 || r.top + dT < top - .5));
+        if(cut){ const slot = (host.closest('[data-slot]') || {dataset: {}}).dataset.slot || host.className || host.tagName;
+          const k = slot + '|' + n.textContent.slice(0, 20); if(!seen.has(k)){ seen.add(k);
+            out.push({slot, kind: 'text-clipped', text: n.textContent.trim().slice(0, 60), byPt: +pt(Math.max(cut.bottom - dB - bot, top - cut.top - dT)).toFixed(2)}); }
+          break; } } }
+    return out; };
   AT.placements = () => [...document.querySelectorAll('.ph img')].map(img => ({src: img.getAttribute('src'), w: img.parentElement.clientWidth/96, h: img.parentElement.clientHeight/96}));
 
   // ================= portrait book fold: text fitting =================

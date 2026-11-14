@@ -5,6 +5,7 @@
 <title>BrochureDesk · The Red Line open house flyer · Red Rail</title>
 <link rel="stylesheet" href="red-line.css">
 <script src="../engine/baths.js"></script>
+<script src="red-line.js"></script>
 <script src="../engine/setpieces.js"></script>
 <!--
   The Red Line · Open House flyer "Red Rail" (trim 612 x 792 pt; print: 0.25 in white margin around the field).
@@ -44,9 +45,9 @@ window.brochureReady = (async function(){
   let h = '';
 
   // the rail, with the label on its side
-  h += `<div class="rail" style="left:18pt;top:18pt;width:60pt;height:756pt"><div class="rl-lbl" style="left:14pt;bottom:30pt;width:36pt;height:600pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div></div>`;
+  h += `<div class="rail" style="left:18pt;top:18pt;width:60pt;height:756pt"><div class="rl-lbl" style="left:0;bottom:30pt;width:60pt;height:600pt;line-height:60pt" data-slot="oh.label" data-lines="1">${esc(O.label)}</div></div>`;
   // the event
-  h += `<div class="abs oh-date" style="left:${X - 2}pt;top:32pt;width:${W + 2}pt;height:60pt" data-slot="oh.date" data-lines="1" data-fit="34">${esc(O.long)}</div>`;
+  h += `<div class="abs oh-date" style="left:${X - 2}pt;top:30pt;width:${W + 2}pt;height:64pt;line-height:64pt" data-slot="oh.date" data-lines="1" data-fit="34">${esc(O.long)}</div>`;
   h += `<div class="abs oh-time" style="left:${X}pt;top:96pt;width:230pt;height:32pt" data-slot="oh.time" data-lines="1">${esc(O.time)}</div>`;
   let dy = 0;
   { const ls = [[O.note, 'oh.note', 'oh-strong'], [O.refreshments, 'oh.refreshments', 'oh-note']].filter(l => l[0]);
@@ -67,13 +68,14 @@ window.brochureReady = (async function(){
   h += `<div class="rule" style="left:${X}pt;top:558pt;width:${W}pt;height:2.2pt"></div>`;
   const ps = (C.photos || []).slice(0, 2), pw = 128, gx = 10, tx = X + W - 2*pw - gx - 18;
   h += `<div class="abs kick" style="left:${X}pt;top:568pt;width:${tx - X}pt;height:11pt" data-slot="oh.kicker" data-lines="1">On the tour</div>`;
-  h += `<div class="abs ab" style="left:${X}pt;top:584pt;width:${tx - X}pt;height:75pt" data-slot="oh.blurb" data-para="1" data-min="4" data-fillbox="1">${esc(C.text || '')}</div>`;
+  h += `<div class="abs ab" style="left:${X}pt;top:584pt;width:${tx - X}pt;height:75pt" data-slot="oh.blurb" data-para="1" data-min="4" data-fillbox="1" data-lines="5" data-nobal="1"${C.pool ? ` data-pool='${esc(JSON.stringify(C.pool)).replace(/'/g, '&#39;')}'` : ''}>${esc(C.text || '')}</div>`;
   h += `<div class="abs" data-gapcheck="oh.photos" style="left:0;top:0">${ps.map((id, i) => SP.photo(D, id, X + W - 2*pw - gx + i*(pw + gx), 570, pw, 90, 'oh.photo' + i)).join('')}</div>`;
 
   h += SP.card(D, [X, 674, W, 86], {layout: 'panel', fieldAccent: true});
   h += `<div class="abs" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
 
-  await SP.finish(D, 612, 792, h, issues);
+  // the write-up fills its five lines from the listing's own true lines (owner 11/10/2026: every Open House flyer complete, no blank band)
+  await SP.finish(D, 612, 792, h, issues, async () => { if(window.CapFit) CapFit([...document.querySelectorAll('[data-pool]')]); });
 })();
 </script>
 </body>

@@ -104,20 +104,29 @@
     return `<div class="abs body" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${n*lh}pt;font-size:${fs}pt;line-height:${lh}pt;${style || ''}" data-slot="${slot}" data-lines="${n}" data-cap="1" data-nmin="${n}" data-nmax="${n}"></div>`;
   };
   OFC.cap = (c, slot, x, y, w, n, beats) => {
-    pending.push({slot: slot + '.text', beats: beats || c.text});
+    pending.push({slot: slot + '.text', beats: beats || c.text, min: c.__min || 0});
     return `<div class="cap abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${12 + n*11}pt">
       <div class="nm" data-slot="${slot}.name" data-lines="1"><b style="font-weight:700">${esc(c.name)}</b>${c.tag ? `<span>${esc(c.tag)}</span>` : ''}</div>
       <div class="tx" data-slot="${slot}.text" data-lines="${n}" data-cap="1" data-nmin="${n}" data-nmax="${n}" style="height:${n*11}pt"></div></div>`;
   };
-  // the search: every combination of the optional beats at n lines; best = last line 77-100% full
-  const search = (el, beats, n) => {
-    const lo = 0.74, O = [].concat(beats).map((b, i) => { const v = [].concat(b); return i === 0 ? v : [null, ...v]; });
+  // every line of the box (set ragged) as a share of the box width: text under a photo runs the photo's width (owner 11/8/2026)
+  OFC.minLine = el => {
+    const r = document.createRange(); r.selectNodeContents(el);
+    const rects = [...r.getClientRects()].filter(q => q.width > .5 && q.height > .5), box = el.getBoundingClientRect();
+    if(!rects.length) return 0;
+    const lh = parseFloat(getComputedStyle(el).lineHeight) || 12, lines = [];
+    for(const q of rects){ const l = lines.find(x => Math.abs(x.top - q.top) < lh*0.5); if(l) l.r = Math.max(l.r, q.right); else lines.push({top: q.top, r: q.right}); }
+    return Math.min(...lines.map(l => (l.r - box.left) / box.width));
+  };
+  // the search: every combination of the optional beats at n lines; best = every line 80-100% full (the last 90% when it can)
+  const search = (el, beats, n, min) => {
+    const lo = 0.8, O = [].concat(beats).map((b, i) => { const v = [].concat(b); return i === 0 ? v : [null, ...v]; });
     const idx = O.map(() => 0); let best = null, near = null; const seen = [];
     for(;;){
       const t = idx.map((k, i) => O[i][k]).filter(Boolean).join(' ');
-      el.textContent = t; const [k, fill] = OF.lineFill(el); seen.push([t.length, k, fill]);
-      if(k === n){
-        if(fill >= lo && fill <= 1){ const sc = fill - 0.3*Math.abs(fill - 0.9) + 0.0005*t.length; if(!best || sc > best.sc) best = {t, sc}; }
+      el.textContent = t; const [k, fill0] = OF.lineFill(el), fill = Math.min(fill0, OFC.minLine(el)); seen.push([t.length, k, fill]);
+      if(k === n && t.length >= (min || 0)){
+        if(fill >= lo && fill <= 1){ const sc = fill - 0.3*Math.abs(fill - 0.9) + 0.0005*t.length; if(!best || sc > best.sc) best = {t, sc, fill}; }
         if(!near || fill > near.fill) near = {t, fill};
       }
       let j = O.length - 1; while(j >= 0 && ++idx[j] === O[j].length){ idx[j] = 0; j--; } if(j < 0) break;
@@ -126,18 +135,21 @@
   };
   // which of the candidate line counts the copy can fill (first in the list that fits wins); measured in a hidden box of the
   // same width and type, so a layout can size its photos to the copy before anything is placed
-  OFC.pickN = (beats, w, style, ns) => {
+  OFC.pickN = (beats, w, style, ns, min) => {
     const m = document.createElement('div');
     m.style.cssText = `position:absolute;left:-9999pt;top:0;visibility:hidden;width:${w}pt;height:auto;${style}`;
     document.body.appendChild(m); let pick = null;
-    for(const n of ns){ if(search(m, beats, n).best){ pick = n; break; } }
+    for(const n of ns){ if(search(m, beats, n, min).best){ pick = n; break; } }
     m.remove(); return pick;
   };
   OFC.fillAll = () => {
     for(const p of pending){
       const el = document.querySelector(`[data-slot="${p.slot}"]`); if(!el) continue;
-      const n = +el.dataset.lines, {best, near, seen, O} = search(el, p.beats, n);
-      el.textContent = best ? best.t : near ? near.t : O.map(o => o[0]).join(' ');
+      const n = +el.dataset.lines, {best, near, seen, O} = search(el, p.beats, n, p.min);
+      // no fit at all: the beats in reading order until the text is at least as long as its own copy (never shorter)
+      const inOrder = () => { const t = []; for(const o of O){ const v = o[o.length - 1]; if(v) t.push(v); if(t.join(' ').length >= (p.min || 0) && t.length > 1) break; } return t.join(' '); };
+      el.textContent = best ? best.t : near ? near.t : (p.min ? inOrder() : O.map(o => o[0]).join(' '));
+      el.style.textAlign = best && !el.dataset.ragged && best.fill >= .88 ? 'justify' : '';   // justified only when the lines are near full already (owner 11/10: no wide gaps)   // data-ragged: a short note keeps its word spacing (owner 11/10: no wide gaps)
       if(!best){ el.dataset.nofit = '1';
         const multi = seen.filter(x => x[1] > 1), cpl = multi.reduce((a, x) => a + x[0] / (x[1] - 1 + x[2]), 0) / Math.max(1, multi.length);
         el.dataset.diag = `n=${n} cpl~${Math.round(cpl)} want ${Math.round(cpl*(n - 1 + .8))}-${Math.round(cpl*n*.98)} chars; have ` + [...new Set(seen.filter(x => x[1] >= n - 1 && x[1] <= n + 1).map(x => x[0] + '/' + x[1] + '/' + x[2].toFixed(2)))].sort((a, b) => parseInt(a) - parseInt(b)).join(' '); }
@@ -178,7 +190,8 @@
     const issues = OF.check(D, extra).filter(i => !(i.kind === 'last-line-short' && i.pct >= 73));
     document.querySelectorAll('.page').forEach(pg => {
       const k = [...pg.querySelectorAll('.logo img, .logo [data-slot="broker.name"], .cc-logo img, .cc-brkname')].filter(e => e.offsetParent).length;
-      if(k !== 1) issues.push({slot: 'logo', kind: 'logo-count', found: k, want: 1});
+      const want = OFC.logoWant == null ? 1 : OFC.logoWant;   // the flyer front carries no logo (owner 11/10/2026)
+      if(k !== want) issues.push({slot: 'logo', kind: 'logo-count', found: k, want});
     });
     issues.push(...OFC.houseIssues(D));
     document.querySelectorAll('[data-nofit]').forEach(el => issues.push({slot: el.dataset.slot, kind: 'copy-does-not-fit', detail: el.dataset.diag || 'no combination fits'}));
@@ -192,6 +205,7 @@
     if((D.brand || {}).accent) document.documentElement.style.setProperty('--accent', D.brand.accent);
     await Promise.all(['700 10pt', '400 10pt', '600 10pt'].flatMap(w => [document.fonts.load(`${w} 'Space Grotesk'`), document.fonts.load(`${w} 'Source Sans 3'`)]));
     const r = build();
+    if(r.logos != null) OFC.logoWant = r.logos;
     document.getElementById('pages').innerHTML = r.html;
     await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(res => { i.onload = i.onerror = res; })));
     OF.fitLogos();

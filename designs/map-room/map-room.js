@@ -104,7 +104,7 @@
     let best = null;
     for(const cols of lv.length === 4 ? [4, 2, 1] : lv.length > 1 ? [lv.length, 1] : [1]){   // the center column is narrow: floors may stack
       const up = layout(0, cols), tu = layout(90, cols);
-      const pick = tu.area >= up.area*1.33 ? tu : up;
+      const pick = tu.area >= up.area*1.33 && !lv.every(l => l.textDir === 'h') ? tu : up;   // a plan whose words read across stays upright (owner 11/10/2026: as given)
       if(!best || pick.area > best.area) best = pick;
     }
     const A = best, gridW = A.colW.reduce((a,b)=>a+b,0)*A.s + GAP*(A.cols-1), gridH = A.rowH.reduce((a,b)=>a+b,0)*A.s + (LAB+4)*A.rows + GAP*0.6*(A.rows-1);

@@ -47,7 +47,7 @@
     const lines = o.lines || RL.need(c.text, w), mn = o.min || lines, mx = o.max || lines, nh = o.big ? 19 : 14;
     return `<div class="cap abs${o.big ? ' big' : ''}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${nh + lines*11}pt">
       <div class="nm" data-slot="${slot}.name" data-lines="1" style="height:${nh}pt"><b>${esc(c.name)}</b>${c.tag ? `<span>${esc(c.tag)}</span>` : ''}</div>
-      <div class="tx" data-slot="${slot}.text" data-lines="${lines}" data-nmin="${mn}" data-nmax="${mx}" data-cap="1" style="height:${lines*11}pt">${esc(RL.txt(c.text))}</div></div>`;
+      <div class="tx" data-slot="${slot}.text" data-lines="${lines}" data-nmin="${mn}" data-nmax="${mx}" data-cap="1"${c.id && (c.pool || RL.pool(c.id)) && !RL.fitMode ? ` data-pool='${esc(JSON.stringify(c.pool || RL.pool(c.id))).replace(/'/g, '&#39;')}'` : ''}${c.keep && !RL.fitMode ? ` data-keep='${esc(JSON.stringify(c.keep)).replace(/'/g, '&#39;')}'` : ''} style="height:${lines*11}pt">${esc(RL.txt(c.text))}</div></div>`;
   };
   RL.kick = (t, slot, x, y, w) => `<div class="abs kick" style="left:${x}pt;top:${y}pt;width:${w||600}pt;height:11pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
   RL.title = (t, slot, x, y, w) => `<div class="abs title one" style="left:${x}pt;top:${y}pt;width:${w||744}pt;height:32pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
@@ -172,6 +172,94 @@
     if(window.AgentCard) issues.push(...AgentCard.trec(document, [...document.querySelectorAll('.logo img')]));
     return issues;
   };
+  // ---------- text under a photo fills the photo's width (owner 11/8/2026) ----------
+  // A caption with a data-pool (true lines about its photo, the existing ones first) is re-set from that pool: the sentences that set in exactly
+  // its box's lines with every line (set ragged) at least 90% of the width, else 80%; type up to 12% larger when that is what it takes; then justified.
+  // A caption that cannot fill keeps its text, left aligned. Never shortened to meet the rule: it only gets fuller or larger.
+  // owner 11/10/2026 (round 2): a small justification stretch is fine, big word gaps are not. A justified box whose lines would
+  // open gaps over maxX normal spaces is set ragged instead (the fill comes from true lines and type size, never spread words).
+  // owner 11/10/2026: no last line under 80% anywhere. A write-up whose last line falls short takes the type size (97% to 112%
+  // of its own, in 1% steps) at which it still fits its box and its last line runs 82%+; if none does, it keeps its size.
+  window.LastFit = window.LastFit || function(els, min){
+    min = min || .82;
+    const last = el => { const r = document.createRange(); r.selectNodeContents(el); const q = [...r.getClientRects()].filter(x => x.width > .5 && x.height > .5);
+      if(!q.length) return 1; const bx = el.getBoundingClientRect(), t = Math.max(...q.map(x => x.top)), lh = parseFloat(getComputedStyle(el).lineHeight) || 12;
+      const rows = new Set(q.map(x => Math.round(x.top/(lh*.5)))).size; if(rows < 2) return 1;
+      return (Math.max(...q.filter(x => Math.abs(x.top - t) < lh*.5).map(x => x.right)) - bx.left)/bx.width; };
+    for(const el of els){ if(!el || !el.textContent.trim() || last(el) >= min) continue;
+      const cs = getComputedStyle(el), fs0 = parseFloat(cs.fontSize), lr = (parseFloat(cs.lineHeight) || fs0*1.3)/fs0, keepF = el.style.fontSize, keepL = el.style.lineHeight;
+      const hb = el.clientHeight, fixedH = !!el.style.height && el.style.height !== 'auto';
+      let ok = false;
+      for(const z of [1.01, 1.02, .99, 1.03, .98, 1.04, .97, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1, 1.11, 1.12]){
+        el.style.fontSize = (fs0*z) + 'px'; el.style.lineHeight = (fs0*z*lr) + 'px';
+        for(const t of [0, .1, -.1, .2]){ el.style.letterSpacing = t ? t + 'px' : '';
+          if(fixedH && el.scrollHeight > hb + 1) continue;
+          if(last(el) >= min){ ok = true; break; } }
+        if(ok) break; }
+      if(!ok){ el.style.fontSize = keepF; el.style.lineHeight = keepL; el.style.letterSpacing = ''; } }
+    if(window.NoWideGaps) NoWideGaps([...els].filter(Boolean));   // a new size never re-opens wide gaps (owner 11/12)
+  };
+  // the width of a normal word space in this box's type (as the print check measures it: the space glyph plus letter and word spacing)
+  RL.spaceW = el => { const cs = getComputedStyle(el), c = RL._cv || (RL._cv = document.createElement('canvas').getContext('2d'));
+    c.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`; return c.measureText(' ').width + (parseFloat(cs.wordSpacing) || 0) + (parseFloat(cs.letterSpacing) || 0); };
+  // owner 11/12: never spread words. Each justified line's own gap (its slack over its word count, plus a normal space) against the
+  // real space of its type: past 1.6x, the block sets ragged (the fitters' line-fill rules are measured ragged, so they still hold).
+  window.NoWideGaps = window.NoWideGaps || function(els, maxX){
+    maxX = maxX || 1.6;   // reviewer5 p15: ~2x still read loose; past 1.6x the block sets ragged
+    for(const el of els){ if(getComputedStyle(el).textAlign !== 'justify') continue;
+      const keep = el.style.textAlign; el.style.textAlign = 'left';
+      const box = el.getBoundingClientRect(), fs = parseFloat(getComputedStyle(el).fontSize) || 12, sp = RL.spaceW(el) || fs*.26, r = document.createRange(), lines = [];
+      const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for(let n = tw.nextNode(); n; n = tw.nextNode()){ const re = /\S+/g; let m;
+        while((m = re.exec(n.textContent))){ r.setStart(n, m.index); r.setEnd(n, m.index + m[0].length); const q = r.getBoundingClientRect();
+          let L = lines.find(l => Math.abs(l.t - q.top) < fs*.5); if(!L){ L = {t: q.top, n: 0, r: 0}; lines.push(L); } L.n++; L.r = Math.max(L.r, q.right); } }
+      lines.sort((a, b) => a.t - b.t);
+      const bad = lines.slice(0, -1).some(L => L.n > 1 && (box.right - L.r)/(L.n - 1) + sp > maxX*sp);
+      el.style.textAlign = bad ? 'left' : (keep || 'justify'); if(bad) el.dataset.ragged = '1'; }
+  };
+  window.CapFit = window.CapFit || function(els){
+    const stat = el => { const r = document.createRange(); r.selectNodeContents(el); const box = el.getBoundingClientRect(), lh = parseFloat(getComputedStyle(el).lineHeight) || 12, rows = [];
+      for(const q of r.getClientRects()){ if(q.width < .5 || q.height < .5) continue; const l = rows.find(x => Math.abs(x.top - q.top) < lh*.5); if(l) l.r = Math.max(l.r, q.right); else rows.push({top: q.top, r: q.right}); }
+      return {n: rows.length, min: rows.length ? Math.min(...rows.map(x => (x.r - box.left)/box.width)) : 0}; };
+    const fitEl = (el, useKeep) => {
+      let pool; try { pool = JSON.parse(el.dataset.pool || '[]'); } catch(e){ return; }
+      pool = pool.filter(Boolean).slice(0, 10); const n = +el.dataset.fitn || +el.dataset.lines || 0, minl = +el.dataset.minlen || 0;   // data-minlen: never shorter than the writer's caption (owner 11/10)
+      if(!pool.length || !n) return;
+      const t0 = el.textContent, fs0 = parseFloat(getComputedStyle(el).fontSize), k = pool.length;
+      let keepMask = 0; try { if(useKeep) (JSON.parse(el.dataset.keep || '[]')).forEach(x => { const i = pool.indexOf(x); if(i >= 0) keepMask |= 1 << i; }); } catch(e){}
+      el.style.fontSize = ''; el.textContent = pool.join(' ');
+      const s0 = stat(el), all = pool.join(' ').length, cpl0 = all/Math.max(.5, s0.n - 1 + Math.max(.3, s0.min));
+      let got = null, ok80 = null;
+      for(const pass of [0, 1]){ if(got || ok80) break;
+      for(const z of [1, 1.03, 1.06, 1.09, 1.12]){
+        el.style.fontSize = (fs0*z) + 'px';
+        const cpl = cpl0/z, cands = [];
+        for(let m = 1; m < (1 << k); m++){
+          if((m & keepMask) !== keepMask) continue;   // a caption's own pool lists the sentences it must keep (data-keep): a pick is always a superset
+          if(!pass && !(m & 1)) continue;   // first pass: the first line (the existing lead) stays
+          const pick = pool.filter((_, i) => m >> i & 1), len = pick.join(' ').length;
+          if(len < minl) continue;
+          if(keepMask ? (len >= cpl*(n - 1 + .5) && len <= cpl*(n + .3)) : (len >= cpl*(n - 1 + .8) && len <= cpl*(n + .05))) cands.push({pick, d: Math.abs(len - cpl*(n - .06))});
+        }
+        cands.sort((a, b) => a.d - b.d);
+        for(const c of cands.slice(0, 160)){
+          el.textContent = c.pick.join(' '); const s = stat(el);
+          if(s.n !== n) continue;
+          if(s.min >= .9){ got = c; break; }
+          if(s.min >= .8 && !ok80) ok80 = c;
+        }
+        if(got) break;
+        if(ok80){ got = ok80; break; }
+      }
+      }
+      if(got){ el.textContent = got.pick.join(' '); el.style.textAlign = 'justify'; el.dataset.capfit = 'ok'; NoWideGaps([el]); }
+      else { el.textContent = t0; el.style.fontSize = ''; el.style.textAlign = ''; el.dataset.capfit = 'no'; }
+    };
+    // a caption's own keep list (the sentences it must hold) applies where the box can hold them; where it cannot, the pool is set freely
+    for(const el of els){ fitEl(el, true); if(el.dataset.keep && el.dataset.capfit !== 'ok') fitEl(el, false); }
+  };
+
+  RL.pool = id => ((((RL.data().companion || {}).capPool) || {})[id]) || null;
   window.RL = RL;
 })();
 

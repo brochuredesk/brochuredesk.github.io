@@ -5,6 +5,7 @@
 <title>BrochureDesk · Swatchbook Open House flyer A</title>
 <link rel="stylesheet" href="swatchbook.css">
 <script src="swatchbook.js"></script>
+<script src="capfit.js"></script>
 <script src="../engine/agentcard.js"></script>
 <script src="../engine/ivory.js"></script>
 <!--
@@ -27,6 +28,7 @@ window.brochureReady = (async function(){
   document.body.dataset.mode = D.mode || 'email';
   await SW.setup(D);
   const O = SW.openHouse(D), issues = [];
+  if(!O.long || !O.time) issues.push({slot: 'oh.when', kind: 'oh-date-time-missing'});   /* every Open House piece shows its date and time, big (owner 11/10) */
   const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot) || '';
   const X = 30, Wd = 552;
   const sty = document.createElement('style'); sty.textContent = '.evb{font:600 12pt/15.5pt var(--font-body);color:var(--navy);text-align:left}.evb.b{font-weight:700}'; document.head.appendChild(sty);
@@ -57,9 +59,11 @@ window.brochureReady = (async function(){
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
   // the longest date still fits its line (down from 40 pt, never below 34)
   const dt = document.getElementById('ohdate'); let fs = 40; while(dt.scrollWidth > dt.clientWidth + 1 && fs > 34){ fs -= 1; dt.style.fontSize = fs + 'pt'; }
-  SW.fill();
+  await Promise.all([...document.fonts].filter(f => f.status !== 'loaded').map(f => f.load().catch(() => {}))); await document.fonts.ready; SW.fill();   // measure with the real fonts (owner 11/10: never shorter)
   ContactCard.fit(document);
   issues.push(...SW.focus(D));
+  await Promise.all([...document.fonts].filter(f => f.status !== 'loaded').map(f => f.load().catch(() => {}))); await document.fonts.ready; await new Promise(r => setTimeout(r, 60)); SW.fill(); CapFit.run(document.querySelectorAll('.cap .a'));
+  SW.lastFix();   // owner 11/10: no last line under 80% (a small type step, same words)
   window.brochureCheck = () => SW.check(D, issues);
   window.photoPlacements = SW.placements;
 })();

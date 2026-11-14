@@ -47,8 +47,11 @@
 </style>
 </head>
 <body data-mode="email">
+<script src="capfit.js"></script>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
+<script src="../engine/planink.js"></script>
+<script src="../engine/planrooms.js"></script>
 <script src="split-flyer.js"></script>
 <script>
 window.brochureReady = (async function(){
@@ -60,7 +63,7 @@ window.brochureReady = (async function(){
   const side = (D.piece || {}).side === 'back' ? 'back' : 'front';
   const hasPlan = !!(D.plan && D.plan.levels && D.plan.levels.length);
   const X = 36, W = 540, num = v => Number(v).toLocaleString('en-US');
-  const BODY = 'font-size:10.5pt;line-height:15pt;color:#3c383a', CAP = 'font-size:9pt;line-height:11.5pt;color:#3c383a', FT = 'font-size:9.5pt;line-height:13pt;color:#3c383a', NT = 'font-size:9pt;line-height:12pt;color:#3c383a', SM = 'font-size:9pt;line-height:12pt;color:#3c383a';
+  const BODY = 'font-size:10.5pt;line-height:15pt;color:#3c383a', CAP = 'font-size:9pt;line-height:11.5pt;color:#3c383a', FT = 'font-size:9.5pt;line-height:13pt;color:#3c383a', NT = 'font-size:9pt;line-height:12pt;color:#3c383a', SM = 'font-size:10.5pt;line-height:14pt;color:#3c383a';
   const place = SP.placeZip(L), LOGO = [X + W - 150, 24, 150, 30];
   const CARD_Y = 666, CARD_H = 86, OW = 148, BOT = 654;
   let h = '', after = () => {};
@@ -69,15 +72,16 @@ window.brochureReady = (async function(){
   const capRow = (items, slot, y, n, ph) => {
     const gap = 10, cw = (W - gap*(items.length - 1))/items.length; let s = '';
     s += `<div class="abs" data-gapcheck="${slot}" style="left:0;top:0">${items.map((c, i) => SP.photo(D, c.id, X + i*(cw + gap), y, cw, ph, `${slot}.photo${i}`)).join('')}</div>`;
-    items.forEach((c, i) => { const x = X + i*(cw + gap), f = SF.fit(SF.beats(c.text), cw, CAP, n);
+    items.forEach((c, i) => { const x = X + i*(cw + gap), f = SF.fit(SF.capBeats(c.text), cw, CAP, n);
       s += `<div class="cap abs" style="left:${x}pt;top:${y + ph + 6}pt;width:${cw}pt;height:17pt"><div class="nm" data-slot="${slot}.cap${i}.t" data-lines="1"><b>${esc(c.name)}</b>${c.tag ? `<span>${esc(SF.feet(c.tag))}</span>` : ''}</div></div>`;
-      s += `<div class="abs" style="left:${x}pt;top:${y + ph + 23}pt;width:${cw}pt;height:${n*11.5}pt;${CAP}" data-slot="${slot}.cap${i}" data-cap="1" data-row="${slot}" data-lines="${n}">${esc(f.text)}</div>`;
+      s += `<div class="abs" style="left:${x}pt;top:${y + ph + 23}pt;width:${cw}pt;height:${n*11.5}pt;${CAP}" data-slot="${slot}.cap${i}" data-cap="1" data-row="${slot}" data-fixed="1" data-lines="${n}">${esc(f.text)}</div>`;
       if(!f.ok) issues.push({slot: `${slot}.cap${i}`, kind: 'box-not-full', lines: f.n, wanted: n}); });
     return s;
   };
-  const capLines = items => SF.common(items.map(c => SF.beats(c.text)), (W - 20)/3, CAP, [4, 3, 5, 6]) || 4;
+  const capLines = items => SF.common(items.map(c => SF.capBeats(c.text)), (W - 20)/3, CAP, [4, 3, 5, 6]) || 4;
   const fillNote = (slot, f, n) => { if(!f.ok) issues.push({slot, kind: 'box-not-full', lines: f.n, wanted: n}); };
-  const header = (kicker, slotK) => SF.logo(D, ...LOGO) + `<div class="abs kick" style="left:${X}pt;top:30pt;width:370pt;height:10pt" data-slot="${slotK}" data-lines="1">${esc(kicker)}</div>`;
+  // no logo on the front (owner 11/10/2026); on the back the one logo rides on the narrow card's band
+  const header = (kicker, slotK) => `<div class="abs kick" style="left:${X}pt;top:30pt;width:370pt;height:10pt" data-slot="${slotK}" data-lines="1">${esc(kicker)}</div>`;
 
   // ====================================== FRONT ======================================
   if(side === 'front'){
@@ -107,25 +111,42 @@ window.brochureReady = (async function(){
     const wy = 390, lw = 214, px = X + lw + 18, pw = X + W - px;
     h += `<div class="abs kick" style="left:${X}pt;top:${wy}pt;width:${lw}pt;height:10pt" data-slot="front.head" data-lines="1">${esc(K.head || '')}</div>`;
     h += `<div class="abs sub" id="fsub" style="left:${X}pt;top:${wy + 15}pt;width:${lw}pt;height:45pt" data-slot="front.sub" data-lines="2">${esc(K.sub || '')}</div>`;
-    const wf = SF.fit(SF.beats(K.intro), pw, BODY, 4); fillNote('front.intro', wf, 4);
-    h += SF.para('front.intro', wf.text, px, wy, pw, 4, 10.5, 15);
+    // no contact block on the front (owner 11/10/2026): the write-up takes more lines and the row of photos runs to the fine print
+    const ib = SF.beats(K.intro); let NI = 4, wf = SF.fit(ib, pw, BODY, 4);
+    for(const k of [6, 5]){ const f = SF.fit(ib, pw, BODY, k); if(f.ok){ NI = k; wf = f; break; } }
+    fillNote('front.intro', wf, NI);
+    h += SF.para('front.intro', wf.text, px, wy, pw, NI, 10.5, 15);
     // three captioned photos
-    const n = capLines(caps), capH = 17 + 6 + n*11.5, rowTop = 466, ph = BOT - capH - rowTop + 0;
+    const n = SF.common(caps.map(c => SF.capBeats(c.text)), (W - 20)/3, CAP, [5, 4, 6, 3]) || capLines(caps), capH = 17 + 6 + n*11.5, rowTop = Math.max(466, wy + NI*15 + 16), ph = 752 - capH - rowTop;
     h += capRow(caps, 'front', rowTop, n, ph);
-    h += SF.footer(D, X, CARD_Y, W, CARD_H, OW, 'Information deemed reliable but not guaranteed.');
+    h += `<div class="abs" style="left:${X}pt;top:762pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">Information deemed reliable but not guaranteed.</div>`;
     after = () => { const s = document.getElementById('fsub'); let z = parseFloat(getComputedStyle(s).fontSize)*72/96; while(SP.lines(s) > 2 && z > 16){ z -= .5; s.style.fontSize = z + 'pt'; s.style.lineHeight = (z*1.18) + 'pt'; } };
   }
 
   // ====================================== BACK ======================================
   else {
-    const B = FL.back || {}, NP = B.noplan || {}, TOP = 94, ZH = (D.plan && D.plan.levels && D.plan.levels.length) ? 250 : 215;
+    // the narrow card at the foot's left with the claim block beside it (owner 11/10/2026, rule 3); the plan zone and the photo row
+    // take the band the claim block held
+    const Bd = (FL.back || {}).band || {}, sbt = SF.beats(Bd.small), all = sbt.map(x => [].concat(x).slice(-1)[0]).join(' ').length;
+    let sw = 230, SN = 3, sf = null;
+    out: for(const w0 of [230, 240, 220, 250, 210, 260, 200, 270, 190, 280, 180, 290, 170, 300, 160, 310, 150, 320, 330, 340, 350]){
+      for(let k = 3; k <= 5; k++){ const f = SF.fit(sbt, w0, SM, k, 0.85); if(f.ok && !f.soft && f.text.length >= all*0.97){ sw = w0; SN = k; sf = f; break out; } } }
+    if(!sf){ SN = Math.max(3, SF.most(sbt, sw, SM, 5, 3)); sf = SF.fit(sbt, sw, SM, SN); }
+    const CLH = 9 + 28 + 6 + SN*14 + 9;
+    const CARDH = 66, CARDT = 752 - CARDH, CLT = CARDT - 6 - CLH, BOTB = CLT - 12;
+    const B = FL.back || {}, NP = B.noplan || {}, TOP = 94, ZH = (D.plan && D.plan.levels && D.plan.levels.length) ? 272 : 215;
     const kicker = (!hasPlan && NP.kicker) || B.kicker || '', title = (!hasPlan && NP.title) || B.title || '';
     h += header(kicker, 'back.kicker');
     h += `<div class="abs fl-title" data-fit="22" style="left:${X}pt;top:41pt;width:376pt;height:34pt" data-slot="back.title" data-lines="1">${esc(title)}</div>`;
     h += `<div class="rule" style="left:${X}pt;top:80pt;width:${W}pt"></div>`;
     const row = (B.row || []).slice(0, 3), rowN = capLines(row);
-    const bandY = TOP + ZH + 14, bandH = 84, rowTop = bandY + bandH + 14, capH = 17 + 6 + rowN*11.5, ph = BOT - capH - rowTop;
-    const rooms = (B.rooms || (L.rooms || []).map(r => [r.name, r.size, r.level])).map(r => [r[0], SF.feet(r[1]), r[2]]);
+    const rowTop = TOP + ZH + 14, capH = 17 + 6 + rowN*11.5, ph = BOTB - capH - rowTop;
+    const rooms0 = (B.rooms || (L.rooms || []).map(r => [r.name, r.size, r.level])).map(r => [r[0], SF.feet(r[1]), r[2]]);
+    // beside the plan, the plan's own room names and sizes (owner 11/13/2026, captions round 3 Q2); a room the plan calls something else
+    // takes the plan's name in "Reading the plan" too
+    const PRm = hasPlan && window.PlanRooms ? PlanRooms.match(D, rooms0.map(r => ({name: r[0], size: r[1], level: +r[2] > 0 ? +r[2] - 1 : null}))) : null;
+    const rooms = PRm ? rooms0.map((r, i) => [PRm[i].name, PRm[i].size, r[2]]) : rooms0;
+    if(PRm && B.plan && B.plan.note) B.plan.note = [].concat(B.plan.note).map(t => typeof t === 'string' ? PlanRooms.rename(t, PRm) : Array.isArray(t) ? t.map(u => typeof u === 'string' ? PlanRooms.rename(u, PRm) : u) : t);
 
     if(hasPlan){
       // the plan at one scale on the left; the room list (and, when the plan is wide, the reading note too) in the column beside it
@@ -133,10 +154,12 @@ window.brochureReady = (async function(){
       const probe = SF.plan(D, {x: X, y: TOP, w: PW, h: ZH}), wide = !!(probe.used && probe.used.h < 0.7*ZH);
       let pitch, noteHtml = '';
       if(wide){
-        const ph0 = Math.ceil(probe.used.h), pl = SF.plan(D, {x: X, y: TOP, w: PW, h: ph0}); issues.push(...pl.issues); h += pl.html;
-        const N = Math.max(2, Math.floor((ZH - ph0 - 14 - 14)/12)), nf = SF.fit(nb, PW, NT, N); fillNote('back.plannote', nf, N);
-        const noteH = 14 + N*12;
-        noteHtml = `<div class="abs kick" style="left:${X}pt;top:${TOP + ZH - noteH}pt;width:${PW}pt;height:10pt" data-slot="back.notehead" data-lines="1">${esc((B.plan || {}).head || 'Reading the plan')}</div>` + SF.para('back.plannote', nf.text, X, TOP + ZH - N*12, PW, N, 9, 12, '', 'data-para="1"');
+        const ph0 = Math.ceil(probe.used.h);
+        const N = Math.max(2, SF.most(nb, PW, NT, Math.max(2, Math.floor((ZH - ph0 - 14 - 14)/12)), 2)), nf = SF.fit(nb, PW, NT, N); fillNote('back.plannote', nf, N);
+        const noteH = 14 + N*12, off = Math.max(0, (ZH - ph0 - 18 - noteH)/2);   // plan and note read as one group, centered in the zone
+        const pl = SF.plan(D, {x: X, y: TOP + off, w: PW, h: ph0}); issues.push(...pl.issues); h += pl.html;
+        const nT = TOP + off + ph0 + 18;
+        noteHtml = `<div class="abs kick" style="left:${X}pt;top:${nT}pt;width:${PW}pt;height:10pt" data-slot="back.notehead" data-lines="1">${esc((B.plan || {}).head || 'Reading the plan')}</div>` + SF.para('back.plannote', nf.text, X, nT + 14, PW, N, 9, 12, '', 'data-para="1"');
         pitch = Math.min(30, (ZH - 14)/nR);
       } else {
         issues.push(...probe.issues); h += probe.html;
@@ -154,7 +177,7 @@ window.brochureReady = (async function(){
         const x = X + i*(cw + G), rs = rooms.filter(r => +r[2] === i + 1), one = n === 1, bt = SF.beats(f.text);
         const tw = one ? 254 : cw, left = one ? ZH - HEAD : ZH - HEAD - 8 - rs.length*PITCH;
         const N = Math.max(2, SF.most(bt, tw, FT, Math.max(2, Math.floor(left/13)), 2)), tf = SF.fit(bt, tw, FT, N); fillNote(`back.floor${i}.text`, tf, N);
-        const tbl = (rr, pitch) => rr.map((r, j) => `<div style="height:${pitch.toFixed(2)}pt" data-slot="back.floor${i}.room${j}" data-lines="1"><span class="n">${esc(r[0])}</span><span class="s">${esc(r[1])}</span></div>`).join('');
+        const tbl = (rr, pitch) => { pitch = Math.min(pitch, 25); return rr.map((r, j) => `<div style="height:${pitch.toFixed(2)}pt;font-size:${Math.min(15, pitch*0.72).toFixed(1)}pt" data-slot="back.floor${i}.room${j}" data-lines="1"><span class="n" style="font-size:inherit;line-height:inherit">${esc(r[0])}</span><span class="s" style="font-size:inherit;line-height:inherit">${esc(r[1])}</span></div>`).join(''); };
         h += `<div class="abs" style="left:${x}pt;top:${TOP}pt;width:${cw}pt;height:${ZH}pt;border-top:1pt solid var(--accent)">`
           + `<div style="position:absolute;left:0;top:6pt;height:22pt;width:${cw}pt;font:400 16pt/22pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.1pt" data-slot="back.floor${i}.name" data-lines="1">${esc(f.name)}</div>`;
         if(one){
@@ -171,17 +194,23 @@ window.brochureReady = (async function(){
     }
 
     // the claim block: the cover's rose block under its burgundy rule
-    const Bd = B.band || {}, items = (Bd.items || []).slice(0, 6), sw = 176, sf = SF.fit(SF.beats(Bd.small), sw, SM, 3); fillNote('back.claim.small', sf, 3);
-    h += `<div class="claim" style="left:${X}pt;top:${bandY}pt;width:${W}pt;height:${bandH}pt;padding:9pt 14pt 0 14pt;gap:18pt">`
+    const items = (Bd.items || []).slice(0, 6), CX = X, CWd = W;
+    // the claim block runs the full width above the short contact card (owner 11/10/2026, rule 1): the big line and the small
+    // write-up on the left, the items in two columns on the right
+    const iw = CWd - 24 - sw - 24;
+    fillNote('back.claim.small', sf, SN);
+    h += `<div class="claim" style="left:${CX}pt;top:${CLT}pt;width:${CWd}pt;height:${CLH}pt;padding:9pt 12pt 0 12pt;flex-direction:row;gap:24pt">`
       + `<div style="width:${sw}pt;flex:none"><div class="big" style="height:28pt" data-slot="back.claim.big" data-lines="1">${esc(Bd.big || '')}</div>`
-      + `<div style="margin-top:5pt;height:36pt;width:${sw}pt;font-size:9pt;line-height:12pt;color:var(--text);overflow:hidden" data-slot="back.claim.small" data-lines="3" data-para="1">${esc(sf.text)}</div></div>`
-      + `<div style="flex:1;min-width:0;padding-top:3pt"><div class="kick" style="height:10pt;margin-bottom:7pt" data-slot="back.claim.head" data-lines="1">${esc(Bd.head || '')}</div>`
-      + `<div class="grid" style="grid-template-rows:repeat(3,auto);gap:5pt 14pt">${items.map((t, i) => `<div data-slot="back.claim.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div></div></div>`;
+      + `<div style="margin-top:6pt;width:${sw}pt;height:${SN*14}pt;font-size:10.5pt;line-height:14pt;color:var(--text);overflow:hidden" data-slot="back.claim.small" data-lines="${SN}" data-para="1">${esc(sf.text)}</div></div>`
+      + `<div style="width:${iw}pt;flex:none;padding-top:3pt;height:${CLH - 9 - 9}pt;display:flex;flex-direction:column"><div class="kick" style="height:10pt;margin-bottom:6pt;flex:none" data-slot="back.claim.head" data-lines="1">${esc(Bd.head || '')}</div>`
+      + `<div class="grid" style="display:grid;flex:1;align-content:space-between;grid-template-columns:1fr 1fr;grid-auto-flow:column;grid-template-rows:repeat(${Math.ceil(items.length/2)},auto);gap:0 18pt">${items.map((t, i) => `<div data-slot="back.claim.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div></div></div>`;
     h += capRow(row, 'back', rowTop, rowN, ph);
-    h += SF.footer(D, X, CARD_Y, W, CARD_H, OW, (B.fine) || (hasPlan ? 'Information deemed reliable but not guaranteed. Room sizes are approximate.' : 'Information deemed reliable but not guaranteed. Room sizes are approximate.'));
+    h += SP.card(D, [X, CARDT, W, CARDH], {layout: 'panel', size: 'short', brokerage: true, fine: '', bottomGap: .5, grow: 0, s: {name: 19, nameFloor: 15, phone: 13, line: 9, desigInline: true, hsW: 52, panelW: 160, rowGap: 14, logo: {wide: [132, 30], square: [32, 32], tall: [34, 34]}}});
+    h += `<div class="abs" style="left:${X}pt;top:758pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(B.fine || 'Information deemed reliable but not guaranteed. Room sizes are approximate.')}</div>`;
   }
 
-  await SP.finish(D, 612, 792, h, issues, async () => { after(); SF.alignOffices(); });
+  await SP.finish(D, 612, 792, h, issues, async () => { after(); SF.alignOffices(); if(window.PlanInk) PlanInk.applyAll(D, false); });
+  if(window.CapFit) (window.proofNotes = window.proofNotes || []).push({capFit: CapFit.run(((typeof D !== "undefined" && D.copy) || {}).extra)});
   window.brochureCheck = (prev => () => prev().concat(window.AgentCard ? AgentCard.trec(document, [...document.querySelectorAll('.logo img')]) : []))(window.brochureCheck);
 })();
 </script>

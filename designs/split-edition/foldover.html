@@ -21,6 +21,8 @@
 -->
 </head>
 <body>
+<script src="../engine/planink.js"></script>
+<script src="capfit.js"></script>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
 <script>
@@ -87,34 +89,38 @@ window.brochureReady = (async function(){
   function back(){
     const B = C.back || {};
     let h = kick(B.kicker, 'back.kicker', 24, 26, 700) + SE.title(B.title, 'back.title', 24, 36) + SE.rule(24, 71, 744);
-    // the outdoor stack: two photos, each with its caption
-    const lw = 330, ln = 3, capH = SE.capH(ln), ph = Math.floor((372 - 14 - 2*(6 + capH))/2);
+    // the outdoor stack: two photos, each with its caption; it runs to the foot of the panel, into the room the full-width card
+    // held (owner 11/10/2026: the card is narrow now, under the right column)
+    const lw = 330, ln = 3, capH = SE.capH(ln), ph = Math.floor((432 - 14 - 2*(6 + capH))/2);
     [B.photoA, B.photoB].forEach((c, i) => { const y = 84 + i*(ph + 6 + capH + 14);
       h += SE.photo(D, (c||{}).id, 24, y, lw, ph) + SE.cap(c, `back.cap${i}`, 24, y + ph + 6, lw, {lines: ln, min: 3, max: 3}); });
     const rx = 372, rw = 396;
     if(hasPlan){
-      const pl = SE.plan(D, {x:rx, y:84, w:rw, h:200});
+      const pl = SE.plan(D, {x:rx, y:84, w:rw, h:254});
       issues.push(...pl.issues); h += pl.html;
-      h += `<div class="abs body sm" style="left:${rx}pt;top:288pt;width:${rw}pt;height:48pt" data-slot="back.plannote" data-lines="4" data-cap="1"><b style="font:700 8pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--accent)">${esc(B.planHead || 'Reading the plan')}&nbsp; </b>${esc(SE.txt(B.planNote))}</div>`;
+      h += `<div class="abs body sm" style="left:${rx}pt;top:342pt;width:${rw}pt;height:48pt" data-slot="back.plannote" data-lines="4" data-cap="1"><b style="font:700 8pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--accent)">${esc(B.planHead || 'Reading the plan')}&nbsp; </b>${esc(SE.txt(B.planNote))}</div>`;
     } else {
-      const fl = B.floors || [], n = fl.length, cols = n > 2 ? 2 : n, rows = Math.ceil(n / cols), fh = Math.floor((246 - 14*(rows-1)) / rows), fw = (rw - 18*(cols-1)) / cols;
+      const fl = B.floors || [], n = fl.length, cols = n > 2 ? 2 : n, rows = Math.ceil(n / cols), fh = Math.floor((300 - 14*(rows-1)) / rows), fw = (rw - 18*(cols-1)) / cols;
       h += kick(B.roomsHead || 'Room by room', 'back.roomshead', rx, 84, rw);
       fl.forEach((f, i) => { const fx = rx + (i % cols)*(fw + 18), fy = 100 + Math.floor(i / cols)*(fh + 14) - 0, avail = fh - 16;
         const tl = Math.max(2, Math.min(4, Math.floor((avail - 24 - 16 - f.rooms.length/(n === 1 ? 2 : 1)*19)/12)));
-        const rp = Math.min(21, Math.floor((avail - 24 - tl*12 - 10) / Math.ceil(f.rooms.length/(n === 1 ? 2 : 1))));
+        const rp = Math.min(24, Math.floor((avail - 24 - tl*12 - 10) / Math.ceil(f.rooms.length/(n === 1 ? 2 : 1))));
         h += `<div class="abs" style="left:${fx}pt;top:${fy}pt;width:${fw}pt;border-top:1pt solid var(--accent);padding-top:5pt">
           <div style="font:400 15pt/20pt var(--font-display);color:var(--ink);height:20pt;white-space:nowrap;overflow:hidden" data-slot="back.floor${i}.name" data-lines="1">${esc(f.n)}</div>
           <div class="body sm" style="margin-top:2pt;height:${tl*12}pt" data-slot="back.floor${i}.text" data-lines="${tl}" data-cap="1">${esc(SE.txt(f.text))}</div>
-          <div class="rooms" style="margin-top:8pt;${n === 1 ? 'display:grid;grid-template-columns:1fr 1fr;column-gap:18pt;border-top:0' : ''}">${f.rooms.map((r,j) => `<div style="height:${rp}pt;line-height:${rp}pt" data-slot="back.floor${i}.room${j}" data-lines="1"><span class="n">${esc(r[0])}</span><span class="s">${esc(r[1])}</span></div>`).join('')}</div></div>`; });
+          <div class="rooms" style="margin-top:8pt;${n === 1 ? 'display:grid;grid-template-columns:1fr 1fr;column-gap:18pt;border-top:0' : ''}">${f.rooms.map((r,j) => `<div style="height:${rp}pt;line-height:${rp}pt;align-items:center;font-size:${Math.min(15, rp*0.62).toFixed(1)}pt" data-slot="back.floor${i}.room${j}" data-lines="1"><span class="n" style="font-size:inherit;line-height:inherit">${esc(r[0])}</span><span class="s" style="font-size:inherit;line-height:inherit">${esc(r[1])}</span></div>`).join('')}</div></div>`; });
     }
     // the claim block
-    const Bd = B.claim || {}, cy = 84 + 372 - 118;
+    const Bd = B.claim || {}, cy = 84 + 432 - 118;
     h += `<div class="claim" style="left:${rx}pt;top:${cy}pt;width:${rw}pt;height:118pt;padding:9pt 14pt 0 14pt;gap:18pt">
       <div style="width:176pt;flex:none"><div class="big" style="height:28pt;flex:none" data-slot="back.claim.big" data-lines="1">${esc(Bd.big)}</div>
         <div class="sm" style="margin-top:8pt;height:60pt" data-slot="back.claim.small" data-lines="5" data-cap="1">${esc(SE.txt(Bd.small))}</div></div>
       <div style="flex:1;min-width:0;padding-top:3pt"><div class="kick" style="height:10pt;margin-bottom:6pt" data-slot="back.claim.head" data-lines="1">${esc(Bd.head)}</div>
-        <div class="grid" style="grid-template-rows:repeat(${Math.min(6, (Bd.items||[]).length)},auto);gap:4pt 0">${(Bd.items||[]).slice(0,6).map((t,i)=>`<div data-slot="back.claim.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div></div></div>`;
-    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', brokerage: true, fine: B.footnote || ''});
+        <div class="grid" style="grid-template-rows:repeat(${Math.min(6, (Bd.items||[]).length)},auto);gap:6pt 0">${(Bd.items||[]).slice(0,6).map((t,i)=>`<div data-slot="back.claim.item${i}" data-lines="1">${esc(t)}</div>`).join('')}</div></div></div>`;
+    // the narrow contact card under the right column (owner 11/10/2026, rule 3), the brokerage on its band; the fine print under it
+    h += ContactCard.html([24, 526, 744, 66], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', size:'short', bottomGap: .5, grow: 0, fine: '',
+      s: {name: 19, nameFloor: 15, phone: 13, line: 9, desigInline: true, hsW: 52, panelW: 160, rowGap: 14, logo: {wide: [132, 30], square: [32, 32], tall: [34, 34]}}});
+    if(B.footnote) h += `<div class="abs" style="left:372pt;top:597pt;width:396pt;height:8pt;text-align:right;font:400 6pt/8pt var(--font-body);color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(B.footnote)}</div>`;
     return h;
   }
 
@@ -163,8 +169,10 @@ window.brochureReady = (async function(){
   document.querySelectorAll('[data-fit]').forEach(el => { const [w, mx, mn] = el.dataset.fit.split('|').map(Number); let s = mx; el.style.fontSize = s + 'pt';
     while(s > mn && el.scrollWidth > w + .5){ s -= 1; el.style.fontSize = s + 'pt'; } });
   SE.fitLogos();
+  if(window.PlanInk) PlanInk.applyAll(D, false);
   ContactCard.fit(document);
   document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  if(window.CapFit) (window.proofNotes = window.proofNotes || []).push({capFit: CapFit.run(((typeof D !== "undefined" && D.copy) || {}).extra)});
   window.brochureCheck = () => SE.check(D, issues);
 })();
 </script>

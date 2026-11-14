@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>BrochureDesk · The Map Room fold-over</title>
 <link rel="stylesheet" href="map-room.css">
+<script src="../engine/planink.js"></script>
 <script src="map-room.js"></script>
 <!--
   BrochureDesk · The Map Room · 11 x 17 fold-over
@@ -58,18 +59,18 @@ window.brochureReady = (async function(){
 
   // ================= BACK =================
   function back(){
-    const B = C.back || {}, its = (B.items || []).slice(0, 2), w = (744 - G)/2, ph = 239;
+    const B = C.back || {}, its = (B.items || []).slice(0, 2), w = (744 - G)/2, ph = 239 + 36;   // the photos take the row Around the house used to fill
     let h = MR.kick(B.kicker, 'back.kicker', 24, 26, 700) + MR.title(B.title, 'back.title', 24, 36) + MR.rule(24, 74, 744);
     its.forEach((it, i) => { const x = 24 + i*(w + G);
       h += MR.photo(D, it.id, x, Y0, w, ph);
       h += MR.cap(it, `back.cap${i}`, x, Y0 + ph + 8, w, {lines: 4, min: 4, max: 4, wide: true}); });
-    // around the house and the two covered spaces, in one row above the card
-    const ay = 428, nb = (B.nearby || []).slice(0, 3), sp = (B.spaces || []).slice(0, 2);
-    h += `<div class="abs kick" style="left:24pt;top:${ay + 4}pt;width:118pt;height:22pt;white-space:normal;line-height:11pt" data-slot="back.aroundhead" data-lines="2">${esc(B.aroundHead || 'Around the house')}</div>`;
-    h += `<div class="abs around" style="left:150pt;top:${ay}pt;width:420pt;display:flex">${nb.map((x,i)=>`<div style="width:140pt;flex:none"><div class="d" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}<small>${esc(x.u || 'miles')}</small></div><div class="p" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}</div>`;
-    h += `<div class="abs" style="left:572pt;top:${ay}pt;width:.8pt;height:34pt;background:var(--line)"></div>`;
-    h += `<div class="abs around" style="left:586pt;top:${ay}pt;width:182pt;display:flex">${sp.map((x,i)=>`<div style="width:92pt;flex:none"><div class="d" style="font-size:15pt" data-slot="back.space${i}.v" data-lines="1">${esc(x.v)}</div><div class="p" data-slot="back.space${i}.l" data-lines="1">${esc(x.l)}</div></div>`).join('')}</div>`;
-    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', brokerage: true, fine: B.footnote || ''});
+    // round 3 (owner 11/10/2026: "narrower" = SHORTER TOP TO BOTTOM): Around the house runs one row across the page (the
+    // nearby places, then the covered spaces), and the contact card runs the full width under it at the short size (66 pt)
+    const ay = 468, nb = (B.nearby || []).slice(0, 3), sp = (B.spaces || []).slice(0, 2), cells = nb.length + sp.length, cw = 744/Math.max(cells, 1);
+    h += `<div class="abs kick" style="left:24pt;top:${ay}pt;width:744pt;height:11pt;line-height:11pt" data-slot="back.aroundhead" data-lines="1">${esc(B.aroundHead || 'Around the house')}</div>`;
+    h += `<div class="abs around" style="left:24pt;top:${ay + 18}pt;width:744pt;display:flex">${nb.map((x,i)=>`<div style="width:${cw}pt;flex:none"><div class="d" data-slot="back.near${i}.d" data-lines="1">${esc(x.d)}<small>${esc(x.u || 'miles')}</small></div><div class="p" data-slot="back.near${i}.p" data-lines="1">${esc(x.p)}</div></div>`).join('')}${sp.map((x,i)=>`<div style="width:${cw}pt;flex:none;${i === 0 ? 'border-left:.8pt solid var(--line);padding-left:12pt;box-sizing:border-box' : ''}"><div class="d" data-slot="back.space${i}.v" data-lines="1">${esc(x.v)}</div><div class="p" data-slot="back.space${i}.l" data-lines="1">${esc(x.l)}</div></div>`).join('')}</div>`;
+    h += ContactCard.html([24, 536, 744, 66], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', size:'short', brokerage: true, fine: ''});
+    if(B.footnote) h += `<div class="abs fine" style="left:24pt;top:606pt;width:744pt;height:7pt;font-size:6pt;line-height:7pt;white-space:nowrap;overflow:hidden" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(B.footnote)}</div>`;
     return h;
   }
 
@@ -122,6 +123,7 @@ window.brochureReady = (async function(){
   MR.fitLogos();
   ContactCard.fit(document);
   document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
+  if(window.PlanInk) PlanInk.applyAll(D, false);   // owner 11/10/2026 (p2): the listing plan's background is clear
   window.brochureCheck = () => MR.check(D, issues);
 })();
 </script>

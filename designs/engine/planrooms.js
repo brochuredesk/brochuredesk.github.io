@@ -41,10 +41,15 @@
     if(!lv.some(x => x.length)) return out;
     const pool = l => l != null && l >= 0 && lv[l] ? [lv[l]] : lv;
     const take = (row, p, by) => { p.used = true; row.by = by; row.name = p.name; row.size = p.dims ? PR.ft(p.dims) : row.size; row.from = 'plan'; };
-    // 1. the same name on the same floor (Dining -> Dining Area; Master -> Primary; Full Bath -> Bath)
+    // 1. the same name on the same floor: exact names first (on every floor), then a near name (Dining -> Dining Area;
+    //    Master -> Primary; Full Bath -> Bath), never across "primary" (a Primary Bath is not the plan's other Bath)
+    const pri = k => /\bprimary\b/.test(k);
     for(const row of out){ const k = key(row.name); if(!k) continue;
+      for(const L of pool(row.level)){ const p = L.find(q => !q.used && key(q.name) === k); if(p){ take(row, p, 'name'); break; } } }
+    for(const row of out){ if(row.from === 'plan') continue; const k = key(row.name); if(!k) continue;
       for(const L of pool(row.level)){
-        const p = L.find(q => !q.used && key(q.name) === k) || L.find(q => !q.used && !NOT_ROOM.test(q.name) && key(q.name) && (k.endsWith(' ' + key(q.name)) || key(q.name).endsWith(' ' + k) || k.startsWith(key(q.name) + ' ') || key(q.name).startsWith(k + ' ')));
+        const p = L.find(q => { const qk = key(q.name); return !q.used && qk && !NOT_ROOM.test(q.name) && pri(k) === pri(qk)
+          && (k.endsWith(' ' + qk) || qk.endsWith(' ' + k) || k.startsWith(qk + ' ') || qk.startsWith(k + ' ')); });
         if(p){ take(row, p, 'name'); break; } } }
     // 2. a room the plan names differently (the MLS "Game Room" is the plan's "Living Room"): the one unused room on that floor whose
     //    size is within 15% (either way round); only when exactly one fits, so nothing is guessed
@@ -58,6 +63,21 @@
     for(const row of out) if(row.from === 'plan'){ const k = row.name.toLowerCase(); seen[k] = (seen[k] || 0) + 1; }
     for(const row of out) if(row.from === 'plan' && seen[row.name.toLowerCase()] > 1 && row.was && key(row.was) !== key(row.name)) row.name = row.was;
     return out;
+  };
+  // the plan's own room list for one floor: its labeled rooms (no halls, stairs or closets) in reading order, top to bottom;
+  // when there are more than n, the smallest go
+  PR.list = (L, n) => {
+    let rs = PR.rooms(L).filter(r => !NOT_ROOM.test(r.name)).map((r, i) => Object.assign({}, r, {i}));
+    if(n && rs.length > n) rs = rs.slice().sort((a, b) => area(b.dims) - area(a.dims) || a.i - b.i).slice(0, n);
+    return rs.sort((a, b) => (Math.abs(a.at[1] - b.at[1]) < 0.06 ? a.at[0] - b.at[0] : a.at[1] - b.at[1])).map(r => ({name: r.name, size: r.dims ? PR.ft(r.dims) : '', from: 'plan'}));
+  };
+  // one floor's size table beside the plan: each room matched to the plan; when any listed room isn't on that floor of the plan
+  // (a study or dining room the plan doesn't show), the plan's own room list stands in, so the table and the plan agree
+  PR.floor = (D, rows, level, n) => {
+    const m = PR.match(D, rows.map(r => Object.assign({}, r, {level})));
+    const L = levels(D)[level];
+    if(!L || !PR.rooms(L).length || m.every(r => r.from === 'plan')) return m;
+    return PR.list(L, n || rows.length);
   };
   const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   PR.rename = (text, rows) => {

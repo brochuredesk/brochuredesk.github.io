@@ -50,12 +50,10 @@
   .slab{display:flex;flex-direction:column;justify-content:center;padding:4pt 16pt 4pt 10pt}
   .slab .bg{font:600 13.5pt/14.5pt var(--font-display);color:#fff;overflow:hidden}
   .kk{font:600 15pt/18pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden}
-  /* the back (owner 11/7/2026): a near-black field over the whole card; the red strips (status band, board, bottom strip) on it */
-  body.pc-back{--paper:#201e1e;--ink:#ffffff;--text:#dedbd8;--muted:#b9b5b1;--accent:#d8343a;--line:rgba(255,255,255,.22)}
-  body.pc-back .cc{--cc-paper:#201e1e;--cc-ink:#ffffff;--cc-muted:#c9c5c1;--cc-accent:#ef5a5e;--cc-line:rgba(255,255,255,.28)}
 </style>
 </head>
 <body data-mode="email">
+<script src="capfit.js"></script>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
 <script>
@@ -104,15 +102,13 @@ window.brochureReady = (async function(){
   } else {
     // ---------- back ----------
     const Z = SP.mail(W), X = M, LZ = Z.zA[0] - 12, rW = Z.zP[0] - 12 - Z.zA[0], pTop = 62;
-    document.body.classList.add('pc-back');
-    h += SP.backField(W, H, '#201e1e') + SP.mailTint(Z, W, H, {color: '#f6f4f1'});
-    h += `<div class="band" data-blk="1" style="left:-9pt;top:-9pt;width:${Z.zP[0] - 6 + 9}pt;height:61pt"></div>`;
+    h += `<div class="band" data-blk="1" style="left:-9pt;top:-9pt;width:${Z.zP[0] - 10 + 9}pt;height:61pt"></div>`;
     h += `<div class="band" data-blk="1" style="left:-9pt;top:426pt;width:${Z.zB[0] - 12 + 9}pt;height:15pt"></div>`;
     const ret = SP.returnLines(D);
     h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:11pt;width:${rW}pt;height:32pt${!sold && big ? ';text-align:right' : ''}" data-slot="return" data-lines="3"><b>${esc(ret[0] || '')}</b>${ret.slice(1).map(r => '<br>' + esc(r)).join('')}</div>`;
     h += `<div class="abs bst" style="left:${X}pt;top:7pt;width:${Z.zA[0] - 14 - X}pt;height:38pt" data-slot="back.status" data-lines="1"><span class="s">${esc(status)}</span><span class="a">${esc(L.address)}</span></div>`;
     const cap = (c, x, y, w, slot, row) => `<div class="abs cb" style="left:${x}pt;top:${y + 4}pt;width:${w}pt;height:${29 + 33}pt"><div class="nm" data-slot="${slot}.t" data-lines="1">${esc(c.t)}</div><div class="sz" data-slot="${slot}.s" data-lines="1">${esc(c.s)}</div>
-      <div class="tx" style="height:33pt" data-slot="${slot}" data-cap="1" data-row="${row}" data-para="1" data-min="3">${esc(c.a)}</div></div>`;
+      <div class="tx" style="height:33pt" data-slot="${slot}" data-cap="1" data-row="${row}" data-para="1" data-min="3">${esc((big && c.a11) || c.a)}</div></div>`;
     let g = '';
     if(!sold){
       const bk = C.back || [], n = big ? 4 : 3, items = bk.slice(0, n), rItem = bk[4], gap = 10, ph = 54;
@@ -137,7 +133,7 @@ window.brochureReady = (async function(){
     // a red block under the postage box, bleeding off the right edge
     const sl = C.slab || {};
     h += `<div class="band slab" data-blk="1" style="left:${Z.zP[0]}pt;top:${Z.zP[1] + Z.zP[3] + 8}pt;width:${W - Z.zP[0] + 9}pt;height:${Z.zA[1] - Z.zP[1] - Z.zP[3] - 16}pt"><div class="bg" data-slot="slab.big" data-lines="4">${esc(sl.big || '')}</div></div>`;
-    h += SP.postCard(D, Z, W, {dark: true});
+    h += SP.postCard(D, Z, W);
     h += SP.fine(D, X, 396, Z.zB[0] - 12 - X, 'var(--text)');
     h += SP.mailGuides(D, Z);
   }
