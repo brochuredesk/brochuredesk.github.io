@@ -570,6 +570,7 @@
     'other-site': "We couldn't find that listing from the link. Paste its HAR or Matrix link instead.",
     'not-a-listing': "That HAR link isn't a single listing. Open the listing on HAR and copy that page's link.",
     'not-matrix': "That doesn't look like a Matrix listing link. Paste the link from the Matrix email or share page.",
+    zillow: "We can't read Zillow links. Paste the listing's HAR or Matrix link instead.",
     'not-a-link': "That doesn't look like a link yet. Paste the whole listing link, starting with https://.",
     blocked: "That site asked us to prove we're a person, and we won't try to get past that. Paste the HAR or Matrix link instead.",
     unreadable: "We opened the link but couldn't find the listing on it.",
@@ -578,10 +579,12 @@
     'slow-down': "That's a lot of tries in a row. Wait a few minutes and try again.",
     network: 'Something went wrong on our end while reading the link. Try again.'
   };
-  // HAR, Matrix (share and emailed links), Zillow / Realtor.com / Redfin (found on HAR by address) and brokerage pages all go to the reader
+  // HAR and Matrix links (share and emailed) go to the reader, one listing per submit (owner 11/14/2026: HAR stays beside Matrix).
+  // Zillow links are refused here, before anything is sent.
   function localCheck(v){
     let u; try { u = new URL(v); } catch(e) { return 'not-a-link'; }
-    return /^https?:$/.test(u.protocol) ? '' : 'not-a-link';
+    if(!/^https?:$/.test(u.protocol)) return 'not-a-link';
+    return /(^|\.)zillow\.com$/i.test(u.hostname) ? 'zillow' : '';
   }
   $('#linkForm').addEventListener('submit', e => { e.preventDefault(); runLookup($('#link').value.trim()); });
   $('#sampleListing').onclick = () => runLookup('sample');
