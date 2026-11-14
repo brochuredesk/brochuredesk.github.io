@@ -3,8 +3,9 @@
    rooms) stay as the listing has them.
      - line-only plans: an SVG filter turns the plan's white into transparent and its dark lines into one ink color (the
        design's ink on light paper; light lines on a dark field, the readability guard);
-     - plans with colored rooms (data.plan.colored = true): kept exactly as given; on light paper they blend in (multiply),
-       on a dark field they sit on a light panel.
+     - plans with colored rooms (data.plan.colored = true): kept exactly as given; on light paper they blend in (multiply);
+       on a dark field they sit on the design's own background too (owner 11/14/2026: the plan box always defaults to the
+       design background; the agent picks a lighter box on the proof if the plan is hard to see, templates/_shared/planbox.js).
    Agents can set the ink in the customizer: data.plan.lineColor = 'auto' (default) | 'dark' | 'light' | any CSS color.
    Use: PlanInk.attr(D, darkField) -> attributes for the plan <img>; PlanInk.panel(D, darkField) -> true when a light panel
    must sit behind the plan; PlanInk.install() once per page (adds the filter definitions). */
@@ -34,7 +35,7 @@
         : `<filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 ${r}  0 0 0 0 ${g}  0 0 0 0 ${b}  -0.3333 -0.3333 -0.3333 1 0"/></filter>`); }
     return id; };
   PI.style = (D, dark) => PI.colored(D) ? (dark ? '' : 'mix-blend-mode:multiply') : `filter:url(#${PI.filterId(D, dark)})`;
-  PI.panel = (D, dark) => PI.colored(D) && !!dark;
+  PI.panel = () => false;   // no automatic light panel (owner 11/14/2026); was: colored-room plan on a dark field (11/13 Q4)
   PI.install = () => { let s = document.getElementById('planink-defs');
     if(!s){ s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.id = 'planink-defs'; s.setAttribute('width', 0); s.setAttribute('height', 0);
       s.style.cssText = 'position:absolute;width:0;height:0'; document.body.appendChild(s); }
