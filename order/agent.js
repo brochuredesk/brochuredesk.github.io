@@ -1482,7 +1482,7 @@
       store.event(pkg.id, 'library-write', {cost: s.cost});
       save(true); openLib();
     } catch(e) {
-      $('#libStatus').textContent = e.message === 'daily-cap' ? "We've hit today's writing limit for test drives. Try again tomorrow." : "We couldn't finish writing just now. Try again.";
+      $('#libStatus').textContent = e.message === 'daily-cap' ? "We've hit today's writing limit. Try again tomorrow." : "We couldn't finish writing just now. Try again.";
     } finally { b.disabled = false; }
   };
   function soldForm(){
@@ -1763,7 +1763,7 @@
     } catch(e) {
       clearInterval(timer);
       pkg.stage = 'rough'; save();
-      $('#writeErr').textContent = e.message === 'daily-cap' ? "We've hit today's writing limit for test drives. Try again tomorrow." : "We couldn't finish writing just now. Your design is saved; try again.";
+      $('#writeErr').textContent = e.message === 'daily-cap' ? "We've hit today's writing limit. Try again tomorrow." : "We couldn't finish writing just now. Your design is saved; try again.";
       $('#writeRetry').hidden = false;
     }
   }
