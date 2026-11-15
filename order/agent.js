@@ -187,6 +187,9 @@
       const p = list.find(x => x.id === cur);
       if(p){ await openPackage(p, hash); return; }
     }
+    // a link pasted on the homepage (brochuredesk.com, owner 11/14/2026) opens the start page with it filled in
+    let homeLink = null; try { homeLink = localStorage.getItem('bd-home-link'); } catch(e) {}
+    if(homeLink || hash === 'start') return openStart();
     openHome();
   }
 
@@ -559,6 +562,7 @@
     $('#link').value = ''; $('#progress').hidden = true; $('#pickBox').hidden = true; $('#toGallery').disabled = true;
     $('#upForm').reset(); $('#upForm').hidden = true; $('#upErr').textContent = ''; $('#upCount').textContent = ''; upFiles = [];
     $('#photoPick').hidden = true; $('#planBox').hidden = true;
+    try { const h = localStorage.getItem('bd-home-link'); if(h){ localStorage.removeItem('bd-home-link'); $('#link').value = h; } } catch(e) {}
     show('vStart'); setTimeout(() => $('#link').focus(), 50);
   }
   function stepTo(step, pct, text){
