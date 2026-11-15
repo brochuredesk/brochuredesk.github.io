@@ -65,15 +65,21 @@
   const SAMPLE_AGENT = {name: 'Avery Morgan', designation: 'REALTOR®', nar: false, phone: '713.555.0123', phoneLabel: 'Call / Text',
     email: 'avery@yourbrokerage.com', web: 'yourbrokerage.com', qrLabel: 'Scan for details', headshot: null, qr: '/designs/qr.png'};
   const SAMPLE_BRAND = {brokerage: 'Any Brokerage', accent: '#1f4e5f', paper: '#f3f0ea', ink: '#232323', muted: '#5a5a5a',
-    phone: '713.555.0100', web: 'anybrokerage.com', officeLabel: 'Office', logo: '/designs/samples/larkspur/AnyBrokerage_forest.png',
-    logoOnDark: '/designs/samples/larkspur/AnyBrokerage_gold-on-dark.png'};
+    phone: '713.555.0100', web: 'anybrokerage.com', officeLabel: 'Office', logo: '/designs/samples/any-brokerage/AnyBrokerage_forest.png',
+    logoOnDark: '/designs/samples/any-brokerage/AnyBrokerage_gold-on-dark.png'};
   const SAMPLE_LISTING = {
-    link: 'sample', listing: {address: '4127 Larkspur Bend Street', neighborhood: 'East End', city: 'Houston', state: 'Texas', zip: '77023',
-      beds: 3, baths: 2, halfBaths: 0, sqft: 1385, yearBuilt: 1940, stories: 1},
-    photos: [['front', 'front exterior, 1940 bungalow, new siding'], ['living', 'living room, open to dining'], ['kitchen', 'kitchen, new cabinets'],
-      ['kitchen2', 'kitchen bar seating'], ['dining', 'dining area'], ['nook', 'breakfast nook'], ['hall', 'entry'], ['primary', 'primary bedroom'],
-      ['bedroom2', 'bedroom two'], ['study', 'bedroom three'], ['office', 'primary bath'], ['family', 'front exterior, side angle'], ['lawn', 'backyard']]
-      .map(([f, c], n) => ({n, url: `/designs/samples/larkspur/${f}.jpg`, desc: c}))
+    link: 'sample', listing: {address: '18322 Live Oak Bend Lane', neighborhood: 'Live Oak Estates', city: 'Tomball', state: 'Texas', zip: '77377',
+      beds: 5, baths: 4, halfBaths: 0, sqft: 3640, yearBuilt: 1979, stories: 1},
+    photos: [['cover', 'front exterior, ranch on acreage under live oaks'], ['family', 'family room, vaulted ceiling, stone fireplace'],
+      ['kitchen', 'kitchen, island, double wall ovens'], ['kitchen-2', 'kitchen, gas cooktop'], ['living', 'living room, beamed ceiling'],
+      ['dining', 'dining room, beamed ceiling'], ['sunroom', 'sunroom, French doors'], ['primary', 'primary bedroom'],
+      ['primary-bath', 'primary bath, double vanity, glass shower'], ['bedroom-p2', 'bedroom two'], ['pool', 'fenced pool and pavilion'],
+      ['barn-outside', 'barn and fenced paddock'], ['oaks', 'backyard, live oaks, acreage']]
+      .map(([f, c], n) => ({n, url: `/designs/samples/live-oak-bend/${f}.jpg`, desc: c})),
+    spares: [['family-2', 'family room, beams, fireplace'], ['bedroom3', 'bedroom three'], ['bedroom4', 'bedroom four'], ['bedroom5', 'bedroom five'],
+      ['bath2', 'bath two'], ['bath3', 'bath three'], ['bath4', 'bath four, jetted tub'], ['closet', 'primary walk-in closet'], ['porch', 'front porch'],
+      ['barn', 'barn stalls'], ['garage', 'detached three-car garage']]
+      .map(([f, c], n) => ({n: 13 + n, url: `/designs/samples/live-oak-bend/${f}.jpg`, desc: c}))
   };
 
   const $ = s => document.querySelector(s);
@@ -605,7 +611,7 @@
     try {
       stepTo('lookup', 8, 'Reading your listing…');
       let j;
-      if(link === 'sample'){ j = {ok: true, listing: SAMPLE_LISTING.listing, photos: SAMPLE_LISTING.photos, spares: []}; await new Promise(r => setTimeout(r, 500)); }
+      if(link === 'sample'){ j = {ok: true, listing: SAMPLE_LISTING.listing, photos: SAMPLE_LISTING.photos, spares: SAMPLE_LISTING.spares}; await new Promise(r => setTimeout(r, 500)); }
       else {
         try { j = await fetch(`${FN_MATRIX}?link=${encodeURIComponent(link)}`).then(r => r.json()); } catch(e) { throw {code: 'network'}; }
         if(!j.ok) throw {code: j.error};
@@ -1402,7 +1408,7 @@
     order.sort((a, b) => (P[b].house ? 1 : 0) - (P[a].house ? 1 : 0));   // whole-house exteriors first
     const agent = Object.assign({}, SAMPLE_AGENT, {nar: true}, profile ? {name: profile.display_name || SAMPLE_AGENT.name, phone: profile.cell || SAMPLE_AGENT.phone,
       email: profile.preferred_email || SAMPLE_AGENT.email} : {}, {headshot: null});
-    const logos = Object.fromEntries(['black', 'gold', 'white', 'forest', 'color', 'gold-on-dark'].map(k => [k, `/designs/samples/larkspur/AnyBrokerage_${k}.png`]));
+    const logos = Object.fromEntries(['black', 'gold', 'white', 'forest', 'color', 'gold-on-dark'].map(k => [k, `/designs/samples/any-brokerage/AnyBrokerage_${k}.png`]));
     // the agent's brand kit when saved (a brokerage switch rebrands these sets the same way); else the sample brand
     const kit = kitOverride !== undefined ? kitOverride : brandKit();
     const brand = kit && kit.logo ? {brokerage: kit.brokerage, address: kit.officeAddress || '', logo: kit.logo, logoKnockout: kit.logoOnDark || null, logos: {}}
