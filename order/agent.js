@@ -101,10 +101,10 @@
   const lput = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} };
   const store = {
     async list(){
-      if(localMode) return Object.values(lget(LKEY, {})).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      if(localMode) return Object.values(lget(LKEY, {})).map(stripUploadTokens).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
       const {data, error} = await sb.from('agent_packages').select('state').order('updated_at', {ascending: false}).limit(50);
       if(error) throw error;
-      return data.map(r => r.state);
+      return data.map(r => stripUploadTokens(r.state));
     },
     async save(p){
       if(localMode){ const all = lget(LKEY, {}); all[p.id] = p; lput(LKEY, all); return; }
@@ -112,6 +112,7 @@
       if(error) throw error;
     },
     async event(id, event, detail = {}){
+      if(window.bdTrack) window.bdTrack(event, Object.assign({browserOnly: !!localMode}, detail));   // site measurement (/site/track.js): numbers and labels only
       if(localMode){ const l = lget(LEVENTS, []); l.push({at: new Date().toISOString(), package_id: id, event, detail}); lput(LEVENTS, l.slice(-200)); }
       if(!sb) return;
       sb.from('package_events').insert(Object.assign({package_id: id, event, detail}, localMode ? {user_id: null} : {})).then(({error}) => { if(error) console.warn('event not logged', error.message); });
@@ -931,7 +932,13 @@
   const printSrc = url => /^https:\/\/([\w-]+\.)*(harmls|harstatic)\.com\//.test(url || '') ? `${FN_MATRIX}?photo=${encodeURIComponent(url)}&size=full`
     : isOwnUpload(url) ? url : '';   // an uploaded listing photo is kept at full size in the agent's storage
   const rawPhoto = new Map();   // full files of photos read straight from another site, until they're copied (runLookup)
-  const isOwnUpload = url => typeof url === 'string' && url.startsWith(SUPABASE_URL + '/storage/v1/object/sign/agent-uploads/');
+  // An uploaded photo is kept as its place in the agent's folder (.../object/sign/agent-uploads/<path>, no token): the same
+  // key every time, so picks, notes and print snapshots never change. A working link (about a day) is made each time a page
+  // shows or sends it (liveLink); the print server and package archive make their own (owner 11/14/2026: short photo links).
+  const UPLOAD_BASE = SUPABASE_URL + '/storage/v1/object/sign/agent-uploads/';
+  const isOwnUpload = url => typeof url === 'string' && url.startsWith(UPLOAD_BASE);
+  const uploadPath = url => decodeURIComponent(url.slice(UPLOAD_BASE.length).split('?')[0]);
+  const stableUpload = url => isOwnUpload(url) ? url.split('?')[0] : url;
   async function loadPhoto(url, viaReader, direct){
     if(photoSrc.has(url)) return photoSrc.get(url);
     if(!viaReader && url.startsWith('/')){ photoSrc.set(url, url);
@@ -940,7 +947,7 @@
     // a brokerage site's own photos can't go through the reader (Matrix and HAR photos only); try them straight from the site.
     // Photos in the agent's own storage (uploads, and photos copied from another MLS) are read straight from there too.
     const own = isOwnUpload(url);
-    const r = await fetch(direct || own ? url : `${FN_MATRIX}?photo=${encodeURIComponent(url)}&size=preview`);
+    const r = await fetch(own ? await liveLink(url) : direct ? url : `${FN_MATRIX}?photo=${encodeURIComponent(url)}&size=preview`);
     if(!r.ok) throw new Error('photo');
     const blob = await r.blob();
     if(direct && !own) rawPhoto.set(url, blob);
@@ -951,7 +958,9 @@
   const photoUrlNow = url => photoSrc.get(url) || (url.startsWith('/') ? url : '');
   let photosReady = Promise.resolve();
   function resolvePhotos(p){
-    photosReady = Promise.all(p.photos.map(ph => loadPhoto(ph.url, !ph.url.startsWith('/')).catch(() => null)));
+    // uploaded photos: one request makes every fresh link (about a day) before they load
+    const signFirst = liveLinks(p.photos.map(ph => ph.url).filter(isOwnUpload)).catch(() => null);
+    photosReady = signFirst.then(() => Promise.all(p.photos.map(ph => loadPhoto(ph.url, !ph.url.startsWith('/')).catch(() => null))));
     return photosReady;
   }
 
@@ -1835,11 +1844,16 @@
   async function ai(body){
     const headers = {'content-type': 'application/json'};
     if(me){ const {data} = await sb.auth.getSession(); if(data.session) headers.authorization = 'Bearer ' + data.session.access_token; }
+    // uploaded photos go out as working links (about a day) and come back as their place in the folder, so notes keyed by
+    // photo stay the same key the package uses
+    let text = JSON.stringify(body);
+    const own = [...new Set(text.match(new RegExp(UPLOAD_TOKEN.source.replace(/\\\?token=.*$/, ''), 'g')) || [])];
+    if(own.length){ const live = await liveLinks(own); own.forEach((u, i) => { text = text.split(u + '"').join(live[i] + '"'); }); }
     let r;
-    try { r = await fetch(FN_AI, {method: 'POST', headers, body: JSON.stringify(body)}); } catch(e) { throw new Error('network'); }
+    try { r = await fetch(FN_AI, {method: 'POST', headers, body: text}); } catch(e) { throw new Error('network'); }
     const j = await r.json().catch(() => ({ok: false, error: 'bad-reply'}));
     if(!j.ok) throw new Error(j.error || 'ai-failed');
-    return j;
+    return own.length ? stripUploadTokens(j) : j;
   }
   // a rewrite whose spots still fail after two rounds sends just those back for the last (strongest-model) pass, in a request
   // of its own: the platform stops each request at 150 s, and the last pass doesn't fit after two rounds
@@ -2085,7 +2099,7 @@
   // agent-uploads under their own folder (migration 20261102_agent_uploads.sql); the account keeps only its path, and the
   // screens show it through a signed link (6 hours, refreshed as needed). The test drive (this browser only) keeps the
   // small JPEG copy as before. A copy saved before this (a data: link) moves to the bucket the next time the editor opens.
-  const UPLOADS = 'agent-uploads', SIGN_FOR = 6 * 3600, signedLinks = new Map();   // path -> {url, until}
+  const UPLOADS = 'agent-uploads', SIGN_FOR = 86400, signedLinks = new Map();   // path -> {url, until}; links last about a day
   const canUpload = () => !!(sb && me && !localMode);
   async function signUploads(paths){
     const need = [...new Set(paths.filter(Boolean))].filter(p => !((signedLinks.get(p) || {}).until > Date.now() + 10 * 60e3));
@@ -2094,6 +2108,20 @@
     if(error){ console.warn('photo links', error.message); return; }
     (data || []).forEach(d => { if(d.signedUrl && d.path) signedLinks.set(d.path, {url: d.signedUrl, until: Date.now() + SIGN_FOR * 1000}); });
   }
+  // a working link for an uploaded listing photo (signed now if the last one is under 10 minutes from expiring)
+  async function liveLink(url){
+    if(!isOwnUpload(url)) return url;
+    const path = uploadPath(url);
+    await signUploads([path]);
+    return (signedLinks.get(path) || {}).url || url;
+  }
+  async function liveLinks(urls){
+    await signUploads(urls.filter(isOwnUpload).map(uploadPath));
+    return urls.map(u => isOwnUpload(u) ? (signedLinks.get(uploadPath(u)) || {}).url || u : u);
+  }
+  // a saved package from before 11/14 holds three-year links: keep only the photo's place, so old tokens are never reused
+  const UPLOAD_TOKEN = new RegExp(UPLOAD_BASE.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&') + '([^"?\\s]+)\\?token=[^"\\s]*', 'g');
+  const stripUploadTokens = p => p && typeof p === 'object' ? JSON.parse(JSON.stringify(p).replace(UPLOAD_TOKEN, (m, path) => UPLOAD_BASE + path)) : p;
   // the photo as the screens show it: its signed link when stored, else the copy it carries
   const shown = it => it && it.path ? Object.assign({}, it, {src: (signedLinks.get(it.path) || {}).url || it.src || ''}) : it;
   // what the account keeps: the path, never a link that expires or a copy of the photo
@@ -2108,9 +2136,10 @@
     return {path, src: (signedLinks.get(path) || {}).url || p.src};
   }
   // A listing photo the agent uploads (or one copied from another MLS's page): saved once in their own folder at up to 3000 px,
-  // a JPEG under the 5 MB the photo reader takes, and kept by a long signed link (three years, past the Just Sold window), so the
-  // screens, the writer and the print server all read the same file. HAR photos are 2048 px, so this is never smaller than those.
-  const LISTING_SIGN = 3 * 365 * 86400, LISTING_PX = 3000;
+  // a JPEG under the 5 MB the photo reader takes. The package keeps its place in the folder (stableUpload), never a long link
+  // (owner 11/14/2026: links last about a day, made fresh whenever a page shows the photo), so the screens, the writer and the
+  // print server all read the same file. HAR photos are 2048 px, so this is never smaller than those.
+  const LISTING_PX = 3000;
   async function storeListingPhoto(file, lid, n){
     let blob = file;
     const bmp = await createImageBitmap(file);
@@ -2123,9 +2152,9 @@
     const path = `${me.id}/listing/${lid}/${n}-${uuid().slice(0, 8)}.jpg`;
     const {error} = await sb.storage.from(UPLOADS).upload(path, blob, {contentType: 'image/jpeg', upsert: false});
     if(error) throw new Error('photo upload: ' + error.message);
-    const {data, error: e2} = await sb.storage.from(UPLOADS).createSignedUrl(path, LISTING_SIGN);
-    if(e2 || !data || !data.signedUrl) throw new Error('photo link');
-    return data.signedUrl;
+    await signUploads([path]);
+    if(!signedLinks.get(path)) throw new Error('photo link');
+    return UPLOAD_BASE + path.split('/').map(encodeURIComponent).join('/');
   }
   function removeUpload(it){
     if(!it || !it.path || !canUpload()) return;

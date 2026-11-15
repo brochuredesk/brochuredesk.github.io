@@ -38,6 +38,7 @@
         <label>Email<input type="email" name="email" autocomplete="email" required></label>
         <label>Password<input type="password" name="password" autocomplete="new-password" minlength="8" required><small class="gray">At least 8 characters.</small></label>
         <button class="btn" type="submit">Create my account</button>
+        <p class="fine agree">By creating an account you agree to the <a href="/terms/">Terms</a>. <a href="/privacy/">Privacy</a></p>
         <p class="err" id="signupErr" role="alert"></p></form>
       <form id="forgotForm" class="stack" hidden>
         <h2>Reset your password</h2>
@@ -45,7 +46,7 @@
         <button class="btn" type="submit">Email me a link</button>
         <p class="err" id="forgotErr" role="alert"></p></form>
       <p class="ok" id="acctSent" role="status" hidden></p>`;
-    card.insertBefore(p, card.querySelector('.fine:last-child'));
+    card.insertBefore(p, card.querySelector(':scope > .fine:last-child'));
     const swap = id => { ['signupForm', 'forgotForm'].forEach(x => $('#' + x).hidden = x !== id); $('#acctSent').hidden = true; };
     $('#toSignup').onclick = () => swap('signupForm');
     $('#toForgot').onclick = () => { swap('forgotForm'); const e = $('#signinForm').email.value; if(e) $('#forgotForm').email.value = e; };
