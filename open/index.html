@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<title>BrochureDesk</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#1a1917;color:#f1ede4;font:16px system-ui,sans-serif;text-align:center;padding:24px}a{color:#d8c4a0}</style>
+</head>
+<body>
+<p id="m">One moment.</p>
+<script>
+/* Test pass: /open/#<pass> turns the working site on for this browser; /open/#off turns it back off.
+   Only the pass's fingerprint is kept here, never the pass itself. */
+(async function(){
+  var m = document.getElementById('m'), k = location.hash.slice(1);
+  try { history.replaceState(null, '', location.pathname); } catch(e) {}
+  try {
+    if (k === 'off') { localStorage.removeItem('bd-open'); m.innerHTML = 'Testing is off on this browser. <a href="/">Home</a>'; return; }
+    var d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(k));
+    var h = Array.from(new Uint8Array(d)).map(function(b){ return b.toString(16).padStart(2, '0'); }).join('');
+    if (h === '8e564fec9a5028df3f6ee929a90aebe4ba2c642f3391acf8c62a80fbf821ae66') { localStorage.setItem('bd-open', '1'); location.replace('/home/'); return; }
+  } catch(e) {}
+  location.replace('/');
+})();
+</script>
+</body>
+</html>
