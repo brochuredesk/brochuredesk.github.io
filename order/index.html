@@ -7,7 +7,7 @@
 <title>Agent studio · test</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Figtree:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="agent.css?v=11">
+<link rel="stylesheet" href="agent.css?v=12">
 </head>
 <body>
 <header class="top">
@@ -168,13 +168,39 @@
 
 <!-- 1. Paste the link, pick what they're buying -->
 <section class="view" id="vStart" hidden>
-  <h1>Paste your HAR or Matrix listing link</h1>
+  <h1>Paste your listing's link from your MLS</h1>
   <form id="linkForm" class="linkrow">
-    <label class="sr" for="link">HAR or Matrix listing link</label>
-    <input id="link" type="url" placeholder="https://matrix.harmls.com/Matrix/Public/Portal.aspx?ID=..." autocomplete="off">
+    <label class="sr" for="link">Your listing's link from your MLS or local association</label>
+    <input id="link" type="url" placeholder="https://… your listing's MLS share link" autocomplete="off">
     <button class="btn" type="submit" id="go">Go</button>
   </form>
+  <p class="fine" id="linkNote">Zillow, Realtor.com and sites like them don't let us look up listings. Use your listing's link from your MLS or local association, or <button type="button" class="link" id="upOpen">upload your photos</button> instead.</p>
   <p class="fine"><button type="button" class="link" id="sampleListing">Use the sample listing</button> (4127 Larkspur Bend, made up) to try the flow without a link.</p>
+  <form class="card upform" id="upForm" hidden novalidate>
+    <h2>Upload your listing</h2>
+    <p class="fine">Your photos and a few details. We write everything else.</p>
+    <label class="updrop" id="upDrop">
+      <span><b>Add your listing photos</b><small>JPG or PNG, up to 60 (photos picked on an iPhone come in as JPGs). Use the full-size files your photographer sent.</small></span>
+      <input type="file" id="upFiles" accept="image/jpeg,image/png,image/webp" multiple>
+    </label>
+    <p class="fine" id="upCount" aria-live="polite"></p>
+    <div class="upgrid">
+      <label class="wide">Street address<input id="upAddr" autocomplete="off" placeholder="2614 Calder Street"></label>
+      <label>City<input id="upCity" autocomplete="off"></label>
+      <label>State<input id="upState" autocomplete="off" maxlength="20" placeholder="TX"></label>
+      <label>ZIP<input id="upZip" inputmode="numeric" autocomplete="off" maxlength="10"></label>
+      <label>Bedrooms<input id="upBeds" inputmode="numeric" maxlength="2"></label>
+      <label>Full baths<input id="upBaths" inputmode="numeric" maxlength="2"></label>
+      <label>Half baths<input id="upHalf" inputmode="numeric" maxlength="2"></label>
+      <label>Square feet<input id="upSqft" inputmode="numeric" maxlength="6"></label>
+      <label>Year built<input id="upYear" inputmode="numeric" maxlength="4"></label>
+      <label>Stories<input id="upStories" inputmode="numeric" maxlength="1"></label>
+      <label class="wide">Neighborhood or subdivision<input id="upHood" autocomplete="off"></label>
+      <label class="wide">Your listing description (paste it from your MLS)<textarea id="upDesc" rows="6"></textarea></label>
+    </div>
+    <p class="err" id="upErr" role="alert"></p>
+    <div class="row gap"><button class="btn" type="submit" id="upGo">Use these photos</button><button class="btn line" type="button" id="upClose">Back to the link</button></div>
+  </form>
   <div class="progress" id="progress" hidden>
     <div class="bar"><i id="barFill"></i></div>
     <ol class="steps" id="steps"><li data-step="lookup">Lookup</li><li data-step="photos">Photos</li><li data-step="details">Details</li></ol>
@@ -377,7 +403,7 @@
 <script src="/order/upload-panel.js?v=1"></script>
 <script src="account.js?v=2"></script>
 <script src="proof-editor.js?v=3"></script>
-<script src="agent.js?v=59"></script>
+<script src="agent.js?v=60"></script>
 <script src="/order/help-bot.js?v=1" defer></script>
 </body>
 </html>

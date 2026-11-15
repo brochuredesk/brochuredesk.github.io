@@ -557,6 +557,8 @@
   function openStart(){
     pkg = null; lookup = null;
     $('#link').value = ''; $('#progress').hidden = true; $('#pickBox').hidden = true; $('#toGallery').disabled = true;
+    $('#upForm').reset(); $('#upForm').hidden = true; $('#upErr').textContent = ''; $('#upCount').textContent = ''; upFiles = [];
+    $('#photoPick').hidden = true; $('#planBox').hidden = true;
     show('vStart'); setTimeout(() => $('#link').focus(), 50);
   }
   function stepTo(step, pct, text){
@@ -567,20 +569,21 @@
     $('#status').textContent = text;
   }
   const MSG = {
-    'other-site': "We couldn't find that listing from the link. Paste its HAR or Matrix link instead.",
+    'other-site': "We couldn't read that listing from the link. Paste your listing's link from your MLS, or upload your photos below.",
     'not-a-listing': "That HAR link isn't a single listing. Open the listing on HAR and copy that page's link.",
     'not-matrix': "That doesn't look like a Matrix listing link. Paste the link from the Matrix email or share page.",
-    zillow: "We can't read Zillow links. Paste the listing's HAR or Matrix link instead.",
+    zillow: "Zillow doesn't let us look up listings. Paste your listing's link from your MLS, or upload your photos below.",
     'not-a-link': "That doesn't look like a link yet. Paste the whole listing link, starting with https://.",
-    blocked: "That site asked us to prove we're a person, and we won't try to get past that. Paste the HAR or Matrix link instead.",
-    unreadable: "We opened the link but couldn't find the listing on it.",
+    blocked: "That site asked us to prove we're a person, and we won't try to get past that. Paste your listing's link from your MLS, or upload your photos below.",
+    unreadable: "We opened the link but couldn't get the listing's photos from it. Upload your photos below instead.",
     'not-found': "That link didn't open a listing. It may have expired.",
     unreachable: "We couldn't reach the listing site just now. Try again in a moment.",
     'slow-down': "That's a lot of tries in a row. Wait a few minutes and try again.",
     network: 'Something went wrong on our end while reading the link. Try again.'
   };
-  // HAR and Matrix links (share and emailed) go to the reader, one listing per submit (owner 11/14/2026: HAR stays beside Matrix).
-  // Zillow links are refused here, before anything is sent.
+  // Any listing link goes to the reader, one listing per submit: HAR and Houston Matrix links are read in full; another MLS's or
+  // a brokerage's page is read for what it shows (owner 11/14/2026: agents in every city and state). Zillow links are refused
+  // here, before anything is sent; the upload form is the way in for any listing we can't read.
   function localCheck(v){
     let u; try { u = new URL(v); } catch(e) { return 'not-a-link'; }
     if(!/^https?:$/.test(u.protocol)) return 'not-a-link';
@@ -589,8 +592,8 @@
   $('#linkForm').addEventListener('submit', e => { e.preventDefault(); runLookup($('#link').value.trim()); });
   $('#sampleListing').onclick = () => runLookup('sample');
   async function runLookup(link){
-    $('#linkErr').textContent = '';
-    if(link !== 'sample'){ const bad = localCheck(link); if(bad){ $('#progress').hidden = false; $('#linkErr').textContent = MSG[bad]; return; } }
+    $('#linkErr').textContent = ''; $('#upForm').hidden = true;
+    if(link !== 'sample'){ const bad = localCheck(link); if(bad){ $('#progress').hidden = false; $('#linkErr').textContent = MSG[bad]; openUpload(); return; } }
     $('#progress').hidden = false; $('#pickBox').hidden = false; $('#toGallery').disabled = true; $('#go').disabled = true;
     pickChanged();
     try {
@@ -607,13 +610,20 @@
       for(const p of j.photos.concat(j.spares || [], (j.gallery || []).map(g => ({n: g.n, url: g.url, desc: g.caption || '', direct: g.direct}))))
         if(p.url && !seen.has(p.url) && !planUrls.has(p.url) && PT.roomKey(p.room || p.desc) !== 'floor plan'){ seen.add(p.url); cand.push(p); }
       cand.splice(ALL_PHOTOS);
-      const picked = new Set(j.photos.concat(j.spares || []).map(p => p.url)), want = cand.length, got = [];
+      const picked = new Set(j.photos.concat(j.spares || []).map(p => p.url)), want = cand.length, got = [], lid = uuid();
       stepTo('photos', 25, `Found ${j.totalPhotos || cand.length} photos, getting them all…`);
       let next = 0, done = 0;
       const worker = async () => {
         while(next < cand.length){
           const i = next++;
-          try { const u = await loadPhoto(cand[i].url, link !== 'sample', cand[i].direct); got[i] = u ? cand[i] : null; } catch(e) { got[i] = null; }
+          try { const u = await loadPhoto(cand[i].url, link !== 'sample', cand[i].direct); got[i] = u ? cand[i] : null;
+            // a photo straight from another site (another MLS, a brokerage page) is copied into the agent's own storage, so the
+            // writer and the print server can use it later (they only take Houston listing photos and our own storage)
+            if(u && cand[i].direct && canUpload()){ const raw = rawPhoto.get(cand[i].url);
+              const kept = raw ? await storeListingPhoto(raw, lid, i).catch(() => null) : null;
+              if(kept){ photoSrc.set(kept, u); got[i] = Object.assign({}, cand[i], {url: kept, from: cand[i].url, direct: false}); } }
+            rawPhoto.delete(cand[i].url);
+          } catch(e) { got[i] = null; }
           done++; if(done <= want) stepTo('photos', 25 + Math.round(55 * done / want), `Getting photo ${Math.min(done, want)} of ${want}…`);
         }
       };
@@ -621,23 +631,95 @@
       const keep = got.filter(Boolean);
       if(!keep.length) throw {code: 'unreadable'};
       // the upper box: our picks in listing order (staged first, as the reader sorted them), up to the cap
-      const upper = keep.filter(p => picked.has(p.url)).slice(0, PICK_CAP).sort((a, b) => a.n - b.n);
+      const upper = keep.filter(p => picked.has(p.from || p.url)).slice(0, PICK_CAP).sort((a, b) => a.n - b.n);
       if(upper.length < PICK_CAP) upper.push(...keep.filter(p => !upper.includes(p)).slice(0, PICK_CAP - upper.length));
       stepTo('details', 90, 'Filling in the details…');
       const l = j.listing;
       // the whole listing record is kept (description, every detail field, rooms, what conveys, every photo caption,
       // and price / schools in `withheld`, which package-ai never passes to the writer)
-      lookup = {link, listing: Object.assign({}, l, {address: l.address, neighborhood: l.neighborhood || '', city: l.city || 'Houston', state: 'Texas', zip: l.zip || '',
+      const houston = /^(har|matrix|zillow|realtor|redfin|trulia|homes|movoto)$/.test(l.source || '') || l.readFrom === 'har';
+      lookup = {link, listing: Object.assign({}, l, {address: l.address, neighborhood: l.neighborhood || '', city: l.city || (houston ? 'Houston' : ''), state: houston ? 'Texas' : (l.state || ''), zip: l.zip || '',
         beds: l.beds, baths: l.baths, halfBaths: l.halfBaths || 0, sqft: l.sqft, yearBuilt: l.yearBuilt || l.year, stories: l.stories || null, description: l.description || ''}),
         photos: keep.map(p => ({n: p.n, url: p.url, desc: p.desc || '', room: PT.roomKey(p.room || p.desc)})), upper: upper.map(p => p.url),
-        floorPlan: {source: fp.source, files: fp.files, stories: fp.stories, active: false, art: null, asked: null}, moves: 0, id: uuid(), tags: {}};
+        floorPlan: {source: fp.source, files: fp.files, stories: fp.stories, active: false, art: null, asked: null}, moves: 0, id: lid, tags: {}};
       stepTo('done', 100, `Found ${lookup.listing.address}: ${keep.length} photos. Pick what you'd like below.`);
       $('#toGallery').disabled = false;
       drawPicker(); drawPlanBox(); if(fp.files.length) loadPlan(fp.files, fp.source);
       if(link !== 'sample') tagRooms();
     } catch(e) {
       $('#linkErr').textContent = MSG[e && e.code] || MSG.network; stepTo('lookup', 0, '');
+      if(['other-site', 'blocked', 'unreadable', 'not-found'].includes(e && e.code)) openUpload();
     } finally { $('#go').disabled = false; }
+  }
+  // ---------- upload the listing instead of a link (owner 11/14/2026: agents in every city and state) ----------
+  // The agent's photos and a few facts make the same lookup a link makes; the writer reads the photos and the description.
+  const UP_MIN = 6, UP_MAX = ALL_PHOTOS;
+  let upFiles = [];
+  function openUpload(){
+    $('#upForm').hidden = false; $('#upErr').textContent = '';
+    if(!$('#upState').value && profile && profile.state) $('#upState').value = profile.state;
+  }
+  $('#upOpen').onclick = () => { openUpload(); $('#upForm').scrollIntoView({behavior: 'smooth', block: 'start'}); };
+  $('#upClose').onclick = () => { $('#upForm').hidden = true; $('#link').focus(); };
+  function setUpFiles(list){
+    const ok = [...list].filter(f => /^image\/(jpeg|png|webp)$/.test(f.type));
+    const skipped = list.length - ok.length;
+    upFiles = upFiles.concat(ok).slice(0, UP_MAX);
+    $('#upCount').textContent = (upFiles.length ? `${upFiles.length} photo${upFiles.length === 1 ? '' : 's'} added.` : '')
+      + (skipped ? ` ${skipped} file${skipped === 1 ? " wasn't a JPG or PNG" : "s weren't JPGs or PNGs"}, so we left ${skipped === 1 ? 'it' : 'them'} out.` : '');
+  }
+  $('#upFiles').onchange = e => { setUpFiles(e.target.files); e.target.value = ''; };
+  const drop = $('#upDrop');
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); setUpFiles(e.dataTransfer.files); });
+  const upNum = id => { const v = $(id).value.replace(/[^\d.]/g, ''); return v === '' ? null : +v; };
+  $('#upForm').addEventListener('submit', e => { e.preventDefault(); runUpload(); });
+  async function runUpload(){
+    const err = t => { $('#upErr').textContent = t; };
+    const address = $('#upAddr').value.trim(), city = $('#upCity').value.trim(), state = $('#upState').value.trim(), zip = $('#upZip').value.trim();
+    if(!address || !city || !state) return err('Add the street address, city and state.');
+    if(upFiles.length < UP_MIN) return err(`Add at least ${UP_MIN} photos so every design has enough to fill its spots.`);
+    err(''); $('#upGo').disabled = true; $('#go').disabled = true;
+    $('#linkErr').textContent = ''; $('#progress').hidden = false; $('#pickBox').hidden = false; $('#toGallery').disabled = true;
+    pickChanged();
+    const lid = uuid(), photos = [];
+    try {
+      stepTo('photos', 10, `Getting your photos ready: 0 of ${upFiles.length}…`);
+      let next = 0, done = 0;
+      const worker = async () => {
+        while(next < upFiles.length){
+          const i = next++, f = upFiles[i];
+          try {
+            const screen = await shrink(f);
+            const url = canUpload() ? await storeListingPhoto(f, lid, i) : screen;   // the browser-only test keeps the screen copy
+            photoSrc.set(url, screen);
+            photos[i] = {n: i, url, desc: '', room: ''};
+          } catch(e) { photos[i] = null; }
+          done++; stepTo('photos', 10 + Math.round(75 * done / upFiles.length), `Getting your photos ready: ${done} of ${upFiles.length}…`);
+        }
+      };
+      await Promise.all([worker(), worker(), worker()]);
+      const keep = photos.filter(Boolean);
+      if(keep.length < UP_MIN) throw new Error(`Only ${keep.length} of your photos opened. Add JPG or PNG files and try again.`);
+      stepTo('details', 92, 'Filling in the details…');
+      const baths = upNum('#upBaths'), half = upNum('#upHalf');
+      const listing = {source: 'upload', readFrom: 'upload', url: '', address, city, state, zip, county: '', neighborhood: $('#upHood').value.trim(),
+        beds: upNum('#upBeds'), baths, halfBaths: half || 0, sqft: upNum('#upSqft'), year: upNum('#upYear'), yearBuilt: upNum('#upYear'),
+        stories: upNum('#upStories'), mls: '', type: '', status: '', style: '', lotSize: '', garage: '', pool: '', legal: '',
+        description: $('#upDesc').value.trim(), details: {}, rooms: [], conveys: [],
+        links: {virtualTours: [], videos: [], floorPlans: [], website: '', documents: []}, photoCaptions: [],
+        floorPlan: {found: false, source: null, files: [], stories: null}, withheld: {price: {}, schools: {}}};
+      lookup = {link: 'upload', listing, photos: keep.map(p => ({n: p.n, url: p.url, desc: '', room: ''})), upper: keep.slice(0, PICK_CAP).map(p => p.url),
+        floorPlan: {source: null, files: [], stories: null, active: false, art: null, asked: null}, moves: 0, id: lid, tags: {}};
+      stepTo('done', 100, `${address}: ${keep.length} photos. Pick what you'd like below.`);
+      store.event(lid, 'listing-upload', {photos: keep.length, state, stored: canUpload()});
+      $('#upForm').hidden = true; $('#toGallery').disabled = false;
+      drawPicker(); drawPlanBox();
+      tagRooms();
+    } catch(e) {
+      stepTo('photos', 0, ''); err(e && e.message && !/photo/.test(e.message) ? e.message : 'Something went wrong while saving your photos. Try again.');
+    } finally { $('#upGo').disabled = false; $('#go').disabled = false; }
   }
   function pickChanged(){
     const kind = document.querySelector('input[name=kind]:checked').value;
@@ -765,7 +847,7 @@
       $('#planAsk').onclick = () => { F.asked = null; drawPlanBox(); };
     } else {
       // the floor plan question (versions-and-floor-plan-ask brief; proposed wording, the owner's call)
-      box.innerHTML = `<p>${F.failed ? "We found a floor plan but couldn't open it." : "We didn't find a floor plan on this listing."} Do you have one?</p>
+      box.innerHTML = `<p>${F.failed ? "We found a floor plan but couldn't open it." : lookup.link === 'upload' ? 'Do you have a floor plan for this listing?' : "We didn't find a floor plan on this listing."}${lookup.link === 'upload' ? '' : ' Do you have one?'}</p>
         <div class="row gap"><button type="button" class="btn" id="planYes">Yes, upload it</button><button type="button" class="btn line" id="planNo">No floor plan</button></div>
         <label class="planup" id="planUp" hidden>Floor plan (PDF, JPG or PNG; one file per floor is fine)<input type="file" id="planFile" accept="application/pdf,image/jpeg,image/png" multiple></label>`;
       $('#planYes').onclick = () => { $('#planUp').hidden = false; $('#planFile').click(); };
@@ -834,14 +916,20 @@
   // Matrix photos come through our reader (browsers can't fetch them directly); sample photos are on this site.
   // The reader saves each photo once and sends the browser to that copy: the small (about 1024 px) one here for the
   // picker and proofs, the full-size original only for print (printSrc).
-  const printSrc = url => /^https:\/\/([\w-]+\.)*(harmls|harstatic)\.com\//.test(url || '') ? `${FN_MATRIX}?photo=${encodeURIComponent(url)}&size=full` : '';
+  const printSrc = url => /^https:\/\/([\w-]+\.)*(harmls|harstatic)\.com\//.test(url || '') ? `${FN_MATRIX}?photo=${encodeURIComponent(url)}&size=full`
+    : isOwnUpload(url) ? url : '';   // an uploaded listing photo is kept at full size in the agent's storage
+  const rawPhoto = new Map();   // full files of photos read straight from another site, until they're copied (runLookup)
+  const isOwnUpload = url => typeof url === 'string' && url.startsWith(SUPABASE_URL + '/storage/v1/object/sign/agent-uploads/');
   async function loadPhoto(url, viaReader, direct){
     if(photoSrc.has(url)) return photoSrc.get(url);
     if(!viaReader && url.startsWith('/')){ photoSrc.set(url, url); return url; }
-    // a brokerage site's own photos can't go through the reader (Matrix and HAR photos only); try them straight from the site
-    const r = await fetch(direct ? url : `${FN_MATRIX}?photo=${encodeURIComponent(url)}&size=preview`);
+    // a brokerage site's own photos can't go through the reader (Matrix and HAR photos only); try them straight from the site.
+    // Photos in the agent's own storage (uploads, and photos copied from another MLS) are read straight from there too.
+    const own = isOwnUpload(url);
+    const r = await fetch(direct || own ? url : `${FN_MATRIX}?photo=${encodeURIComponent(url)}&size=preview`);
     if(!r.ok) throw new Error('photo');
     const blob = await r.blob();
+    if(direct && !own) rawPhoto.set(url, blob);
     if(isCollage(await createImageBitmap(blob))) return null;
     const u = await shrink(blob); photoSrc.set(url, u); return u;
   }
@@ -2002,6 +2090,26 @@
     await signUploads([path]);
     if(pkg) store.event(pkg.id, 'photo-upload', {kind});
     return {path, src: (signedLinks.get(path) || {}).url || p.src};
+  }
+  // A listing photo the agent uploads (or one copied from another MLS's page): saved once in their own folder at up to 3000 px,
+  // a JPEG under the 5 MB the photo reader takes, and kept by a long signed link (three years, past the Just Sold window), so the
+  // screens, the writer and the print server all read the same file. HAR photos are 2048 px, so this is never smaller than those.
+  const LISTING_SIGN = 3 * 365 * 86400, LISTING_PX = 3000;
+  async function storeListingPhoto(file, lid, n){
+    let blob = file;
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, LISTING_PX / Math.max(bmp.width, bmp.height));
+    if(k < 1 || file.type !== 'image/jpeg' || file.size > 4.5e6){
+      const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+      blob = await new Promise(r => c.toBlob(r, 'image/jpeg', .9));
+    }
+    const path = `${me.id}/listing/${lid}/${n}-${uuid().slice(0, 8)}.jpg`;
+    const {error} = await sb.storage.from(UPLOADS).upload(path, blob, {contentType: 'image/jpeg', upsert: false});
+    if(error) throw new Error('photo upload: ' + error.message);
+    const {data, error: e2} = await sb.storage.from(UPLOADS).createSignedUrl(path, LISTING_SIGN);
+    if(e2 || !data || !data.signedUrl) throw new Error('photo link');
+    return data.signedUrl;
   }
   function removeUpload(it){
     if(!it || !it.path || !canUpload()) return;
