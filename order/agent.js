@@ -2437,7 +2437,7 @@
   // the order, and any time after from the "Coloring page" link beside "Printer or download"
   async function offerColoring(){
     const v = await ask(`<h2>Your coloring page</h2><p>We're tracing your front photo into a coloring page, with ${esc(pkg.listing.address)} in big letters to color in.</p>
-      ${localMode ? `<p class="fine"><b>Test:</b> signed in, it's made from your main front photo. Here you get the 2614 Calder Street sample.</p>` : ''}`,
+      ${localMode ? `<p class="fine"><b>Test:</b> signed in, it's made from your main front photo. Here you get the 18322 Live Oak Bend Lane sample.</p>` : ''}`,
       [['Download it', 'download'], ['Later', 'later', 'line']]);
     pkg.delivery.coloring = {how: v || 'later', at: new Date().toISOString()};
     store.event(pkg.id, 'delivery', {piece: 'coloring-page', how: v || 'later'});
