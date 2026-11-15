@@ -93,7 +93,7 @@
   const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
   let me = null, profile = null, localMode = false, pkg = null, designs = [], catalog = null;
-  const specs = {}, tpls = {}, examples = {}, fontSpecs = {}, photoSrc = new Map();
+  const specs = {}, tpls = {}, examples = {}, fontSpecs = {}, photoSrc = new Map(), photoSize = new Map();   // photoSize: each photo's pixel size (w, h), for the designs' layout math
 
   // ---------- storage: the account when signed in, this browser in test mode ----------
   const LKEY = 'bd-agent-packages', LEVENTS = 'bd-agent-events';
@@ -934,7 +934,9 @@
   const isOwnUpload = url => typeof url === 'string' && url.startsWith(SUPABASE_URL + '/storage/v1/object/sign/agent-uploads/');
   async function loadPhoto(url, viaReader, direct){
     if(photoSrc.has(url)) return photoSrc.get(url);
-    if(!viaReader && url.startsWith('/')){ photoSrc.set(url, url); return url; }
+    if(!viaReader && url.startsWith('/')){ photoSrc.set(url, url);
+      await new Promise(r => { const im = new Image(); im.onload = () => { photoSize.set(url, {w: im.naturalWidth, h: im.naturalHeight}); r(); }; im.onerror = r; im.src = url; });
+      return url; }
     // a brokerage site's own photos can't go through the reader (Matrix and HAR photos only); try them straight from the site.
     // Photos in the agent's own storage (uploads, and photos copied from another MLS) are read straight from there too.
     const own = isOwnUpload(url);
@@ -942,7 +944,8 @@
     if(!r.ok) throw new Error('photo');
     const blob = await r.blob();
     if(direct && !own) rawPhoto.set(url, blob);
-    if(isCollage(await createImageBitmap(blob))) return null;
+    const bm = await createImageBitmap(blob); photoSize.set(url, {w: bm.width, h: bm.height});
+    if(isCollage(bm)) return null;
     const u = await shrink(blob); photoSrc.set(url, u); return u;
   }
   const photoUrlNow = url => photoSrc.get(url) || (url.startsWith('/') ? url : '');
@@ -1042,7 +1045,8 @@
     const d = designs.find(x => x.id === designId) || {}, fs = await fontSpec(designId);
     const arr = arrangement(pkg, designId), ids = arr.map(i => 'p' + i);
     const P = {};
-    arr.forEach(i => { const ph = pkg.photos[i]; P['p' + i] = {src: photoUrlNow(ph.url), tags: [ph.desc || '', ph.note || ''].filter(Boolean).join(', '), role: ph.role, exterior: ph.exterior, house: ph.house, fullHouse: ph.house ? true : undefined}; });
+    // w and h: the flyers size the hero from the photo's shape; without them the photo rows collapsed to slivers (11/14/2026)
+    arr.forEach(i => { const ph = pkg.photos[i]; P['p' + i] = Object.assign({src: photoUrlNow(ph.url), tags: [ph.desc || '', ph.note || ''].filter(Boolean).join(', '), role: ph.role, exterior: ph.exterior, house: ph.house, fullHouse: ph.house ? true : undefined}, photoSize.get(ph.url) || {}); });
     // a template may name the sample house's photos itself (a default 'front' hero): each such name shows the package's
     // photo it maps to (the same match as the example copy)
     const exP = await example(designId);
