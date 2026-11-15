@@ -562,8 +562,10 @@
     $('#link').value = ''; $('#progress').hidden = true; $('#pickBox').hidden = true; $('#toGallery').disabled = true;
     $('#upForm').reset(); $('#upForm').hidden = true; $('#upErr').textContent = ''; $('#upCount').textContent = ''; upFiles = [];
     $('#photoPick').hidden = true; $('#planBox').hidden = true;
-    try { const h = localStorage.getItem('bd-home-link'); if(h){ localStorage.removeItem('bd-home-link'); $('#link').value = h; } } catch(e) {}
-    show('vStart'); setTimeout(() => $('#link').focus(), 50);
+    let h = null; try { h = localStorage.getItem('bd-home-link'); if(h) localStorage.removeItem('bd-home-link'); } catch(e) {}
+    show('vStart');
+    // a link pasted on the homepage starts reading right away; the agent never pastes it twice (owner 11/14/2026)
+    if(h){ $('#link').value = h; runLookup(h.trim()); } else setTimeout(() => $('#link').focus(), 50);
   }
   function stepTo(step, pct, text){
     const order = ['lookup', 'photos', 'details'];
