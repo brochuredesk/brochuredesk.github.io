@@ -694,11 +694,13 @@
     const shownSet = list => new Set([].concat(...list.map(c => [].concat(...(c.s || []).map(z => [].concat(z))))).map(nk));
     if(hasPlan){
       const pc = FXS.planCard(D, LX, 76, LW, Math.max(130, o.planMax || 300)); h += pc.html; issues.push(...pc.issues); window.planIssues = pc.issues;
-      const y = pc.bottom + 14, aboutBlock = 12 + 7 + 3*16.5 + 14, ph = Math.max(70, Math.min(175, bottom - y - aboutBlock - 25 - 3*13.5));
+      const CLN = 4;   // 11/16 (blank-space rule): the plan back's photo captions run four lines, so no band opens above The house
+      const y = pc.bottom + 14, aboutBlock = 12 + 7 + 3*16.5 + 14, ph = Math.max(70, Math.min(175, bottom - y - aboutBlock - 25 - CLN*13.5));
       const pick = FXS.pick(D, all, 4, {avoid: used, exactAvoid: !!o.outdoor, outdoor: !!o.outdoor, house: !!o.outdoor}).filter(c => !FXS.isHouse(D, c.photo) || SW.fits(D, c.photo, rw, ph)).slice(0, 2);
       shown = pick.slice();
-      pick.forEach((c, i) => { h += FXS.captioned(D, c, LX + i*(rw + gap), y, pick.length === 1 ? Math.min(LW, ph*2.5) : rw, ph, 3, 'back.photo' + i, {narrow: 12, period: !!o.outdoor, row: 'back.r0'}); });
-      const ay = y + ph + 25 + 3*13.5 + 14, kept = FXS.noFacts(aboutS.filter(x => ![].concat(x).some(a => shownSet(shown).has(nk(a)))));
+      pick.forEach((c, i) => { h += FXS.captioned(D, c, LX + i*(rw + gap), y, pick.length === 1 ? Math.min(LW, ph*2.5) : rw, ph, CLN, 'back.photo' + i, {narrow: 12, period: !!o.outdoor, row: 'back.r0'}); });
+      const ay = y + ph + 25 + CLN*13.5 + 14, kept = FXS.noFacts(aboutS.filter(x => ![].concat(x).some(a => shownSet(shown).has(nk(a)))));
+      h += `<div class="abs" style="left:${LX}pt;top:${ay - 6}pt;width:${LW}pt;height:0;border-top:var(--fx-rule-w, .75pt) solid var(--fx-rule, currentColor)"></div>`;   // 11/16: a hairline across the column closes the photo row, so neither caption sits over open space
       h += `<div class="abs" style="left:${LX}pt;top:${ay}pt">${FXS.label('The house', 'back.about.label')}</div><div class="abs body" data-slot="back.about" data-lines="3" data-try="3,4" data-lh="16.5" ${sd(kept.length >= 3 ? kept : aboutS)} style="left:${LX}pt;top:${ay + 19}pt;width:${LW}pt;height:${3*16.5}pt;font-size:10.5pt;line-height:16.5pt"></div>`;
     } else {
       const aboutLines = 4, rowsTop0 = 82 + 19 + aboutLines*16.5 + 16;

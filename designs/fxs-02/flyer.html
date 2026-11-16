@@ -174,7 +174,8 @@ window.brochureReady = (async function(){
     // the broker block, small, between the gray bar and the right side (owner review r2; same as the fold-over back)
     {
       const x0 = 172, x1 = 585, RULE = 694, CARDH = 61.5, y0 = RULE + (792 - RULE - CARDH)/2 + 2, hs = hsSrc ? 48 : 0, tx = x0 + (hs ? hs + 12 : 0), lgW = 118;
-      h += `<div class="hr" style="left:${x0}pt;top:${RULE}pt;width:${x1 - x0}pt"></div>`;   // owner review r4 (11/7): the agent block is centered between this bar and the foot of the page
+      const hx = 45;   // 11/16 (blank-space rule): the bar runs under the whole row of room photos above it, so the first caption ends on it too
+      h += `<div class="hr" style="left:${hx}pt;top:${RULE}pt;width:${x1 - hx}pt"></div>`;   // owner review r4 (11/7): the agent block is centered between this bar and the foot of the page
       if(hsSrc) h += `<div class="abs hsbox" style="left:${x0}pt;top:${y0}pt;width:${hs}pt;height:${hs}pt"><img src="${esc(hsSrc)}" alt=""></div>`;
       h += `<div class="abs agentline" style="left:${tx}pt;top:${y0 - 2}pt;width:${x1 - lgW - 14 - tx}pt"><div class="n" style="font-size:15pt;line-height:18pt" data-slot="agent.name" data-lines="1">${esc(A.name || '')}</div><div class="p" style="font-size:12pt;line-height:15pt;margin-top:1pt;font-weight:600" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div><div style="font:400 9pt/12pt var(--fx-font);color:var(--fx-mute);white-space:nowrap;overflow:hidden" data-slot="agent.email" data-lines="1">${esc(A.email || '')}</div></div>`;
       h += FXS.logo(D, x1 - lgW, y0 - 2, lgW, 24, 'flex-end');

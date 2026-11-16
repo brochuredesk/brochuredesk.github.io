@@ -337,6 +337,15 @@ window.brochureReady = (async function(){
   document.querySelectorAll('[data-bottom]').forEach(el => { el.style.top = (+el.dataset.bottom - (+el.dataset.lines)*(+el.dataset.lh)) + 'pt'; });
   // the arch: the round left end, half the shorter side
   document.querySelectorAll('.ph.arch').forEach(el => { const r = Math.min(el.clientWidth, el.clientHeight)*72/96/2; el.style.borderRadius = `${r}pt 0 0 ${r}pt`; });
+  // 11/16 (blank-space rule): the inside right's bottom row of captions, open page under it, takes one more line of its own true sentences (both
+  // captions, so the row stays even) when the page has room; the photos don't move and the logo re-centers below
+  { const caps = [...document.querySelectorAll('.cap .a[data-slot^="right.photo"]')], tops = caps.map(c => c.getBoundingClientRect().top), maxT = Math.max(...tops);
+    const row = caps.filter((c, i) => tops[i] > maxT - 2), pn = row.length && row[0].closest('.panel');
+    if(row.length === 2 && pn){ const k = 72/96, pr = pn.getBoundingClientRect(), lh = +row[0].dataset.lh || 12.5, n0 = +row[0].dataset.lines || 4, bot = Math.max(...row.map(c => c.getBoundingClientRect().bottom));
+      if((pr.bottom - bot)*k - lh > 30){ const keep = row.map(c => [c.innerHTML, c.style.height, c.style.width, c.dataset.lines]), pk = row.map(c => { delete c.dataset.w0; c.style.width = ''; return SW.pfN(c, n0 + 1); });
+        if(pk.every(Boolean)) row.forEach((c, i) => { c.innerHTML = SW.capHtml(c.dataset.lead || '', pk[i].pick); c.dataset.lines = n0 + 1; c.style.height = ((n0 + 1)*lh) + 'pt'; c.style.textAlign = 'justify';
+          for(let e = c.parentElement; e && e !== pn; e = e.parentElement) e.style.overflow = 'visible'; });
+        else row.forEach((c, i) => { [c.innerHTML, c.style.height, c.style.width, c.dataset.lines] = keep[i]; }); } } }
   SW.fitLogos();
   // owner review r4 (11/7): the inside-right broker logo is centered between the last caption above it and the foot of the page
   document.querySelectorAll('[data-slot="right.intro"]').forEach(intro => { const pn = intro.closest('.panel'), pr = pn.getBoundingClientRect(), k = 72/96;

@@ -120,9 +120,26 @@
   // after the fill: top-row captions on the inside right that set fewer than their four lines: both photos grow down by the unused lines, labels and
   // captions moving with them, so no band opens above the bottom row (owner 11/8: four lines under the top photos where the facts allow; blank check)
   FO.rightCapFit = () => { const caps = ['right.photo0', 'right.photo1'].map(sl => document.querySelector(`.cap .a[data-slot="${sl}"]`)).filter(Boolean); if(!caps.length) return;
-    const n = Math.max(...caps.map(c => SW.lines(c).n)), lh = +caps[0].dataset.lh || 13.22; if(n >= 4) return; const d = (4 - n)*lh;
+    const n = Math.max(...caps.map(c => SW.lines(c).n)), lh = +caps[0].dataset.lh || 13.22; if(n >= 4) return FO.rightGapFit(); const d = (4 - n)*lh;
     ['right.photo0', 'right.photo1'].forEach(sl => { const ph = document.querySelector(`.ph[data-slot-photo="${sl}"]`), box = ph && ph.parentElement, lbl = document.querySelector(`[data-slot="${sl}.label"]`), cap = document.querySelector(`.cap .a[data-slot="${sl}"]`);
+      if(box) box.style.height = (parseFloat(box.style.height) + d) + 'pt'; if(lbl) lbl.parentElement.style.top = (parseFloat(lbl.parentElement.style.top) + d) + 'pt'; if(cap) cap.style.top = (parseFloat(cap.style.top) + d) + 'pt'; });
+    FO.rightGapFit(); };
+
+  // after the fill (11/16, blank-space rule 11/10): a photo row whose captions set every line they may but still end well above the next thing
+  // below (the next row of photos, or the taupe band): the row's photos grow down into that space, labels and captions moving with them, so the
+  // last caption line sits about half a line clear of what follows. next(low): the top (px) of what follows, given the lowest caption line.
+  FO.capGapFit = (slots, next) => { const caps = slots.map(sl => document.querySelector(`.cap .a[data-slot="${sl}"]`)).filter(Boolean); if(!caps.length) return;
+    const b0 = document.querySelector(`.ph[data-slot-photo="${slots[0]}"]`), box0 = b0 && b0.parentElement; if(!box0) return;
+    const k = parseFloat(box0.style.height)/box0.getBoundingClientRect().height, lh = +caps[0].dataset.lh || 12;
+    const low = Math.max(...caps.map(c => { const rg = document.createRange(); rg.selectNodeContents(c); const q = [...rg.getClientRects()].filter(x => x.height > .5); return q.length ? Math.max(...q.map(x => x.bottom)) : c.getBoundingClientRect().top; }));
+    const nt = next(low); if(!(nt > low)) return;
+    const d = Math.floor(((nt - low)*k - lh*.6)*4)/4; if(!(d > 1)) return;
+    slots.forEach(sl => { const ph = document.querySelector(`.ph[data-slot-photo="${sl}"]`), box = ph && ph.parentElement, lbl = document.querySelector(`[data-slot="${sl}.label"]`), cap = document.querySelector(`.cap .a[data-slot="${sl}"]`);
       if(box) box.style.height = (parseFloat(box.style.height) + d) + 'pt'; if(lbl) lbl.parentElement.style.top = (parseFloat(lbl.parentElement.style.top) + d) + 'pt'; if(cap) cap.style.top = (parseFloat(cap.style.top) + d) + 'pt'; }); };
+  FO.rightGapFit = () => { const nb = document.querySelector('.ph[data-slot-photo="right.photo2"]'); if(nb) FO.capGapFit(['right.photo0', 'right.photo1'], () => nb.parentElement.getBoundingClientRect().top); };
+  // the flyer back's photo row: down to the taupe band under it
+  FO.flyerRowFit = () => { const sl = [0, 1, 2, 3].map(i => 'back.photo' + i).filter(x => document.querySelector(`.cap .a[data-slot="${x}"]`)); if(!sl.length) return;
+    FO.capGapFit(sl, low => Math.min(...[...document.querySelectorAll('.taupeb, .taupe')].map(e => e.getBoundingClientRect().top).filter(t => t > low - 1))); };
 
   // after the fill: the single side photo on the inside left (the stair-beside-the-list layout) whose caption sets fewer than four lines grows
   // downward by the lines it did not use, its label and caption moving with it, so the panel's foot lines up with the approved 2-story page

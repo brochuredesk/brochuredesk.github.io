@@ -39,6 +39,7 @@ window.brochureReady = (async function(){
   FO.grow();
   FO.just3();
   FO.span();
+  if(FO.flyerRowFit) FO.flyerRowFit();
   SW.fitLogos();
   issues.push(...SW.focus(D));
   document.querySelectorAll('.ph[data-zoom]').forEach(el => { const [z, fx, fy] = el.dataset.zoom.split(',').map(Number), im = el.querySelector('img'); if(!im) return; im.style.cssText = `position:absolute;max-width:none;width:${z*100}%;height:${z*100}%;left:${-(z - 1)*fx*100}%;top:${-(z - 1)*fy*100}%;object-fit:cover`; });

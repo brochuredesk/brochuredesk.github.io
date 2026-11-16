@@ -190,6 +190,14 @@ window.brochureReady = (async function(){
   // titles fit their line (down from 28 pt)
   document.querySelectorAll('.ttl.fit').forEach(el => { let fs = 24; while(el.scrollWidth > el.clientWidth + 1 && fs > 16){ fs -= .5; el.style.fontSize = fs + 'pt'; } });
   SW.fill();
+  // 11/16 (blank-space rule): the inside right's bottom-left caption, open space under it and the logo under its row-mate, takes the lines
+  // down to the logo's foot, so both columns end on one line (the text left, the logo right); the photos don't move
+  { const caps = [...document.querySelectorAll('.cap .a[data-slot^="right.photo"]')], logo = [...document.querySelectorAll('.logo')].find(l => caps.length && l.closest('.panel') === caps[0].closest('.panel'));
+    const low = caps.length ? caps.reduce((a, b) => { const A = a.getBoundingClientRect(), B = b.getBoundingClientRect(); return B.top > A.top + 2 || (Math.abs(B.top - A.top) <= 2 && B.left < A.left) ? b : a; }) : null;
+    if(low && logo && SW.refit){ const r = low.getBoundingClientRect(), L = logo.getBoundingClientRect(), sc = r.width/(low.offsetWidth || r.width), lh = +low.dataset.lh || 12.5, n0 = +low.dataset.lines || 4;
+      if(L.left > r.right - 2){ const T = Math.floor(((L.bottom - r.top)/sc*0.75 + 1)/lh), keep = [low.innerHTML, low.style.height, low.style.width];
+        for(let t = T; t > n0; t--){ low.style.height = (t*lh) + 'pt'; low.parentElement.style.overflow = 'visible'; if(low.closest('.item')) low.closest('.item').style.overflow = 'visible'; if(low.closest('.row')) low.closest('.row').style.overflow = 'visible'; if(SW.refit(low, t)){ low.style.textAlign = 'justify'; break; }
+          [low.innerHTML, low.style.height, low.style.width] = keep; } } } }
   document.querySelectorAll('.ttl[data-two]').forEach(el => { const w0 = el.clientWidth*.75; let w = w0; for(let k = 0; k < 14; k++){ el.style.width = w + 'pt'; const L2 = SW.lines(el); if(L2.n === 1 || (L2.n === 2 && L2.fill >= .75)) break; w -= 8; } });
   // the arch: the round left end, half the shorter side
   SW.fitLogos();

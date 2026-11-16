@@ -1175,6 +1175,10 @@
     // then every text box shrinks to fit (8 pt floor) and grows back up to 10 pt, as on the print file (config/copy-rules.json)
     if(!w.ShrinkFit) await new Promise(r => { const sc = doc.createElement('script'); sc.src = '/designs/engine/shrinkfit.js'; sc.onload = sc.onerror = r; doc.head.appendChild(sc); });
     try { if(w.ShrinkFit) w.ShrinkFit.run(TYPE_SIZE); } catch(e){ console.warn(e); }
+    // then a justified box whose word gaps would fail the print check sets ragged, if every line still reaches 80%, as on the print
+    // file (templates/_shared/unspread.js, 11/16/2026)
+    if(!w.Unspread) await new Promise(r => { const sc = doc.createElement('script'); sc.src = '/designs/engine/unspread.js'; sc.onload = sc.onerror = r; doc.head.appendChild(sc); });
+    try { if(w.Unspread) w.Unspread.run({gapRatio: 3.5, gapEm: 0.75, lineMin: 0.8}); } catch(e){ console.warn(e); }
   }
   const TYPE_SIZE = {floor: 8, fineFloor: 6, growTo: 10, step: 0.25, minLeading: 1.15, growSamples: true};
   async function drawParts(box, designId, parts, data, onReady){

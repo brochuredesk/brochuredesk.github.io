@@ -71,7 +71,8 @@
       let slotEl = null;
       for(let p = img.parentElement, i = 0; p && i < 3 && p !== pageOf(img, ps); p = p.parentElement, i++){
         if(p.children.length > 2 || (p.innerText || '').trim()) break;
-        const q = R(p); if(q.w*q.h > r.w*r.h*1.05){ slotEl = p; break; } }
+        const q = R(p); if(q.w*q.h > P.w*P.h*.8) break;   // a layer the size of the page (a whole-card overlay) is not a slot
+        if(q.w*q.h > r.w*r.h*1.05){ slotEl = p; break; } }
       if(slotEl){ const q = R(slotEl), cov = (r.w*r.h)/(q.w*q.h);
         if(cov < th.slotCoverMin && q.w*q.h > P.w*P.h*.015) add(out, where, 'photo-squeezed', `photo covers ${Math.round(cov*100)}% of its slot (${Math.round(r.w)} x ${Math.round(r.h)} in ${Math.round(q.w)} x ${Math.round(q.h)} px)`); }
     }
@@ -93,7 +94,7 @@
   const overlapX = (a, b) => Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l));
 
   // photos in rows (same top, similar height, side by side): what text sits under each one, before the next photo or box
-  function rows(D, all){
+  function rows(D, all, own){
     const ph = photos(D).map(el => Object.assign(R(el), {el})), out = [];
     for(const p of ph){
       const mates = ph.filter(q => q !== p && Math.abs(q.t - p.t) < 4 && Math.abs(q.h - p.h) < p.h*.15 && (q.l >= p.r - 2 || q.r <= p.l + 2));
@@ -104,7 +105,9 @@
       const stop = Math.min(...ph.filter(q => q !== p && q.t > p.b - 2 && overlapX(q, p) > p.w*.3).map(q => q.t), p.b + Math.max(p.h*.9, 160), pb);
       // nor is the agent card, the brokerage lines or the fine print under a bottom-row photo (the Open House email's card)
       const notCap = L => /^(agent|broker|contact|cc|fine)/i.test(slotOf(L.el)) || !!L.el.closest('.cc, .cc-panel, [data-contactcard]');
-      const under = all.filter(L => L.t >= p.b - 2 && L.b <= stop + 2 && !notCap(L) && (!panel || panel.contains(L.el)) && overlapX(L, p) > Math.min(L.r - L.l, p.w)*.5);
+      // nor, when asked which photos carry a caption (own), is text that runs on under a row-mate too (the address and write-up under a cover strip of labelled tiles): a caption is one photo's
+      const across = L => own && mates.some(m => overlapX(L, m) > m.w*.3);   // own: only for which photos carry a caption (required-missing, heading-empty)
+      const under = all.filter(L => L.t >= p.b - 2 && L.b <= stop + 2 && !notCap(L) && !across(L) && (!panel || panel.contains(L.el)) && overlapX(L, p) > Math.min(L.r - L.l, p.w)*.5);
       // the first block under the photo: stop at the first vertical gap bigger than two line heights
       under.sort((a, b) => a.t - b.t); const blk = []; let y = p.b;
       for(const L of under){ if(L.t - y > Math.max(2.2*(L.b - L.t), 14) && blk.length) break; if(!blk.length && L.t - p.b > Math.max(3*(L.b - L.t), 30)) break; blk.push(L); y = Math.max(y, L.b); }
@@ -154,7 +157,7 @@
     if(need.minPhotos){ const n = photos(D).length; if(n < need.minPhotos) add(out, 'photos', 'required-missing', `${n} photo(s) on the piece; this design shows ${need.minPhotos}`); }
     if(need.captions){
       // a photo in a row whose row-mates carry a write-up must carry one too (owner 11/9 rule 6: every photo gets a caption)
-      for(const x of rows(D, all)){
+      for(const x of rows(D, all, true)){
         const mateCap = x.mates.some(m => { const y = rows.cache.get(m.el); return y && y.words >= 6; });
         if(mateCap && x.words === 0) add(out, slotOf(x.p.el) || (x.p.el.getAttribute('src') || '').replace(/^.*\//, ''), 'required-missing', 'a photo with no caption under it, beside photos that have one');
       }
@@ -173,7 +176,7 @@
   function headings(cfg, D, all, P0){
     const out = [], th = cfg.th, ps = pages(), done = new Set();
     // caption headings: under a photo, row-mates have a write-up under their heading, this one has only the heading
-    for(const x of rows(D, all)){
+    for(const x of rows(D, all, true)){
       const mateCap = x.mates.some(m => { const y = rows.cache.get(m.el); return y && y.words >= 6 && y.nLines >= 2; });
       if(mateCap && x.words > 0 && x.words < 6 && x.nLines <= 1){ const s = x.els.map(e => slotOf(e)).find(Boolean) || 'caption';
         done.add(s); add(out, s, 'heading-empty', `"${x.text.slice(0, 40)}" heads a photo with no caption under it, beside photos that have one`); }
@@ -198,7 +201,7 @@
     for(const el of document.querySelectorAll('[data-slot]')){
       if(!vis(el) || el.querySelector('[data-slot]')) continue;
       const s = el.dataset.slot, t = el.textContent.trim().replace(/[.·•:]+$/, '');
-      if(/(^|\.)(h|t|head|heading|title|label|kicker|eyebrow)\d*$|head$|title$/i.test(s)) continue;   // a section heading ("Close by"), not a distance
+      if(/(^|\.)(h|t|k|head|heading|title|label|kicker|eyebrow)\d*$|head$|title$/i.test(s)) continue;   // a section heading ("Close by"), not a distance
       if(/^oh\.|time$/i.test(s) && !/near|place|poi|spot/i.test(s)) continue;
       const distSlot = /(near|place|poi|spot|around|local)s?\d*\.(dist|distance|drive|mins?|miles?|time|far|away|d)$/i.test(s);
       if(VAGUE.test(t) || (distSlot && !/\d/.test(t) && !/^(walk|walking|next door|in the neighborhood)$/i.test(t)))
@@ -211,7 +214,7 @@
       const own = [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join(' ').trim().replace(/[.·•:]+$/, '');
       if(!own || !VAGUE.test(own)) continue;
       const s = slotOf(el) || (el.className ? String(el.className).split(' ')[0] : el.tagName.toLowerCase());
-      if(/(^|\.)(h|t|head|heading|title|label|kicker|eyebrow)\d*$|head$|title$/i.test(s) || said.has(s + ':' + own)) continue;
+      if(/(^|\.)(h|t|k|head|heading|title|label|kicker|eyebrow)\d*$|head$|title$/i.test(s) || said.has(s + ':' + own)) continue;
       said.add(s + ':' + own); add(out, s, 'distance-empty', `a nearby place shows "${own}" instead of a distance or drive time`);
     }
     return out;
@@ -291,7 +294,7 @@
   // text): the text, first line top to last line bottom, must fill fillMin (90%) of the box's content height. Boxes sized to their text pass
   // by themselves; titles and single-line labels are skipped. A caption box made as tall as its row-mate's longer caption counts (p32).
   // name, label and size slots (a nearby place's name, a map index label, a room-size column) are not write-ups: never measured as one
-  const NOT_WRITEUP = /(^|\.)(near|index|places?|poi|rooms?\d*\.size)|(\.|^)(p|name|label|size|sz|dims?|dist|d|t|h|title|head|kicker|num|n)\d*$/i;
+  const NOT_WRITEUP = /(^|\.)(near|index|places?|poi|rooms?\d*\.size|room\.\d+(\.l)?$)|(\.|^)(p|name|label|size|sz|dims?|dist|d|t|h|title|head|kicker|num|n)\d*$/i;
   const lead = L => { const st = getComputedStyle(L.el), fs = parseFloat(st.fontSize) || 10, lh = parseFloat(st.lineHeight) || fs*1.2, h = L.b - L.t, k = Math.max(0, (lh - h)/2);
     return Object.assign({}, L, {t: L.t - k, b: L.b + k, lh: Math.max(lh, h)}); };
   function underfull(cfg){
@@ -338,7 +341,9 @@
       const tb = Math.max(...ls.map(L => L.b)), lh = Math.min(...ls.map(L => L.lh)), tr = Math.max(...all.filter(mine).map(L => L.b));   // tr: the ink's own bottom (tb adds half-leading, which can pass a bar set close under the text and drop it from "below")   // the body text's line, not the heading's
       const below = all.filter(L => !mine(L) && L.t >= tr - 1 && overlapX(L, p) > Math.min(L.r - L.l, p.w)*.3).map(L => L.t)
         .concat(painted.filter(o => !wr.some(e => e.contains(o.el) || o.el.contains(e)) && o.el !== p.el && o.t >= tr - 1 && o.h < P.h*.9 && overlapX(o, p) > p.w*.3).map(o => o.t));
-      const next = Math.min(P.b - P.h*.04, ...below), H = next - p.b, used = tb - p.b;
+      // text set inside a filled box below the photo (a write-up panel) can't run past that box: its inner foot is the end of its space (11/16)
+      const held = painted.filter(o => o.t >= p.b - 1 && wr.some(e => o.el.contains(e)) && o.el !== p.el).map(o => o.b - (parseFloat(getComputedStyle(o.el).paddingBottom) || 0)*(o.h/(o.el.offsetHeight || o.h)));
+      const next = Math.min(P.b - P.h*.04, ...below, ...held), H = next - p.b, used = tb - p.b;
       if(H < th.fillMinLines*lh || used/H >= th.fillMin || next - tb < 1.25*lh) continue;   // a normal line of space before the next thing is fine
       const s = wr.map(e => slotOf(e)).filter(Boolean).pop() || 'caption';
       if(seen.has(s)) continue; seen.add(s);
@@ -403,7 +408,7 @@
     cfg = cfg || {}; cfg.th = Object.assign({}, DEF, cfg.th || {});
     D = D || (() => { try { return JSON.parse(document.getElementById('brochure-data').textContent); } catch(e) { return {}; } })();
     const all = lines();
-    rows.cache = new Map(rows(D, all).map(x => [x.p.el, x]));
+    rows.cache = new Map(rows(D, all, true).map(x => [x.p.el, x]));
     const out = [].concat(required(cfg, D, all), squeezed(D, cfg.th), headings(cfg, D, all), distances(), clipped(cfg), wordGaps(cfg), underfull(Object.assign({D}, cfg)), lastLines(Object.assign({D}, cfg)));
     const off = new Set(cfg.off || []);
     return out.filter(c => !off.has(c.kind));

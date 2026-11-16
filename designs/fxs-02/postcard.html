@@ -215,6 +215,13 @@ window.brochureReady = (async function(){
     let done = okAny();
     for(const fs of sizes){ if(done) break; document.querySelectorAll('[data-slot^="back.photo"][data-s]').forEach(e => { e.style.fontSize = fs + 'pt'; e.dataset.lines = 4; delete e.dataset.w0; e.style.width = ''; delete e.dataset.diag; }); SW.fill(); done = okAny(); }
   }
+  // the About box (11/16): a write-up that sets fewer lines than its box holds opens its leading (up to 1.6x the type) so it fills the box
+  // top to bottom, never a blank band under its last line; the box, its padding and the type size stay as they are
+  if(!front && !sold) document.querySelectorAll('.pc-ibox').forEach(bx => { const p = bx.querySelector('[data-slot="back.box"]'); if(!p || !p.textContent.trim()) return;
+    const cs = getComputedStyle(bx), sc = bx.getBoundingClientRect().height/bx.offsetHeight, inner = bx.getBoundingClientRect().bottom - (parseFloat(cs.paddingBottom) || 0)*sc;
+    const fs = parseFloat(getComputedStyle(p).fontSize), lh0 = parseFloat(getComputedStyle(p).lineHeight), n = SW.lines(p).n; if(!(n >= 2)) return;
+    const pt = p.getBoundingClientRect().top, room = (inner - pt)/sc, lh = Math.min(fs*1.6, room/n);
+    if(lh > lh0 + .5){ p.style.lineHeight = lh + 'px'; p.style.height = (lh*n) + 'px'; } });
   if(front){ const hp = document.querySelector('.ph[data-slot-photo="front.hero"]'); if(hp){ const r = Math.min(hp.clientHeight*72/96*.42, big ? 84 : 72); hp.style.borderRadius = `${r}pt 0 0 ${r}pt`; } }
   SW.fitLogos();
   if(window.ContactCard) ContactCard.fit(document);

@@ -107,6 +107,8 @@
     el.style.width = base + 'pt'; return pickFor(el, T);
   };
   SW.pfN = pfN;   // SW.grow re-picks a write-up's sentences at a bigger size
+  // re-pick one box for T lines (its sentences, its lead in bold); true when whole sentences fill them (11/16)
+  SW.refit = (el, T) => { const b = pfN(el, T); if(!b) return false; el.innerHTML = html(el.dataset.lead || '', b.pick); el.dataset.lines = T; delete el.dataset.diag; return true; };
   const LH = 12.5, CAPPAD = 5;
   // owner 11/8/2026: a caption's own sentences, then the listing's other true lines about the same photo (companion.roomLines[photo].all), at most 9, no fact twice
   SW.capPool = (D, c) => { const own = [].concat(c.s || c.a || []), R = ((((D || {}).companion || {}).roomLines || {})[c.photo] || {}).all || [], key = x => String([].concat(x)[0]).toLowerCase().replace(/[^a-z ]/g, '').slice(0, 24);
