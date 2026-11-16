@@ -93,7 +93,24 @@
 
   // ---- writing aids ----
   X.yn = (x, y, d, style) => `<div class="yn" style="left:${x}pt;top:${y}pt">` +
-    ['Y', 'N'].map(t => `<span style="width:${d}pt;height:${d}pt;${style}">${t}</span>`).join('') + '</div>';
+    ['Y', 'N'].map(t => `<span style="width:${d}pt;height:${d}pt;${style}"><i class="yn-t">${t}</i></span>`).join('') + '</div>';
+  // the Y and N sit dead center in their marks, top to bottom and side to side, by the letter's own ink, not its font box
+  // (standing rule, owner 11/16/2026, every sign-in sheet in every design)
+  const centerYN = () => {
+    const c = document.createElement('canvas').getContext('2d');
+    document.querySelectorAll('.yn span').forEach(s => {
+      const t = s.querySelector('.yn-t'); if(!t) return;
+      const cs = getComputedStyle(t); c.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      const m = c.measureText(t.textContent), r = s.getBoundingClientRect(), g = t.getBoundingClientRect();
+      // the baseline, read off a zero-size probe sitting on it (the font's own box metrics are rounded to whole pixels)
+      const pr = document.createElement('b'); pr.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
+      t.appendChild(pr); const bl = pr.getBoundingClientRect().top; pr.remove();
+      const iy = bl + (m.actualBoundingBoxDescent - m.actualBoundingBoxAscent) / 2, ix = g.left + (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2;
+      const k = 72 / 96;   // px to pt
+      t.style.left = ((r.left + r.width / 2 - ix) * k).toFixed(2) + 'pt';
+      t.style.top = ((r.top + r.height / 2 - iy) * k).toFixed(2) + 'pt';
+    });
+  };
   X.wline = (x, y, w, style) => `<div class="wline" style="left:${x}pt;top:${y}pt;width:${w}pt;${style || ''}"></div>`;
   // five rating marks across [x, x+w], each d pt round; style(i) gives each its own look
   X.dots = (x, y, w, d, style, n = 5) => `<div class="dots" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${d}pt">` +
@@ -152,6 +169,7 @@
     fit2();
     labelFit();
     unclip();
+    centerYN();
     if(window.ContactCard) ContactCard.fit(document);
     if(window.StandardFooter && StandardFooter.finish) StandardFooter.finish(document, {home});
     // a flanked label keeps its hairlines only when there's room for them

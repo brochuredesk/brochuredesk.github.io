@@ -1,0 +1,69 @@
+/* Open House extras for four design sets that had none of their own (11/15/2026, NEW, not yet reviewed):
+   The Modern Chronicle, Inside to Outside, The Survey Book, The Vaulted Opening. Each look is built from its set's own
+   fold-over and Open House flyer: the same fonts, colors, rules, labels and signature shapes (looks-sets.js).
+   Font families carry an 'SX ' prefix so these faces never change how another set's extras pick a weight.
+   The variable names are the ones the black-and-white version already turns to black ink (extras.css body.bw). */
+
+@font-face{font-family:'SX Fraunces';font-weight:400;src:url(../../fonts/pool/fraunces-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Fraunces';font-weight:500;src:url(../../fonts/pool/fraunces-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Fraunces';font-weight:600;src:url(../../fonts/pool/fraunces-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Libre Franklin';font-weight:400;src:url(../../fonts/pool/libre-franklin-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Libre Franklin';font-weight:600;src:url(../../fonts/pool/libre-franklin-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Libre Franklin';font-weight:700;src:url(../../fonts/pool/libre-franklin-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Schibsted Grotesk';font-weight:500;src:url(../../fonts/pool/schibsted-grotesk-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Schibsted Grotesk';font-weight:600;src:url(../../fonts/pool/schibsted-grotesk-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Schibsted Grotesk';font-weight:700;src:url(../../fonts/pool/schibsted-grotesk-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Public Sans';font-weight:400;src:url(../../fonts/pool/public-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Public Sans';font-weight:600;src:url(../../fonts/pool/public-sans-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Public Sans';font-weight:700;src:url(../../fonts/pool/public-sans-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Spectral';font-weight:400;src:url(../../fonts/pool/spectral-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Spectral';font-weight:500;src:url(../../fonts/pool/spectral-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'SX Spectral';font-weight:600;src:url(../../fonts/pool/spectral-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'SX IBM Plex Sans';font-weight:400;src:url(../../fonts/pool/ibm-plex-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'SX IBM Plex Sans';font-weight:500;src:url(../../fonts/pool/ibm-plex-sans-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'SX IBM Plex Sans';font-weight:600;src:url(../../fonts/pool/ibm-plex-sans-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'SX IBM Plex Sans';font-weight:700;src:url(../../fonts/pool/ibm-plex-sans-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'SX DM Serif Display';font-weight:400;src:url(../../fonts/pool/dm-serif-display-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'SX DM Sans';font-weight:400;src:url(../../fonts/pool/dm-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'SX DM Sans';font-weight:500;src:url(../../fonts/pool/dm-sans-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'SX DM Sans';font-weight:600;src:url(../../fonts/pool/dm-sans-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'SX DM Sans';font-weight:700;src:url(../../fonts/pool/dm-sans-latin-700-normal.woff2) format('woff2')}
+
+.set-chronicle{   /* The Modern Chronicle: warm paper, deep red kickers and rules, Fraunces over Libre Franklin */
+  --paper:#faf7f1; --ink:#2a2420; --muted:#6b6258; --accent:#9b2c2c; --signal:#9b2c2c; --line:rgba(155,44,44,.5);
+  --soft:rgba(155,44,44,.25); --dot:rgba(42,36,32,.42); --tint:rgba(155,44,44,.03); --on:#ffffff; --on-soft:rgba(255,255,255,.85);
+  --font-display:'SX Fraunces',Georgia,serif; --font-body:'SX Libre Franklin',Helvetica,Arial,sans-serif;
+  --cc-paper:transparent;
+}
+.set-insideout{   /* Inside to Outside: navy outside, white inside, bold white sans titles, amber small caps and rules */
+  --paper:#ffffff; --ink:#1c2436; --muted:#566079; --accent:#1c2436; --navy:#1c2436; --gold:#e2b45e; --accent2:#e2b45e; --signal:#1c2436;
+  --line:rgba(28,36,54,.22); --soft:rgba(28,36,54,.22); --dot:rgba(28,36,54,.3); --tint:rgba(28,36,54,.035);
+  --on:#ffffff; --on-soft:#d9dde7; --line-on:rgba(226,180,94,.62);
+  --font-display:'SX Schibsted Grotesk',Helvetica,Arial,sans-serif; --font-body:'SX Public Sans',Helvetica,Arial,sans-serif;
+  --cc-paper:transparent;
+}
+.set-surveybook{  /* The Survey Book: white paper, steel-blue double rules and corner marks, Spectral over IBM Plex Sans */
+  --paper:#ffffff; --ink:#1f3650; --muted:#566170; --accent:#3f6385; --signal:#3a5f82; --line:rgba(63,99,133,.5);
+  --soft:rgba(63,99,133,.3); --dot:rgba(63,99,133,.6); --tint:#f6f8fb; --on:#ffffff; --on-soft:rgba(255,255,255,.85);
+  --font-display:'SX Spectral',Georgia,serif; --font-body:'SX IBM Plex Sans',Helvetica,Arial,sans-serif;
+  --cc-paper:transparent;
+}
+.set-vaulted{     /* The Vaulted Opening: midnight field, white keyline frames, DM Serif Display over DM Sans */
+  --paper:#1f2b45; --ink:#1f2b45; --muted:#4c5a78; --accent:#1f2b45; --navy:#1f2b45; --gold:#b7c7e6; --signal:#1f2b45;
+  --line:rgba(31,43,69,.28); --soft:rgba(31,43,69,.28); --dot:rgba(31,43,69,.34); --tint:rgba(31,43,69,.035);
+  --on:#ffffff; --on-soft:#e1e7f2; --line-on:rgba(255,255,255,.42);
+  --font-display:'SX DM Serif Display',Georgia,serif; --font-body:'SX DM Sans',Helvetica,Arial,sans-serif;
+  --cc-paper:transparent;
+}
+body.bw.set-chronicle,body.bw.set-insideout,body.bw.set-surveybook,body.bw.set-vaulted{--soft:rgba(0,0,0,.34); --dot:rgba(0,0,0,.45)}
+body.bw.set-surveybook{--tint:rgba(0,0,0,.025)}
+
+/* The Survey Book's corner marks: on a photo, set 5 pt off it; on a panel, on its corners */
+.sb-corners{position:absolute;pointer-events:none}
+.sb-corners::before,.sb-corners::after{content:'';position:absolute;width:12pt;height:12pt;border:1.6pt solid var(--signal)}
+.sb-corners::before{left:-5pt;top:-5pt;border-right:0;border-bottom:0}
+.sb-corners::after{right:-5pt;bottom:-5pt;border-left:0;border-top:0}
+.sb-panel{position:absolute;border:.7pt solid var(--line);background:var(--tint)}
+.sb-panel::before,.sb-panel::after{content:'';position:absolute;width:9pt;height:9pt;border:1.4pt solid var(--signal)}
+.sb-panel::before{left:-1pt;top:-1pt;border-right:0;border-bottom:0}
+.sb-panel::after{right:-1pt;bottom:-1pt;border-left:0;border-top:0}
