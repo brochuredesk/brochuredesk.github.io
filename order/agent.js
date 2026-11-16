@@ -2086,7 +2086,7 @@
     // an Open House flyer picked from the library draws with the library's own proof card (account.js)
     if(finalPiece === 'open-house-flyer' && pkg.ohFlyer && pkg.ohFlyer.library && window.Account){
       box.className = 'proof single';
-      if(await Account.ohProof(box, pkg, await dataFor(pkg.design, true), () => { save(); drawFinal(); })) return;
+      if(await Account.ohProof(box, pkg, await dataFor(pkg.design, true), () => { save(); drawFinal(); drawExtras('extrasFinal'); })) return;
     }
     const parts = partsFor(S, finalPiece, pkg);
     box.className = 'proof ' + (finalPiece === 'foldover' ? 'fold' : parts.length > 1 ? 'two' : 'single');
@@ -2188,7 +2188,7 @@
     $('#ohFields').hidden = !on; if(!on){ ohEd = null; return; }
     if(window.Account && !$('#ohLibPick')){
       $('#ohFields').insertAdjacentHTML('beforeend', '<p><button type="button" class="link" id="ohLibPick">Pick from the Open House library</button></p>');
-      $('#ohLibPick').onclick = async () => { if(!await Account.ohPick(pkg, await dataFor(pkg.design, true), () => { save(); drawFinal(); }))
+      $('#ohLibPick').onclick = async () => { if(!await Account.ohPick(pkg, await dataFor(pkg.design, true), () => { save(); drawFinal(); drawExtras('extrasFinal'); }))
         await ask("<h2>The library isn't loading</h2><p>Try again in a minute.</p>", [['OK', 'ok']]); };
     }
     await moveInlinePhotos(); await ohPhotosReady();
