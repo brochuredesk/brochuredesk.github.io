@@ -21,6 +21,7 @@
   Copy: data.cards.oh.b = {photo, spine, para: [sentences], row: [{id, name, tag, text: [sentences]}, ...]}.
 -->
 <style>
+  .spcap{font:400 9.5pt/12.5pt var(--font-body);color:#efe6d8;overflow:hidden}
   .spine{position:absolute;background:#1f2b2c}
   .evb{font:600 12pt/15.5pt var(--font-body);color:#1f2b2c}
   .evb.s{font-weight:700;color:#a8581d}
@@ -62,7 +63,31 @@ window.brochureReady = (async function(){
     sp += evb.html;
     if(evb.h) y += 12 + evb.h;
     const phY = y + 16, phH = spineEnd - 16 - phY;
-    sp += OFC.photo(D, K.spine, px, phY, pw, phH);
+    // owner 11/10 (round 2, p-squeezed): no landscape photo in a tall strip; the spine photo keeps a near-square frame and
+    // its own caption fills the column under it (true lines about the photo, never a line the write-up already says)
+    const spN = 4, spH = Math.max(Math.round(pw*.8), phH - (8 + 18 + spN*12.5)), spCapTop = phY + spH + 8;
+    sp += OFC.photo(D, K.spine, px, phY, pw, spH);
+    if(phH - spH > 60){
+      const paraG = new Set((K.para || []).flatMap(x => { const w = String(Array.isArray(x) ? x[0] : x).toLowerCase().match(/[a-z0-9'-]+/g) || []; return w.slice(2).map((_, i) => w.slice(i, i + 3).join(' ')); }));
+      const spSrc = (((D.copy || {}).top || {}).chapters || []).flatMap(c => c.items || []).concat(((D.copy || {}).bottom || {}).groups ? [].concat(...D.copy.bottom.groups.map(g => g.items || [])) : []).find(it => it.id === K.spine) || {};
+      let spPool = OF.noRepeat([].concat(String(spSrc.text || '').match(/[^.!?]+[.!?]+/g) || [], OF.pool(K.spine) || []).map(x => x.trim()).filter((x, i, a) => x && a.indexOf(x) === i))
+        .filter(x => { const w = x.toLowerCase().match(/[a-z0-9'-]+/g) || []; return !w.slice(2).some((_, i) => paraG.has(w.slice(i, i + 3).join(' '))); });
+      // a real listing whose copy has no room text for the spine photo (order-flow test 11/16): the listing's own facts and
+      // its MLS description fill the caption, never an empty slot; nothing the write-up already says
+      const spFb = !spPool.length;
+      if(spFb){ const L = D.listing || {}, fx = [];
+        if(L.yearBuilt || L.year) fx.push(`The house was built in ${L.yearBuilt || L.year}.`);
+        const tg = String(((D.photos || {})[K.spine] || {}).tags || '').toLowerCase().split(/\s*,\s*/).filter(Boolean);
+        const rm = (L.rooms || []).find(r => r && r.name && tg.some(t => t.includes(String(r.name).toLowerCase()) || String(r.name).toLowerCase().includes(t)));
+        const lvl = {1: 'first', 2: 'second', 3: 'third', 4: 'fourth'};
+        if(rm && rm.size) fx.unshift(`The ${rm.name} measures about ${String(rm.size).replace(/\s*x\s*/i, ' by ')}${(L.stories || 0) > 1 && lvl[rm.level] ? `, on the ${lvl[rm.level]} floor` : ''}.`);
+        if(L.lotSize) fx.push(`It sits on a ${String(L.lotSize).replace(/\s*lot$/i, '')} lot.`);
+        const ds = (String(L.description || '').match(/[^.!?]+[.!?]+/g) || []).map(x => x.trim()).filter(x => x.length > 30);
+        spPool = OF.noRepeat(ds.concat(fx)).filter(x => { const w = x.toLowerCase().match(/[a-z0-9'-]+/g) || []; return !w.slice(2).some((_, i) => paraG.has(w.slice(i, i + 3).join(' '))); }); }
+      const spName = spSrc.name || K.spineName || (((D.photos || {})[K.spine] || {}).room) || String(((D.photos || {})[K.spine] || {}).tags || '').split(',')[0].trim() || 'The house';
+      sp += `<div class="abs" style="left:${px}pt;top:${spCapTop}pt;width:${pw}pt;height:14pt;font:700 9pt/14pt var(--font-display);letter-spacing:1.2pt;text-transform:uppercase;color:#e8a46a;white-space:nowrap;overflow:hidden" data-slot="oh.spine.name" data-lines="1">${esc(spName)}</div>`;
+      sp += `<div class="abs tx spcap" style="left:${px}pt;top:${spCapTop + 18}pt;width:${pw}pt;height:${spN*12.5}pt" data-slot="oh.spine.text" data-lines="${spN}" data-cap="1"${spPool.length ? ` data-pool='${esc(JSON.stringify(spPool)).replace(/'/g, '&#39;')}'` : ''}>${esc(spPool.slice(0, spFb ? 2 : 3).join(' '))}</div>`;
+    }
     h += `<div class="spine" style="left:${m.inset}pt;top:${m.inset}pt;width:${SW - m.inset}pt;height:${H - 2*m.inset}pt"></div><div class="spine" style="left:${m.inset}pt;top:${spineEnd + 16}pt;width:${W - 2*m.inset}pt;height:${H - m.inset - spineEnd - 16}pt"></div>` + sp;
 
     // right column, outside in
@@ -85,7 +110,7 @@ window.brochureReady = (async function(){
     });
     h += `<div class="ofl">` + ContactCard.html([36, 660, 540, 102], Object.assign({}, D.agent || {}, {headshot: OFC.headshot(D)}), Object.assign({}, D.brand || {}, {logo: (D.brand || {}).logoOnDark || (D.brand || {}).logoKnockout || (D.brand || {}).logo}), {layout: 'panel', bottomGap: .5}) + `</div>`;
     h += `<div class="ofl"><div class="abs fl-fine" style="left:36pt;top:764pt;width:540pt" data-slot="fineprint" data-lines="1" data-fine="1">Information deemed reliable but not guaranteed.</div></div>`;
-    return {html: OFC.frame(D, W, H, h), after: () => OFC.fitWidth('.fl-addr', 20)};
+    return {html: OFC.frame(D, W, H, h), after: () => { OFC.fitWidth('.fl-addr', 20); if(window.CapFit) CapFit([...document.querySelectorAll('.spcap[data-pool]')]); }};
   });
 })();
 </script>

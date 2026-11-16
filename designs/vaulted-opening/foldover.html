@@ -47,6 +47,10 @@
   .rr.stack .d{margin-left:0}
   .rl .notes{flex:none}
   .rl .notes .body{font-size:8.75pt;line-height:12pt}
+  /* the real-home samples (body.v1115): the room list as approved 11/15/2026 */
+  body.v1115 .rr .n{font:400 11.5pt/14pt var(--font-display)}
+  body.v1115 .rr .d{font:500 9.3pt/12pt var(--font-body)}
+  body.v1115 .rl .notes .body{font-size:9.5pt;line-height:13pt}
   .rl.band .cols{flex:1;display:flex;gap:14pt;min-height:0}
   .rl.band .fl{flex:1 1 0;min-width:0}
   .rl.band .notes{display:flex;gap:14pt}
@@ -72,6 +76,8 @@
 <script>
 window.brochureReady = (async function(){
   const D = AT.data();
+  const REAL1115 = !!D.layout1115 || /-real$/.test(D.version || '');   // the real-home samples (2219 Alder Row, 1915 Fairhaven Street, 1173 Linden Court; data.layout1115): the 11/15 approved layout
+  if(REAL1115) document.body.classList.add('v1115');
   if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
   const mode = D.mode || 'proof';
   const pt = AT.pt, esc = AT.esc, L = D.listing;
@@ -102,7 +108,43 @@ window.brochureReady = (async function(){
   const fmt = n => Number(n).toLocaleString('en-US');
 
   // ================= COVER =================
+  // cover1115: the cover panel as the owner approved it on 11/15/2026 on the real sample houses (commit d15dd53a), used for the
+  // real-home samples (REAL1115); the Wren Hollow samples and orders keep the cover below (captions round 3, approved 11/13/2026)
+  function cover1115(){
+    const K = C.cover || {}, hp = (D.photos||{})[K.photo] || {w:3, h:2}, aspect = hp.w / hp.h, tall = aspect < 1;
+    const sec = K.second, ins = K.inset;
+    const facts = [];
+    if(L.beds) facts.push([L.beds, L.beds == 1 ? 'Bedroom' : 'Bedrooms']);
+    if(L.baths) facts.push(...AT.factBath(L));   // bath wording rule (the owner 11/1)
+    if(L.sqft) facts.push([fmt(L.sqft), 'Sq ft']);
+    if(L.yearBuilt) facts.push([L.yearBuilt, 'Year built']);
+    const factsHTML = `<div class="facts${facts.length > 4 ? ' five' : ''}" data-slot="cover.facts" data-lines="2">${facts.map(f => `<div><b>${AT.halfy(f[0])}</b> <span>${esc(f[1])}</span></div>`).join('')}</div>`;
+    const placeLine = [L.neighborhood, L.city, [L.state, L.zip].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+    const para = (t, slot, mt, min) => `<div class="body" style="margin-top:${mt}pt;overflow:visible" data-slot="${slot}" data-para="1" data-min="${min}">${esc(t)}</div>`;
+    const addrBlock = size => `<div class="kicker" data-slot="cover.kicker" data-lines="1">${esc(placeLine.toUpperCase())}</div>
+        <div class="addr" id="addr" style="font-size:${size}pt;margin-top:3pt" data-slot="cover.address" data-lines="1">${esc(L.address)}</div>`;
+    if(!tall){
+      return `<div class="cvr"><div style="position:relative;flex:1 1 0;min-height:250pt">
+          ${AT.photo(D, K.photo, 'position:absolute;inset:0', 'cover.photo', 'hero')}</div>
+        <div class="lower"><div class="c2">
+          <div class="l"><div>${addrBlock(36)}</div><div style="margin-top:10pt">${factsHTML}</div>${para(K.house, 'cover.house', 11, 4).replace('class="body"', 'class="body" data-big="1"')}${para(K.house2, 'cover.house2', 8, 3).replace('class="body"', 'class="body" data-big="1"')}</div>
+          <div class="r">${(() => { const one = (it, slot, h) => { const sp = (D.photos||{})[it.photo] || {w:3,h:2};
+              if(h){ const bx = sp.box, need = Math.max(bx ? (bx[3] - bx[1]) * 1.04 : 0, AT.fullHouse(D, it.photo) ? .77 : 0); h = Math.max(h, Math.ceil(need * 266 * sp.h / sp.w)); }   // a whole house stays whole in its frame
+              return `<div class="item" style="flex:none">${AT.photo(D, it.photo, 'flex:none;min-height:0;' + (h ? 'height:' + h + 'pt' : 'aspect-ratio:' + (sp.w/sp.h*0.97).toFixed(3)), slot)}${cap(it, slot)}</div>`; };
+            // the second small photo is the data's old inset (never drawn over the hero), with its own title and write-up
+            return one(sec, 'cover.second', ins && ins.photo && ins.body ? (sec.h || 118) : 0) + (ins && ins.photo && ins.body ? `<div style="height:12pt;flex:none"></div>` + one(ins, 'cover.third', ins.h || 100) : ''); })()}</div></div></div></div>`;
+    }
+    // a tall whole-house photo: a full-bleed column on the left, the write-up beside it,
+    // the second exterior and the second paragraph across the foot
+    const hw = Math.round((810 - 258) * aspect);
+    return `<div class="cvr"><div style="flex:1 1 0;min-height:0;display:flex">
+        <div style="position:relative;flex:none;width:${hw}pt">${AT.photo(D, K.photo, 'position:absolute;inset:0', 'cover.photo', 'hero tallhero')}</div>
+        <div style="flex:1;min-width:0;padding:38pt 38pt 0 18pt;display:flex;flex-direction:column">
+          ${addrBlock(26)}<div style="margin-top:10pt">${factsHTML.replace(/class="facts( five)?"/, 'class="facts col"').replace('data-lines="2"', 'data-lines="' + facts.length*3 + '"')}</div>${para(K.house, 'cover.house', 14, 4).replace('class="body"', 'class="body" data-big="2"')}${para(K.house2, 'cover.house2', 10, 3).replace('class="body"', 'class="body" data-big="2"')}</div></div>
+        <div style="flex:none;padding:14pt 38pt 38pt"><div class="row" style="height:200pt;gap:16pt">${item(sec, 'cover.second', 'flex:1 1 0')}${item(K.third, 'cover.third', 'flex:1 1 0')}</div></div></div>`;
+  }
   function cover(){
+    if(REAL1115) return cover1115();
     const K = C.cover || {}, hp = (D.photos||{})[K.photo] || {w:3, h:2}, aspect = hp.w / hp.h, tall = aspect < 1;
     const sec = K.second;
     const facts = [];
@@ -156,7 +198,52 @@ window.brochureReady = (async function(){
   }
 
   // ================= BACK: the plan on a white board, the garage and the patio =================
+  // back1115: the back panel as the owner approved it on 11/15/2026 on the real sample houses (commit d15dd53a), used for the
+  // real-home samples (REAL1115); the Wren Hollow samples and orders keep the back below (captions round 3, approved 11/13/2026)
+  function back1115(){
+    const P = C.back || {}, ph = (P.photos || []).slice(0, 2);
+    const hasPlan = planOK, levels = AT.levels(D);
+    const multi = hasPlan ? levels.length > 1 : (P.roomList || []).length > 1;
+    const T = 92, B = 674;   // the card is the half-height one (owner 11/15/2026): 70 pt, so the rest of the back grows into the freed 70 pt
+    let html = header(hasPlan ? P : Object.assign({}, P, {title: P.titleNoPlan || P.title}), 'back') + `<div class="abs kicker" style="right:29pt;top:31pt;text-align:right;width:260pt" data-slot="back.address" data-lines="1">${esc((L.address + ' · ' + L.city + ', ' + (L.stateAbbr || 'TX')).toUpperCase())}</div>`;
+    const drawPlan = (bx, by, bw, bh) => AtlasPlan.draw(D.plan, {x: bx + 8, y: by + 26, w: bw - 16, h: bh - 26 - 46}, {allowRotate: true});
+    const board = (bx, by, bw, bh) => {
+      const plan = drawPlan(bx, by, bw, bh);
+      issues.push(...plan.issues);
+      const zs = AtlasPlan.zonesOf(D.plan), Z = AtlasPlan.ZONES;
+      const legend = Object.keys(Z).filter(k => zs.includes(k)).map(k => `<span style="display:inline-flex;align-items:center;margin:0 7pt"><i style="display:inline-block;width:9pt;height:9pt;margin-right:4pt;border:.6pt solid rgba(31,43,69,.4);background:color-mix(in srgb, ${Z[k].fill} ${Math.round(Z[k].op*100)}%, var(--paper))"></i>${esc(Z[k].label)}</span>`).join('');
+      return `<div class="board"><div class="planframe" style="left:${bx}pt;top:${by}pt;width:${bw}pt;height:${bh}pt"></div>
+        <div class="abs sect" style="left:${bx + 12}pt;top:${by + 10}pt" data-slot="back.planTitle" data-lines="1">${esc(P.planTitle || 'Floor plan')}</div>
+        ${plan.html}
+        <div class="abs" style="left:${bx}pt;top:${by + bh - 36}pt;width:${bw}pt;text-align:center;font:600 8pt/10pt var(--font-body);color:var(--ink);white-space:nowrap">${legend}</div>
+        <div class="abs fine" style="left:${bx}pt;top:${by + bh - 20}pt;width:${bw}pt;text-align:center;white-space:nowrap;color:#4f5a6b" data-slot="back.planDisc" data-fine="1" data-lines="1">${esc(P.planDisc || 'Approximate; not to scale. Buyer to verify.')}</div></div>`;
+    };
+    // the plan's space with no plan: the floor-by-floor room sizes with the write-up, on the same white board
+    const roomBoard = (bx, by, bw, bh, band) => {
+      const fl = P.roomList || []; let k = 0;
+      const rows = f => f.rows.map(r => `<div class="rr${band ? ' stack' : ''}"><span class="n" data-slot="back.room${k++}.n" data-lines="1">${esc(r[0])}</span><span class="d" data-slot="back.room${k - 1}.d" data-lines="1">${esc(r[1])}</span></div>`).join('');
+      const notes = (P.notes || []).map((t, i) => `<div class="body" data-slot="back.note${i}" data-para="1" data-min="2">${esc(t)}</div>`).join('');
+      return `<div class="board"><div class="planframe" style="left:${bx}pt;top:${by}pt;width:${bw}pt;height:${bh}pt"></div>
+        <div class="rl${band ? ' band' : ''}" style="left:${bx + 14}pt;top:${by + 12}pt;width:${bw - 28}pt;height:${bh - 24}pt">
+          ${band ? `<div class="cols">${fl.map((f, i) => `<div class="fl"><div class="sect" data-slot="back.floor${i}" data-lines="1">${esc(f.floor)}</div><div class="rows">${rows(f)}</div></div>`).join('')}</div>`
+                 : fl.map((f, i) => `<div class="fl" style="flex:${f.rows.length + 1} 1 0"><div class="sect" data-slot="back.floor${i}" data-lines="1">${esc(f.floor)}</div><div class="rows">${rows(f)}</div></div>`).join('')}
+          <div class="notes">${notes}</div></div></div>`;
+    };
+    const photoRow = (rt) => `<div class="flow row" style="left:29pt;right:29pt;top:${rt}pt;height:${B - rt}pt;flex-direction:row;gap:10pt">${ph.map((it, i) => item(it, `back.photo${i}`, 'flex:1 1 0', 'key')).join('')}</div>`;
+    if(multi){
+      let bh = 296;
+      if(hasPlan){ const probe = drawPlan(29, T, 554, 430); bh = Math.min(400, Math.round(probe.usedH + 26 + 46 + 12)); html += board(29, T, 554, bh); }
+      else { bh = Math.min(360, Math.max(...(P.roomList || []).map(f => f.rows.length)) * 38 + 92); html += roomBoard(29, T, 554, bh, true); }
+      html += photoRow(T + bh + 12);
+    } else {
+      const lw = 262;
+      html += hasPlan ? board(29, T, lw, B - T) : roomBoard(29, T, lw, B - T, false);
+      html += `<div class="flow" style="left:${29 + lw + 10}pt;right:29pt;top:${T}pt;height:${B - T}pt;gap:10pt">${ph.map((it, i) => item(it, `back.photo${i}`, 'flex:1 1 0', 'key')).join('')}</div>`;
+    }
+    return html + AT.card(D, [29, 686, 554, 70], C.footnote || '');
+  }
   function back(){
+    if(REAL1115) return back1115();
     const P = C.back || {}, ph = (P.photos || []).slice(0, 2);
     const hasPlan = planOK, levels = AT.levels(D);
     const multi = hasPlan ? levels.length > 1 : (P.roomList || []).length > 1;
@@ -305,8 +392,37 @@ window.brochureReady = (async function(){
   })});
   ContactCard.fit(document);
   if(window.CapFit) (window.proofNotes = window.proofNotes || []).push({capFit: CapFit.run(((typeof D !== "undefined" && D.copy) || {}).extra)});
+  if(REAL1115){   // the 11/15 cover fill (real-home samples, approved 11/15/2026)
+    // the cover's left column (address, facts, write-up) fills the height of the photo column beside it: the write-up type steps up
+    // (never more than 20%), the lines open up, and any slack left is spread between the blocks
+    document.querySelectorAll('.c2').forEach(c2 => {
+      const l = c2.querySelector(':scope > .l'), r = c2.querySelector(':scope > .r'); if(!l || !r) return;
+      const bodies = [...l.querySelectorAll('.body')]; if(!bodies.length) return;
+      const base = parseFloat(getComputedStyle(bodies[0]).fontSize) * .75, rh = r.getBoundingClientRect().height;
+      l.style.flex = '1'; l.style.justifyContent = 'space-between';
+      const gap = () => { const k = [...l.children]; return rh - k.reduce((a, e) => a + e.getBoundingClientRect().height + parseFloat(getComputedStyle(e).marginTop) + parseFloat(getComputedStyle(e).marginBottom), 0); };
+      l.style.justifyContent = 'flex-start';
+      // each size is tried with the type-size balancing (AT.balance) applied; tier 1: every line 80%+ and the last 90%+, tier 2: last line 75%+;
+      // the largest size (never more than 20% up) in the best tier that still fits the photo column wins, else the size the paragraphs had
+      const settle = fs => bodies.forEach(b => { b.style.maxWidth = ''; b.style.fontSize = fs + 'pt'; b.style.lineHeight = (fs * 1.43) + 'pt'; AT.balance(b);
+        if(!b.style.fontSize){ b.style.fontSize = fs + 'pt'; b.style.lineHeight = (fs * 1.43) + 'pt'; } });
+      const tier = () => { let t = 1; for(const b of bodies){ const ls = AT.lineBoxes(b), w = b.getBoundingClientRect().width, f = ls.map(q => (q.r - q.l) / w);
+        if(f.length > 1 && f.slice(0, -1).some(x => x < .8)) return 0; if(f.length > 1 && f[f.length-1] < .75) return 0; if(f.length > 1 && f[f.length-1] < .9) t = 2; } return t; };
+      const best = {1: null, 2: null};
+      for(let fs = base; fs <= base * 1.2 + .01; fs += .1){
+        settle(fs); if(gap() < 0) break; const t = tier(); if(t) best[t] = fs;
+      }
+      const pick = best[1] != null ? best[1] : best[2] != null ? best[2] : base;
+      settle(pick);
+      // then the lines open up (1.43 to 1.64) while the column still fits, so less slack is left to spread (owner 11/15/2026: no barren text areas)
+      for(let lh = 1.45; lh <= 1.64 + .001; lh += .01){ const prev = bodies.map(b => b.style.lineHeight);
+        bodies.forEach(b => b.style.lineHeight = (parseFloat(b.style.fontSize) * lh) + 'pt');
+        if(gap() < 0){ bodies.forEach((b, i) => b.style.lineHeight = prev[i]); break; } }
+      l.style.justifyContent = 'space-between';
+    });
+  }
   issues.push(...AT.fitHouse(D));   // after every caption has its final height, so each photo's frame is final
-  if(window.PlanInk) PlanInk.applyAll(D, true);   // owner 11/10/2026: the listing plan's background is clear, light lines on the midnight field
+  if(window.PlanInk && !REAL1115) PlanInk.applyAll(D, true);   // (not on the real-home samples: their plan board stays as the owner approved it 11/15/2026)   // owner 11/10/2026: the listing plan's background is clear, light lines on the midnight field
   window.brochureCheck = () => AT.check(D, [...issues, ...AT.repeatChecks()]);
   window.photoPlacements = AT.placements;
 })();

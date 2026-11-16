@@ -1,6 +1,7 @@
 /* Fold gap (owner 11/16/2026): on every 11 x 17 fold-over, in every design and every version, a photo never runs into the
    center fold. Any photo whose edge lands at the fold, past it, or within 0.05 in of it is pulled back so it stops 0.05 in
    short of the fold (about 1/10 in of clear paper across the crease), so a slightly off fold still looks clean.
+   Only where photos meet: a photo with no photo facing it across the fold (a lone cover hero) stays as approved (11/16 correction).
    Bars, bands and color fields (anything that is not a photo) still run all the way across. A photo that deliberately
    crosses the fold as one image (the same photo on both panels, meeting at the fold over the same stretch) stays as it is,
    and so does anything inside [data-fold-cross].
@@ -118,10 +119,29 @@
     }
   }
 
+  // correction (11/16, the owner's words "wherever photos touch" / "where photos meet at the center fold"): only a photo with a
+  // photo facing it on the other panel, also at the fold, over an overlapping stretch, is pulled back. A lone cover hero that
+  // reaches the fold with paper or a color field facing it stays exactly as approved.
+  function markFacing(all){
+    for(const [e, m] of all){
+      const pm = e.pair ? all.get(e.pair) : null;
+      for(const p of m.photos){
+        p.faced = false;
+        if(!pm || !touches(e.side, p.V, m.F)) continue;
+        for(const q of pm.photos){
+          if(!touches(e.pair.side, q.V, pm.F)) continue;
+          const qa = e.mirror ? [q.W - q.along[1], q.W - q.along[0]] : q.along;
+          if(Math.min(p.along[1], qa[1]) - Math.max(p.along[0], qa[0]) > 1){ p.faced = true; break; }
+        }
+      }
+    }
+  }
+
   function survey(fold){
     const all = new Map();
     for(const e of edges(fold)) all.set(e, measure(e));
     markCross(all);
+    markFacing(all);
     return all;
   }
 
@@ -159,7 +179,7 @@
       if(e.turned) e.panel.style.transform = 'none';
       try {
         for(const p of m.photos){
-          if(p.cross) continue;
+          if(p.cross || !p.faced) continue;
           const el = target(p, e), own = el.dataset.foldgap != null;
           if(own) el.style.clipPath = el.dataset.foldgapWas || '';
           if(!own && (getComputedStyle(el).clipPath || 'none') !== 'none') continue;   // the design's own clip: left alone (the check still reports a touch)
@@ -189,7 +209,7 @@
       if(e.turned) e.panel.style.transform = 'none';
       try {
         for(const p of m.photos){
-          if(p.cross) continue;
+          if(p.cross || !p.faced) continue;
           const V = clipped(p, e.root), over = reach(e.side, V, m.F);
           if(over > TOL && V.r - V.l > 1 && V.b - V.t > 1){
             const gap = (GAP - over) / PX / 72;

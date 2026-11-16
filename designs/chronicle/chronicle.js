@@ -325,7 +325,8 @@
   };
   // justified text never opens wide word gaps (owner 11/10, rule 8): a justified block whose ragged lines would have to stretch a word
   // gap past about 0.6 em is set flush left instead (its lines already run 80%+ of the width)
-  AT.gapGuard = () => { document.querySelectorAll('#pages *').forEach(el => { if(el.closest('.cc') || !el.textContent.trim()) return;
+  // (the 11/15 back on the real-home samples, data-back1115, keeps its justified write-ups and captions as approved 11/15/2026)
+  AT.gapGuard = () => { document.querySelectorAll('#pages *').forEach(el => { if(el.closest('.cc') || el.closest('[data-back1115]') || !el.textContent.trim()) return;
       const cs = getComputedStyle(el); if(cs.textAlign !== 'justify' || el.children.length) return;
       const keep = el.style.textAlign; el.style.textAlign = 'left';
       const n = el.firstChild, w = el.getBoundingClientRect().width, fs = parseFloat(cs.fontSize), rg = document.createRange(), rows = [];

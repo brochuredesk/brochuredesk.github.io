@@ -1,0 +1,71 @@
+/* Twilight Frame marks shared by every page (tokens in tf-tokens.css): the closed hairline frame, the accent eyebrow, Tenor Sans caps
+   labels, the short accent rule, Spectral numerals, Jost body on the dark field, and the white box with a thin accent line. */
+@import url(tf-tokens.css);
+.tf-fr{position:absolute;background:var(--tf-frame);z-index:5}
+.tf-eyebrow{position:absolute;font:500 10pt/12pt var(--tf-font);letter-spacing:4.5pt;text-transform:uppercase;color:var(--tf-accent);white-space:nowrap;overflow:hidden}
+.tf-label{position:absolute;font:400 30pt/1.25 var(--tf-label);letter-spacing:5pt;text-transform:uppercase;color:var(--tf-on);white-space:nowrap;overflow:hidden}
+.tf-serif{position:absolute;font:500 30pt/1.25 var(--tf-serif);color:var(--tf-on);white-space:nowrap;overflow:hidden}
+.tf-caps{position:absolute;font:600 13pt/16pt var(--tf-font);letter-spacing:2.6pt;text-transform:uppercase;color:var(--tf-accent);white-space:nowrap;overflow:hidden}
+.tf-rule{position:absolute;height:1.2pt;background:var(--tf-accent)}
+.tf-hair{position:absolute;height:1pt;background:var(--tf-rule)}
+.tf-vhair{position:absolute;width:1pt;background:var(--tf-rule)}
+.tf-lift{position:absolute;background:linear-gradient(var(--tf-dark),transparent);opacity:.75;pointer-events:none}
+.tf-lift.up{background:linear-gradient(transparent,var(--tf-dark))}
+/* Design pass 11/15: the set's own panel. On this dark set a white box read as a pasted-in table, so lists, tables and notes sit on
+   the field lightened a step, with B01's thin accent line set in from the edge and light type. White stays for the mail zones only. */
+.tf-wbox{position:absolute;background:var(--tf-lift)}
+.tf-wbox:after{content:"";position:absolute;inset:4.5pt;border:1pt solid color-mix(in srgb, var(--tf-accent) 78%, transparent);pointer-events:none}
+.tf-ink .tf-eyebrow,.tf-ink .fo-kick{color:var(--tf-accent)}
+/* the one light moment of a piece: B01's white card with the thin accent line, dark type inside (once per piece, where it earns it) */
+.tf-wbox.lt{background:#fff}
+.tf-wbox.lt:after{border-color:var(--tf-box-line)}
+.tf-lt{--fx-on:#161616;--fx-soft:#2c2c2c;--fx-rule:rgba(0,0,0,.22);--tf-on:#161616;--tf-soft:#2c2c2c;--tf-rule:rgba(0,0,0,.22);--tf-accent:var(--tf-ink-accent)}
+.tf-cut{position:absolute;pointer-events:none}
+/* the dusk glow where the field meets a hero photo (TF.glow): accent and dark only */
+.tf-glow{position:absolute;pointer-events:none;z-index:3}
+.tf-glow.l{opacity:.9}
+/* the one display moment of a panel: Spectral, sentence case, two lines */
+.tf-head{position:absolute;font:500 34pt/1.16 var(--tf-serif);color:var(--tf-on);letter-spacing:-.2pt;text-wrap:balance}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.script{position:absolute;font-family:var(--tf-label);font-weight:400;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1.25;text-transform:uppercase;letter-spacing:4pt}
+
+/* labels: accent caps, tracked (the B01 eyebrow, smaller) */
+.lbl{display:inline-block;vertical-align:bottom;font:500 8.6pt/12pt var(--tf-font);letter-spacing:2.6pt;text-transform:uppercase;color:var(--tf-accent);white-space:nowrap;overflow:hidden}
+.lbl.sz{text-transform:none;color:var(--fx-soft);letter-spacing:1.4pt;margin-left:10pt;font-weight:400}
+.body{font:400 10.5pt/16.5pt var(--tf-font);color:var(--fx-soft);overflow:hidden}
+.wu{font:400 11pt/17pt var(--tf-font);color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font:400 6.6pt/8pt var(--tf-font);color:var(--fx-soft);white-space:nowrap;overflow:hidden;opacity:.85}
+
+/* photos: square corners on the dark field */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font:400 9.5pt/12.5pt var(--tf-font);color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:600;color:var(--fx-on)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font:400 10.5pt/14pt var(--tf-font);color:var(--fx-soft);white-space:nowrap;overflow:hidden;border-bottom:var(--fx-rule-w) solid var(--fx-rule)}
+.bul:before{content:"";width:4pt;height:4pt;transform:rotate(45deg);background:var(--tf-accent);flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font:500 18pt/1 var(--tf-serif);color:var(--fx-on)}
+.stat .l{font:500 9pt/1 var(--tf-font);letter-spacing:2pt;text-transform:uppercase;color:var(--fx-soft)}
+
+.near{flex:none;display:flex;gap:0;border-top:var(--fx-rule-w) solid var(--fx-rule);padding-top:9pt}
+.near .c{flex:1;min-width:0;padding-left:14pt;border-left:var(--fx-rule-w) solid var(--fx-rule)}
+.near .c:first-child{padding-left:0;border-left:0}
+.near .d{font:500 15pt/18pt var(--tf-serif);color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.near .p{font:500 8pt/10pt var(--tf-font);letter-spacing:1.6pt;text-transform:uppercase;color:var(--fx-soft);overflow:hidden;margin-top:1pt;min-height:20pt}
+.logo.w img{filter:brightness(0) invert(1)}
+/* PR3: the contact card divider prints 1.5 pt (Chrome sets borders on whole px; the shared .45 pt line printed under 1 pt), a lighter tint keeps its weight */
+body .cc .cc-panel:not(.cc-band){border-left-width:1.5pt}
+body .cc .cc-band{border-top-width:1.5pt}

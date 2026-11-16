@@ -73,6 +73,19 @@
       if(size < design * (1 - SHRINK_MAX) - 0.01)
         out.push({slot: el.dataset.slot, kind: 'address-shrunk', size: +size.toFixed(2), design: +design.toFixed(2), text: el.textContent.trim().slice(0, 60)});
     }
+    // A suffix dropped from a box drawn tall enough for two or more lines (11/16/2026, House in Sections Open House: "2219 Alder" over a blank
+    // line): the full address had room on the lines the design gave it, so it prints in full (number over street, as the Vaulted
+    // Opening flyer does, owner 11/15/2026). Fail-level.
+    for(const d of AddressFit.done || []){
+      if(d.how !== 'suffix dropped') continue;
+      const el = [...document.querySelectorAll('[data-slot]')].find(e => e.dataset.slot === d.slot && e.textContent === d.to);
+      if(!el) continue;
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || parseFloat(getComputedStyle(el).fontSize) * 1.2;
+      // only a box drawn to a fixed height that now holds an empty line; a box that sizes to its text (height auto) closes up, and
+      // dropping the suffix for one line there is the 10/30 rule working as meant
+      if(el.clientHeight >= lh * 1.8)
+        out.push({level: 'fail', slot: d.slot, kind: 'address-suffix-dropped', text: d.to.slice(0, 60), full: d.from.trim().slice(0, 60), detail: 'the box has room for the full address on its lines'});
+    }
     return out;
   }
   window.AddressFit = {run, drop, check, done: []};

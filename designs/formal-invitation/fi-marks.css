@@ -1,0 +1,65 @@
+/* Formal Invitation marks shared by every page (tokens in fi-tokens.css): the main-color band edged by accent strips, the tracked
+   Josefin eyebrow, EB Garamond capitals, the sign-in sheet's double hairline, the white card with its inset hairline, Garamond body. */
+@import url(fi-tokens.css);
+.fi-band{position:absolute;background:var(--fi-main)}
+.fi-strip{position:absolute;background:var(--fi-strip)}
+.fi-dbl{position:absolute;height:4pt;border-top:1pt solid;border-bottom:1pt solid;box-sizing:border-box}   /* 1 pt lines, 2 pt apart: holds on press, reversed too */
+/* the card, as on B03's sign-in sheet: a light card with a gold hairline set inside its edge; on the pale page a thin keyline in the main color holds its edge on press */
+.fi-card{position:absolute;background:var(--fi-card);box-shadow:0 0 0 .6pt var(--fi-rule)}
+.fi-card:after{content:"";position:absolute;inset:5pt;border:.75pt solid var(--fi-strip);pointer-events:none}
+.fi-eyebrow{position:absolute;font:600 9pt/12pt var(--fi-sans);letter-spacing:4pt;text-transform:uppercase;color:var(--fi-ink);white-space:nowrap;overflow:hidden}
+.fi-label{position:absolute;font:600 30pt/1.25 var(--fi-cap);letter-spacing:3.5pt;text-transform:uppercase;color:var(--fi-ink);white-space:nowrap;overflow:hidden}
+.fi-serif{position:absolute;font:500 30pt/1.25 var(--fi-cap);color:var(--fi-ink);white-space:nowrap;overflow:hidden}
+.fi-caps{position:absolute;font:600 12pt/16pt var(--fi-sans);letter-spacing:2.4pt;text-transform:uppercase;color:var(--fi-ink);white-space:nowrap;overflow:hidden}
+.fi-rule{position:absolute;height:1pt;background:var(--fi-ink)}
+.fi-hair{position:absolute;height:.75pt;background:var(--fi-rule)}
+.fi-vhair{position:absolute;width:.75pt;background:var(--fi-rule)}
+/* type on the main color: white (or near-black) with the accent for the caps */
+.fi-on{--fi-ink:var(--fi-on);--fx-on:var(--fi-on);--fx-soft:var(--fi-soft);--fx-rule:var(--fi-rule-on);--fi-rule:var(--fi-rule-on);--fx-mute:var(--fi-acc)}
+.fi-on .fi-eyebrow,.fi-on .fo-kick,.fi-on .fi-caps,.fi-on .lbl,.fi-on .fo-tile-l{color:var(--fi-acc)}
+.fi-on .fi-rule{background:var(--fi-acc)}
+/* the white card: type inside reads in the main color and a dark ink */
+.fi-ink{--fx-on:var(--fi-ink);--fx-soft:#262b34;--fx-rule:rgba(0,0,0,.14)}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.script{position:absolute;font-family:var(--fi-cap);font-weight:600;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1.25;text-transform:uppercase;letter-spacing:3.5pt}
+
+/* labels: tracked Josefin caps in the main color (the B03 eyebrow, smaller) */
+.lbl{display:inline-block;vertical-align:top;font:600 8.6pt/12pt var(--fi-sans);letter-spacing:2.4pt;text-transform:uppercase;color:var(--fi-ink);white-space:nowrap;overflow:hidden}
+.body{font:500 12pt/17pt var(--fi-cap);color:var(--fx-soft);overflow:hidden}
+.wu{font:500 12.5pt/18pt var(--fi-cap);color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font:500 6.6pt/8pt var(--fi-sans);color:var(--fx-soft);white-space:nowrap;overflow:hidden}
+
+/* photos: square corners on the paper */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font:500 11pt/13.5pt var(--fi-cap);color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:600;color:var(--fx-on)}
+.cap.big .a{font-size:12pt;line-height:14.5pt}
+
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font:500 11.5pt/14pt var(--fi-cap);color:var(--fx-soft);white-space:nowrap;overflow:hidden;border-bottom:.5pt solid var(--fx-rule)}
+.bul:before{content:"";width:3.6pt;height:3.6pt;transform:rotate(45deg);background:var(--fi-strip);flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font:500 18pt/1 var(--fi-cap);color:var(--fx-on)}
+.stat .l{font:600 9pt/1 var(--fi-sans);letter-spacing:2pt;text-transform:uppercase;color:var(--fx-soft)}
+
+.near{flex:none;display:flex;gap:0;border-top:var(--fx-rule-w) solid var(--fx-rule);padding-top:9pt}
+.near .c{flex:1;min-width:0;padding-left:14pt;border-left:var(--fx-rule-w) solid var(--fx-rule)}
+.near .c:first-child{padding-left:0;border-left:0}
+.near .d{font:500 15pt/18pt var(--fi-cap);color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.near .p{font:600 8pt/10pt var(--fi-sans);letter-spacing:1.6pt;text-transform:uppercase;color:var(--fx-soft);overflow:hidden;margin-top:1pt;min-height:20pt}
+.logo.w img{filter:brightness(0) invert(1)}
+
+/* centered list lines on the card (no bullet, no rule) */
+.bul.c{justify-content:center;border-bottom:0;gap:0}
+.bul.c:before{display:none}

@@ -56,7 +56,12 @@ OHL.start(['700 10pt "DM Sans"', '500 10pt "DM Sans"', '400 10pt "DM Sans"', '40
   const HEAD = FX09HEAD(D);
   let h = '';
   // ---- the shared header: the neighborhood in copper, the stories and a selling fact at the right
-  h += `<div class="abs" style="left:${X0}pt;top:30pt;width:260pt;height:12pt;font:700 9pt/12pt 'DM Sans';letter-spacing:3.75pt;color:var(--fx-ink2);text-transform:uppercase;white-space:nowrap" data-slot="kicker.left" data-lines="1">${esc(HEAD.left)}</div>`;
+  // a long neighborhood line keeps its 9 pt type (type-too-small-printed kicker.left, order-flow test 11/16): first it loses the
+  // city after a slash or comma (the header never needs it), then its letter spacing closes a little; never shrinks
+  const kw = (t, ls) => { const c = kw.c || (kw.c = document.createElement('canvas').getContext('2d')); c.font = "700 9pt 'DM Sans'"; return c.measureText(t.toUpperCase()).width*.75 + ls*[...t].length; };
+  if(kw(HEAD.left || '', 3.75) > 258) HEAD.left = String(HEAD.left).split(/\s*[\/,·]\s*/)[0] || HEAD.left;
+  const kls = [3.75, 3, 2.5, 2, 1.5, 1].find(v => kw(HEAD.left || '', v) <= 258) || 1;
+  h += `<div class="abs" style="left:${X0}pt;top:30pt;width:260pt;height:12pt;font:700 9pt/12pt 'DM Sans';letter-spacing:${kls}pt;color:var(--fx-ink2);text-transform:uppercase;white-space:nowrap" data-slot="kicker.left" data-lines="1">${esc(HEAD.left)}</div>`;
   h += `<div class="abs" style="left:${X0 + 216}pt;top:30pt;width:${CW - 216}pt;height:12pt;font:500 9pt/12pt 'DM Sans';letter-spacing:3pt;color:var(--fx-text);text-align:right;white-space:nowrap" data-slot="kicker.right" data-lines="1">${esc(HEAD.right)}</div>`;
   h += `<div class="abs" style="left:${X0}pt;top:46pt;width:${CW}pt;height:.75pt;background:var(--fx-rule)"></div>`;
   // ---- the event, straight on the navy: the label, the day in copper spaced caps, the date in huge serif numerals, the time in bold sans at 60% of that, the perks on a cream bar

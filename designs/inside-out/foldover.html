@@ -31,6 +31,7 @@
 <script>
 window.brochureReady = (async function(){
   const D = AT.data();
+  const REAL1115 = !!D.layout1115 || /-real$/.test(D.version || '');   // the real-home samples (2219 Alder Row, 1915 Fairhaven Street, 1173 Linden Court; data.layout1115): the 11/15 approved layout
   if(!D.listing){ document.getElementById('pages').innerHTML='<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
   const mode = D.mode || 'proof';
   const pt = AT.pt, esc = AT.esc, L = D.listing, b = D.brand || {};
@@ -105,7 +106,42 @@ window.brochureReady = (async function(){
   }
 
   // ================= BACK: meals, outdoors or the plan, places, the card =================
+  // back1115: the back panel as the owner approved it on 11/15/2026 on the real sample houses (commit d15dd53a), used for the
+  // real-home samples (REAL1115); the Wren Hollow samples and orders keep the back below (captions round 3, approved 11/13/2026)
+  function back1115(){
+    const B = C.back || {}, meals = B.meals || [], out = B.outdoor || [], pl = B.places || [];
+    const up = !!(D.plan && D.plan.upright), nl = levels.length, maxH = up ? (nl >= 4 ? 250 : nl === 3 ? 296 : 280) : nl >= 4 ? 320 : nl === 3 ? 304 : 290, T = 82, zoneB = 618;   // upright plans (listing's own, narrow floors) take less height so the photos above keep a normal shape
+    let zone, sideHTML = '';
+    if(hasPlan){
+      // the board is sized to the plan's shape: draw once in the largest box, then close the board up around what was drawn
+      const bx = 24, bw0 = 564, AR = !D.plan.upright;   // plan.upright: the listing's own drawing stays as given (labels read across)
+      const probe = AtlasPlan.draw(D.plan, {x: bx + 10, y: T + 26, w: bw0 - 20, h: maxH - 56}, {allowRotate: AR});
+      const bh = Math.min(maxH, Math.round(probe.usedH + 56 + 4)), mealsH = (zoneB - T) - 8 - bh, by = T + mealsH + 8;
+      // a narrow plan (tall stacks of floors) gets a board closed up around it, and an outdoor photo takes the width that is left
+      const side = out[0] && probe.usedW + 40 < bw0 - 190 ? out[0] : null;
+      const bw = side ? Math.round(probe.usedW + 44) : bw0;
+      const plan = AtlasPlan.draw(D.plan, {x: bx + 10, y: by + 26, w: bw - 20, h: bh - 56}, {allowRotate: AR});
+      sideHTML = side ? `<div class="abs" style="left:${bx + bw + 8}pt;top:${by}pt;width:${bw0 - bw - 8}pt;height:${bh}pt;display:flex">${item(side, 'back.side')}</div>` : '';
+      issues.push(...plan.issues);
+      window.proofNotes.push({planBoard: {usedW: Math.round(probe.usedW), usedH: Math.round(probe.usedH), board: bh, rotated: !!probe.rotated}});
+      const zs = AtlasPlan.zonesOf(D.plan), Z = AtlasPlan.ZONES;
+      const lg = Object.keys(Z).filter(k => zs.includes(k)).map(k => `<span style="display:inline-flex;align-items:center;margin:0 9pt"><i style="display:inline-block;width:10pt;height:10pt;margin-right:5pt;border:.6pt solid rgba(28,36,54,.45);background:color-mix(in srgb, ${Z[k].fill} ${Math.round(Z[k].op*100)}%, #fff)"></i>${esc(Z[k].label)}</span>`).join('');
+      zone = `<div class="flow" style="top:${T}pt;height:${mealsH}pt;gap:8pt">${row(meals, 'back.meals')}</div>
+        <div class="board" style="left:${bx}pt;top:${by}pt;width:${bw}pt;height:${bh}pt"></div>${sideHTML}
+        <div class="boardvars">
+          <div class="pt" style="left:${bx + 12}pt;top:${by + 9}pt" data-slot="back.plan.title" data-lines="1">Floor plan</div><!-- (a heading: back.plan.title reads as a title to the caption-fill check) -->
+          ${plan.html}
+          <div class="lg" style="left:${bx}pt;width:${bw}pt;top:${by + bh - 27}pt">${lg}</div>
+          <div class="disc fine" style="left:${bx}pt;width:${bw}pt;top:${by + bh - 13}pt" data-slot="back.planDisc" data-fine="1" data-lines="1">${esc(B.planDisc || 'Approximate; not to scale.')}</div></div>`;
+    } else {
+      zone = `<div class="flow" style="top:${T}pt;height:${zoneB - T}pt;gap:8pt">${row(meals, 'back.meals', null, out.length > 1 ? '0.8 1 0' : '')}${row(out, 'back.out', out.length > 1 ? [1.6, 1] : null, out.length > 1 ? '1.2 1 0' : '')}</div>`;
+    }
+    const placesHTML = `<div class="places abs" style="left:24pt;top:${zoneB + 8}pt;width:564pt;height:64pt"><div class="sect" data-slot="back.placesTitle" data-lines="1">${esc(B.placesTitle || 'Nearby')}</div>
+      <div class="rows" style="margin-top:3pt">${pl.slice(0, 6).map((p, i) => `<div class="r"><div class="p" data-slot="back.place${i}" data-lines="1">${esc(p.name)}</div><div class="d" data-slot="back.dist${i}" data-lines="1">${esc(p.miles)}</div></div>`).join('')}</div></div>`;
+    return `${head(B.kicker, B.title, 'back')}${zone}${placesHTML}${AT.card(D, [24, 698, 564, 70], C.footnote || '')}`;
+  }
   function back(){
+    if(REAL1115) return back1115();
     const B = C.back || {}, meals = B.meals || [], out = B.outdoor || [], pl = B.places || [];
     // the contact block runs the panel's full width but short top to bottom (owner 11/10/2026, standing rule 1: "narrower" = shorter,
     // never narrower side to side); the places run full width in two columns above it and the rooms and the plan grow into the rest
@@ -183,7 +219,7 @@ window.brochureReady = (async function(){
     return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, fills: ls.map(q => Math.round((q.r - q.l)/w*100))};
   })});
   ContactCard.fit(document);
-  if(window.PlanInk) PlanInk.applyAll(D, true);   // owner 11/10/2026: the listing plan's background is clear (light lines on the navy field)
+  if(window.PlanInk && !REAL1115) PlanInk.applyAll(D, true);   // (not on the real-home samples: their plan board stays as the owner approved it 11/15/2026)   // owner 11/10/2026: the listing plan's background is clear (light lines on the navy field)
   if(window.CapFit) (window.proofNotes = window.proofNotes || []).push({capFit: CapFit.run(((typeof D !== "undefined" && D.copy) || {}).extra)});
   window.brochureCheck = () => AT.check(D, issues);
   window.photoPlacements = AT.placements;

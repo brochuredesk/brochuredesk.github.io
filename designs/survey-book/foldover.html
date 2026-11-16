@@ -37,6 +37,7 @@
   .rr .n{font:600 11pt/13pt var(--font-display);color:var(--ink)}
   .rr .d{margin-left:auto;font:500 9pt/12pt var(--font-body);color:var(--signal)}
   .rl .notes{flex:none}
+  body.v1115 .planframe{background:#f6f8fb}   /* the real-home samples: the plan frame as approved 11/15/2026 */
   .rl.band{gap:12pt}
   .rl.band .cols{flex:1;display:flex;gap:14pt;min-height:0}
   .rl.band .fl{flex:1 1 0;min-width:0}
@@ -66,6 +67,8 @@
 <script>
 window.brochureReady = (async function(){
   const D = AT.data();
+  const REAL1115 = !!D.layout1115 || /-real$/.test(D.version || '');   // the real-home samples (2219 Alder Row, 1915 Fairhaven Street, 1173 Linden Court; data.layout1115): the 11/15 approved layout
+  if(REAL1115) document.body.classList.add('v1115');
   if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
   const mode = D.mode || 'proof';
   const pt = AT.pt, esc = AT.esc, L = D.listing;
@@ -122,7 +125,63 @@ window.brochureReady = (async function(){
   }
 
   // ================= INSIDE LEFT: the plan beside the first captioned photos =================
+  // left1115: the left panel as the owner approved it on 11/15/2026 on the real sample houses (commit d15dd53a), used for the
+  // real-home samples (REAL1115); the Wren Hollow samples and orders keep the left below (captions round 3, approved 11/13/2026)
+  function left1115(){
+    const P = C.left || {}, ph = P.photos || [];
+    const hasPlan = planOK;
+    const levels = AT.levels(D), multi = hasPlan ? levels.length > 1 : (P.roomList || []).length > 1;
+    const T = 92, B = 763, colX = 29, colW = 330, gutter = 9, rx = colX + colW + gutter, rw = 612 - 29 - rx;
+    let html = header(hasPlan ? P : Object.assign({}, P, {kicker: P.kickerNoPlan || P.kicker, title: P.titleNoPlan || P.title}), 'left');
+    const legendHTML = () => { const zs = AtlasPlan.zonesOf(D.plan), Z = AtlasPlan.ZONES;
+      return Object.keys(Z).filter(k => zs.includes(k)).map(k => `<span style="display:inline-flex;align-items:center;margin:0 7pt"><i style="display:inline-block;width:9pt;height:9pt;margin-right:4pt;border:.6pt solid rgba(31,54,80,.4);background:color-mix(in srgb, ${Z[k].fill} ${Math.round(Z[k].op*100)}%, var(--paper))"></i>${esc(Z[k].label)}</span>`).join(''); };
+    const drawPlan = (fx, fy, fw, fh) => AtlasPlan.draw(D.plan, {x: fx + 10, y: fy + 30, w: fw - 20, h: fh - 30 - 44}, {allowRotate: true});
+    const frame = (fx, fy, fw, fh) => {
+      const plan = drawPlan(fx, fy, fw, fh);
+      issues.push(...plan.issues);
+      return `<div class="planframe" style="left:${fx}pt;top:${fy}pt;width:${fw}pt;height:${fh}pt"></div>
+        <div class="abs sect" style="left:${fx + 12}pt;top:${fy + 11}pt" data-slot="left.planTitle" data-lines="1">${esc(P.planTitle || 'Floor plan')}</div>
+        ${plan.html}
+        <div class="abs" style="left:${fx}pt;top:${fy + fh - 34}pt;width:${fw}pt;text-align:center;font:600 8pt/10pt var(--font-body);color:var(--ink);white-space:nowrap">${legendHTML()}</div>
+        <div class="abs fine" style="left:${fx}pt;top:${fy + fh - 18}pt;width:${fw}pt;text-align:center;white-space:nowrap" data-slot="left.planDisc" data-fine="1" data-lines="1">${esc(P.planDisc || 'Approximate; not to scale. Buyer to verify.')}</div>`;
+    };
+    if(hasPlan && multi){
+      // every floor across a wide band sized to the plans, the three captioned photos in a row under it
+      const probe = drawPlan(29, T, 554, 440), fh = Math.min(440, Math.round(probe.usedH + 30 + 44 + 14)), rowTop = T + fh + 12;
+      html += frame(29, T, 554, fh);
+      html += `<div class="flow row" style="left:29pt;top:${rowTop}pt;width:554pt;height:${B - rowTop}pt;gap:9pt;flex-direction:row">${ph.slice(0, 3).map((it, i) => item(it, `left.photo${i}`, 'flex:1 1 0')).join('')}</div>`;
+      return html;
+    }
+    const roomListHTML = (x, y, w, h) => {
+      const fl = P.roomList || [], n0 = fl.reduce((a, f) => a + f.rows.length, 0); let k = 0;
+      return `<div class="rl" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt">
+        ${fl.map(f => `<div class="fl" style="flex:${f.rows.length + 1} 1 0"><div class="sect" data-slot="left.floor${k}" data-lines="1">${esc(f.floor)}</div><div class="rows">${f.rows.map(r => `<div class="rr"><span class="n" data-slot="left.room${k++}.n" data-lines="1">${esc(r[0])}</span><span class="d" data-slot="left.room${k - 1}.d" data-lines="1">${esc(r[1])}</span></div>`).join('')}</div></div>`).join('')}
+        <div class="notes">${(P.notes || []).map((t, i) => `<div class="body" style="margin-top:${i ? 7 : 0}pt;overflow:visible" data-slot="left.note${i}" data-para="1" data-min="2">${esc(t)}</div>`).join('')}</div></div>`;
+    };
+    if(!hasPlan && multi){
+      // no plan, several floors: a band of floor-by-floor room sizes with the write-up beneath, then the three captioned photos in a row
+      const fl = P.roomList || [], bh = Math.min(330, Math.max(200, 48 + Math.max(...fl.map(f => f.rows.length)) * 30 + 74)), rowTop = T + bh + 12; let k = 0;
+      html += `<div class="rl band" style="left:29pt;top:${T}pt;width:554pt;height:${bh}pt">
+        <div class="cols">${fl.map(f => `<div class="fl"><div class="sect" data-slot="left.floor${k}" data-lines="1">${esc(f.floor)}</div><div class="rows">${f.rows.map(r => `<div class="rr stack"><span class="n" data-slot="left.room${k++}.n" data-lines="1">${esc(r[0])}</span><span class="d" data-slot="left.room${k - 1}.d" data-lines="1">${esc(r[1])}</span></div>`).join('')}</div></div>`).join('')}</div>
+        <div class="notes">${(P.notes || []).map((t, i) => `<div class="body" data-slot="left.note${i}" data-para="1" data-min="2">${esc(t)}</div>`).join('')}</div></div>`;
+      // a tall photo beside a stack of two: the sizes step instead of three equal frames
+      html += `<div class="flow row" style="left:29pt;top:${rowTop}pt;width:554pt;height:${B - rowTop}pt;gap:9pt;flex-direction:row">
+        ${item(ph[0], 'left.photo0', 'flex:1 1 0')}
+        <div class="stack2" style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:9pt">${ph.slice(1, 3).map((it, i) => item(it, `left.photo${i + 1}`, 'flex:1 1 0')).join('')}</div></div>`;
+      return html;
+    }
+    let colHTML;
+    if(hasPlan){
+      colHTML = frame(colX, T, colW, B - T - 20);
+    } else {
+      colHTML = roomListHTML(colX, T, colW, B - T);
+    }
+    const side = ph.slice(0, 3);
+    html += colHTML + `<div class="flow" style="left:${rx}pt;top:${T}pt;width:${rw}pt;height:${B - T}pt;gap:9pt">${side.map((it, i) => item(it, `left.photo${i}`, 'flex:1 1 0')).join('')}</div>`;
+    return html;
+  }
   function left(){
+    if(REAL1115) return left1115();
     const P = C.left || {}, ph = P.photos || [];
     const hasPlan = planOK;
     const levels = AT.levels(D), multi = hasPlan ? levels.length > 1 : (P.roomList || []).length > 1;
@@ -187,7 +246,12 @@ window.brochureReady = (async function(){
     return `<div class="flow" style="left:29pt;right:29pt;top:92pt;bottom:${792 - bottom}pt;gap:10pt">${h}</div>`;
   }
   const right = () => { const P = C.right || {}; return header(P, 'right') + grid(P, 'right', 3, 763); };
-  const back = () => { const P = C.back || {};
+  // back1115: the back panel as the owner approved it on 11/15/2026 on the real sample houses (commit d15dd53a), used for the
+  // real-home samples (REAL1115); the Wren Hollow samples and orders keep the back below (captions round 3, approved 11/13/2026)
+  const back1115 = () => { const P = C.back || {};
+    return header(P, 'back') + `<div class="abs kicker" style="right:29pt;top:31pt;text-align:right;width:260pt;color:var(--ink)" data-slot="back.address" data-lines="1">${esc((L.address + ' · ' + L.city + ', ' + (L.stateAbbr || 'TX')).toUpperCase())}</div>`
+      + grid(P, 'back', 2, 674, (P.photos || []).length >= 4 ? [0.8, 1.2] : null) + AT.card(D, [29, 686, 554, 70], C.footnote || ''); };
+  const back = () => { if(REAL1115) return back1115(); const P = C.back || {};
     return header(P, 'back') + `<div class="abs kicker" style="right:29pt;top:31pt;text-align:right;width:260pt;color:var(--ink)" data-slot="back.address" data-lines="1">${esc((L.address + ' · ' + L.city + ', ' + (L.stateAbbr || 'TX')).toUpperCase())}</div>`
       + grid(P, 'back', 2, 660, null) + cardFoot(); };
   // the contact block runs the panel's full width but short top to bottom (owner 11/10/2026 rule 1), the fine print under it
@@ -252,7 +316,7 @@ window.brochureReady = (async function(){
     return {slot: el.dataset.slot, fs: Math.round(parseFloat(getComputedStyle(el).fontSize)*72/96*100)/100, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, wPt: +el.dataset.w0 || Math.round(pt(w))};
   })});
   ContactCard.fit(document);
-  if(window.PlanInk) PlanInk.applyAll(D, false);   // owner 11/10/2026: the listing plan's background is clear
+  if(window.PlanInk && !REAL1115) PlanInk.applyAll(D, false);   // (not on the real-home samples: their plan board stays as the owner approved it 11/15/2026)   // owner 11/10/2026: the listing plan's background is clear
   if(window.CapFit) window.capFitLog = CapFit.run((D.copy || {}).extra); (window.proofNotes = window.proofNotes || []).push({capFit: window.capFitLog});
   // two-photo back: the side caption sets at 10 pt, justified, and the lower band takes the caption's height plus the card's
   document.querySelectorAll('.side-cap').forEach(sc => {

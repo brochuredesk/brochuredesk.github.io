@@ -57,6 +57,23 @@ window.brochureReady = (async function(){
       h += `<div class="abs cap2" style="left:${x}pt;top:${(py + ph).toFixed(2)}pt;width:${pw}pt"><div class="h" data-slot="oh.room${i}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="oh.room${i}.body" data-para="1" data-min="2" data-lines="${nl}">${esc(c.a)}</div></div>`; }); };
   const hy = 176 + dy, BOT = 646, FS = AT.stats(L), fi = AT.fifth(L); if(fi) FS.push(fi);
   const facts = (x, y, w, hh) => `<div class="abs stk" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hh}pt;display:flex;flex-direction:column">${FS.slice(0, 5).map((t, i) => `<div style="flex:1;display:flex;align-items:center;font-size:10pt;line-height:12pt" data-slot="oh.facts${i}" data-lines="1">${esc(t)}</div>`).join('')}</div>`;
+  // the address always prints in full (owner 11/15/2026, as the Vaulted Opening flyer): on one line when it fits at full size; otherwise
+  // the number on one line and the street under it at full size (stepped down at most 9% when the street alone is a little wide, then
+  // wrapped). Markup in the box keeps the shared fitter from dropping the suffix (11/16/2026: "2219 Alder" over a blank line). The
+  // place line and the facts move up under it, and the facts share the rest of the column evenly.
+  const addrBlock = (x, y, w, fs0, lh, ls) => {
+    const mw = (t, sz) => { const tm = document.createElement('span'); tm.className = 'dsp'; tm.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;letter-spacing:${ls}pt;font-size:${sz}pt`; tm.textContent = t; document.body.appendChild(tm); const v = tm.getBoundingClientRect().width * .75; tm.remove(); return v; };
+    let fs = fs0, k = 1, html = esc(L.address);
+    if(mw(L.address, fs0) > w){
+      const m = String(L.address).trim().match(/^(\S+)\s+(.+)$/);
+      if(m){ const ws = mw(m[2], fs0); let rows = [m[2]];
+        if(ws > w && ws * .91 <= w) fs = Math.max(fs0 * .91, Math.floor(w / ws * fs0 * 4) / 4);   // a little wide: step down at most 9%
+        else if(ws > w){ rows = []; let cur = ''; for(const wd of m[2].split(' ')){ const t = cur ? cur + ' ' + wd : wd; if(cur && mw(t, fs0) > w){ rows.push(cur); cur = wd; } else cur = t; } rows.push(cur); }
+        html = [m[1]].concat(rows).map(esc).join('<br>'); k = 1 + rows.length; }
+      else k = 2;
+    }
+    return {k, html: `<div class="abs dsp" id="addr" style="left:${x - 1}pt;top:${y}pt;width:${w}pt;height:${k*lh}pt;font-size:${fs}pt;line-height:${lh}pt;white-space:normal;letter-spacing:${ls}pt" data-slot="address" data-lines="${k}">${html}</div>`};
+  };
   if(need > 260 && bx && hp.w){
     // a tall house (owner 11/7: the whole house, roof and sides, always shows): the frame takes the photo's own shape at 260 pt, so the
     // house stands whole in it; the address and the facts fill the column beside it, and the two rooms run the full width under it
@@ -64,9 +81,9 @@ window.brochureReady = (async function(){
     h += AT.ph(D, hero, `position:absolute;left:${X}pt;top:${hy}pt;width:${HW}pt;height:${fh}pt`, 'oh.hero', 'hero');
     u += `<div class="tcol" style="left:${sx - 10}pt;top:${hy}pt;width:${612 - sx + 10 + 20}pt;height:${fh}pt"></div>`;
     h += `<div class="abs sc" style="left:${sx}pt;top:${hy + 10}pt;width:${sw - 8}pt;height:10pt" data-slot="oh.addrhead" data-lines="1">${esc(PC.addrHead || 'The address')}</div>`;
-    h += `<div class="abs dsp" id="addr" style="left:${sx - 1}pt;top:${hy + 26}pt;width:${sw - 6}pt;height:50pt;font-size:21pt;line-height:25pt;white-space:normal;letter-spacing:-.5pt" data-slot="address" data-lines="2">${esc(L.address)}</div>`;
-    h += `<div class="abs" style="left:${sx}pt;top:${hy + 80}pt;width:${sw - 8}pt;height:14pt;font:700 10.5pt/14pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden" data-slot="place" data-lines="1">${esc(AT.placeZip(L))}</div>`;
-    h += facts(sx, hy + 104, sw - 8, fh - 112);
+    const A = addrBlock(sx, hy + 26, sw - 6, 21, 25, -.5), pY = hy + 30 + A.k*25; h += A.html;
+    h += `<div class="abs" style="left:${sx}pt;top:${pY}pt;width:${sw - 8}pt;height:14pt;font:700 10.5pt/14pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden" data-slot="place" data-lines="1">${esc(AT.placeZip(L))}</div>`;
+    h += facts(sx, pY + 24, sw - 8, hy + fh - 8 - (pY + 24));
     roomsAt(X, W, hy + fh + 14, BOT);
   } else {
     const fh = need, hb = hy + fh;
@@ -75,9 +92,9 @@ window.brochureReady = (async function(){
     const TX = 224, ty = hb + 8, yy = ty + 14;
     u += `<div class="tcol" style="left:-20pt;top:${ty}pt;width:${TX + 20}pt;height:${800 - ty}pt"></div>`;
     h += `<div class="abs sc" style="left:${X}pt;top:${yy}pt;width:${TX - X - 14}pt;height:10pt" data-slot="oh.addrhead" data-lines="1">${esc(PC.addrHead || 'The address')}</div>`;
-    h += `<div class="abs dsp" id="addr" style="left:${X - 1}pt;top:${yy + 16}pt;width:${TX - X - 12}pt;height:60pt;font-size:27pt;line-height:30pt;white-space:normal;letter-spacing:-.6pt" data-slot="address" data-lines="2">${esc(L.address)}</div>`;
-    h += `<div class="abs" style="left:${X}pt;top:${yy + 80}pt;width:${TX - X - 14}pt;height:16pt;font:700 11.5pt/16pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden" data-slot="place" data-lines="1">${esc(AT.placeZip(L))}</div>`;
-    h += facts(X, yy + 108, TX - X - 14, BOT - yy - 108);
+    const A = addrBlock(X, yy + 16, TX - X - 12, 27, 30, -.6), pY = yy + 20 + A.k*30; h += A.html;
+    h += `<div class="abs" style="left:${X}pt;top:${pY}pt;width:${TX - X - 14}pt;height:16pt;font:700 11.5pt/16pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden" data-slot="place" data-lines="1">${esc(AT.placeZip(L))}</div>`;
+    h += facts(X, pY + 28, TX - X - 14, BOT - pY - 28);
     // two rooms, each under its own red section head
     roomsAt(TX + 16, X + W - TX - 16, yy, BOT);
   }
