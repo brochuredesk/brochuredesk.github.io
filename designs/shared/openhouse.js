@@ -150,6 +150,8 @@
         // check only once the fonts and every photo and logo have loaded (slow connections draw images late)
         const imgs = () => Promise.all([...doc.images].map(i => i.complete ? 0 : new Promise(r => { i.addEventListener('load', r, {once: true}); i.addEventListener('error', r, {once: true}); })));
         Promise.resolve(w.brochureReady).then(() => doc.fonts && doc.fonts.ready).then(imgs).then(() => new Promise(r => setTimeout(r, 60))).then(() => {
+          // a street that doesn't fit on one line drops its suffix, as on the print file (templates that load addressfit.js)
+          try { if(w.AddressFit) w.AddressFit.run(); } catch(err) {}
           fit(box);
           let issues = [];
           try { issues = (w.brochureCheck ? w.brochureCheck() : []).concat(w.OHStandard ? w.OHStandard.check(data) : []).filter(BLOCKING); } catch(err) { issues = [{kind: 'error', detail: String(err)}]; }
