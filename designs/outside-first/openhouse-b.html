@@ -21,7 +21,6 @@
   Copy: data.cards.oh.b = {photo, spine, para: [sentences], row: [{id, name, tag, text: [sentences]}, ...]}.
 -->
 <style>
-  .spcap{font:400 9.5pt/12.5pt var(--font-body);color:#efe6d8;overflow:hidden}
   .spine{position:absolute;background:#1f2b2c}
   .evb{font:600 12pt/15.5pt var(--font-body);color:#1f2b2c}
   .evb.s{font-weight:700;color:#a8581d}
@@ -63,18 +62,7 @@ window.brochureReady = (async function(){
     sp += evb.html;
     if(evb.h) y += 12 + evb.h;
     const phY = y + 16, phH = spineEnd - 16 - phY;
-    // owner 11/10 (round 2, p-squeezed): no landscape photo in a tall strip; the spine photo keeps a near-square frame and
-    // its own caption fills the column under it (true lines about the photo, never a line the write-up already says)
-    const spN = 4, spH = Math.max(Math.round(pw*.8), phH - (8 + 18 + spN*12.5)), spCapTop = phY + spH + 8;
-    sp += OFC.photo(D, K.spine, px, phY, pw, spH);
-    if(phH - spH > 60){
-      const paraG = new Set((K.para || []).flatMap(x => { const w = String(Array.isArray(x) ? x[0] : x).toLowerCase().match(/[a-z0-9'-]+/g) || []; return w.slice(2).map((_, i) => w.slice(i, i + 3).join(' ')); }));
-      const spSrc = (((D.copy || {}).top || {}).chapters || []).flatMap(c => c.items || []).concat(((D.copy || {}).bottom || {}).groups ? [].concat(...D.copy.bottom.groups.map(g => g.items || [])) : []).find(it => it.id === K.spine) || {};
-      const spPool = OF.noRepeat([].concat(String(spSrc.text || '').match(/[^.!?]+[.!?]+/g) || [], OF.pool(K.spine) || []).map(x => x.trim()).filter((x, i, a) => x && a.indexOf(x) === i))
-        .filter(x => { const w = x.toLowerCase().match(/[a-z0-9'-]+/g) || []; return !w.slice(2).some((_, i) => paraG.has(w.slice(i, i + 3).join(' '))); });
-      sp += `<div class="abs" style="left:${px}pt;top:${spCapTop}pt;width:${pw}pt;height:14pt;font:700 9pt/14pt var(--font-display);letter-spacing:1.2pt;text-transform:uppercase;color:#e8a46a;white-space:nowrap;overflow:hidden" data-slot="oh.spine.name" data-lines="1">${esc(spSrc.name || K.spineName || '')}</div>`;
-      sp += `<div class="abs tx spcap" style="left:${px}pt;top:${spCapTop + 18}pt;width:${pw}pt;height:${spN*12.5}pt" data-slot="oh.spine.text" data-lines="${spN}" data-cap="1"${spPool.length ? ` data-pool='${esc(JSON.stringify(spPool)).replace(/'/g, '&#39;')}'` : ''}>${esc(spPool.slice(0, 3).join(' '))}</div>`;
-    }
+    sp += OFC.photo(D, K.spine, px, phY, pw, phH);
     h += `<div class="spine" style="left:${m.inset}pt;top:${m.inset}pt;width:${SW - m.inset}pt;height:${H - 2*m.inset}pt"></div><div class="spine" style="left:${m.inset}pt;top:${spineEnd + 16}pt;width:${W - 2*m.inset}pt;height:${H - m.inset - spineEnd - 16}pt"></div>` + sp;
 
     // right column, outside in
@@ -97,7 +85,7 @@ window.brochureReady = (async function(){
     });
     h += `<div class="ofl">` + ContactCard.html([36, 660, 540, 102], Object.assign({}, D.agent || {}, {headshot: OFC.headshot(D)}), Object.assign({}, D.brand || {}, {logo: (D.brand || {}).logoOnDark || (D.brand || {}).logoKnockout || (D.brand || {}).logo}), {layout: 'panel', bottomGap: .5}) + `</div>`;
     h += `<div class="ofl"><div class="abs fl-fine" style="left:36pt;top:764pt;width:540pt" data-slot="fineprint" data-lines="1" data-fine="1">Information deemed reliable but not guaranteed.</div></div>`;
-    return {html: OFC.frame(D, W, H, h), after: () => { OFC.fitWidth('.fl-addr', 20); if(window.CapFit) CapFit([...document.querySelectorAll('.spcap[data-pool]')]); }};
+    return {html: OFC.frame(D, W, H, h), after: () => OFC.fitWidth('.fl-addr', 20)};
   });
 })();
 </script>
