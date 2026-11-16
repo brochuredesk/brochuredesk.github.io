@@ -143,8 +143,13 @@
   // Room photos may lose a fifth; a full-house shot only down to just below its house box; no box, no trim.
   OHL.minFrameH = (D, id, fw, fh) => {
     const p = (D.photos||{})[id] || {}, m = p.house;
-    if(!Ivory.fullHouse(D, id)) return Math.round(fh*0.8);
-    if(!m || !p.w || !p.h) return fh;
+    // fitHero asks with fh = 99999 (no limit): a photo without an outline is measured against its own height at this width
+    // (11/9 book p92 sliver); a photo with an outline keeps the measure it always had
+    const own = p.w && p.h ? Math.ceil(fw*p.h/p.w) : Math.ceil(fw*.75), free = fh >= 99999 ? own : fh;
+    if(!Ivory.fullHouse(D, id)) return Math.round(free*0.8);
+    // no house box: no trim, so the frame is the photo's own height at this width (owner 11/10/2026, 11/9 book p92: returning
+    // the caller's 99999 placeholder here made fitHero draw the house as a thin sliver in the Open House emails)
+    if(!m || !p.w || !p.h) return Math.min(free, own);
     // and never more than a quarter of the photo's height (Ivory's roofline rule)
     return Math.min(fh, Math.max(Math.ceil(m.bottom*fw*p.h/p.w + 6), Math.ceil(fw*p.h/p.w*0.755)));
   };
@@ -177,8 +182,14 @@
   // enough, otherwise narrower at the same proportions (nothing more is cropped), centered by the template.
   // capTall: also never taller than the photo's own shape at that width (a taller frame would zoom in and crop the sides)
   OHL.fitHero = (D, id, fw, maxH, capTall) => {
-    const min = OHL.minFrameH(D, id, fw, 99999);
-    const p = (D.photos||{})[id] || {};
+    // The set data may give the house outline only as photos.<id>.box (owner 11/10/2026, p92: the Connections Open House email
+    // hero printed as a thin sliver because minFrameH saw no outline and asked for an endless frame): box is read as the outline.
+    // A whole-house photo with no outline at all: its own full shape is the shortest safe frame, nothing cropped (Ivory Open House
+    // emails, 11/16/2026). A photo with an outline is measured exactly as before.
+    const p = (D.photos||{})[id] || {}, bx = Array.isArray(p.box) && p.box.length === 4 ? p.box : null;
+    const Dh = !p.house && bx ? Object.assign({}, D, {photos: Object.assign({}, D.photos, {[id]: Object.assign({}, p, {house: {left: +bx[0], top: +bx[1], right: +bx[2], bottom: +bx[3]}})})}) : D;
+    let min = Ivory.fullHouse(D, id) && !p.house && !bx && p.w && p.h ? Math.ceil(fw*p.h/p.w) : OHL.minFrameH(Dh, id, fw, 99999);
+    if(min >= 79999) min = 0;
     if(capTall && p.w && p.h) maxH = Math.min(maxH, Math.floor(fw*p.h/p.w));
     return min <= maxH ? {w: fw, h: maxH} : {w: Math.round(fw*maxH/min), h: maxH};
   };

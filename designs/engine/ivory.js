@@ -84,7 +84,28 @@
 
   // Caption = bold room name + one short detail line. Written captions win; otherwise both come
   // from the photo's tags (first tag = room name, the next tags = the detail line).
-  Ivory.caption = function(D, id){
+  // A photo's true details (its tags after the room name), for a caption that fills its lines (owner 11/10/2026)
+  Ivory.tagList = (D, id) => String(((D.photos||{})[id]||{}).tags||'').split(',').map(t=>t.trim()).filter(Boolean).slice(1);
+  Ivory.tagsAttr = (D, id) => Ivory.esc(JSON.stringify(Ivory.tagList(D, id)));
+  // every element with data-tags takes as many of those details as fill data-tl lines (default 2) with a last line 80%+ full;
+  // failing that, the most that still fit those lines. Captions in one row (data-row) end on the same line count.
+  Ivory.fitTags = (root) => (root || document).querySelectorAll('[data-tags]').forEach(d => { let tags = []; try { tags = JSON.parse(d.dataset.tags); } catch(e) {}
+    if(!tags.length) return; const want = +d.dataset.tl || 2, h0 = d.style.height, ov = d.style.overflow; d.style.height = 'auto'; d.style.overflow = 'visible';
+    const set = k => { const t = tags.slice(0, k).join(', '); d.textContent = t.charAt(0).toUpperCase() + t.slice(1); };
+    const meas = () => { const rg = document.createRange(); rg.selectNodeContents(d); const rs = [...rg.getClientRects()].filter(r => r.width > .5), box = d.getBoundingClientRect();
+      const tops = [...new Set(rs.map(r => Math.round(r.top)))], bt = Math.max(...tops);
+      return {n: tops.length, last: (Math.max(...rs.filter(r => Math.round(r.top) > bt - 3).map(r => r.right)) - box.left) / box.width}; };
+    let full = 0, fit = 0;
+    for(let k = 1; k <= tags.length; k++){ set(k); const m = meas(); if(m.n === want){ fit = k; if(m.last >= .8) full = k; } else if(m.n < want && !fit) fit = k; }
+    set(full || fit || 1); d.style.height = h0; d.style.overflow = ov; });
+  // a photo's caption block (owner 11/10/2026: every photo gets a caption): the room name, then two lines of the photo's own
+  // true details (filled by Ivory.fitTags after layout). Ivory.CAPH is the room it takes under the photo.
+  Ivory.CAPH = 41;   // with two detail lines; Ivory.capH(n) for n lines
+  Ivory.capH = n => 17 + 12*n;
+  Ivory.capBlock = (D, id, x, y, w, slot, n) => { const c = Ivory.caption(D, id, 200); n = n || 2; if(!c.name) return '';
+    return `<div class="abs cap-name" style="left:${x}pt;top:${y + 5}pt;width:${w}pt;height:12pt;font-size:9.5pt;line-height:12pt" data-slot="${slot}.name" data-lines="1">${Ivory.esc(c.name)}</div>`
+      + `<div class="abs cap-detail" style="left:${x}pt;top:${y + 17}pt;width:${w}pt;height:${12*n}pt;font-size:9pt;line-height:12pt;white-space:normal" data-slot="${slot}.detail" data-lines="${n}" data-tags="${Ivory.tagsAttr(D, id)}" data-tl="${n}">${Ivory.esc(c.detail)}</div>`; };
+  Ivory.caption = function(D, id, max){   // max: the detail's length budget (34 = one line; the postcard back's two-line captions pass more)
     const p = (D.photos||{})[id] || {};
     if(p.caption && p.caption.name) return {name: p.caption.name, detail: p.caption.detail || ''};
     const tags = String(p.tags||'').split(',').map(t=>t.trim()).filter(Boolean);
@@ -92,7 +113,7 @@
     let detail = '';
     for(const t of tags.slice(1)){
       const next = detail ? detail + ', ' + t : t;
-      if(next.length > 34) break;
+      if(next.length > (max || 34)) break;
       detail = next;
     }
     return {name, detail: cap1(detail)};
@@ -422,6 +443,25 @@
     else if(a) r.time = `${a.txt} ${a.ap}`;
     return r;
   };
+
+
+  // ---------- repeat guard (owner 11/10/2026, standing rule 7: no phrase repeats inside a caption or across captions on one
+  // piece, and no two captions open the same way). Content words drop the small words; two sentences repeat each other when
+  // they share a run of two content words (inside one caption) or three (across captions), or open with the same three words.
+  const STOP = new Set('a an the and or of to in on at by for with from into over under off up out its it is are was be has have this that these those there here as one two each every all any both their his her our your than then too also just very more most'.split(' '));
+  const words = s => String(s||'').toLowerCase().replace(/[’']/g, '').match(/[a-z0-9½-]+/g) || [];
+  const content = s => words(s).filter(w => !STOP.has(w)).map(w => w.replace(/(ies)$/, 'y').replace(/([^s])s$/, '$1'));
+  const grams = (s, n) => { const c = content(s), out = new Set(); for(let i = 0; i + n <= c.length; i++) out.add(c.slice(i, i + n).join(' ')); return out; };
+  const opening = s => words(s).slice(0, 3).join(' ');
+  Ivory.repeats = (a, b, n) => { const A = grams(a, n || 2); for(const g of grams(b, n || 2)) if(A.has(g)) return g; return ''; };
+  // a sentence list with no sentence repeating an earlier one (inside one caption: two-word runs)
+  Ivory.noRepeat = (sents, n) => { const out = []; sents.forEach(x => { if(!out.some(o => Ivory.repeats(o, x, n || 2))) out.push(x); }); return out; };
+  // the page's ledger: what earlier captions on this piece said (three-word runs and their openings)
+  Ivory.ledger = () => { const L = {g: new Set(), open: new Set()};
+    L.add = t => { const sents = String(t||'').match(/[^.!?]+[.!?]*/g) || []; sents.forEach(x => grams(x, 3).forEach(g => L.g.add(g))); if(sents[0]) L.open.add(opening(sents[0])); };
+    L.clashes = x => { for(const g of grams(x, 3)) if(L.g.has(g)) return true; return false; };
+    L.firstOk = x => !L.open.has(opening(x));
+    return L; };
 
   window.Ivory = Ivory;
 })();

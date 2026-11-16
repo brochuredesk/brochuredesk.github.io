@@ -144,6 +144,7 @@
   AB.card = function(D, o){
     const A = D.agent || {}, b = D.brand || {};
     const cell = A.cell || A.phone, office = A.office || b.phone, title = A.title || A.designation;
+    if(o.h <= 80) return AB.cardHalf(D, o);   // half-height back card (owner 11/15/2026, standing rule: every fold-over back's contact block is half as tall, about 70 pt)
     const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot);
     const hs = hsSrc ? `<div class="col hs" style="left:0;top:12pt;bottom:4pt;width:${o.hs||92}pt"><img src="${esc(hsSrc)}" alt=""></div>` : '';
     const logo = b.logo
@@ -170,11 +171,42 @@
     </div>`;
   };
 
+
+  // Half-height card (about 70 pt, owner 11/15/2026): the same two blocks and hairline in two tight rows. The name steps
+  // down from 24 pt to 18 pt only if the columns need the room; the phone sits beside its label, email and web share a line.
+  AB.cardHalf = function(D, o){
+    const A = D.agent || {}, b = D.brand || {};
+    const cell = A.cell || A.phone, office = A.office || b.phone, title = A.title || A.designation;
+    const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot);
+    const hsW = o.hs || 56;
+    const hs = hsSrc ? `<div class="col hs" style="left:0;top:4pt;bottom:3pt;width:${hsW}pt"><img src="${esc(hsSrc)}" alt=""></div>` : '';
+    const logo = b.logo
+      ? `<div class="logo" data-area="3400" data-maxh="30" style="position:absolute;left:0;right:0;top:3pt;height:30pt;justify-content:flex-end"><img src="${esc(b.logo)}" alt=""></div>`
+      : `<div class="logo" style="position:absolute;left:0;right:0;top:5pt;height:26pt;justify-content:flex-end"><span class="word" style="font-size:18pt" data-slot="broker.name" data-lines="1">${esc(b.brokerage||'')}</span></div>`;
+    const lbl = 'font:600 8pt/10pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--kicker);margin-right:6pt;vertical-align:2pt';
+    const big = 'font:500 16pt/18pt var(--font-display);color:var(--ink)';
+    return `<div class="card" data-card="1" data-hs="${hs ? hsW+14 : 0}" style="left:${o.x}pt;top:${o.y}pt;width:${o.w}pt;height:${o.h}pt">
+      ${hs}
+      <div class="col agent" style="left:0">
+        <div class="name" style="top:2pt;font-size:24pt;line-height:28pt" data-slot="agent.name" data-lines="1" data-start="24">${esc(A.name)}</div>
+        ${cell ? `<div class="line" style="left:0;top:32pt;font-weight:400"><span style="${lbl}" data-fine="1"${title ? ' data-slot="agent.title"' : ''}>${esc(title || A.phoneLabel || 'Call or text')}</span><span style="${big}" data-slot="agent.cell" data-lines="1">${esc(cell)}</span></div>` : ''}
+        ${(A.email || A.web) ? `<div class="line" style="left:0;top:53pt;font-size:9pt;line-height:11pt">${A.email ? `<span data-slot="agent.email" data-lines="1">${esc(A.email)}</span>` : ''}${A.email && A.web ? '<span style="padding:0 7pt;font-weight:400">·</span>' : ''}${A.web ? `<span data-slot="agent.web" data-lines="1">${esc(A.web)}</span>` : ''}</div>` : ''}
+      </div>
+      <div class="vr v1" style="top:8pt;bottom:4pt"></div>
+      <div class="col brk" style="text-align:right">
+        ${logo}
+        ${office ? `<div class="line" style="right:0;top:34pt;text-align:right;font-weight:400"><span style="${lbl}" data-fine="1">${esc(b.officeLabel||'Office')}</span><span style="${big}" data-slot="broker.office" data-lines="1">${esc(office)}</span></div>` : ''}
+        <div class="line" style="right:0;top:53pt;text-align:right;font-size:9pt;line-height:11pt">${b.logo ? `<span style="font:600 8pt/10pt var(--font-body);letter-spacing:1.2pt;text-transform:uppercase;color:var(--kicker);margin-right:7pt" data-slot="broker.name" data-fine="1">${esc(b.brokerage||'')}</span>` : ''}${b.web ? `<span style="font-weight:400" data-slot="broker.web" data-lines="1">${esc(b.web)}</span>` : ''}</div>
+      </div>
+    </div>`;
+  };
+
   // ---------- short contact card (owner 11/10/2026, round 3: "narrower" meant SHORTER TOP TO BOTTOM): the full-width card of
   // AB.card, its rows tightened to about 1.25 in (was 132 pt; the round 2 narrow stack was about 180 pt). Same columns and
   // fitting (AB.layoutCards): agent left, brokerage right.
   AB.cardShortH = 90;
   AB.cardShort = function(D, o){
+    if(o.h <= 80) return AB.cardHalf(D, o);   // half-height back card (owner 11/15/2026, standing rule: about 70 pt)
     const A = D.agent || {}, b = D.brand || {};
     const cell = A.cell || A.phone, office = A.office || b.phone, title = A.title || A.designation;
     const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot);

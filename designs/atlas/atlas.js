@@ -103,7 +103,7 @@
   // ---------- floor plan facts ----------
   // A design built around the plan: it needs a plan that lists rooms (owner 10/28).
   // A level lists rooms either as drawn rooms (L.rooms) or, for the agent's own plan image, by the room names printed on it (L.roomNames).
-  const listsRooms = l => (l.rooms||[]).length || (l.kind === 'image' && (l.roomNames||[]).length);
+  const listsRooms = l => l.kind === 'image' && !!l.src && (l.roomNames||[]).length;   // only the listing's own plan image (owner 11/10/2026: never redrawn)
   AT.planOK = D => !!(D.plan && (D.plan.levels||[]).some(listsRooms));
   AT.levels = D => ((D.plan && D.plan.levels) || []).filter(l => !l.inset && listsRooms(l));
   const footprint = L => L.kind === 'image' ? (L.feet ? L.feet.w*L.feet.d : L.w*L.h) : (L.rooms||[]).filter(r => r.kind !== 'outdoor').reduce((a, r) => a + r.w*r.d, 0);
@@ -131,7 +131,7 @@
   const touch = (a, b) => { const T = .7, ox = Math.min(a.x+a.w, b.x+b.w) - Math.max(a.x, b.x), oy = Math.min(a.y+a.d, b.y+b.d) - Math.max(a.y, b.y);
     return (Math.abs(a.x+a.w-b.x) < T || Math.abs(b.x+b.w-a.x) < T) && oy > 1.5 || (Math.abs(a.y+a.d-b.y) < T || Math.abs(b.y+b.d-a.y) < T) && ox > 1.5; };
   // The rooms of a floor for matching and tinting: drawn rooms, or for the agent's plan image the boxes (fractions of the image) of the rooms it names
-  AT.roomsOf = L => L.kind === 'image' ? (L.roomBoxes||[]).map(b => ({name: b.name, short: b.short, dims: b.dims, x: b.box[0], y: b.box[1], w: b.box[2], d: b.box[3]})) : (L.rooms||[]);
+  AT.roomsOf = L => L.kind === 'image' ? (L.roomBoxes||[]).map(b => ({name: b.name, short: b.short, dims: b.dims, x: b.box[0], y: b.box[1], w: b.box[2], d: b.box[3]})) : [];
   AT.labeled = L => AT.roomsOf(L).some(r => r.label !== false && r.kind !== 'open');
   AT.matchRoom = (L, title, dims, body) => {
     const rs = AT.roomsOf(L); title = String(title||'');
@@ -198,21 +198,7 @@
       const hl = b ? `<rect x="${(ox + b.box[0]*iw).toFixed(2)}" y="${(oy + b.box[1]*ih).toFixed(2)}" width="${(b.box[2]*iw).toFixed(2)}" height="${(b.box[3]*ih).toFixed(2)}" fill="var(--accent)" fill-opacity=".6" stroke="var(--accent)" stroke-width=".8"/>` : '';
       return `<svg width="${W}pt" height="${H}pt" viewBox="0 0 ${W} ${H}" aria-hidden="true"><image href="${L.src}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="xMidYMid meet"/>${hl}</svg>`;
     }
-    const rs = (L.rooms||[]).filter(r => !r.crop || true);
-    let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-    rs.forEach(r => { const w = r.crop && r.crop.side==='right' ? Math.min(r.w, r.crop.to) : r.w, d = r.crop && r.crop.side==='bottom' ? Math.min(r.d, r.crop.to) : r.d;
-      x0=Math.min(x0,r.x); y0=Math.min(y0,r.y); x1=Math.max(x1,r.x+w); y1=Math.max(y1,r.y+d); });
-    const bw = x1-x0, bh = y1-y0, s = Math.min(W/bw, H/bh), w = bw*s, h = bh*s, ox = (W-w)/2, oy = (H-h)/2;
-    let g = '';
-    rs.forEach(r => {
-      const x = ox + (r.x-x0)*s, y = oy + (r.y-y0)*s, rw = r.w*s, rd = r.d*s, out = r.kind === 'outdoor';
-      g += `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${rw.toFixed(2)}" height="${rd.toFixed(2)}" fill="${out ? 'none' : r.kind==='garage' ? 'rgba(31,58,50,.10)' : 'var(--paper)'}" stroke="var(--ink)" stroke-width="${out ? .4 : .55}"${out ? ' stroke-dasharray="1.4 1"' : ''}/>`;
-    });
-    if(hi != null && hi >= 0 && rs[hi]){
-      const r = rs[hi];
-      g += `<rect x="${(ox + (r.x-x0)*s).toFixed(2)}" y="${(oy + (r.y-y0)*s).toFixed(2)}" width="${(r.w*s).toFixed(2)}" height="${(r.d*s).toFixed(2)}" fill="var(--accent)" fill-opacity=".75" stroke="var(--ink)" stroke-width=".8"/>`;
-    }
-    return `<svg width="${W}pt" height="${H}pt" viewBox="0 0 ${W} ${H}" aria-hidden="true">${g}</svg>`;
+    return '';   // a level that is not the listing's own image draws nothing (owner 11/10/2026)
   };
   // the small plan's box: wide enough for the plan's shape, never taller than the caption's text beside it
   AT.miniBox = (L, maxW, maxH) => {
@@ -267,7 +253,7 @@
   // The standard Right panel card, with and without a headshot. The card carries the spread's one brokerage logo.
   AT.card = function(D, box, fine){
     const A = D.agent || {}, hs = AT.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
-    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, {layout:'panel', fine: fine || '', bottomGap: 0.5});
+    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, Object.assign({layout:'panel', fine: fine || '', bottomGap: 0.5}, box[3] <= 80 ? {size: 'half', grow: 0} : {}));   // a box 80 pt or shorter is the half-height card (owner 11/15/2026)
   };
 
   // ---------- print checks (read by the renderer) ----------

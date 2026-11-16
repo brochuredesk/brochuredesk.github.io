@@ -61,7 +61,7 @@ img{display:block}
 .facts{display:flex;justify-content:space-between;border-top:.8pt solid var(--line);border-bottom:.8pt solid var(--line)}
 .facts .f{flex:1;padding:6pt 0 7pt;text-align:left;white-space:nowrap;overflow:hidden}
 .facts .f b{display:block;font:600 19pt/22pt var(--font-display);color:var(--ink)}
-.facts .f span{display:block;font:700 8pt/10pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--accent)}
+.facts .f > span{display:block;font:700 8pt/10pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--accent)}
 .places .r{display:flex;align-items:baseline;justify-content:space-between;border-bottom:.6pt solid var(--line);gap:8pt}
 .places .p{font:600 10pt/17pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
 .places .d{font:700 8pt/17pt var(--font-body);letter-spacing:.8pt;text-transform:uppercase;color:var(--accent);white-space:nowrap;flex:none}
@@ -81,3 +81,10 @@ img{display:block}
 .rl-h{font:700 8.5pt/16pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--accent);border-bottom:.7pt solid var(--line);white-space:nowrap;overflow:hidden}
 .rl-r{display:flex;justify-content:space-between;align-items:baseline;gap:6pt;border-bottom:.5pt dotted var(--line);font:600 9.5pt/15pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
 .rl-r i{font-style:normal;font-weight:700;color:var(--accent);flex:none}
+.body.ibig{font-size:10.6pt}   /* the cover write-up when no nearby list prints (owner 11/10, rule 9) */
+
+/* owner 11/10: a plan without coloured rooms prints on the paper itself, light lines on the dark field (never redrawn) */
+body[data-plan=clear] .board,body[data-plan=clear] .brd{background:transparent !important}
+body[data-plan=clear] .plan.lv img{filter:grayscale(1) invert(1) brightness(1.1);mix-blend-mode:screen}
+body[data-plan=clear] .plan.flr{color:#c9d6e8 !important}
+body[data-plan=clear] .pnote{color:#aab6c8 !important}

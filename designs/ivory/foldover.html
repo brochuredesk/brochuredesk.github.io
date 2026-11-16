@@ -5,7 +5,7 @@
 <title>BrochureDesk · Ivory fold-over</title>
 <link rel="stylesheet" href="ivory.css">
 <script src="ivory.js"></script>
-<script src="../engine/planink.js"></script>
+<script src="planink.js"></script>
 <script src="plan.js"></script>
 <!--
   BrochureDesk · Ivory design · 11 x 17 fold-over
@@ -174,8 +174,16 @@ Ivory.whenFonts(function(){
   const fp = P[C.front.photo] || {};
   const tallCover = C.front.layout ? C.front.layout === 'tall' : (fp.w && fp.h && fp.h >= fp.w * 0.95);
   const side = C.front.side || [];
+  // Framed cover (owner 11/15/2026, sample-house review Q1): a listing whose best front photo is too small to print across the whole
+  // cover (under 150 ppi at full bleed, the print gate's cover floor) is set whole, uncropped, inside the page margins at the largest
+  // size that holds 150 ppi, so the piece passes its print check instead of being held. Only when the lookup set no layout.
+  const FLOOR = 152, fullPpi = fp.w && fp.h ? Math.min(fp.w / (810 / 72), fp.h / (540 / 72)) : 999;
+  const framed = !C.front.layout && !tallCover && fullPpi < 150;
+  const frameStyle = () => { const w = Math.floor(Math.min(744, fp.w * 72 / FLOOR, 496 * fp.w / fp.h)), h = Math.round(w * fp.h / fp.w);
+    return `style="left:${(792 - w) / 2}pt;top:${Math.max(24, Math.round((540 - h) / 2))}pt;width:${w}pt;height:${h}pt"`; };
   const front = (tallCover
       ? photo('front-tall-hero', C.front.photo) + photo('front-tall-a', side[0]) + photo('front-tall-b', side[1])
+      : framed ? photo('front-photo front-framed', C.front.photo, frameStyle())
       : photo('front-photo', C.front.photo)) + `
     <div class="abs label front-location" data-slot="front.location" data-lines="1">${esc(C.front.location)}</div>
     ${title('front-address', L.address, 'front.address')}

@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <title>BrochureDesk · The Neighborhood Atlas fold-over</title>
 <link rel="stylesheet" href="atlas.css">
+<script src="../engine/planink.js"></script>
 <script src="atlas.js"></script>
+<script src="capfit.js"></script>
 <script src="atlas-plan.js"></script>
 <script src="atlas-map.js"></script>
 <script src="atlas-mapdata.js"></script>
@@ -57,6 +59,9 @@
   .pn{position:absolute;left:12pt;top:10pt}
   .pn .d{font-size:8pt;line-height:10pt;color:var(--text);margin-top:3pt;width:120pt}
   .plandisc{position:absolute;text-align:center;white-space:nowrap}
+  .bk .cap .h{font-size:9.5pt;line-height:12.5pt}
+  .bk .cap .a{font-size:9pt;line-height:12.5pt}
+  .bk .note .body{font-size:9pt;line-height:13pt}
   .note .sect{margin-bottom:5pt}
   .note .body{font-size:8.5pt;line-height:11.5pt;overflow:visible}
   .callout.small .big{font-size:25pt;line-height:29pt;letter-spacing:1pt}
@@ -167,7 +172,7 @@ window.brochureReady = (async function(){
 
   // ================= BACK: THE PROPERTY, IN PLAN =================
   function back(){
-    const B = C.back || {};
+    const B = C.back || {}, CY = 682, CH = 74;   // round 3 (owner 11/10/2026: "narrower" = shorter top to bottom): the card runs the full width at the short size
     const ph = (B.photos || []).slice(0, 2);
     const multi = levels.length > 1;
     const callout = B.callout && (B.callout.kind !== 'flood' || AT.floodStated(L.description)) ? B.callout : (B.callout2 || null);
@@ -184,29 +189,32 @@ window.brochureReady = (async function(){
     const planText = `<div class="pn"><div class="sect" data-slot="back.planTitle" data-lines="1">Floor plan</div><div class="d" data-slot="back.planNote" data-lines="3">${esc(B.planNote || 'Room names and sizes match the captions inside.')}</div></div>`;
     if(!multi){
       // one level: the plan in a tall frame on the left, photos and the write-up on the right
-      const fx = 29, fy = 88, fw = 292, fh = 490;
-      plan = AtlasPlan.draw(D.plan, {x: fx + 10, y: fy + 56, w: fw - 20, h: fh - 92}, {allowRotate:true});
+      const fx = 29, fy = 88, fw = 292, fh = 568;   // the frame runs down to just over the full-width short card
+      plan = AtlasPlan.draw(D.plan, {x: fx + 10, y: fy + 56, w: fw - 20, h: fh - 92}, {allowRotate:false});
       plan.html = plan.html.replace(/<div class="abs plan-level"[^>]*>[^<]*<\/div>/g, '');   // a one-story plan carries no floor name
       body = `<div class="planframe" style="left:${fx}pt;top:${fy}pt;width:${fw}pt;height:${fh}pt">${planText}</div>${plan.html}${legend(fx, fy + fh - 26, fw)}
         <div class="plandisc fine" style="left:${fx}pt;top:${fy+fh+5}pt;width:${fw}pt" data-slot="back.planDisc" data-fine="1" data-lines="2">${esc(B.planDisc || 'Approximate; not to scale. Buyer to verify.')}</div>
-        <div class="flow" style="left:335pt;top:88pt;right:29pt;height:518pt;gap:12pt">
+        <div class="flow" style="left:335pt;top:88pt;right:29pt;height:${fh}pt;gap:12pt">
           ${ph.map(bk).join('')}${noteHTML}${calloutHTML}</div>`;
     } else {
       // two or more floors: every floor across the top (a grid of four), the plan's note and key at its left, photos and the write-up under it
-      const fx = 29, fy = 88, fw = 554, fh = levels.length === 4 ? 300 : 270, PX = 138;
-      plan = AtlasPlan.draw(D.plan, {x: fx + PX, y: fy + 12, w: fw - PX - 12, h: fh - 24}, {allowRotate:true});
+      const fx = 29, fy = 88, fw = 554, PX = 138; let fh = levels.length === 4 ? 300 : 270;
+      plan = AtlasPlan.draw(D.plan, {x: fx + PX, y: fy + 12, w: fw - PX - 12, h: fh - 24}, {allowRotate:false});
+      // a frame no taller than the plan needs (the photos under it take the rest; owner 11/10/2026: no blank space)
+      if(plan.usedH && plan.usedH + 30 < fh){ fh = Math.max(190, Math.ceil(plan.usedH) + 30); plan = AtlasPlan.draw(D.plan, {x: fx + PX, y: fy + 12, w: fw - PX - 12, h: fh - 24}, {allowRotate:false}); }
       body = `<div class="planframe" style="left:${fx}pt;top:${fy}pt;width:${fw}pt;height:${fh}pt"></div>${plan.html}
         <div class="abs sidecol" style="left:${fx + 12}pt;top:${fy}pt;width:${PX - 26}pt;height:${fh}pt">${planText.replace('class="pn"', 'class="pn" style="position:static"')}<div style="margin-top:14pt;font:600 8pt/10pt var(--font-body);color:var(--ink);white-space:nowrap">${legendItems(true)}</div></div>
         <div class="plandisc fine" style="left:${fx}pt;top:${fy+fh+5}pt;width:${fw}pt" data-slot="back.planDisc" data-fine="1" data-lines="1">${esc(B.planDisc || 'Approximate; not to scale. Buyer to verify.')}</div>
-        <div class="flow" style="left:29pt;top:${fy+fh+20}pt;right:29pt;bottom:${792-606}pt;gap:14pt;flex-direction:row">
-          ${ph.map((it, i) => `<div class="item" style="flex:1 1 0">${AT.photo(D, it.photo, '', `back.photo${i}`)}${cap(it, `back.photo${i}`, false)}</div>`).join('')}
-          <div style="flex:1.2 1 0;display:flex;flex-direction:column;gap:10pt;min-width:0">${noteHTML}<div style="flex:1 1 0;min-height:0;display:flex;flex-direction:column">${calloutHTML.replace(/flex:0 0 \d+pt/, 'flex:1 1 0')}</div></div></div>`;
+        <div class="flow" style="left:29pt;top:${fy+fh+20}pt;right:29pt;bottom:${792-604}pt;gap:14pt;flex-direction:row">
+          ${ph.map((it, i) => `<div class="item" style="flex:1 1 0">${AT.photo(D, it.photo, '', `back.photo${i}`)}${cap(it, `back.photo${i}`, false)}</div>`).join('')}</div>
+        <div class="flow" style="left:29pt;top:614pt;width:554pt;height:${CY - 10 - 614}pt;gap:14pt;flex-direction:row"><div data-noteband="1" style="flex:1 1 0;min-width:0">${noteHTML}</div>${calloutHTML ? `<div style="flex:0 0 200pt;display:flex;flex-direction:column">${calloutHTML.replace(/flex:0 0 \d+pt/, 'flex:1 1 0')}</div>` : ''}</div>`;
     }
     issues.push(...plan.issues);
     return `${kick(B.kicker, 'back.kicker')}${title(B.title, 'back.title', 250)}
       <div class="abs kicker" style="right:29pt;top:55pt;color:var(--ink);text-align:right;width:300pt" data-slot="back.address" data-lines="1">${esc((L.address + ' · ' + [L.city, L.state, L.zip].filter(Boolean).join(', ').replace(/, (\d{5})$/, ' $1')).toUpperCase())}</div>
       ${body}
-      ${AT.card(D, [29, 616, 554, 140], C.footnote || '')}`;
+      ${AT.cardBox(D, [29, CY, 554, CH], {layout: 'panel', size: 'short'})}
+      <div class="abs fine" style="left:29pt;top:762pt;width:554pt;height:8pt;white-space:nowrap" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(C.footnote || '')}</div>`;
   }
 
   // ================= INSIDE =================
@@ -251,7 +259,8 @@ window.brochureReady = (async function(){
     for(let fs = 46; fs >= 28; fs -= 1){ el.style.fontSize = fs + 'pt'; if(AT.textWidth(el) <= 346) break; }
   });
   // paragraphs whose last line comes up short are set on a slightly narrower column
-  document.querySelectorAll('[data-para]').forEach(el => AT.balance(el));
+  document.querySelectorAll('[data-para]').forEach(el => { if(!el.closest('.cap')) AT.balance(el); });
+  AT.capFit(document);   // captions under photos: full column, justified, type up to 12% so the last line reaches the photo's width (owner 11/8/2026)
   // captions in one row share one height so the photos above them line up
   document.querySelectorAll('.row').forEach(row => {
     const caps = [...row.children].map(it => it.querySelector(':scope > .cap')).filter(Boolean);
@@ -286,6 +295,15 @@ window.brochureReady = (async function(){
     if(rh.length && (Math.max(...rh) > 26 || Math.min(...rh) < 15)) issues.push({slot:'cover.index', kind:'index-rows-uneven', heights:rh.map(v=>+v.toFixed(1))});
   }
   if(mapEl){ const mh = pt(mapEl.clientHeight); window.proofNotes.push({mapHeightPt: Math.round(mh)}); if(mh < 100) issues.push({slot:'cover.map', kind:'map-too-small', heightPt:Math.round(mh)}); }
+  // the note beside the callout fills its band down to the card: its type grows (up to about 12%) while it fits (owner 11/10/2026)
+  document.querySelectorAll('[data-noteband]').forEach(band => {
+    const nb = band.querySelector('.note .body'), note = band.querySelector('.note'); if(!nb) return;
+    const H = band.clientHeight; let best = 8.5;
+    for(let fs = 8.5; fs <= 9.55; fs += .125){ nb.style.fontSize = fs + 'pt'; nb.style.lineHeight = (fs * 1.38) + 'pt'; if(note.offsetHeight <= H) best = fs; else break; }
+    nb.style.fontSize = best + 'pt'; nb.style.lineHeight = (best * 1.38) + 'pt';
+    const n = Math.round(nb.offsetHeight / (best * 1.38 * 96/72)), room = (H - (note.offsetHeight - nb.offsetHeight)) * 72/96;
+    if(n) nb.style.lineHeight = Math.min(best * 1.6, room / n) + 'pt';
+  });
   // what every paragraph set in (for the sample copy to be written to length): lines, last line's fill, characters
   window.proofNotes.push({paragraphs: [...document.querySelectorAll('[data-para]')].map(el => {
     const ls = AT.lineBoxes(el), w = el.getBoundingClientRect().width, last = ls[ls.length-1];
@@ -293,6 +311,7 @@ window.brochureReady = (async function(){
   })});
   // the plan pieces are never cut or shrunk to fit: a floor name that will not fit is reported by the plan check
   ContactCard.fit(document);
+  if(window.PlanInk) PlanInk.applyAll(D, false);   // owner 11/10/2026 (p2): the listing plan's background is clear
   window.brochureCheck = () => AT.check(D, issues);
   window.photoPlacements = AT.placements;
 })();

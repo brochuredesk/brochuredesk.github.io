@@ -24,6 +24,7 @@
   No price, no QR, no photo numbers, no "virtually staged". Copy: data.copy.pc.jl / data.copy.pc.js.
 -->
 <style>
+  .callin{color:var(--accent)}
   .cc{--cc-paper:#17403a;--cc-ink:#ffffff;--cc-muted:#d3e5dd;--cc-accent:#a9d6c5;--cc-line:rgba(255,255,255,.42)}
   .st{font:400 46pt/48pt var(--font-display);letter-spacing:-.8pt;color:var(--ink);white-space:nowrap;overflow:hidden}
   .ad{font:400 22pt/25pt var(--font-display);letter-spacing:-.2pt;color:var(--ink);overflow:hidden}
@@ -96,7 +97,7 @@ window.brochureReady = (async function(){
     h += `<div class="abs" data-blk="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:13pt;background:var(--accent)"></div>`;
     // the return address over the photo beside the address block; the status line across the left
     const ret = SP.returnLines(D);
-    h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:16pt;width:${rW}pt;height:32pt;text-align:right" data-slot="return" data-lines="3"><b>${esc(ret[0] || '')}</b>${ret.slice(1).map(r => '<br>' + esc(r)).join('')}</div>`;
+    h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:16pt;width:${rW}pt;height:32pt;text-align:right" ><b data-slot="return0" data-lines="1" style="display:block">${esc(ret[0] || '')}</b>${ret.slice(1).map((r, i) => `<span data-slot="return${i + 1}" data-lines="1" style="display:block">${esc(r)}</span>`).join('')}</div>`;
     h += `<div class="abs bst" style="left:${X}pt;top:16pt;width:${LZ - X}pt;height:28pt" data-slot="back.status" data-lines="1"><span class="s">${esc(status)}</span><span class="a">${esc(L.address)}</span></div>`;
     h += `<div class="rule" style="left:${X}pt;top:47pt;width:${LZ - X}pt"></div>`;
     const cap = (c, x, y, w, slot, row) => `<div class="abs cap" style="left:${x}pt;top:${y + 4}pt;width:${w}pt"><div class="nm sm" data-slot="${slot}.t" data-lines="1">${esc(c.t)}</div></div>
@@ -118,8 +119,8 @@ window.brochureReady = (async function(){
       h += `<div class="abs svc" style="left:${Z.zA[0]}pt;top:${pTop + 16}pt;width:${rW}pt;height:${Z.zP[1] + Z.zP[3] + 66 - pTop - 16}pt">${(C.services || []).map((s, i) => `<div class="it"><i></i><span data-slot="sold.svc${i}" data-lines="3">${esc(s)}</span></div>`).join('')}</div>`;
       const my = pTop + ph + 12;
       h += `<div class="abs kick" style="left:${X}pt;top:${my}pt;width:${LZ - X}pt;height:10pt" data-slot="sold.meetLabel" data-lines="1">${esc(C.meetLabel || 'When we meet')}</div>`;
-      h += `<div class="abs ab" style="left:${X}pt;top:${my + 15}pt;width:${LZ - X}pt;height:60pt" data-slot="sold.meet" data-para="1" data-min="3" data-fillbox="1">${esc(big ? C.meet11 : C.meet9)}</div>`;
-      h += `<div class="abs" style="left:${X}pt;top:${my + 81}pt;width:${LZ - X}pt;height:22pt;font:400 17pt/22pt var(--font-display);color:var(--accent);white-space:nowrap;overflow:hidden" data-slot="sold.call" data-lines="1">${esc(C.call || 'Call or text me anytime.')}</div>`;
+      // the invitation closes the write-up, which fills from its label down to the card (bigger type, never spread words)
+      h += `<div class="abs ab" style="left:${X}pt;top:${my + 15}pt;width:${LZ - X}pt;height:${Z.cardY - 10 - my - 15}pt" data-slot="sold.meet" data-para="1" data-min="3" data-fillbox="1">${esc(big ? C.meet11 : C.meet9)} <span class="callin">${esc(C.call || 'Call or text me anytime.')}</span></div>`;
     }
     h += `<div class="abs" data-gapcheck="back.photos" style="left:0;top:0">${g}</div>`;
     // the white board under the postage box, bleeding off the right edge
@@ -131,7 +132,24 @@ window.brochureReady = (async function(){
     h += SP.mailGuides(D, Z);
   }
 
-  await SP.finish(D, W, H, h, issues);
+  // the "When we meet" write-up takes bigger type (up to 13 pt) until it fills its box down to the call line (owner 11/10: no
+  // half-empty box; never by spreading words)
+  await SP.finish(D, W, H, h, issues, async () => {
+    document.querySelectorAll('[data-slot="sold.meet"]').forEach(el => { const box = el.clientHeight; let best = null;
+      el.style.height = 'auto';
+      for(let z = 10; z <= 14.01; z = +(z + .25).toFixed(2)){ el.style.fontSize = z + 'pt'; el.style.lineHeight = (z*1.38).toFixed(2) + 'pt';
+        if(el.scrollHeight <= box + .5) best = z; else break; }
+      if(best){ el.style.fontSize = best + 'pt'; el.style.lineHeight = (best*1.38).toFixed(2) + 'pt'; }
+      el.style.height = 'auto';
+      // what the type leaves goes above the label, so the write-up ends just over the card (no half-empty band under it)
+      const lab = document.querySelector('[data-slot="sold.meetLabel"]'), free = (box - el.scrollHeight)*72/96 - 2;
+      if(lab && free > 0) [lab, el].forEach(e => { e.style.top = (parseFloat(e.style.top) + free) + 'pt'; }); });
+    // the Just Listed write-up takes bigger type (up to 112%) while it still fits its box, so it runs to the box's foot
+    document.querySelectorAll('[data-slot="back.about"]').forEach(el => { const cs = getComputedStyle(el), f0 = parseFloat(cs.fontSize), r = parseFloat(cs.lineHeight)/f0; let best = 1;
+      for(let z = 1.01; z <= 1.121; z += .01){ el.style.fontSize = f0*z + 'px'; el.style.lineHeight = f0*z*r + 'px'; if(el.scrollHeight <= el.clientHeight + 1) best = z; else break; }
+      el.style.fontSize = f0*best + 'px'; el.style.lineHeight = f0*best*r + 'px'; });
+    if(window.LastFit) LastFit([...document.querySelectorAll('[data-slot]')].filter(e => !e.querySelector('[data-slot]') && !/(^|\.)(kicker|title|head|headline|name|label|status|return\d*|t|h|nm)$|^(agent|broker|cc|slab|fine)|^sold\.(step|svc)/i.test(e.dataset.slot)));   // no last line under 80% (owner 11/10)
+  });
 })();
 </script>
 </body>

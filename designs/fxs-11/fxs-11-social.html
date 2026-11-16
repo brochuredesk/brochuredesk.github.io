@@ -700,6 +700,9 @@ FXP.start(['800 20pt "Montserrat"', '700 20pt "Montserrat"', '600 20pt "Montserr
       if(FILL && n && sp > 2 && !((shape === 'story' || shape === 'post') && kind === 'oh')){ const o2 = C0.out.slice(); for(let q = 0; q < o2.length; q++){ const j = mk.filter(z => z.i <= q).length; if(j) o2[q] = `<div class="abs" style="left:0;top:0;width:${W}pt;height:${H}pt;transform:translateY(${(sp*j/n).toFixed(2)}pt);pointer-events:none">${o2[q]}</div>`; } C0.out = o2; C0.y += sp; }
     }
     out = C0.out; y = C0.y;
+    if(kind === 'oh' && shape === 'wide' && rest < u(125)){   // 11/13: a whole-house photo that leaves the room strip low: the label, the date and time, and the address each move down a little so the event sits centered top to bottom between the page margin and the room strip
+      const sh = (h, d) => `<div class="abs" style="left:0;top:0;width:${W}pt;height:${H}pt;transform:translateY(${d}pt);pointer-events:none">${h}</div>`;
+      headHtml = sh(headHtml, 6); out = out.map((h, q) => sh(h, q < evEnd ? 9 : 4.5)); }
     if(y - u(16) > mc) tiny.push({slot: 'fx11', kind: 'left-column-overflows', detail: `the left column runs ${Math.round((y - mb)/FXP.K)} px past the strip`});
     // ---- the agent strip: hairline, name / REALTOR(R) / phone on the left, the one logo on the right
     const strip = agentStrip(m, tx, tw, mb, SH, wideS, shape !== 'slide');

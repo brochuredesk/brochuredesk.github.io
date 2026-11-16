@@ -14,8 +14,8 @@
   The Vaulted Opening · optional two-sided 8.5 x 11 flyer (trim 612 x 792 pt; print: 0.25 in margin of the midnight field, content on the 36 pt
   column like the Open House flyer). data.piece.side = "front" | "back". Built from out/portrait-flyers/vaulted-opening/ (build.py).
   Same family as the fold-over: the midnight-blue field, DM Serif Display titles, white keylines on every photo, pale-blue tracked kickers,
-  DM Sans text, and the cover's inset: a small keylined photo (the entry) set into the hero's corner under its own label.
-  FRONT  top band (place line, the one logo in white), white keyline, the whole house with its inset, the address with the ruled facts beside it,
+  DM Sans text. No inset photo on the hero: the Vaulted Opening never draws one (owner 11/15/2026).
+  FRONT  top band (place line, the one logo in white), white keyline, the whole house, the address with the ruled facts beside it,
          a rule, the write-up beside the places list, three keylined captioned photos, the card with the office lines level with its name and
          phone lines, fine print.
   BACK   With a plan: header, the plan on its white board with the key at the left, four captioned photos, the note. Without: the rooms floor
@@ -207,7 +207,7 @@ window.brochureReady = (async function(){
   const folIds = items.filter(Boolean).map(i => i.photo);
   const PL0 = (FL.places || (LF.places || []).map(p => ({n: p.n, d: p.d})));
   const PLT = FL.placesTitle || LF.placesTitle || 'Around the neighborhood';
-  const INS = CV.inset && has(CV.inset.photo) && !used.has(CV.inset.photo) ? CV.inset : null;
+  const INS = null;   // the Vaulted Opening never draws an inset photo, on any piece (owner 11/15/2026); the data's cover.inset is kept but never drawn
 
   // ---------- pieces ----------
   const cap = (id, slot, r, x, y, w) => { const d = dimsOf(id);
@@ -223,8 +223,7 @@ window.brochureReady = (async function(){
 
   if(front){
     // ================= FRONT =================
-    // vaulted-opening front = the fold-over's cover: the whole house full bleed to the page edges, a white-keyline inset photo over its lower
-    // corner, a navy tab with the one logo on the hero, then the address, the write-up with the facts and places beside it, and three keyline photos
+    // vaulted-opening front = the fold-over's cover: the whole house full bleed to the page edges, a navy tab with the one logo on the hero, then the address, the write-up with the facts and places beside it, and three keyline photos
     const trio = pick(FL.front && FL.front.photos, 3, folIds);
     const facts = [];
     if(L.beds) facts.push([Number(L.beds).toLocaleString('en-US'), L.beds == 1 ? 'Bedroom' : 'Bedrooms']);

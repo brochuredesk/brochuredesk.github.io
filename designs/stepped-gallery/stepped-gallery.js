@@ -59,7 +59,7 @@
     const kind = o.kind || 'd', k = K(kind), lines = o.lines || PG.need(c.text, w, kind);
     return `<div class="cap ${kind === 'l' ? 'lead' : ''} abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${PG.capH(lines, kind)}pt">
       <div class="nm" data-slot="${slot}.name" data-lines="1"><b>${esc(c.name)}</b>${c.tag ? `<span>${esc(c.tag)}</span>` : ''}</div>
-      <div class="tx" data-slot="${slot}.text" data-lines="${lines}" data-nmin="${o.min || lines}" data-nmax="${o.max || lines}" data-cap="1" data-w="${w}" style="height:${lines*k.lh}pt">${esc(PG.txt(c.text))}</div></div>`;
+      <div class="tx" data-slot="${slot}.text" data-lines="${lines}" data-nmin="${o.min || lines}" data-nmax="${o.max || lines}" data-cap="1" data-w="${w}"${c.id && PG.pool(c.id) && !PG.fitMode ? ` data-pool='${esc(JSON.stringify(PG.pool(c.id))).replace(/'/g, '&#39;')}'` : ''} style="height:${lines*k.lh}pt">${esc(/^(back|front)\./.test(slot) ? PG.noRepeat((String(PG.txt(c.text)).match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || []).map(x => x.trim()).filter(Boolean)).join(' ') : PG.txt(c.text))}</div></div>`;   // never a repeated line (owner 11/10, rule 7)
   };
   // lines a caption sets in: copy.lines[slot], else the default
   PG.lines = (D, slot, dflt) => ((D.copy||{}).lines || {})[slot] || dflt;
@@ -84,7 +84,10 @@
   PG.fitTags = () => document.querySelectorAll('.cap .nm').forEach(el => { if(el.scrollWidth > el.clientWidth + 1){ const sp = el.querySelector('span'); if(sp) sp.style.display = 'none'; } });
   // the floor-by-floor room list with real writing (the back's no-plan fill): blocks [{label, rooms [[name, size]], text}]
   PG.roomList = (D, blocks, slot, x, y, w, h) => {
-    blocks = blocks || []; const lh = 13, rowH = 15, headH = 20, ns = blocks.map((b, i) => PG.lines(D, `${slot}${i}`, 3));
+    blocks = blocks || []; const lh = 13, headH = 20, ns = blocks.map((b, i) => PG.lines(D, `${slot}${i}`, 3));
+    // owner 11/10 (no blank space): a list shorter than its column spaces its rows out (up to 30 pt) before the blocks part
+    const nRows = blocks.reduce((a, b) => a + b.rooms.length, 0), base = blocks.reduce((a, b, i) => a + headH + b.rooms.length*15 + 6 + ns[i]*lh, 0);
+    const rowH = h > 0 && nRows ? Math.min(30, 15 + Math.max(0, (h - base - 10*Math.max(0, blocks.length - 1))/nRows)) : 15;
     const used = blocks.reduce((a, b, i) => a + headH + b.rooms.length*rowH + 6 + ns[i]*lh, 0);
     const gap = blocks.length > 1 ? Math.max(8, (h - used)/(blocks.length - 1)) : 0; let yy = y, out = '';
     blocks.forEach((b, i) => {
@@ -115,7 +118,7 @@
   PG.facts = L => {
     const f = [];
     if(L.beds) f.push([L.beds, `Bedroom${L.beds == 1 ? '' : 's'}`]);
-    if(L.baths){ const bt = BD.bathsText(L), m = bt.main.match(/^(\S+) (.*)$/); f.push([m[1], m[2]]); if(bt.half) f.push([L.halfBaths, 'Half Baths']); }
+    if(L.baths){ const bt = BD.bathsText(L), m = bt.main.match(/^([\d.,]+(?:[\s\u2009\u202f]*½)?)\s+(.*)$/) || bt.main.match(/^(\S+) (.*)$/); f.push([m[1], m[2]]); if(bt.half) f.push([L.halfBaths, 'Half Baths']); }   // "3½ Baths": the ½ stays with the number
     if(L.sqft) f.push([n(L.sqft), 'Sq Ft']);
     if(L.yearBuilt || L.year) f.push([L.yearBuilt || L.year, 'Year Built']);
     else if(L.stories) f.push([L.stories, +L.stories === 1 ? 'Story' : 'Stories']);
@@ -127,6 +130,10 @@
   // plan.levels: [{name, photo, w, h}] (px of a clear-background cut). Every level at one scale. One level: no label; two or
   // more: labeled by floor. The drawing turns a quarter turn when that prints it a third larger or more (never redrawn).
   PG.plan = (D, box) => {
+    // owner 11/10 (standing rule): the plan's background goes clear so the paper shows through; on this dark paper the lines turn
+    // light (CSS invert + screen, never redrawn). A plan with coloured rooms (MLS colours) keeps a light panel. plan.levels[].colored
+    // comes with the listing (the sample data marks it from the image).
+    if(D.plan && D.plan.levels) document.body.dataset.plan = D.plan.levels.some(l => l.colored) ? 'panel' : 'clear';
     const P = D.plan; if(!P || !P.levels || !P.levels.length) return {html:'', issues:[], used:null};
     const lv = P.levels.map(l => Object.assign({}, l, {src: l.src || PG.src(D, l.photo)})), GAP = 22, LAB = lv.length > 1 ? 14 : 0, issues = [];
     const layout = (ang, cols) => {
@@ -217,6 +224,60 @@
     if(window.ContactCard) issues.push(...ContactCard.check(document));
     return issues;
   };
+  // ---------- text under a photo fills the photo's width (owner 11/8/2026) ----------
+  // A caption with a data-pool (true lines about its photo, the existing ones first) is re-set from that pool: the sentences that set in exactly
+  // its box's lines with every line (set ragged) at least 90% of the width, else 80%; type up to 12% larger when that is what it takes; then justified.
+  // A caption that cannot fill keeps its text, left aligned. Never shortened to meet the rule: it only gets fuller or larger.
+  // owner 11/10 (rule 7): no phrase repeats inside a caption: a line that shares two content words (or a number) with an earlier
+  // kept line of the same pool, or opens with the same two words, is left out ("The front is stone and stucco." after "A stone
+  // and stucco facade faces the community drive.")
+  PG.content = t => new Set((String(t).toLowerCase().match(/[a-z0-9'-]+/g) || []).filter(w => /\d/.test(w) || (w.length >= 4 && !/^(with|from|that|this|they|there|their|into|onto|over|under|along|beside|each|just|also|have|has|sits|runs|room|rooms|floor|house|home)$/.test(w))));
+  // two content words side by side ("stone and stucco" -> "stone stucco"), the small words between them skipped
+  PG.pairs = t => { const w = (String(t).toLowerCase().match(/[a-z0-9'-]+/g) || []).filter(x => /\d/.test(x) || (x.length >= 4 && !/^(with|from|that|this|they|there|their|into|onto|over|under|along|beside|each|just|also|have|sits|runs)$/.test(x))); const p = []; for(let i = 0; i + 1 < w.length; i++) p.push(w[i] + ' ' + w[i + 1]); return p; };
+  PG.noRepeat = (arr, seed) => { const pairs = new Set((seed || []).flatMap(x => PG.pairs(x))), out = [], kept = (seed || []).map(PG.content), opens = new Set((seed || []).map(x => (String(x).toLowerCase().match(/[a-z0-9']+/g) || []).slice(0, 2).join(' ')));
+    arr.forEach(x => { const c = PG.content(x), o = (String(x).toLowerCase().match(/[a-z0-9']+/g) || []).slice(0, 2).join(' ');
+      if(opens.has(o) || kept.some(k => [...c].filter(w => k.has(w)).length >= 3) || PG.pairs(x).some(p => pairs.has(p))) return; out.push(x); kept.push(c); opens.add(o); PG.pairs(x).forEach(p => pairs.add(p)); });
+    return out; };
+  window.CapFit = window.CapFit || function(els){
+    const stat = el => { const r = document.createRange(); r.selectNodeContents(el); const box = el.getBoundingClientRect(), lh = parseFloat(getComputedStyle(el).lineHeight) || 12, rows = [];
+      for(const q of r.getClientRects()){ if(q.width < .5 || q.height < .5) continue; const l = rows.find(x => Math.abs(x.top - q.top) < lh*.5); if(l) l.r = Math.max(l.r, q.right); else rows.push({top: q.top, r: q.right}); }
+      return {n: rows.length, min: rows.length ? Math.min(...rows.map(x => (x.r - box.left)/box.width)) : 0}; };
+    for(const el of els){
+      let pool; try { pool = JSON.parse(el.dataset.pool || '[]'); } catch(e){ continue; }
+      pool = (/^(back|front|oh)\./.test(el.dataset.slot || '') ? PG.noRepeat(pool.filter(x => x && !/\b(generous|spacious|boasts?|nestled|stunning)\b/i.test(x))) : pool.filter(Boolean)).slice(0, 10); const n = +el.dataset.fitn || +el.dataset.lines || 0;   // the approved inside panels keep their lines
+      if(!pool.length || !n) continue;
+      const t0 = el.textContent, fsIn = el.style.fontSize, fs0 = parseFloat(getComputedStyle(el).fontSize), k = pool.length;
+      el.style.fontSize = ''; el.textContent = pool.join(' ');
+      const s0 = stat(el), all = pool.join(' ').length, cpl0 = all/Math.max(.5, s0.n - 1 + Math.max(.3, s0.min));
+      let got = null, ok80 = null;
+      for(const pass of [0, 1]){ if(got || ok80) break;
+      for(const z of [1, 1.03, 1.06, 1.09, 1.12]){
+        el.style.fontSize = (fs0*z) + 'px';
+        const cpl = cpl0/z, cands = [];
+        for(let m = 1; m < (1 << k); m++){
+          if(!pass && !(m & 1)) continue;   // first pass: the first line (the existing lead) stays
+          const pick = pool.filter((_, i) => m >> i & 1), len = pick.join(' ').length;
+          if(len < (+el.dataset.floor || 0)) continue;   // data-floor: never shorter than this many characters
+          if(len >= cpl*(n - 1 + .8) && len <= cpl*(n + .05)) cands.push({pick, d: Math.abs(len - cpl*(n - .06))});
+        }
+        cands.sort((a, b) => a.d - b.d);
+        for(const c of cands.slice(0, 160)){
+          el.textContent = c.pick.join(' '); const s = stat(el);
+          if(s.n !== n) continue;
+          if(s.min >= .9){ got = c; break; }
+          if(s.min >= .8 && !ok80) ok80 = c;
+        }
+        if(got) break;
+        if(ok80){ got = ok80; break; }
+      }
+      }
+      if(got){ el.textContent = got.pick.join(' '); el.style.textAlign = 'justify'; el.dataset.capfit = 'ok'; }
+      else { el.textContent = t0; el.style.fontSize = fsIn; el.style.textAlign = ''; el.dataset.capfit = 'no'; }   // keeps the size the layout fitted it at
+    }
+  };
+
+
+  PG.pool = id => ((((PG.data().companion || {}).capPool) || {})[id]) || null;
   window.PG = PG;
 })();
 

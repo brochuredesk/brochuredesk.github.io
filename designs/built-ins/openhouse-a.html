@@ -6,7 +6,9 @@
 <link rel="stylesheet" href="built-ins.css">
 <link rel="stylesheet" href="built-ins-cards.css">
 <script src="built-ins.js"></script>
+<script src="lastfix.js"></script>
 <script src="built-ins-cards.js"></script>
+<script src="capfit.js"></script>
 <!--
   Built-In Details · Open House flyer "Rooms Below" (trim 612 x 792 pt; print: 0.25 in white margin around the paper field).
   White paper, brick small caps, serif titles over a hairline, as the fold-over. The event leads: the label (22 pt brick small caps),
@@ -24,10 +26,11 @@
 window.brochureReady = (async function(){
   const D = AT.data();
   if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="color:#fff;padding:20pt">No data injected.</p>'; return; }
-  const esc = AT.esc, L = D.listing, b = D.brand || {}, PC = ((D.copy || {}).pc || {}), OHC = PC.oh || {};
+  const esc = AT.esc, L = D.listing, b = D.brand || {}, PC = AT.pcCopy(D), OHC = PC.oh || {};
   const issues = await AT.fontsReady(D);
   document.body.dataset.mode = D.mode || 'email';
   const O = AT.openHouse(D);
+  if(!O.long || !O.time) issues.push({slot: 'oh.when', kind: 'oh-date-time-missing'});   /* every Open House piece shows its date and time, big (owner 11/10) */
   const dm = s => String(s);   // room sizes read 24' x 17' on every piece (owner 11/1 Round 4)
   const X = 36, W = 540;
   let h = '';
@@ -54,8 +57,12 @@ window.brochureReady = (async function(){
 
   // the house, whole, then the address, the place and the four facts
   const hero = (OHC.photos || [])[0] || 'front';
-  h += AT.photo(D, hero, `position:absolute;left:${X}pt;top:${160 + dy}pt;width:${W}pt;height:254pt`, 'oh.hero', 'hero');
-  const T = 422 + dy;
+  // owner standing rule: the exterior keeps the whole house, roof and sides; a tall house takes a taller frame (the rooms and the card
+  // below give up the room: the shorter contact card, two rows)
+  const hp0 = (D.photos || {})[hero] || {}, hb0 = hp0.box, needH = hb0 ? Math.min(1, hb0[3] - hb0[1] + .04) : 0;
+  const HH = Math.max(254, hb0 && hp0.w ? Math.ceil(W / (hp0.w / hp0.h) * needH) : 254), tallH = HH > 254, EXTRA = HH - 254;
+  h += AT.photo(D, hero, `position:absolute;left:${X}pt;top:${160 + dy}pt;width:${W}pt;height:${HH}pt`, 'oh.hero', 'hero');
+  const T = 422 + dy + EXTRA;
   h += `<div class="abs dsp" id="addr" style="left:${X-1}pt;top:${T}pt;width:340pt;height:40pt;font-size:30pt;line-height:40pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
   h += `<div class="abs kicker" style="left:${X}pt;top:${T + 44}pt;width:340pt;height:10pt" data-slot="place" data-lines="1">${esc(AT.placeZip(L).toUpperCase())}</div>`;
   const bm = (() => { const t = BD.bathsText(L), m = t.main.match(/^(\S+) (.*)$/); return {num: m[1], label: m[2], half: t.half}; })();
@@ -65,11 +72,11 @@ window.brochureReady = (async function(){
   h += `<div class="hrule" style="top:${T + 63}pt;left:${X}pt;right:${X}pt"></div>`;
 
   // three rooms, with their sizes
-  const rows = OHC.rows || [], rt = T + 72, rh = 646 - rt, cw = (W - 24)/3, ph = rh - 56;
+  const rows = OHC.rows || [], rt = T + 72, rh = (tallH ? 684 : 658) - rt, cw = (W - 24)/3, ph = rh - 56;   // the captions end just over the card (round 3: no gap under a caption)
   h += `<div class="abs row" style="left:${X}pt;top:${rt}pt;width:${W}pt;height:${rh}pt;gap:12pt">` + rows.map((r, i) =>
-    `<div class="item" style="flex:1 1 0;width:${cw}pt">${AT.photo(D, r.photo, `flex:none;height:${ph}pt`, 'oh.room' + i, 'bp')}<div class="cap"><div class="h" data-slot="oh.room${i}.h" data-lines="1">${esc(r.title)}${r.dims ? `<i>${esc(dm(r.dims))}</i>` : ''}</div><div class="a" data-slot="oh.room${i}.a" data-para="1" data-min="2" data-lines="3">${esc(r.text)}</div></div></div>`).join('') + `</div>`;
+    `<div class="item" style="flex:1 1 0;width:${cw}pt">${AT.photo(D, r.photo, `flex:1 1 0;min-height:0`, 'oh.room' + i, 'bp')}<div class="cap"><div class="h" data-slot="oh.room${i}.h" data-lines="1">${esc(r.title)}${r.dims ? `<i>${esc(dm(r.dims))}</i>` : ''}</div><div class="a" data-slot="oh.room${i}.a" data-para="1" data-min="2" data-lines="3">${esc(r.text)}</div></div></div>`).join('') + `</div>`;
 
-  h += AT.cardBox(D, [X, 664, W, 92], {layout: 'panel'});
+  h += tallH ? AT.cardBox(D, [X, 690, W, 66], {layout: 'panel', size: 'short', s: {name: 20, nameFloor: 15, desigInline: true, wrap: false, phone: 13.5, line: 9.5, office: 9.5, hsW: 50, hsGap: 14, pad: [6, 14, 5], panelW: 160, panelPad: [5, 8], logo: {wide: [140, 30], square: [32, 32], tall: [34, 34]}}}) : AT.cardBox(D, [X, 664, W, 92], {layout: 'panel'});
   h += `<div class="abs fine" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;white-space:nowrap" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
 
   const f = AT.frame(D, 612, 792, h);
@@ -84,8 +91,10 @@ window.brochureReady = (async function(){
   { const caps = [...document.querySelectorAll('.cap .a')], base = caps.map(c => AT.lines(c));
     for(let s = 9; s <= 10; s += .5){ caps.forEach(c => { c.style.fontSize = s + 'pt'; c.style.lineHeight = (s*1.35) + 'pt'; });
       if(caps.some((c, i) => AT.lines(c) !== base[i] || c.scrollHeight > c.clientHeight + 1)){ const p = s - .5; caps.forEach(c => { c.style.fontSize = p + 'pt'; c.style.lineHeight = (p*1.35) + 'pt'; }); break; } } }
+  await document.fonts.ready; CapFit.run(document.querySelectorAll('.cap .a'));
   ContactCard.fit(document);
   window.photoPlacements = AT.placements;
+  if(window.LastFix){ await document.fonts.ready; LastFix.run(document, ((D.copy || {}).pc || {}).alts || {}); }   // no last line under 80% (owner 11/10)
   window.brochureCheck = () => AT.checkSingle(D, issues);
 })();
 </script>

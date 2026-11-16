@@ -47,7 +47,7 @@
     const lines = o.lines || H3.need(c.text, w), mn = o.min || lines, mx = o.max || lines;
     return `<div class="cap abs${o.sm ? ' sm' : ''}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${17 + lines*11}pt">
       <div class="nm" data-slot="${slot}.name" data-lines="1">${esc(c.name)}${c.tag ? `<span>${esc(c.tag)}</span>` : ''}</div>
-      <div class="tx" data-slot="${slot}.text" data-lines="${lines}" data-nmin="${mn}" data-nmax="${mx}" data-cap="1" style="height:${lines*11}pt">${esc(H3.txt(c.text))}</div></div>`;
+      <div class="tx" data-slot="${slot}.text" data-lines="${lines}" data-nmin="${mn}" data-nmax="${mx}" data-cap="1"${c.id && H3.pool(c.id) && !H3.fitMode ? ` data-pool='${esc(JSON.stringify(H3.pool(c.id))).replace(/'/g, '&#39;')}'` : ''} style="height:${lines*11}pt">${esc(H3.txt(c.text))}</div></div>`;
   };
   H3.kick = (t, slot, x, y, w) => `<div class="abs kick" style="left:${x}pt;top:${y}pt;width:${w||600}pt;height:10pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
   H3.title = (t, slot, x, y, w) => `<div class="abs title one" style="left:${x}pt;top:${y}pt;width:${w||744}pt;height:32pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
@@ -83,32 +83,40 @@
   H3.plan = (D, box) => {
     const P = D.plan; if(!P || !P.levels || !P.levels.length) return {html:'', issues:[], used:null};
     const lv = P.levels.map(l => Object.assign({}, l, {src: l.src || H3.src(D, l.photo)})), GAP = box.gap != null ? box.gap : 22, LAB = lv.length > 1 ? 14 : 0, issues = [];
-    const layout = (ang, cols) => {
-      const side = ang === 90, sz = lv.map(l => side ? {w:l.h, h:l.w} : {w:l.w, h:l.h}), rows = Math.ceil(lv.length/cols);
-      const grid = [...Array(rows)].map((_, r) => lv.map((l, i) => i).filter(i => Math.floor(i/cols) === r));
-      const colW = [...Array(cols)].map((_, c) => Math.max(...grid.map(g => g[c] !== undefined ? sz[g[c]].w : 0)));
-      const rowH = grid.map(g => Math.max(...g.map(i => sz[i].h)));
-      const s = Math.min((box.w - GAP*(cols-1)) / colW.reduce((a,b)=>a+b,0), (box.h - (LAB+4)*rows - GAP*0.6*(rows-1)) / rowH.reduce((a,b)=>a+b,0));
-      return {ang, cols, rows, sz, grid, colW, rowH, s, area: sz.reduce((a,z)=>a + z.w*z.h*s*s, 0)};
+    // owner 11/10/2026: the plan's background goes clear so the paper shows through; never redrawn, its lines stay. On this dark
+    // paper the board drops away and the lines print light (invert + screen); a plan with coloured rooms keeps its light board.
+    if(!P.colorRooms && document.body) document.body.classList.add('plan-clear');
+    // rows in floor order, each row sized and centered on its own (a wide level never widens the levels above it); one
+    // scale for every level (owner 11/10/2026: the plan as large as fits, centered in its box)
+    const comps = n => n === 1 ? [[1]] : [[n]].concat(...[...Array(n - 1)].map((_, k) => comps(n - 1 - k).map(c => [k + 1, ...c])));
+    const layout = (ang, parts) => {
+      const side = ang === 90, sz = lv.map(l => side ? {w:l.h, h:l.w} : {w:l.w, h:l.h}), rows = parts.length;
+      let k = 0; const grid = parts.map(m => [...Array(m)].map(() => k++));
+      const rowW = grid.map(g => g.reduce((a, i) => a + sz[i].w, 0)), rowH = grid.map(g => Math.max(...g.map(i => sz[i].h)));
+      const s = Math.min(...grid.map((g, r) => (box.w - GAP*(g.length-1)) / rowW[r]), (box.h - (LAB+4)*rows - GAP*0.6*(rows-1)) / rowH.reduce((a,b)=>a+b,0));
+      return {ang, rows, sz, grid, rowW, rowH, s, area: sz.reduce((a,z)=>a + z.w*z.h*s*s, 0)};
     };
+    // a plan whose lettering reads level as given (textDir 'h') prints upright: never turned on its side (owner 11/10/2026)
+    const noTurn = lv.some(l => l.textDir === 'h');
     let best = null;
-    for(const cols of [...Array(lv.length)].map((_, i) => i + 1)){
-      const up = layout(0, cols), tu = layout(90, cols);
-      const pick = tu.area >= up.area*1.33 ? tu : up;
-      if(!best || pick.area > best.area) best = pick;
+    for(const parts of comps(lv.length)){
+      const up = layout(0, parts), tu = layout(90, parts);
+      const pick = !noTurn && tu.area >= up.area*1.33 ? tu : up;
+      if(!best || pick.area > best.area + 1e-6) best = pick;
     }
-    const A = best, gridW = A.colW.reduce((a,b)=>a+b,0)*A.s + GAP*(A.cols-1), gridH = A.rowH.reduce((a,b)=>a+b,0)*A.s + (LAB+4)*A.rows + GAP*0.6*(A.rows-1);
+    const A = best, gridW = Math.max(...A.grid.map((g, r) => A.rowW[r]*A.s + GAP*(g.length-1))), gridH = A.rowH.reduce((a,b)=>a+b,0)*A.s + (LAB+4)*A.rows + GAP*0.6*(A.rows-1);
     const x0 = box.x + (box.w - gridW)/2, y0 = box.y + (box.h - gridH)/2;
     let html = '';
-    A.grid.forEach((g, r) => g.forEach((i, c) => {
+    A.grid.forEach((g, r) => { const rw = A.rowW[r]*A.s + GAP*(g.length-1); let cx = box.x + (box.w - rw)/2;
+      g.forEach(i => {
       const l = lv[i], w = A.sz[i].w*A.s, h = A.sz[i].h*A.s;
-      const cx = x0 + A.colW.slice(0,c).reduce((a,b)=>a+b,0)*A.s + GAP*c + (A.colW[c]*A.s - w)/2;
-      const cy = y0 + A.rowH.slice(0,r).reduce((a,b)=>a+b,0)*A.s + ((LAB+4) + GAP*0.6)*r + (LAB+4) ;
+      const cy = y0 + A.rowH.slice(0,r).reduce((a,b)=>a+b,0)*A.s + ((LAB+4) + GAP*0.6)*r + (LAB+4) + (A.rowH[r]*A.s - h)/2;
       const uw = l.w*A.s, uh = l.h*A.s, ppi = l.w / (uw/72);
       if(ppi < 300) issues.push({slot:`plan.${i}`, kind:'plan-under-300ppi', ppi:Math.round(ppi)});
       if(LAB) html += `<div class="plan flr" style="left:${cx - 20}pt;top:${cy - LAB - 4}pt;width:${w+40}pt;height:10pt" data-slot="plan.floor${i}" data-lines="1">${esc(l.name)}</div>`;
       html += `<div class="plan lv" style="left:${cx}pt;top:${cy}pt;width:${w}pt;height:${h}pt"><div class="in" style="left:${(w-uw)/2}pt;top:${(h-uh)/2}pt;width:${uw}pt;height:${uh}pt;${A.ang===90?'transform:rotate(90deg);':''}"><img src="${esc(l.src)}" alt="" data-plan="1"></div></div>`;
-    }));
+      cx += w + GAP; });
+    });
     return {html, issues, used:{x:x0, y:y0, w:gridW, h:gridH, ang:A.ang}};
   };
 
@@ -171,6 +179,91 @@
     if(window.AgentCard) issues.push(...AgentCard.trec(document, [...document.querySelectorAll('.logo img')]));
     return issues;
   };
+  // ---------- text under a photo fills the photo's width (owner 11/8/2026) ----------
+  // A caption with a data-pool (true lines about its photo, the existing ones first) is re-set from that pool: the sentences that set in exactly
+  // its box's lines with every line (set ragged) at least 90% of the width, else 80%; type up to 12% larger when that is what it takes; then justified.
+  // A caption that cannot fill keeps its text, left aligned. Never shortened to meet the rule: it only gets fuller or larger.
+  // owner 11/10/2026 (round 2): a small justification stretch is fine, big word gaps are not. A justified box whose lines would
+  // open gaps over maxX normal spaces is set ragged instead (the fill comes from true lines and type size, never spread words).
+  // owner 11/10/2026: no last line under 80% anywhere. A write-up whose last line falls short takes the type size (97% to 112%
+  // of its own, in 1% steps) at which it still fits its box and its last line runs 82%+; if none does, it keeps its size.
+  window.LastFit = window.LastFit || function(els, min){
+    min = min || .82;
+    const last = el => { const r = document.createRange(); r.selectNodeContents(el); const q = [...r.getClientRects()].filter(x => x.width > .5 && x.height > .5);
+      if(!q.length) return 1; const bx = el.getBoundingClientRect(), t = Math.max(...q.map(x => x.top)), lh = parseFloat(getComputedStyle(el).lineHeight) || 12;
+      const rows = new Set(q.map(x => Math.round(x.top/(lh*.5)))).size; if(rows < 2) return 1;
+      return (Math.max(...q.filter(x => Math.abs(x.top - t) < lh*.5).map(x => x.right)) - bx.left)/bx.width; };
+    for(const el of els){ if(!el || !el.textContent.trim() || last(el) >= min) continue;
+      const cs = getComputedStyle(el), fs0 = parseFloat(cs.fontSize), lr = (parseFloat(cs.lineHeight) || fs0*1.3)/fs0, keepF = el.style.fontSize, keepL = el.style.lineHeight;
+      const hb = el.clientHeight, fixedH = !!el.style.height && el.style.height !== 'auto';
+      let ok = false;
+      for(const z of [1.01, 1.02, .99, 1.03, .98, 1.04, .97, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1, 1.11, 1.12]){
+        el.style.fontSize = (fs0*z) + 'px'; el.style.lineHeight = (fs0*z*lr) + 'px';
+        for(const t of [0, .1, -.1, .2]){ el.style.letterSpacing = t ? t + 'px' : '';
+          if(fixedH && el.scrollHeight > hb + 1) continue;
+          if(last(el) >= min){ ok = true; break; } }
+        if(ok) break; }
+      if(!ok){ el.style.fontSize = keepF; el.style.lineHeight = keepL; el.style.letterSpacing = ''; } }
+  };
+  window.NoWideGaps = window.NoWideGaps || function(els, maxX){
+    maxX = maxX || 3;
+    for(const el of els){ if(getComputedStyle(el).textAlign !== 'justify') continue;
+      const keep = el.style.textAlign; el.style.textAlign = 'left';
+      const box = el.getBoundingClientRect(), fs = parseFloat(getComputedStyle(el).fontSize) || 12, sp = fs*.26, r = document.createRange(), lines = [];
+      const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for(let n = tw.nextNode(); n; n = tw.nextNode()){ const re = /\S+/g; let m;
+        while((m = re.exec(n.textContent))){ r.setStart(n, m.index); r.setEnd(n, m.index + m[0].length); const q = r.getBoundingClientRect();
+          let L = lines.find(l => Math.abs(l.t - q.top) < fs*.5); if(!L){ L = {t: q.top, n: 0, r: 0}; lines.push(L); } L.n++; L.r = Math.max(L.r, q.right); } }
+      lines.sort((a, b) => a.t - b.t);
+      const bad = lines.slice(0, -1).some(L => L.n > 1 && (box.right - L.r)/(L.n - 1) + sp > maxX*sp);
+      el.style.textAlign = bad ? 'left' : (keep || 'justify'); if(bad) el.dataset.ragged = '1'; }
+  };
+  window.CapFit = window.CapFit || function(els){
+    const stat = el => { const r = document.createRange(); r.selectNodeContents(el); const box = el.getBoundingClientRect(), lh = parseFloat(getComputedStyle(el).lineHeight) || 12, rows = [];
+      for(const q of r.getClientRects()){ if(q.width < .5 || q.height < .5) continue; const l = rows.find(x => Math.abs(x.top - q.top) < lh*.5); if(l) l.r = Math.max(l.r, q.right); else rows.push({top: q.top, r: q.right}); }
+      return {n: rows.length, min: rows.length ? Math.min(...rows.map(x => (x.r - box.left)/box.width)) : 0, last: rows.length ? (rows[rows.length - 1].r - box.left)/box.width : 0}; };
+    for(const el of els){
+      let pool; try { pool = JSON.parse(el.dataset.pool || '[]'); } catch(e){ continue; }
+      pool = pool.filter(Boolean).slice(0, 10); const n = +el.dataset.fitn || +el.dataset.lines || 0;
+      if(!pool.length || !n) continue;
+      const t0 = el.textContent, fs0 = parseFloat(getComputedStyle(el).fontSize), k = pool.length;
+      el.style.fontSize = ''; el.textContent = pool.join(' ');
+      const s0 = stat(el), all = pool.join(' ').length, cpl0 = all/Math.max(.5, s0.n - 1 + Math.max(.3, s0.min));
+      let got = null, ok80 = null;
+      for(const pass of [0, 1]){ if(got || ok80) break;
+      for(const z of [1, 1.03, 1.06, 1.09, 1.12]){
+        el.style.fontSize = (fs0*z) + 'px';
+        const cpl = cpl0/z, cands = [];
+        for(let m = 1; m < (1 << k); m++){
+          if(!pass && !(m & 1)) continue;   // first pass: the first line (the existing lead) stays
+          const pick = pool.filter((_, i) => m >> i & 1), len = pick.join(' ').length;
+          // owner 11/10/2026: never shorter than the text the caption came with; the lines are justified, so the last line is
+          // the one that has to reach 90% (else 80%)
+          if(len >= t0.trim().length && len >= cpl*(n - 1 + .6) && len <= cpl*(n + .05)) cands.push({pick, d: -len});
+        }
+        cands.sort((a, b) => a.d - b.d);
+        for(const c of cands.slice(0, 160)){
+          el.textContent = c.pick.join(' '); const s = stat(el);
+          if(s.n !== n) continue;
+          if(s.last >= .9){ got = c; break; }
+          if(s.last >= .8 && !ok80) ok80 = c;
+        }
+        if(got) break;
+        if(ok80){ got = ok80; break; }
+      }
+      }
+      if(got){ el.textContent = got.pick.join(' '); el.style.textAlign = 'justify'; el.dataset.capfit = 'ok'; }
+      else {
+        // no pool pick holds as much: the caption keeps its own text, at the size (up to 12% larger) where its last line fills
+        el.textContent = t0; el.style.textAlign = 'justify'; let z0 = null;
+        for(const z of [1, 1.03, 1.06, 1.09, 1.12]){ el.style.fontSize = (fs0*z) + 'px'; const s = stat(el); if(s.n === n && s.last >= .8){ z0 = z; break; } }
+        if(z0 == null){ el.style.fontSize = ''; el.style.textAlign = ''; }
+        el.dataset.capfit = z0 == null ? 'no' : 'own'; }
+    }
+  };
+
+
+  H3.pool = id => ((((H3.data().companion || {}).capPool) || {})[id]) || null;
   window.H3 = H3;
 })();
 

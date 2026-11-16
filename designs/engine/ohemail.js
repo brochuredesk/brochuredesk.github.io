@@ -79,6 +79,33 @@
     const n = Math.max(1, Math.round(m.getBoundingClientRect().height*72/96/lh)); m.remove(); return n;
   };
 
+  // Every photo gets a caption (the owner, 11/10/2026): the room name plus one true line about that photo. The line comes from
+  // the listing's own lines about it: companion.capPool[id] first, then the photo's fold-over caption (any copy item with
+  // photo === id: its sentences, caption, text or body), then the detail from the photo's tags. Never written here; with no
+  // true line, the room name alone.  OE.caption(D, id) -> {name, lines: [true sentences, best first]}
+  const sentences = v => [].concat(v || []).flatMap(x => typeof x === 'string' ? (x.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) || []) : []).map(x => x.trim()).filter(Boolean);
+  const isName = t => t && t.length <= 28 && !/[.!?]$/.test(t) && !/^(a|an|the|new|this)\b/i.test(t) && t.split(/\s+/).length <= 4;
+  // a line's content-word stems ("Recessed lights shine overhead." ~ "A recessed light shines overhead."), and whether two lines
+  // say mostly the same thing (most of the shorter one's stems in the other)
+  const SMALLW = new Set('a an the of to in on at by for with and or but is are was were be it its this that from as into over under up off out there here has have had one two its their each every all any'.split(' '));
+  const stems = t => new Set(String(t).toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(w => w && !SMALLW.has(w)).map(w => w.replace(/(ies)$/, 'y').replace(/(es|s|ed|ing)$/, '')).filter(w => w.length > 1));
+  OE.sameSay = (a, b) => { const A = stems(a), B = stems(b), m = Math.min(A.size, B.size); if(m < 2) return false; let k = 0; A.forEach(x => { if(B.has(x)) k++; }); return k/m >= .7; };
+  OE.caption = (D, id) => {
+    const P = (D.photos || {})[id] || {}, C = D.companion || {}, out = [];
+    let name = (P.caption && P.caption.name) || P.room || P.label || '';
+    const pool = (C.capPool || {})[id];
+    if(pool) out.push(...sentences(Array.isArray(pool) ? pool.map(x => typeof x === 'string' ? x : (x && (x.text || x.s)) || '') : pool));
+    const walk = o => { if(!o || typeof o !== 'object') return; if(Array.isArray(o)){ o.forEach(walk); return; }
+      if(o.photo === id || (o.id === id && !o.photo)){ if(!name && isName(String(o.title || o.name || '').trim())) name = String(o.title || o.name).trim();
+        out.push(...sentences(o.s), ...sentences(o.caption), ...sentences(o.text), ...sentences(o.a), ...sentences(o.body)); }
+      Object.values(o).forEach(v => { if(v && typeof v === 'object') walk(v); }); };
+    walk(D.copy); walk(C.flyer);
+    const ic = window.Ivory && Ivory.caption ? Ivory.caption(D, id) : {};
+    if(!name) name = ic.name || '';
+    if(ic.detail) out.push(/[.!?]$/.test(ic.detail) ? ic.detail : ic.detail + '.');
+    return {name: name.replace(/\s*\d+['′]?\s*x\s*\d+['′]?.*$/i, '').trim(), lines: [...new Set(out)].filter(x => x.split(/\s+/).length >= 3)};
+  };
+
   // n supporting interior photos (never the hero, the food photo or a plan); exteriors only when the listing has no
   // interiors. The social sets use it too (templates/_shared/socialset.js).
   OE.support = (D, hero, n) => {
@@ -283,7 +310,8 @@
       const mode = b.mode || 'bleed';
       const m = mode === 'bleed' ? 0 : (b.m != null ? b.m : mode === 'field' ? 34 : PL);
       const fw = W - 2*m - (mode === 'bleed' ? 0 : 0), want = Math.round(fw*(b.ratio || .66));
-      const fr = OHL.fitHero(D, hero, fw, want, true), hx = (b.x != null ? b.x : m) + (fw - fr.w)/2, top = y + (b.top || 0);
+      // a hero with no house outline has no known minimum height: it keeps the frame's full width (fitHero gave it about 1 pt, 11/13 photo-squeezed)
+      const hp0 = (D.photos || {})[hero] || {}, fr = hp0.house ? OHL.fitHero(D, hero, fw, want, true) : {w: fw, h: hp0.w && hp0.h ? Math.min(want, Math.floor(fw*hp0.h/hp0.w)) : want}, hx = (b.x != null ? b.x : m) + (fw - fr.w)/2, top = y + (b.top || 0);
       if(mode === 'field') back.push({y: top + fr.h*(b.fieldAt != null ? b.fieldAt : .34), color: b.fieldColor || L.accent, inset: b.fieldInset || 0});
       if(b.shadow) h.push(shadow(b.shadow, hx, top, fr.w, fr.h));
       const style = `left:${hx}pt;top:${top}pt;width:${fr.w}pt;height:${fr.h}pt` + (b.radius ? `;border-radius:${b.radius}pt` : '') + (b.border ? `;box-shadow:0 0 0 ${b.border.w || 6}pt ${b.border.color || '#fff'}` : '');
@@ -361,43 +389,95 @@
       y += wu.n*lh + (b.after != null ? b.after : 22);
     };
 
-    // photo layouts, each email its own
+    // photo layouts, each email its own. Every photo carries a caption under it (owner 11/10/2026): the room name and one true
+    // line, 9.5 pt, the photo's full width, up to 2 lines; the layout makes room for it, so what follows moves down.
+    // caption type at the phone floor for text a reader needs (READ-1: 12 px on a 360 px phone = the write-up's minimum here)
+    const CAP = {s: WU.min, lh: +(WU.min*1.25).toFixed(2), gap: 5, maxL: 3}, capUsed = new Map(), capMemo = new Map();   // line -> photo; (id, width) -> caption
+    // a line's wrap at this width: how many lines, and how full the last one is (justified lines above it are full)
+    const wrapOf = (t, w) => { const m = document.createElement('div');
+      m.style.cssText = `position:absolute;left:-9999pt;top:0;visibility:hidden;width:${w}pt;font:400 ${CAP.s}pt/${CAP.lh}pt ${L.body};white-space:normal`;
+      m.textContent = t; document.body.appendChild(m); const rg = document.createRange(); rg.selectNodeContents(m);
+      const rs = [...rg.getClientRects()].filter(q => q.width > 1), tops = [...new Set(rs.map(q => Math.round(q.top)))], lastT = Math.max(...tops);
+      const last = rs.filter(q => Math.round(q.top) === lastT), lw = Math.max(...last.map(q => q.right)) - Math.min(...last.map(q => q.left));
+      const minLine = Math.min(...tops.map(t => { const q = rs.filter(x => Math.round(x.top) === t); return Math.max(...q.map(x => x.right)) - Math.min(...q.map(x => x.left)); }));
+      const res = {n: tops.length, fill: lw*72/96/w, min: minLine*72/96/w}; m.remove(); return res; };
+    // photos side by side carry the same number of caption lines and end level (owner 10/29, 11/9 rule 4), and a photo never sits
+    // with only its room name beside photos that have a line (rule 6): for a row, the fewest lines n (1 to maxL) at which every
+    // photo has a true line (one no other photo uses) that sets in exactly n lines, its last line 80%+ full; else names only.
+    // Ragged, unless the last line fills 88%+ (then justified).
+    const capRow = (ids, w) => {
+      const ws = ids.map((id, i) => Array.isArray(w) ? w[i] : w).filter((x, i) => ids[i]); ids = ids.filter(Boolean);   // w: one width, or one per photo
+      const key = 'row:' + ids.join(',') + '|' + ws.map(Math.round).join(','); if(capMemo.has(key)) return;
+      const C = ids.map(id => OE.caption(D, id)), wraps = C.map((c, i) => c.lines.map(line => ({line, r: wrapOf(line, ws[i])})));
+      let pick = null;
+      for(let n = 1; n <= CAP.maxL && !pick; n++){
+        const taken = new Set(), got = [];
+        for(let i = 0; i < ids.length; i++){
+          const o = wraps[i].find(o => o.r.n === n && o.r.min >= .8 && !taken.has(o.line) && !(capUsed.has(o.line) && capUsed.get(o.line) !== ids[i])
+            && ![...taken, ...[...capUsed].filter(([l, pid]) => pid !== ids[i]).map(([l]) => l)].some(l => OE.sameSay(l, o.line)));   // never the same thing in other words
+          if(!o) break; taken.add(o.line); got.push(o);
+        }
+        if(got.length === ids.length) pick = got;
+      }
+      ids.forEach((id, i) => { const res = {name: C[i].name, line: '', n: 0, nn: C[i].name ? linesN(C[i].name, `${L.bw || 700} ${CAP.s}pt ${L.body}`, ws[i], CAP.lh) : 0};   // a long room name wraps
+        if(pick){ Object.assign(res, {line: pick[i].line, n: pick[i].r.n, justify: pick[i].r.fill >= .88}); capUsed.set(pick[i].line, id); }
+        capMemo.set(id + '|' + Math.round(ws[i]), res); });
+      capMemo.set(key, true);
+    };
+    const capFor = (id, w) => { const k = id + '|' + Math.round(w); if(!capMemo.has(k)) capRow([id], w); return capMemo.get(k); };
     B.photos = b => {
       const g = b.gap != null ? b.gap : 8, x0 = b.full ? 0 : PL, w0 = b.full ? W : CW, r = b.radius ? `;border-radius:${b.radius}pt` : '';
       const bd = b.border ? `;box-shadow:0 0 0 ${b.border.w || 5}pt ${b.border.color || '#fff'}` : '';
-      const lay = b.layout || 'row3', top = y;
-      const put = (id, x, yy, w, ht) => { if(!id) return; if(b.shadow) h.push(shadow(b.shadow, x, yy, w, ht)); h.push(pic(id, x, yy, w, ht, r + bd)); };
+      const lay = b.layout || 'row3', top = y, ink = b.capInk || b.ink || L.ink, h0 = h.length;
+      // a full-bleed photo's caption keeps to the page's side margins; its words are chosen at that same width
+      const cwOf = w => b.full ? w - Math.max(PL, PR) : w;
+      const capLines = c => (c.name ? c.nn || 1 : 0) + c.n;
+      // the height the captions actually set in (the tallest in the row), nothing more
+      const capH = (ids, w) => { const n = Math.max(0, ...ids.filter(Boolean).map(id => capLines(capFor(id, cwOf(w))))); return n ? n*CAP.lh + CAP.gap : 0; };
+      const caption = (id, x, yy, w) => {
+        const cw = cwOf(w), cx = Math.min(Math.max(x, PL), W - PR - cw), c = capFor(id, cw); if(!capLines(c)) return;
+        let ty = yy + CAP.gap;
+        if(c.name){ const nn = c.nn || 1; h.push(`<div class="abs ${nn > 1 ? 'wr' : 'nw'}" data-slot="oh.photo.${esc(id)}.h" data-lines="${nn}" style="left:${cx}pt;top:${ty}pt;width:${cw}pt;height:${nn*CAP.lh}pt;font:${L.bw || 700} ${CAP.s}pt/${CAP.lh}pt ${L.body};color:${b.capName || ink}">${esc(c.name)}</div>`); ty += nn*CAP.lh; }
+        if(c.line) h.push(`<div class="abs wr" data-slot="oh.photo.${esc(id)}.a" data-lines="${c.n}" style="left:${cx}pt;top:${ty}pt;width:${cw}pt;height:${c.n*CAP.lh}pt;font:400 ${CAP.s}pt/${CAP.lh}pt ${L.body};color:${ink};opacity:.9;text-align:${c.justify ? 'justify' : 'left'};text-align-last:left;hyphens:none">${esc(c.line)}</div>`);
+      };
+      const put = (id, x, yy, w, ht) => { if(!id) return; if(b.shadow) h.push(shadow(b.shadow, x, yy, w, ht)); h.push(pic(id, x, yy, w, ht, r + bd)); caption(id, x, yy + ht, w); };
       let bottom = top;
       const row = (n, ratio) => { const ids = take(n, b); if(!ids.length) return; const pw = (w0 - g*(ids.length - 1))/ids.length, ph = Math.round(b.h || pw*ratio);
-        ids.forEach((id, i) => put(id, x0 + i*(pw + g), top, pw, ph)); bottom = top + ph; };
+        capRow(ids, cwOf(pw)); ids.forEach((id, i) => put(id, x0 + i*(pw + g), top, pw, ph)); bottom = top + ph + capH(ids, pw); };
       if(lay === 'row2') row(2, .74);
       else if(lay === 'row3') row(3, .78);
       else if(lay === 'row4') row(4, .82);
       else if(lay === 'verticals3') row(3, 1.32);
       else if(lay === 'squares2') row(2, 1);
       else if(lay === 'squares3') row(3, 1);
-      else if(lay === 'tallL' || lay === 'tallR'){   // one tall photo beside two stacked
-        const ids = take(3, b), tw = Math.round((w0 - g)*.54), sw = w0 - g - tw, th = b.h || Math.round(tw*1.2), sh = (th - g)/2;
+      else if(lay === 'tallL' || lay === 'tallR'){   // one tall photo beside two stacked (each with its caption)
+        const ids = take(3, b), tw = Math.round((w0 - g)*.54), sw = w0 - g - tw; capRow([ids[1], ids[2]], cwOf(sw)); const ch = capH([ids[1], ids[2]], sw);
+        const th = b.h || Math.round(tw*1.2), sh = (th - g - ch)/2;
         const tx = lay === 'tallL' ? x0 : x0 + sw + g, sx = lay === 'tallL' ? x0 + tw + g : x0;
-        put(ids[0], tx, top, tw, th); put(ids[1], sx, top, sw, sh); put(ids[2], sx, top + sh + g, sw, sh);
-        bottom = top + th;
+        put(ids[0], tx, top, tw, th); put(ids[1], sx, top, sw, sh); put(ids[2], sx, top + sh + ch + g, sw, sh);
+        bottom = top + Math.max(th + capH([ids[0]], tw), 2*sh + 2*ch + g);
       } else if(lay === 'wide2' || lay === '2wide'){   // a wide photo over (or under) two
         const ids = take(3, b), wh = b.h || Math.round(w0*.52), pw = (w0 - g)/2, ph = Math.round(pw*.74);
-        const wy = lay === 'wide2' ? top : top + ph + g, py = lay === 'wide2' ? top + wh + g : top;
+        capRow([ids[1], ids[2]], cwOf(pw)); const cw = capH([ids[0]], w0), cr = capH([ids[1], ids[2]], pw);
+        const wy = lay === 'wide2' ? top : top + ph + cr + g, py = lay === 'wide2' ? top + wh + cw + g : top;
         put(ids[0], x0, wy, w0, wh); put(ids[1], x0, py, pw, ph); put(ids[2], x0 + pw + g, py, pw, ph);
-        bottom = top + wh + g + ph;
+        bottom = top + wh + cw + g + ph + cr;
       } else if(lay === 'grid4'){
-        const ids = take(4, b), pw = (w0 - g)/2, ph = Math.round(b.h || pw*.74);
-        ids.forEach((id, i) => put(id, x0 + (i%2)*(pw + g), top + Math.floor(i/2)*(ph + g), pw, ph));
-        bottom = top + (ids.length > 2 ? 2*ph + g : ph);
+        const ids = take(4, b), pw = (w0 - g)/2, ph = Math.round(b.h || pw*.74); capRow(ids.slice(0, 2), cwOf(pw)); capRow(ids.slice(2), cwOf(pw));
+        const c1 = capH(ids.slice(0, 2), pw), c2 = capH(ids.slice(2), pw);
+        ids.forEach((id, i) => put(id, x0 + (i%2)*(pw + g), top + Math.floor(i/2)*(ph + c1 + g), pw, ph));
+        bottom = top + (ids.length > 2 ? 2*ph + c1 + c2 + g : ph + c1);
       } else if(lay === 'mosaic5'){   // two over three, different widths
         const ids = take(5, b), a = Math.round((w0 - g)*.6), c = w0 - g - a, h1 = Math.round(b.h || a*.66), p3 = (w0 - 2*g)/3, h2 = Math.round(p3*.84);
+        capRow(ids.slice(0, 2), [cwOf(a), cwOf(c)]); capRow(ids.slice(2), cwOf(p3)); const c1 = Math.max(capH([ids[0]], a), capH([ids[1]], c)), c2 = capH(ids.slice(2), p3);
         put(ids[0], x0, top, a, h1); put(ids[1], x0 + a + g, top, c, h1);
-        ids.slice(2).forEach((id, i) => put(id, x0 + i*(p3 + g), top + h1 + g, p3, h2));
-        bottom = top + h1 + g + h2;
+        ids.slice(2).forEach((id, i) => put(id, x0 + i*(p3 + g), top + h1 + c1 + g, p3, h2));
+        bottom = top + h1 + c1 + g + h2 + c2;
       }
       if(b.tri) h.push(tri(b.tri, x0, top, w0, bottom - top));
-      y = bottom + (b.after != null ? b.after : 22);
+      // under captions the next block follows at about a line's space (a caption is text: the photo's own gap would leave a hole)
+      const capped = h.slice(h0).some(x => x.includes('data-slot="oh.photo.'));
+      y = bottom + Math.min(b.after != null ? b.after : 22, capped ? Math.round(CAP.lh*.8) : 1e9);
     };
 
     B.card = b => {
@@ -473,6 +553,9 @@
           out.push({slot, kind: 'email-event-missing', detail: `the ${word} does not read on its field (contrast ${ratio(cs.color, probe(el.dataset.bg)).toFixed(1)} to 1)`});
       });
     });
+    // no photo a sliver (owner 11/10: the build fails, not the owner's eye; Ivory emails drew the house 2 px wide, 11/16/2026)
+    document.querySelectorAll('.page.em .photo[data-photo]').forEach(el => { const r = el.getBoundingClientRect(); if(!r.height) return;
+      const a = r.width/r.height; if(a > 4 || a < .4) out.push({slot: 'photo.' + el.dataset.photo, kind: 'photo-frame-too-thin', detail: `photo frame ${Math.round(r.width)} x ${Math.round(r.height)} px (ratio ${a.toFixed(2)})`}); });
     const d = document.querySelector('[data-slot="oh.date"]');
     if(d && px(d) < 39.9) out.push({slot: 'oh.date', kind: 'email-date-small', detail: `date is ${px(d).toFixed(1)} px (40 px minimum)`});
     if(d && (d.getBoundingClientRect().bottom - page.top) > 600) out.push({slot: 'oh.date', kind: 'email-event-low', detail: 'the date sits below the first 600 px (keep the event above the fold)'});
@@ -698,8 +781,12 @@
         yy += 3*f; out.push(put(ph, rp, cx, yy, tW));
         if(stack){
           const lh = r2(Math.max(rn.s*1.3, FB*2)), lw2 = Math.min(w*.7, lh*4.2);
-          out.push(logo(x + (w - lw2)/2, y + th + 8*f, lw2, lh));
-          return {h: th + 8*f + lh, html: out, ok: true};
+          // left-set lines (beside a headshot): the logo centers under the agent's lines, not the column (owner 11/8 rule; 11/13 logo-adrift)
+          const lineW = Math.max(inl ? nW + 8*f + dW : Math.max(nW, dW), rp.wd), lc = nm.align === 'left' && !o.logoBot ? cx + Math.min(lineW, tW)/2 : x + w/2;   // in its own column (wide/GBP) the logo centers in the column
+          // o.logoBot (a card at the foot of its own colored column, wide/GBP): the logo centers between the agent's lines and the column's foot (11/13 logo-adrift)
+          const ly = o.logoBot ? Math.max(y + th + 8*f, (y + th + o.logoBot - lh)/2) : y + th + 8*f;
+          out.push(logo(Math.max(x, Math.min(x + w - lw2, lc - lw2/2)), ly, lw2, lh));
+          return {h: ly - y + lh, html: out, ok: true};
         }
         const lh = Math.max(th, rn.s*1.1);
         out.push(rect(x + w - lw - gap, y + 2, .6, lh - 4, `background:${ink};opacity:.3`));
@@ -867,7 +954,7 @@
       const sp = (H - P.e.h - P.c.h)/3;
       h.push(...eventB(X0 + pw + pad, sp, P.cw - 2*pad, k, {lines: o.lines, box: false, maxLines: 3}).html);
       h.push(rect(X0 + pw + P.cw*.38, sp*1.5 + P.e.h, P.cw*.24, .8, `background:${ev.ink};opacity:.35`));
-      h.push(...cardB(X0 + pw + pad, sp*2 + P.e.h, P.cw - 2*pad, k, {ink: ev.ink, accent: ev.accent, dark: evDark, name: o.name, stack: true}).html);
+      h.push(...cardB(X0 + pw + pad, sp*2 + P.e.h, P.cw - 2*pad, k, {ink: ev.ink, accent: ev.accent, dark: evDark, name: o.name, stack: true, logoBot: H - .05*Math.min(P.cw, H)}).html);
     } else if(shape === 'square'){
       // the house across the top; under it the event in its box | the address, facts and card
       const pad = r2(12*f), gut = r2(12*f), inner = X1 - X0 - 2*pad, lw = Math.round((inner - gut)*.53), rw = inner - gut - lw;

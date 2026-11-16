@@ -6,7 +6,9 @@
 <link rel="stylesheet" href="survey-book.css">
 <script src="../engine/baths.js"></script>
 <script src="survey-book.js"></script>
+<script src="capfit.js"></script>
 <script src="plan.js"></script>
+<script src="../engine/planink.js"></script>
 <!--
   The Survey Book · 11 x 17 fold-over, four upright 8.5 x 11 pages that open like a book (0.125 in bleed, 0.25 in safe zone).
     outside spread: back (left) + cover (right)        inside spread: first page (left) + second page (right)
@@ -38,6 +40,11 @@
   .rl.band{gap:12pt}
   .rl.band .cols{flex:1;display:flex;gap:14pt;min-height:0}
   .rl.band .fl{flex:1 1 0;min-width:0}
+  .rl.band .fl{align-self:flex-start}
+  .rl.band .notes{align-items:flex-start}
+  .rl.band .rr:last-child{padding-bottom:3pt}
+  .rl.band .rows{flex:none}
+  .rl.band .rr{flex:none;min-height:0;padding:6pt 0}
   .rl.band .notes{display:flex;gap:14pt}
   .rl.band .notes .body{flex:1 1 0;font-size:9.5pt;line-height:13.5pt;margin:0}
   .rr.stack{flex-direction:column;align-items:flex-start;justify-content:center;gap:1pt}
@@ -123,19 +130,18 @@ window.brochureReady = (async function(){
     let html = header(hasPlan ? P : Object.assign({}, P, {kicker: P.kickerNoPlan || P.kicker, title: P.titleNoPlan || P.title}), 'left');
     const legendHTML = () => { const zs = AtlasPlan.zonesOf(D.plan), Z = AtlasPlan.ZONES;
       return Object.keys(Z).filter(k => zs.includes(k)).map(k => `<span style="display:inline-flex;align-items:center;margin:0 7pt"><i style="display:inline-block;width:9pt;height:9pt;margin-right:4pt;border:.6pt solid rgba(31,54,80,.4);background:color-mix(in srgb, ${Z[k].fill} ${Math.round(Z[k].op*100)}%, var(--paper))"></i>${esc(Z[k].label)}</span>`).join(''); };
-    const drawPlan = (fx, fy, fw, fh) => AtlasPlan.draw(D.plan, {x: fx + 10, y: fy + 30, w: fw - 20, h: fh - 30 - 44}, {allowRotate: true});
+    const drawPlan = (fx, fy, fw, fh) => AtlasPlan.draw(D.plan, {x: fx + 10, y: fy + 30, w: fw - 20, h: fh - 30 - 26}, {allowRotate: true});   // (no room-color key under the listing's own plan: 26 pt for the note)
     const frame = (fx, fy, fw, fh) => {
       const plan = drawPlan(fx, fy, fw, fh);
       issues.push(...plan.issues);
       return `<div class="planframe" style="left:${fx}pt;top:${fy}pt;width:${fw}pt;height:${fh}pt"></div>
         <div class="abs sect" style="left:${fx + 12}pt;top:${fy + 11}pt" data-slot="left.planTitle" data-lines="1">${esc(P.planTitle || 'Floor plan')}</div>
         ${plan.html}
-        <div class="abs" style="left:${fx}pt;top:${fy + fh - 34}pt;width:${fw}pt;text-align:center;font:600 8pt/10pt var(--font-body);color:var(--ink);white-space:nowrap">${legendHTML()}</div>
         <div class="abs fine" style="left:${fx}pt;top:${fy + fh - 18}pt;width:${fw}pt;text-align:center;white-space:nowrap" data-slot="left.planDisc" data-fine="1" data-lines="1">${esc(P.planDisc || 'Approximate; not to scale. Buyer to verify.')}</div>`;
     };
     if(hasPlan && multi){
       // every floor across a wide band sized to the plans, the three captioned photos in a row under it
-      const probe = drawPlan(29, T, 554, 440), fh = Math.min(440, Math.round(probe.usedH + 30 + 44 + 14)), rowTop = T + fh + 12;
+      const probe = drawPlan(29, T, 554, 440), fh = Math.min(440, Math.round(probe.usedH + 30 + 26 + 10)), rowTop = T + fh + 12;
       html += frame(29, T, 554, fh);
       html += `<div class="flow row" style="left:29pt;top:${rowTop}pt;width:554pt;height:${B - rowTop}pt;gap:9pt;flex-direction:row">${ph.slice(0, 3).map((it, i) => item(it, `left.photo${i}`, 'flex:1 1 0')).join('')}</div>`;
       return html;
@@ -148,7 +154,7 @@ window.brochureReady = (async function(){
     };
     if(!hasPlan && multi){
       // no plan, several floors: a band of floor-by-floor room sizes with the write-up beneath, then the three captioned photos in a row
-      const fl = P.roomList || [], bh = Math.min(330, Math.max(200, 48 + Math.max(...fl.map(f => f.rows.length)) * 30 + 74)), rowTop = T + bh + 12; let k = 0;
+      const fl = P.roomList || [], bh = Math.min(330, Math.max(150, 12 + Math.max(...fl.map(f => f.rows.length)) * 38 + 12 + 56)), rowTop = T + bh + 12; let k = 0;
       html += `<div class="rl band" style="left:29pt;top:${T}pt;width:554pt;height:${bh}pt">
         <div class="cols">${fl.map(f => `<div class="fl"><div class="sect" data-slot="left.floor${k}" data-lines="1">${esc(f.floor)}</div><div class="rows">${f.rows.map(r => `<div class="rr stack"><span class="n" data-slot="left.room${k++}.n" data-lines="1">${esc(r[0])}</span><span class="d" data-slot="left.room${k - 1}.d" data-lines="1">${esc(r[1])}</span></div>`).join('')}</div></div>`).join('')}</div>
         <div class="notes">${(P.notes || []).map((t, i) => `<div class="body" data-slot="left.note${i}" data-para="1" data-min="2">${esc(t)}</div>`).join('')}</div></div>`;
@@ -170,17 +176,24 @@ window.brochureReady = (async function(){
   }
 
   // ================= a 2-column grid of captioned photos =================
-  function grid(P, which, rows, bottom, rowW){
+  // corner: [h] the narrow contact card's height at the bottom left (owner 11/10/2026, back): the last row's first photo stops above
+  // the card and the photo beside it runs down to the foot, into the width the card frees
+  function grid(P, which, rows, bottom, rowW, corner){
     const photos = (P.photos || []).slice(0, rows * 2), n = photos.length;
     const per = n === 4 || n === 6 ? [2, 2, 2].slice(0, n / 2) : n === 3 ? [2, 1] : n === 2 && rows === 2 ? [1, 1] : [2];
     let h = '', k = 0;
-    per.forEach((c, ri) => { h += `<div class="row" style="flex:${(rowW || [])[ri] || 1} 1 0">${photos.slice(k, k + c).map((it, i) => item(it, `${which}.photo${k + i}`, 'flex:1 1 0', which === 'back')).join('')}</div>`; k += c; });
+    per.forEach((c, ri) => { const last = corner && ri === per.length - 1 && c === 2;
+      h += `<div class="row${last ? ' corner' : ''}" style="flex:${(rowW || [])[ri] || 1} 1 0">${photos.slice(k, k + c).map((it, i) => item(it, `${which}.photo${k + i}`, 'flex:1 1 0', which === 'back').replace(/<\/div>$/, last && !i ? `<div class="cc-room" style="flex:none;height:${corner}pt"></div></div>` : '</div>')).join('')}</div>`; k += c; });
     return `<div class="flow" style="left:29pt;right:29pt;top:92pt;bottom:${792 - bottom}pt;gap:10pt">${h}</div>`;
   }
   const right = () => { const P = C.right || {}; return header(P, 'right') + grid(P, 'right', 3, 763); };
   const back = () => { const P = C.back || {};
     return header(P, 'back') + `<div class="abs kicker" style="right:29pt;top:31pt;text-align:right;width:260pt;color:var(--ink)" data-slot="back.address" data-lines="1">${esc((L.address + ' · ' + L.city + ', ' + (L.stateAbbr || 'TX')).toUpperCase())}</div>`
-      + grid(P, 'back', 2, 604, (P.photos || []).length >= 4 ? [0.8, 1.2] : null) + AT.card(D, [29, 616, 554, 140], C.footnote || ''); };
+      + grid(P, 'back', 2, 660, null) + cardFoot(); };
+  // the contact block runs the panel's full width but short top to bottom (owner 11/10/2026 rule 1), the fine print under it
+  const CARD = {W: 554, H: 66};
+  const cardFoot = () => AT.cardBox(D, [29, 738 - CARD.H, CARD.W, CARD.H], {layout: 'panel', size: 'short', fine: '', bottomGap: .5, grow: 0, s: {name: 19, nameFloor: 15, phone: 13, line: 9, desigInline: true, hsW: 52, panelW: 160, rowGap: 14, logo: {wide: [132, 30], square: [32, 32], tall: [34, 34]}}})
+    + `<div class="abs fine" style="left:29pt;top:744pt;width:${CARD.W}pt;height:9pt" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(C.footnote || 'Information deemed reliable but not guaranteed.')}</div>`;
 
   const panels = {front: cover(), left: left(), right: right(), back: back()};
   const panel = h => `<div class="panel">${h}</div>`;
@@ -198,21 +211,36 @@ window.brochureReady = (async function(){
   document.querySelectorAll('#addr').forEach(el => { const max = el.parentElement.clientWidth; for(let fs = parseFloat(el.style.fontSize); fs >= 24; fs -= 1){ el.style.fontSize = fs + 'pt'; if(el.scrollWidth <= el.clientWidth) break; } });
   // the write-up grows until its column is full (no gaps between the facts, the paragraphs and the places); every size is tried with
   // the last-line balance, and the largest that still fits wins
+  // Cover fitting rule (owner 11/15/2026: "the write-ups go up a little in size so they fill their space"): the type grows from the
+  // approved size (about 10 pt) by at most ~15%, then the line height opens up to 1.62 so the rest of the column fills, and what is
+  // left over (never more than about a line) is shared between the paragraph gaps.
   const growFill = (col, bodies, lo, hi, slack) => {
-    const set = f => { bodies.forEach(b => { b.style.maxWidth = ''; b.style.fontSize = f + 'pt'; b.style.lineHeight = (f * 1.432) + 'pt'; }); bodies.forEach(b => { AT.balance(b); if(!b.style.fontSize){ b.style.fontSize = f + 'pt'; b.style.lineHeight = (f * 1.432) + 'pt'; } }); };
+    const R0 = 1.432, LH_MAX = 1.62;
+    const lastFrac = b => { const ls = AT.lineBoxes(b); if(ls.length < 2) return 1; const l = ls[ls.length - 1]; return (l.r - l.l) / b.getBoundingClientRect().width; };
+    // one size for every paragraph: each paragraph's column narrows a point at a time (never more than 5%)
+    // until its last line runs 76%+ of the line
+    const set = (f, k, maxP) => { let ok = true;
+      bodies.forEach(b => { b.style.fontSize = f + 'pt'; b.style.lineHeight = (f * k) + 'pt'; b.style.maxWidth = ''; b.style.textAlign = 'justify';
+        const W = b.getBoundingClientRect().width; let good = lastFrac(b) >= 0.76;
+        for(let p = 1; !good && p <= maxP; p++){ b.style.maxWidth = (W * (100 - p) / 100) + 'px'; good = lastFrac(b) >= 0.76; }
+        if(!good){ b.style.maxWidth = ''; ok = false; } });
+      return ok; };
+    const fits = () => { const cb = col.getBoundingClientRect(), pb = parseFloat(getComputedStyle(col).paddingBottom) || 0, kb = Math.max(...[...col.children].map(c => c.getBoundingClientRect().bottom)); return kb <= cb.bottom - pb - slack * 96 / 72; };
     let best = 0;
-    const lastOK = () => bodies.every(b => { const ls = AT.lineBoxes(b); if(ls.length < 2) return true; const l = ls[ls.length - 1]; return (l.r - l.l) / b.getBoundingClientRect().width >= 0.76; });
-    for(let f = lo; f <= hi; f += 0.125){ set(f); const cb = col.getBoundingClientRect(), pb = parseFloat(getComputedStyle(col).paddingBottom) || 0, kb = Math.max(...[...col.children].map(c => c.getBoundingClientRect().bottom)); if(kb > cb.bottom - pb - slack * 96 / 72) break; if(lastOK()) best = f; }
-    if(best) set(best); else bodies.forEach(b => { b.style.maxWidth = ''; b.style.fontSize = ''; b.style.lineHeight = ''; AT.balance(b); });
+    for(let f = hi; f >= lo; f -= 0.0625){ if(set(f, R0, 5) && fits()){ best = f; break; } }
+    if(!best){ bodies.forEach(b => { b.style.maxWidth = ''; b.style.fontSize = ''; b.style.lineHeight = ''; AT.balance(b); }); return; }
+    let bk = R0;
+    for(let k = R0 + 0.02; k <= LH_MAX; k += 0.02){ bodies.forEach(b => b.style.lineHeight = (best * k) + 'pt'); if(!fits()) break; bk = k; }
+    bodies.forEach(b => { b.style.lineHeight = (best * bk) + 'pt'; b.dataset.grown = '1'; b.dataset.w0 = Math.round(pt(b.getBoundingClientRect().width)); });
   };
   document.querySelectorAll('.c2 .l').forEach(l => {
     const bodies = [...l.querySelectorAll('.body')]; if(!bodies.length) return;
-    l.style.justifyContent = 'flex-start'; growFill(l, bodies, 9.5, 11.75, 4); l.style.justifyContent = 'space-between';
+    l.style.justifyContent = 'flex-start'; growFill(l, bodies, 9.5, 11.5, 4); l.style.justifyContent = 'space-between';
   });
   document.querySelectorAll('.body[data-big]').forEach((b0, i) => { if(i) return;
     const col = b0.parentElement, bodies = [...col.querySelectorAll('.body')], pl = col.querySelector('.places'); if(!pl) return;
-    const was = pl.style.marginTop; pl.style.marginTop = '0'; growFill(col, bodies, 10, 12.5, 14); pl.style.marginTop = was; });
-  document.querySelectorAll('[data-para]').forEach(el => AT.balance(el));
+    const was = pl.style.marginTop; pl.style.marginTop = '0'; growFill(col, bodies, 10, 11.5, 5); pl.style.marginTop = was; });
+  document.querySelectorAll('[data-para]:not([data-grown])').forEach(el => AT.balance(el));
   document.querySelectorAll('.row').forEach(row => {   // captions in one row share a height so the photos line up
     const caps = [...row.children].map(it => it.querySelector(':scope > .cap')).filter(Boolean);
     if(caps.length < 2) return;
@@ -221,9 +249,23 @@ window.brochureReady = (async function(){
   issues.push(...AT.fitHouse(D));
   window.proofNotes.push({paragraphs: [...document.querySelectorAll('[data-para]')].map(el => {
     const ls = AT.lineBoxes(el), w = el.getBoundingClientRect().width, last = ls[ls.length-1];
-    return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, wPt: +el.dataset.w0 || Math.round(pt(w))};
+    return {slot: el.dataset.slot, fs: Math.round(parseFloat(getComputedStyle(el).fontSize)*72/96*100)/100, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, wPt: +el.dataset.w0 || Math.round(pt(w))};
   })});
   ContactCard.fit(document);
+  if(window.PlanInk) PlanInk.applyAll(D, false);   // owner 11/10/2026: the listing plan's background is clear
+  if(window.CapFit) window.capFitLog = CapFit.run((D.copy || {}).extra); (window.proofNotes = window.proofNotes || []).push({capFit: window.capFitLog});
+  // two-photo back: the side caption sets at 10 pt, justified, and the lower band takes the caption's height plus the card's
+  document.querySelectorAll('.side-cap').forEach(sc => {
+    const a = sc.querySelector('.a'); a.style.cssText += ';text-align:justify;text-align-last:left;overflow:visible;max-width:none';
+    const lastOf = () => { const ls = AT.lineBoxes(a), w = a.getBoundingClientRect().width, l = ls[ls.length - 1]; return l ? (l.r - l.l)/w : 0; };
+    let pick = null;   // the size nearest 10 pt whose last line runs 90%+ (else the fullest last line)
+    for(const fs of [10, 10.25, 9.75, 10.5, 9.5, 10.75, 11, 9.25]){ a.style.fontSize = fs + 'pt'; a.style.lineHeight = (fs*1.4) + 'pt'; const r = lastOf();
+      if(r >= 0.9){ pick = fs; break; } if(!pick || r > pick.r) pick = pick && pick.r !== undefined && pick.r >= r ? pick : {fs, r}; }
+    const fs0 = typeof pick === 'number' ? pick : pick.fs; a.style.fontSize = fs0 + 'pt'; a.style.lineHeight = (fs0*1.4) + 'pt';
+    const capH = pt(sc.querySelector('.cap').getBoundingClientRect().height), need = Math.ceil(capH + 14 + CARD.H + 18), y2 = 756 - need;
+    const ph = sc.parentElement.querySelector('[data-slot-photo="back.photo1"]') || sc.previousElementSibling, fl = sc.parentElement.querySelector('.flow');
+    sc.style.top = y2 + 'pt'; sc.style.height = capH + 'pt'; if(ph){ ph.style.top = y2 + 'pt'; ph.style.height = need + 'pt'; } if(fl) fl.style.bottom = (792 - y2 + 14) + 'pt';
+  });
   window.brochureCheck = () => AT.check(D, [...issues, ...AT.repeatChecks()]);
   window.photoPlacements = AT.placements;
 })();

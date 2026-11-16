@@ -110,6 +110,7 @@ window.brochureReady = (async function(){
 
   // ================= BACK: the plan or the rooms, outdoors, places, closing paragraph, the card =================
   function back(){
+    const REAL = /-real$/.test(D.version || '');   // the real-home samples keep a listing's own plan upright (its room labels stay readable); the Wren Hollow samples are unchanged
     const B = C.back || {}, pl = B.places || [], out = [B.big, ...(B.small || [])], nl = levels.length;
     // the contact block runs the full width but short top to bottom (owner 11/10, p54 and rule 1: "narrower" = shorter); above it a
     // band holds the places at the left and the closing write-up, under its own heading, at the right; the plan and photos run down to the band
@@ -127,7 +128,7 @@ window.brochureReady = (async function(){
           if([...k3(x)].some(q => have.has(q))) return; cur += ' ' + x; cands.push(cur); k3(x).forEach(q => have.add(q)); }); }); }
     let html = '';
     const planBox = (bx, by, bw, bh, planArgs) => {
-      const plan = AtlasPlan.draw(D.plan, planArgs, {allowRotate: true});
+      const plan = AtlasPlan.draw(D.plan, planArgs, {allowRotate: !REAL});
       issues.push(...plan.issues);
       const zs = AtlasPlan.zonesOf(D.plan), Z = AtlasPlan.ZONES;
       const lg = Object.keys(Z).filter(k => zs.includes(k)).map(k => `<span style="display:inline-flex;align-items:center;margin:0 7pt"><i style="display:inline-block;width:10pt;height:10pt;margin-right:4pt;border:.6pt solid rgba(42,36,32,.4);background:color-mix(in srgb, ${Z[k].fill} ${Math.round(Z[k].op*100)}%, #fff)"></i>${esc(Z[k].label)}</span>`).join('');
@@ -139,13 +140,13 @@ window.brochureReady = (async function(){
     if(multi){
       // the board closes up around the drawn plan; the photos below take the room
       const maxH = nl >= 4 ? 296 : nl === 3 ? 280 : 270;
-      const probe = AtlasPlan.draw(D.plan, {x: 34, y: T + 24, w: 544, h: maxH - 54}, {allowRotate: true});
+      const probe = AtlasPlan.draw(D.plan, {x: 34, y: T + 24, w: 544, h: maxH - 54}, {allowRotate: !REAL});
       let bh = Math.min(maxH, Math.round(probe.usedH + 42 + 4));   // (no room-color legend row now)
       // a narrow plan (three or four floors stacked) gets a board closed up around it, and the floor-by-floor write-up takes the width that is left
       // (the listing's own plan is wider than a drawing was: with floor write-ups the board is held to 400 pt so they keep their column)
       const secs = B.rooms || [], narrow = !!secs.length;
       const bw = narrow ? Math.min(400, Math.max(300, Math.round(probe.usedW + 44))) : 564;
-      if(narrow){ const p2 = AtlasPlan.draw(D.plan, {x: 34, y: T + 24, w: bw - 20, h: maxH - 54}, {allowRotate: true}); bh = Math.min(maxH, Math.round(p2.usedH + 42 + 4)); }
+      if(narrow){ const p2 = AtlasPlan.draw(D.plan, {x: 34, y: T + 24, w: bw - 20, h: maxH - 54}, {allowRotate: !REAL}); bh = Math.min(maxH, Math.round(p2.usedH + 42 + 4)); }
       html += planBox(24, T, bw, bh, {x: 34, y: T + 24, w: bw - 20, h: bh - 54});
       if(narrow) html += `<div class="rooms narrow abs" style="left:${24 + bw + 14}pt;top:${T}pt;width:${564 - bw - 14}pt;height:${bh}pt;display:flex;flex-direction:column;justify-content:space-between;gap:6pt">${secs.map((sc, i) => `<div class="sec" style="flex:1 1 auto">
           <div class="h" data-slot="back.room${i}.h" data-lines="1">${esc(sc.label)}</div>
@@ -155,7 +156,7 @@ window.brochureReady = (async function(){
     } else {
       const leftH = BOT - T;
       if(hasPlan){
-        const probe = AtlasPlan.draw(D.plan, {x: 30, y: T + 26, w: 250, h: leftH - 54}, {allowRotate: true});
+        const probe = AtlasPlan.draw(D.plan, {x: 30, y: T + 26, w: 250, h: leftH - 54}, {allowRotate: !REAL});
         const bh = Math.min(leftH, Math.round(probe.usedH + 54 + 4));
         html += planBox(24, T, 262, bh, {x: 30, y: T + 26, w: 250, h: bh - 54});
         window.proofNotes.push({planBoard: {usedH: Math.round(probe.usedH), board: bh, avail: leftH}});
@@ -164,7 +165,7 @@ window.brochureReady = (async function(){
         html += `<div class="rooms abs" style="left:24pt;top:${T}pt;width:262pt;height:${leftH}pt;display:flex;flex-direction:column;justify-content:space-between;gap:8pt">${secs.map((s, i) => `<div class="sec" style="flex:none">
           <div class="h" data-slot="back.room${i}.h" data-lines="1">${esc(s.label)}</div>
           <div style="flex:none">${s.rooms.map(r => `<div class="rr"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')}</div>
-          <div class="a" data-slot="back.room${i}.a" data-para="1" data-min="2" style="flex:none;font-size:9pt;line-height:12.6pt">${esc(s.body)}</div></div>`).join('')}</div>`;
+          <div class="a" data-slot="back.room${i}.a" data-para="1" data-min="2" style="flex:none">${esc(s.body)}</div></div>`).join('')}</div>`;
       }
       html += `<div class="flow" style="left:298pt;right:24pt;top:${T}pt;height:${aboveR - T}pt;gap:8pt">
         <div class="item" style="flex:1.12 1 0">${AT.photo(D, out[0].photo, '', 'back.out.a')}${cap(Object.assign({}, out[0], {body: [out[0].body, out[0].more].filter(Boolean).join(' ')}), 'back.out.a')}</div>
@@ -220,6 +221,7 @@ window.brochureReady = (async function(){
       if(ls.length < 2 || (ls[ls.length-1].r - ls[ls.length-1].l)/w >= .82){ ok = true; break; } }
     if(!ok){ a.style.fontSize = ''; a.style.lineHeight = ''; AT.fitLines(a, AT.lineBoxes(a).length); } });
   // the room-by-room list: paragraphs set in their lines, and the rows spread so the column runs to its bottom
+  const REAL = /-real$/.test(D.version || '');
   document.querySelectorAll('.rooms').forEach(R => {
     // (each floor's write-up keeps the column's full width, owner 11/8 and 11/10 rule 5: never a narrowed box; its size moves from
     // 8.5 to 12 pt until its lines run full, ragged 85%+ and the last 80%+, then it is justified)
@@ -307,6 +309,8 @@ window.brochureReady = (async function(){
     return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length};
   })});
   ContactCard.fit(document);
+  // the real-home samples (data.version ends in -real): once the layout above is set, write-ups run the full width of their photo or column, justified (chronicle.css)
+  if(/-real$/.test(D.version || '')) document.body.classList.add('real-fill');
   if(window.CapFit) (window.proofNotes = window.proofNotes || []).push({capFit: CapFit.run(((typeof D !== "undefined" && D.copy) || {}).extra)});
   AT.gapGuard();
   window.brochureCheck = () => AT.check(D, issues);

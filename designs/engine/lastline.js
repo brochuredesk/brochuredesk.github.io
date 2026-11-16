@@ -15,9 +15,10 @@
     const rows = [];
     [...r.getClientRects()].forEach(b => {
       if(b.width < .5) return;
-      // same line when the boxes overlap by over half the shorter one: a smaller run set on the same baseline (a room size
-      // beside its name, 11/3) starts lower but is still that line; wrapped lines don't overlap that much
-      const row = rows.find(x => Math.min(x.bottom, b.bottom) - Math.max(x.top, b.top) > Math.min(x.bottom - x.top, b.height)*.5);
+      // same line: tops close, a smaller inline run (a room's size in small caps after its name) set inside that line's height (11/13),
+      // or boxes overlapping by over half the shorter one (a smaller run on the same baseline, 11/3); wrapped lines don't overlap that much
+      const row = rows.find(x => Math.abs(x.top - b.top) < b.height*.5 || (b.top >= x.top - 1 && b.bottom <= x.bottom + 1) || (x.top >= b.top - 1 && x.bottom <= b.bottom + 1)
+        || Math.min(x.bottom, b.bottom) - Math.max(x.top, b.top) > Math.min(x.bottom - x.top, b.height)*.5);
       if(row){ row.left = Math.min(row.left, b.left); row.right = Math.max(row.right, b.right); row.top = Math.min(row.top, b.top); row.bottom = Math.max(row.bottom, b.bottom); }
       else rows.push({top: b.top, bottom: b.bottom, left: b.left, right: b.right});
     });

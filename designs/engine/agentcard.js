@@ -67,6 +67,11 @@
     short: {pad: [5, 12, 5], hsGap: 12, stripeGap: 15, name: 18, nameFloor: 15, desig: 8.6, label: 8.6, phone: 12.5, line: 9, office: 9,
             rowGap: 14, panelW: 170, panelPad: [5, 10], panelGap: 3, hsW: 46, inlineLabel: true, officeLH: 1.18,
             logo: {wide: [150, 30], square: [30, 30], tall: [32, 32]}, lock: 9.5, type: 12, typeW: 150, typeLines: 2, lockDir: 'right', tint: 12},
+    // the half-height fold-over card (owner 11/15/2026, standing rule: every fold-over back's contact block is half as tall, about
+    // Ivory's; the default for every design from now on). Ivory's fold-over values, set for a 554-564 pt portrait back; box about 70 pt tall.
+    half:  {pad: [5, 10, 4], hsGap: 12, stripeGap: 15, name: 20, nameFloor: 15, desig: 8.6, label: 8.6, phone: 15, line: 10, office: 9.5,
+            rowGap: 12, panelW: 180, panelPad: [5, 8], panelGap: 3, hsW: 50, inlineLabel: true, desigInline: true, officeLH: 1.18,
+            logo: {wide: [160, 34], square: [34, 34], tall: [36, 36]}, lock: 10.5, type: 13, typeW: 160, typeLines: 2, lockDir: 'right', tint: 12},
     post:  {pad: [9, 20, 7], hsGap: 18, stripeGap: 22, name: 28, nameFloor: 18, desig: 9, label: 9, phone: 19, line: 10.5, office: 10, inlineLabel: true,   /* fits the ~85 pt between a postcard back's address block and barcode strip */
             rowGap: 22, panelW: 196, panelPad: [8, 14], panelGap: 8, hsW: 92,
             logo: {wide: [156, 44], square: [48, 48], tall: [52, 52]}, lock: 14, type: 15, typeW: 168, typeLines: 3, tint: 12},
@@ -300,6 +305,40 @@
     card.dataset.namePt = size || floor;
     centerOverBand(card);
     alignPanel(card);
+    capPostLogo(card);
+    unclipName(card);
+  };
+  // the postcard card with a tall or square logo (a real agent's logo can be any shape): when the brokerage group does not
+  // fit the panel (logo, its name in type, the office line), the logo steps down to the room that is left, centered as ever,
+  // and only then are the panel's top and bottom insets tightened. Only runs when the card would otherwise overflow, so a card
+  // that fits is never touched.
+  // a display font whose descenders run past the name box's line (the box hides its overflow): the box grows downward by the
+  // missing amount (padding out, margin back in), so the layout stays put. Only when the letters are cut past the print check's tolerance.
+  const unclipName = card => {
+    const nb = card.querySelector('.cc-nameblock'), n = card.querySelector('.cc-name'); if(!nb || !n) return;
+    nb.style.paddingBottom = ''; nb.style.marginBottom = '';
+    const k = card.getBoundingClientRect().width / card.offsetWidth || 1, cs = getComputedStyle(n);
+    const ctx = document.createElement('canvas').getContext('2d'); ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${parseFloat(cs.fontSize)}px ${cs.fontFamily}`;
+    const tn = [...n.childNodes].filter(c => c.nodeType === 3 && c.textContent.trim()).pop(); if(!tn) return;
+    const rg = document.createRange(); rg.selectNodeContents(tn); const rs = [...rg.getClientRects()].filter(q => q.width > 1), q = rs[rs.length - 1]; if(!q) return;
+    const m = ctx.measureText(tn.textContent), fa = m.fontBoundingBoxAscent, fd = m.fontBoundingBoxDescent, sc = q.height / ((fa + fd) || 1);
+    const ink = q.top + fa * sc + m.actualBoundingBoxDescent * sc, cut = ink - nb.getBoundingClientRect().bottom;
+    if(cut > Math.max(1.25, parseFloat(cs.fontSize) * 0.05) * 0.75){   // about the print check's tolerance (clipTolPx, clipTolEm): a card the check passes is left as it is
+      const px = Math.ceil(cut / k) + 1; nb.style.paddingBottom = px + 'px'; nb.style.marginBottom = -px + 'px'; }
+  };
+  const capPostLogo = card => {
+    delete card.dataset.logoCap;
+    const panel = card.querySelector('.cc-panel'), li = panel && panel.querySelector('.cc-logo img');
+    if(card.dataset.post !== '1' || !li || !overflow(card).length) return;
+    const k = card.getBoundingClientRect().width / card.offsetWidth || 1, h0 = li.getBoundingClientRect().height / k;
+    const pw = panel.clientWidth - 8, size = h => { li.style.height = h + 'px'; li.style.maxHeight = h + 'px'; li.parentElement.style.height = h + 'px'; li.style.width = 'auto'; li.style.maxWidth = pw + 'px'; };
+    const minH = 14 * PT;   // 14 pt: smaller than that and the mark stops reading
+    for(let h = h0 - 1; h >= minH - 0.01 && overflow(card).length; h -= 1){ card.dataset.logoCap = h; size(h); alignPanel(card); }
+    // still over: the panel's insets give up their alignment with the agent block, a little at a time
+    for(let i = 0; i < 12 && overflow(card).length; i++){
+      const t = parseFloat(panel.style.paddingTop) || 0, b = parseFloat(panel.style.paddingBottom) || 0;
+      if(t <= 0 && b <= 0) break;
+      panel.style.paddingTop = Math.max(0, t - 1) + 'pt'; panel.style.paddingBottom = Math.max(0, b - 1) + 'pt'; }
   };
   // the postcard card (opts.postcard, owner 10/29): the brokerage group lines up with the agent block, the logo's top on the
   // name's cap height and the last office line's baseline on the agent's last line, measured on the letters.
@@ -329,7 +368,7 @@
     const li = panel.querySelector('.cc-logo img');
     if(li && ofl.length && !panel.querySelector('[data-slot="broker.address"]')){
       const r0 = li.getBoundingClientRect(), gap = (ofl[0].getBoundingClientRect().top - r0.bottom) / k, pw = panel.clientWidth - 8;
-      if(gap > 8 && r0.width > 0){ const h0 = r0.height / k, w0 = r0.width / k, h1 = Math.min(h0 + (gap - 8)*.75, h0 * (pw - 12) / w0);
+      if(gap > 8 && r0.width > 0){ const h0 = r0.height / k, w0 = r0.width / k, h1 = Math.min(h0 + (gap - 8)*.75, h0 * (pw - 12) / w0, +card.dataset.logoCap || Infinity);
         const size = h => { li.style.height = h + 'px'; li.style.maxHeight = h + 'px'; li.parentElement.style.height = h + 'px'; li.style.width = 'auto'; li.style.maxWidth = pw + 'px'; };
         // never past the panel: step back toward the old size while the panel overflows (bigger logo slots, e.g. Atlas)
         let h = h1; size(h); for(let i = 0; i < 20 && h > h0 && (panel.scrollHeight > panel.clientHeight + 1 || panel.scrollWidth > panel.clientWidth + 1); i++){ h = Math.max(h0, h - (h1 - h0)/10); size(h); } } }
@@ -360,6 +399,8 @@
       fitOne(card);
       card.querySelectorAll('img').forEach(i => { if(!i.complete) i.addEventListener('load', () => fitOne(card), {once: true}); });
     });
+    // the name's descenders are measured again once the fonts are in (a swapped display font has other metrics)
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => (root || document).querySelectorAll('.cc[data-contactcard]').forEach(unclipName));
   };
 
   // ---- print checks: overflow, 8 pt minimum (6 pt fine print), TREC broker-name size, stretched logo, missing image,

@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="survey-book-cards.css">
 <script src="../engine/baths.js"></script>
 <script src="survey-book.js"></script>
+<script src="capfit.js"></script>
 <script src="survey-book-cards.js"></script>
 <!--
   The Survey Book · Open House flyer "The Plat Sheet" (trim 612 x 792 pt; print: 0.25 in white margin around the white field).
@@ -77,6 +78,7 @@ window.brochureReady = (async function(){
   AT.fitRow([...document.querySelectorAll('.cap2 .a')]);
   ContactCard.fit(document);
   window.photoPlacements = AT.placements;
+  if(window.CapFit) window.capFitLog = CapFit.run((D.copy || {}).extra); (window.proofNotes = window.proofNotes || []).push({capFit: window.capFitLog});
   window.brochureCheck = () => AT.checkSingle(D, issues);
 })();
 </script>

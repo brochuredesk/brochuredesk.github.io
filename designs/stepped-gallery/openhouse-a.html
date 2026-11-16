@@ -48,7 +48,7 @@ window.brochureReady = (async function(){
   h += `<div class="abs kicker" style="left:${X}pt;top:${Y0 + HH + 8}pt;width:${BW}pt;height:10pt" data-slot="place" data-lines="1">${esc([L.neighborhood, AT.placeZip(L)].filter(Boolean).join(' · ').toUpperCase())}</div>`;
   h += `<div class="abs dsp" id="addr" style="left:${X-1}pt;top:${Y0 + HH + 20}pt;width:${BW}pt;height:40pt;font-size:34pt;line-height:40pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
   h += `<div class="abs facts1" id="facts" style="left:${X}pt;top:${Y0 + HH + 62}pt;width:${BW}pt;height:10pt" data-slot="oh.facts" data-lines="1">${esc([L.beds && `${L.beds} Bedroom${L.beds == 1 ? '' : 's'}`, L.baths && BD.bathsText(L).main,  L.baths && BD.bathsText(L).half, L.sqft && `${Number(L.sqft).toLocaleString('en-US')} Sq Ft`, (L.yearBuilt || L.year) && `Built ${L.yearBuilt || L.year}`].filter(Boolean).join('  ·  '))}</div>`;
-  const cap = (c, x, y, w, slot, cls) => `<div class="abs cap2 ${cls||''}" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="${slot}.body" data-para="1" data-min="2" data-lines="${c.n}" style="height:${c.n*13}pt">${esc(c.a)}</div></div>`;
+  const cap = (c, x, y, w, slot, cls) => `<div class="abs cap2 ${cls||''}" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="${slot}.body" data-para="1" data-min="2" data-lines="${c.n}"${c.pool ? ` data-pool='${esc(JSON.stringify(c.pool)).replace(/'/g, '&#39;')}'` : ''} style="height:${c.n*13}pt">${esc(c.a)}</div></div>`;
   { const c = rooms[0] || {n: 3}, x = X + BW + GP, y = Y0 + ST, ph = rA - ST - 6 - capH(c.n);
     h += AT.photo(D, ids[0], `position:absolute;left:${x}pt;top:${y}pt;width:${SW}pt;height:${ph}pt`, 'oh.room0', 'room') + cap(c, x, y + ph + 6, SW, 'oh.room0'); }
   // row two: the big frame swaps to the right; the narrow one steps down on the left
@@ -68,6 +68,8 @@ window.brochureReady = (async function(){
   AT.fitLine(document.getElementById('addr'), 24);
   AT.fitLine(document.getElementById('facts'), 8.5);
   issues.push(...AT.fitHouse(D));
+  // a room with a pool of true lines sets the ones that fill its lines (owner 11/10: every line 80%+)
+  if(window.CapFit) CapFit([...document.querySelectorAll('.cap2 .a[data-pool]')]);
   // captions in a row run the same number of lines (row two: narrow and big); row one's single caption stands alone
   AT.fitRow([...document.querySelectorAll('.cap2 .a')].filter(e => /room[12]/.test(e.dataset.slot)));
   ContactCard.fit(document);

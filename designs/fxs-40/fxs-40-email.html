@@ -63,7 +63,7 @@ FXP.start(['400 20pt "Great Vibes"', '500 20pt Oswald', '600 20pt Oswald', '700 
   h.push(`<div class="abs wk" data-bg="${TK.paper}" style="left:${X0}pt;top:${y}pt;width:${CWe}pt;height:19pt;font-size:15pt;line-height:19pt;letter-spacing:2.5pt" data-slot="oh.weekday" data-lines="1">${esc(E.weekday)}</div>`); y += 22;
   const dText = String(E.monthDay || E.long); let S = 46; while(S > 26 && FXP.width(dText, `font-family:Oswald;font-weight:600;font-size:${S}pt`) > CWe) S -= .5;
   h.push(`<div class="abs dt" style="left:${X0}pt;top:${y}pt;width:${CWe}pt;height:${S*1.1}pt;font-size:${S}pt;line-height:${S*1.1}pt" data-slot="oh.date" data-lines="1">${esc(dText)}</div>`); y += S*1.1 + 4;
-  if(E.time){ const TS = S*.6; h.push(`<div class="abs tm" style="left:${X0}pt;top:${y}pt;width:${CWe}pt;height:${TS*1.15}pt;font-size:${TS}pt;line-height:${TS*1.15}pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`); y += TS*1.15 + 8; }
+  if(E.time){ const TS = S*.6; h.push(`<div class="abs tm" style="left:${X0}pt;top:${y}pt;width:${CWe}pt;height:${TS*1.3}pt;font-size:${TS}pt;line-height:${TS*1.15}pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`); y += TS*1.15 + 8; }
   y = Math.max(y, bcy + bdm/2) + 14;
   const perks = [[E.refreshments, 'oh.refreshments', 'evb b'], [E.note, 'oh.note', 'evb']].filter(p => p[0]);
   if(perks.length){ const ph = 14 + perks.length*24 + 8; h.push(`<div class="card" data-box="oh.box" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${ph}pt"></div>`);

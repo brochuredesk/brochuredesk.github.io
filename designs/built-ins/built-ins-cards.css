@@ -39,12 +39,16 @@
 .bcap .h{font-family:var(--font-display);font-size:10pt;line-height:13pt;color:var(--ink);white-space:nowrap;overflow:hidden;padding-top:5pt}
 .bcap .h i{font-family:var(--font-body);font-style:normal;font-weight:600;font-size:8pt;letter-spacing:.6pt;color:var(--signal);margin-left:6pt}
 .bcap .a{font-size:8.5pt;line-height:11.5pt;color:var(--text);overflow:hidden;margin-top:1pt}
-.slab{position:absolute;background:var(--ink);color:#fff;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
-.slab .big{font-family:var(--font-display);font-size:13pt;line-height:17pt}
-.slab .sub{font:600 8pt/10pt var(--font-body);color:#ecd9d5;margin-top:4pt;letter-spacing:.3pt}
+/* the ink callout under the postage box: the headline at the top, the line under it at the bottom, so the text fills the box (round 3) */
+.slab{position:absolute;background:var(--ink);color:#fff;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.slab .big{font-family:var(--font-display);font-size:13pt;line-height:16pt}
+.slab .sub{font:600 8pt/10pt var(--font-body);color:#ecd9d5;margin-top:2pt;letter-spacing:.3pt}
 .svc{display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
 .svc .it{display:flex;gap:6pt;align-items:baseline;font:400 9pt/11.5pt var(--font-body);color:var(--ink)}
 .svc .bx{width:4pt;height:4pt;background:var(--signal);flex:none;transform:translateY(-1.5pt)}
 /* balanced lines: a caption or write-up never ends on a short last line */
-.bcap .a,.cap .a,.jt{text-wrap:balance}
-#jlp{text-wrap:balance}#note{text-wrap:pretty}
+/* captions: plain wrapping, then CapFit fills and justifies every line (owner 11/8, 11/10 rule 8) */
+.bcap .a,.cap .a{text-wrap:wrap}
+.jt{text-wrap:balance}
+#jlp{text-wrap:wrap;text-align:justify;text-align-last:left;hyphens:none}
+#jlp .runin{font:600 8pt/10pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:var(--signal);margin-right:5pt}#note{text-wrap:pretty}

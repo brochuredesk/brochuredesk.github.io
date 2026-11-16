@@ -11,7 +11,8 @@
     outside spread: back (turned 180, on top) over cover      inside spread: inside top over inside bottom
   Walk around the house, then through it: the cover is the whole-house front with three previews, the inside top is the
   home in plan (the plan on a white board beside the two lead rooms and four more), the inside bottom is the rooms in
-  detail (3 x 2), the back is the outdoors and what is around it, with the standard contact card.
+  detail (3 x 2), the back is the outdoors and what is around it, with a narrow contact card at its lower right (owner
+  11/10/2026).
 
   Modes (data.mode):  proof  four panel pages, 810 x 630 pt each (trim + bleed)
                       print  two spreads, 810 x 1242 pt, each half clipped at the fold
@@ -62,23 +63,41 @@ window.brochureReady = (async function(){
   }
 
   // ================= BACK =================
+  // owner 11/10/2026 (rule 3): the contact card is a narrow card at the right of the lower half (about a third of the old
+  // full-width card); the write-up, the list, the closing line and the fine print stack down the left, and the outdoor
+  // photos grow taller into the room the old card took
+  const measureBody = (text, w) => {
+    const m = document.createElement('div'); m.className = 'body';
+    m.style.cssText = `position:absolute;left:-9999pt;top:0;visibility:hidden;width:${w}pt;height:auto;overflow:visible`;
+    m.textContent = text; document.body.appendChild(m); const r = H3.lineFill(m); m.remove(); return r;
+  };
   function back(){
-    const B = C.back || {}, ps = (B.photos || []).slice(0, 3), w = (744 - 2*G)/3;
+    const B = C.back || {}, ps = (B.photos || []).slice(0, 3), w = (744 - 2*G)/3, para = H3.txt(B.para), list = (B.list || []).slice(0, 5);
+    // the write-up's width: the widest (narrowest card) at which its last line runs 90%+, else the fullest last line
+    let cw = 480, best = null;
+    for(let c = 452; c >= 410; c -= 2){ const [k, f] = measureBody(para, c), sc = (f >= .9 ? 10 : 0) + f - k*.01;
+      if(!best || sc > best.sc){ best = {sc, c, k}; } }
+    if(best) cw = best.c;
+    const pl = best ? best.k : ln('back.para', 4), fn = B.footnote || '';
+    // owner 11/10/2026 (p76): the contact block is shorter top to bottom and runs the panel's full width along the foot (its
+    // logo inside); the "What it comes with" table moves beside the write-up in bigger type and takes the room it freed
+    const CH = 76, CYc = 592 - CH, RH = 21, tw = 744 - cw - 24, tx = 24 + cw + 24;
+    const leftH = pl*14 + 10 + 10, rightH = list.length ? 15 + list.length*RH : 0, Z = Math.max(leftH, rightH);
+    const py = CYc - 14 - Z, y0 = py - 29, kb = ln('back.caps', 3), ph = y0 - 13 - H3.capH(kb) - 6 - 82;
     let h = H3.kick(B.kicker, 'back.kicker', 24, 26, 700) + H3.title(B.title, 'back.title', 24, 36) + H3.rule(24, 71, 744);
-    const kb = ln('back.caps', 3), ph = 188 - (kb - 3)*11;
     ps.forEach((c, i) => { const x = 24 + i*(w + G);
       h += H3.photo(D, c.id, x, 82, w, ph);
       h += H3.cap(c, `back.cap${i}`, x, 82 + ph + 6, w, {lines: kb, min: kb, max: kb}); });
-    // improvements headline, the paragraph and the list beside it
-    const y0 = 82 + ph + 6 + H3.capH(kb) + 13;
+    h += H3.rule(24, y0 - 7, 744);   // a rule under the photo row: each caption's space ends here, level across the row
     h += `<div class="abs headline" style="left:24pt;top:${y0}pt;width:744pt;height:22pt" data-slot="back.headline" data-lines="1">${esc(B.headline)}</div>`;
-    const py = y0 + 29, pl = ln('back.para', 4), cw = 452;
-    h += `<div class="abs body" style="left:24pt;top:${py}pt;width:${cw}pt;height:${pl*14}pt" data-slot="back.para" data-lines="${pl}" data-nmin="${pl}" data-nmax="${pl}" data-cap="1">${esc(H3.txt(B.para))}</div>`;
-    const ax = 24 + cw + 24, aw = 768 - ax;
-    h += H3.kick(B.listHead, 'back.listhead', ax, py, aw);
-    h += `<div class="abs around" style="left:${ax}pt;top:${py + 15}pt;width:${aw}pt">${(B.list||[]).slice(0, 5).map((x,i) => `<div class="row"><div class="p" data-slot="back.list${i}.p" data-lines="1">${esc(x.p)}</div><div class="d" data-slot="back.list${i}.d" data-lines="1">${esc(x.d)}</div></div>`).join('')}</div>`;
-    h += H3.kick(B.closing, 'back.closing', 24, py + pl*14 + 14, 440);
-    h += ContactCard.html([24, 468, 744, 136], Object.assign({}, A, {headshot: hs}), b, {layout:'panel', fine: B.footnote || '', fieldAccent: true, bottomGap: 0.5});
+    // the write-up takes bigger type (up to 13 pt) until it fills its column down to the closing line, level with the table
+    h += `<div class="abs body" style="left:24pt;top:${py}pt;width:${cw}pt;height:${pl*14}pt" data-slot="back.para" data-lines="${pl}" data-nmin="${pl}" data-nmax="${pl}" data-growfill="${Z - 20}">${esc(para)}</div>`;
+    h += H3.kick(B.closing, 'back.closing', 24, py + Z - 10, cw);
+    if(list.length){ const ty = py + (Z - rightH)/2;
+      h += H3.kick(B.listHead, 'back.listhead', tx, ty, tw);
+      h += `<div class="abs around big" style="left:${tx}pt;top:${ty + 15}pt;width:${tw}pt">${list.map((x,i) => `<div class="row"><div class="p" data-slot="back.list${i}.p" data-lines="1">${esc(x.p)}</div><div class="d" data-slot="back.list${i}.d" data-lines="1">${esc(x.d)}</div></div>`).join('')}</div>`; }
+    h += ContactCard.html([24, CYc, 744, CH], Object.assign({}, A, {headshot: hs}), b, {layout: 'panel', size: 'mid', grow: 0, bottomGap: .5, fieldAccent: true});
+    if(fn) h += `<div class="abs" style="left:24pt;top:${596}pt;width:744pt;height:8pt;font:400 6.5pt/8pt var(--font-body);color:#d3e5dd;white-space:nowrap;overflow:hidden" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(fn)}</div>`;
     return h;
   }
 
@@ -139,6 +158,23 @@ window.brochureReady = (async function(){
   document.getElementById('pages').innerHTML = html;
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
   H3.fitLogos();
+  if(!H3.fitMode) CapFit(document.querySelectorAll('.tx[data-pool]'));   // text under a photo fills the photo's width (owner 11/8)
+  if(!H3.fitMode) NoWideGaps(document.querySelectorAll('.tx, .body'));
+  if(!H3.fitMode && window.LastFit) LastFit([...document.querySelectorAll('[data-slot]')].filter(e => !e.querySelector('[data-slot]') && !/(^|\.)(kicker|title|head|headline|name|label|status|return\d*|t|h|nm)$|^(agent|broker|cc|slab|fine)|^sold\.(step|svc)/i.test(e.dataset.slot)));   // no last line under 80% (owner 11/10)
+  // owner 11/10/2026 (p76): the back's write-up grows into the room the shorter contact block freed (no blank band)
+  document.querySelectorAll('[data-growfill]').forEach(el => {
+    const room = +el.dataset.growfill, k = 96/72, lastFill = () => { el.style.textAlign = 'left'; const r = document.createRange(); r.selectNodeContents(el);
+      const q = [...r.getClientRects()].filter(x => x.width > 1), bx = el.getBoundingClientRect(), top = Math.max(...q.map(x => x.top));
+      const right = Math.max(...q.filter(x => Math.abs(x.top - top) < 3).map(x => x.right)); el.style.textAlign = 'justify'; return (right - bx.left)/bx.width; };
+    el.style.height = 'auto'; el.style.textAlign = 'justify';
+    let pick = null, first = null;
+    for(let z = 13; z >= 9.5 && !pick; z = +(z - .1).toFixed(2)){ el.style.fontSize = z + 'pt'; el.style.lineHeight = (z*1.4).toFixed(2) + 'pt';
+      if(el.scrollHeight/k > room) continue; if(!first) first = z; if(z < first - 1.6) break; if(lastFill() >= .8) pick = z; }
+    const z = pick || first || 10, n = Math.round(el.scrollHeight/k/(z*1.4)) || 1, lh = Math.min(z*1.6, room/n);
+    el.style.fontSize = z + 'pt'; el.style.lineHeight = lh.toFixed(2) + 'pt'; el.style.height = (n*lh).toFixed(2) + 'pt';
+    el.dataset.lines = n; el.dataset.nmin = n; el.dataset.nmax = n;
+    el.style.top = (parseFloat(el.style.top) + Math.max(0, room - n*lh)) + 'pt';   // the write-up ends on the closing line's space
+  });
   ContactCard.fit(document);
   document.body.dataset.version = `${Math.max(1, Math.min(4, Math.round(+L.stories || 1)))}-story-${hasPlan ? 'plan' : 'noplan'}`;
   window.brochureCheck = () => H3.check(D, issues);

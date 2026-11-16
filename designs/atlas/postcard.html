@@ -128,6 +128,7 @@ window.brochureReady = (async function(){
     const X = 24, zP = [W - 96, 12, 84, 98.25], zA = [W - 243, 187.5, 240, 112.5], zB = [W - 342, 387, 342, 45];
     const LZ = zA[0] - 10, bandR = zP[0] - 12, rW = bandR - zA[0];   // the left zone's right edge; the band's right end; the width beside the address block
     const ret = [].concat(b.returnAddress || b.address || []).flatMap(a => String(a).split('\n')).map(s => s.trim()).filter(Boolean).slice(0, 2);
+    if(ret.length < 2) issues.push({slot: 'address.return', kind: 'return-address-missing', detail: 'the brokerage street and city line are missing from the return address (brand.returnAddress); owner 11/10/2026 rule 10'});   // every mailer back: the full return address (owner 11/10/2026, rule 10)
     const short = String(L.address || '');
     document.body.classList.add('pc-back');
     // the field: forest green to every edge, with contour lines drawn across it (mail side too); the cream tint under the zones
@@ -152,13 +153,14 @@ window.brochureReady = (async function(){
       const RH = (avail - (rowItems.length - 1)*gap) / rowItems.reduce((s, c, i) => s + ratio(i), 0);
       let x = X;
       rowItems.forEach((c, i) => { const w = RH*ratio(i);
-        h += AT.photo(D, c.id, `position:absolute;left:${x.toFixed(2)}pt;top:${pTop}pt;width:${w.toFixed(2)}pt;height:${RH.toFixed(2)}pt`, 'back.photo' + i, 'bp');
-        h += cap(c, x.toFixed(2), pTop + RH, w, 'back.cap' + i); x += w + gap; });
+        h += AT.photo(D, c.id, `position:absolute;left:${x.toFixed(2)}pt;top:${pTop}pt;width:${w.toFixed(2)}pt;height:${RH.toFixed(2)}pt`, 'back.photo' + i, 'bp rowph');
+        h += cap(c, x.toFixed(2), pTop + RH, w, 'back.cap' + i).replace('class="abs bcap"', 'class="abs bcap rowcap"'); x += w + gap; });
+      window.rowFill = {to: legendTop - 19 - 6};   // the photos grow taller so their captions end just over the Nearby list (owner 11/10/2026: no blank space under a caption)
       if(rItem){ const ph2 = 79;
         h += AT.photo(D, rItem.id, `position:absolute;left:${zA[0]}pt;top:${pTop}pt;width:${rW}pt;height:${ph2}pt`, 'back.photoR', 'bp');
         h += cap(rItem, zA[0], pTop + ph2, rW, 'back.capR'); }
       // the small nearby legend closes the left zone
-      h += `<div class="abs kicker" style="left:${X}pt;top:${legendTop - 13}pt;width:${avail}pt;height:10pt" data-slot="legend.label" data-lines="1">Nearby</div>`;
+      h += `<div class="abs kicker" style="left:${X}pt;top:${legendTop - 19}pt;width:${avail}pt;height:10pt;padding-top:5pt;border-top:.7pt solid var(--line);box-sizing:content-box" data-slot="legend.label" data-lines="1">Nearby</div>`;
       h += `<div class="abs lgd" style="left:${X}pt;top:${legendTop}pt;width:${avail}pt;height:${300 - legendTop - 1}pt">${AT.indexRowsHTML(D, 'index')}</div>`;
       slab = PC.slab || {};
     } else {
@@ -170,9 +172,12 @@ window.brochureReady = (async function(){
       h += `<div class="abs svc" style="left:${zA[0]}pt;top:${pTop + 16}pt;width:${rW}pt;height:${182 - pTop - 16}pt">${items.map((s, i) => `<div class="it"><span class="bx"></span><span data-slot="sold.svc${i}" data-lines="3">${esc(s)}</span></div>`).join('')}</div>`;
       const my = pTop + ph1 + 10;
       h += `<div class="abs kicker" style="left:${X}pt;top:${my}pt;width:${avail}pt;height:10pt" data-slot="sold.meetLabel" data-lines="1">${esc(PC.meetLabel || 'When we meet')}</div>`;
-      const lh = 16, ty = my + 15, nl = 3;
-      h += `<div class="abs ptxt jt" style="left:${X}pt;top:${ty}pt;width:${avail}pt;height:${nl*lh}pt;font-size:11pt;line-height:${lh}pt" data-slot="sold.meet" data-para="1" data-min="2" data-fillbox="1" data-nobal="1">${esc(big ? PC.meet11 : PC.meet9)}</div>`;
-      h += `<div class="abs dsp" style="left:${X}pt;top:${ty + nl*lh + 12}pt;width:${avail}pt;height:24pt;font-size:19pt;line-height:24pt;color:var(--accent)" data-slot="sold.call" data-lines="1">${esc(PC.call || 'Call or text me anytime.')}</div>`;
+      // "When we meet" runs down to the contact card: the text takes the biggest type that fits (up to about 12% over 11 pt) and the
+      // call line follows it over a hairline (owner 11/10/2026: no blank space under text)
+      const cardTop = zA[1] + zA[3] + 5;
+      h += `<div class="abs" data-meetbox="1" style="left:${X}pt;top:${my + 15}pt;width:${avail}pt;height:${cardTop - 7 - my - 15}pt;display:flex;flex-direction:column">
+        <div class="ptxt jt" style="flex:none;font-size:11pt;line-height:16pt;overflow:visible" data-slot="sold.meet" data-para="1" data-min="2" data-nobal="1">${esc(big ? PC.meet11 : PC.meet9)}</div>
+        <div class="dsp" style="flex:none;margin-top:7pt;padding-top:5pt;border-top:.75pt solid var(--line, rgba(0,0,0,.2));height:24pt;box-sizing:content-box;font-size:19pt;line-height:24pt;color:var(--accent);white-space:nowrap;overflow:hidden" data-slot="sold.call" data-lines="1">${esc(PC.call || 'Call or text me anytime.')}</div></div>`;
       slab = PC.slab || {};
     }
     // the callout under the postage box, bleeding off the right edge
@@ -197,6 +202,19 @@ window.brochureReady = (async function(){
   document.getElementById('pages').innerHTML = f.html;
   window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
   await AT.settle();
+  if(window.rowFill){   // Just Listed back: the left photo row grows taller by what its captions leave empty above the Nearby list
+    const px = 96/72, caps = [...document.querySelectorAll('.rowcap')], phs = [...document.querySelectorAll('.rowph')];
+    const bot = Math.max(...caps.map(c => (c.offsetTop + c.offsetHeight) / px)), d = window.rowFill.to - bot;
+    if(d > 0){ phs.forEach(e => e.style.height = (parseFloat(e.style.height) + d) + 'pt'); caps.forEach(c => c.style.top = (parseFloat(c.style.top) + d) + 'pt'); }
+    window.rowFill = null;
+  }
+  document.querySelectorAll('[data-meetbox]').forEach(box => {
+    const t = box.querySelector('[data-slot="sold.meet"]'); if(!t) return;
+    const fits = () => box.scrollHeight <= box.clientHeight + .5;
+    let best = 11;
+    for(let fs = 11; fs <= 12.31; fs += .125){ t.style.fontSize = fs + 'pt'; t.style.lineHeight = (fs * 1.45) + 'pt'; if(fits()) best = fs; else break; }
+    t.style.fontSize = best + 'pt'; t.style.lineHeight = (best * 1.45) + 'pt';
+  });
   const fitLines = (el, lo) => { let s = parseFloat(getComputedStyle(el).fontSize)*72/96; while((AT.lines(el) > 2 || el.scrollWidth > el.clientWidth + .5) && s > lo){ s -= .5; el.style.fontSize = s + 'pt'; } };
   const ad = document.getElementById('addr'); if(ad) fitLines(ad, 20);
   const hd = document.getElementById('head'); if(hd) AT.fitLine(hd, 40);

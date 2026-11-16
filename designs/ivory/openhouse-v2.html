@@ -65,14 +65,20 @@ Ivory.whenFonts(function(){
       h += Ivory.eventBox(ls, 360, bt, 216, 16, 4, o).html;
     } }
   // photo grid: two stacked at left, the hero at right; address with the facts on the right; three photos below
-  h += Ivory.photo(D, '', s1, 'left:36pt;top:222pt;width:172pt;height:116pt');
-  h += Ivory.photo(D, '', s2, 'left:36pt;top:346pt;width:172pt;height:116pt');
-  h += Ivory.photo(D, '', hero, 'left:216pt;top:222pt;width:360pt;height:240pt');
+  // every photo carries its caption (owner 11/10/2026): the room name and one line of its own true details; the grid shrinks
+  // to make room. Two stacked at left, the hero at right (its caption level with the lower one's), the address, three below.
+  const CH = Ivory.capH(1), G = 222, LW = 156, HW = 540 - 8 - LW, BH = 100, BOT = 648;
+  const a = (BOT - G - (2*CH + 8) - 54 - 12 - BH - CH) / 2, TH = 2*a + 2*CH + 8, A = G + TH + 6;
+  h += Ivory.photo(D, '', s1, `left:36pt;top:${G}pt;width:${LW}pt;height:${a}pt`) + Ivory.capBlock(D, s1, 36, G + a, LW, 'grid.left0', 1);
+  h += Ivory.photo(D, '', s2, `left:36pt;top:${G + a + CH + 8}pt;width:${LW}pt;height:${a}pt`) + Ivory.capBlock(D, s2, 36, G + 2*a + CH + 8, LW, 'grid.left1', 1);
+  h += Ivory.photo(D, '', hero, `left:${36 + LW + 8}pt;top:${G}pt;width:${HW}pt;height:${TH - CH}pt`) + Ivory.capBlock(D, hero, 36 + LW + 8, G + TH - CH, HW, 'grid.hero', 1);
+  h += `<style>.address{top:${A}pt}.placeline{top:${A + 34}pt}.factline{top:${A + 32}pt}</style>`;
   h += `<div class="abs display address" data-slot="address" data-lines="1">${esc(PS(L.address))}</div>`;
   h += `<div class="abs place placeline" data-slot="place" data-lines="1" data-fine="1">${esc(Ivory.placeZip(L))}</div>`;
   h += `<div class="abs factline" data-slot="oh.facts" data-lines="1">${esc(Ivory.factsShort(L))}</div>`;
-  h += `<div class="hair" style="left:36pt;top:522pt;width:540pt;opacity:.35"></div>`;
-  [[s3,36],[s4,221],[s5,406]].forEach(([id,x])=> h += Ivory.photo(D, '', id, `left:${x}pt;top:534pt;width:170pt;height:106pt`));
+  h += `<div class="hair" style="left:36pt;top:${A + 52}pt;width:540pt;opacity:.35"></div>`;
+  const by = BOT - CH - BH;
+  [[s3,36],[s4,221],[s5,406]].forEach(([id,x], i)=> h += Ivory.photo(D, '', id, `left:${x}pt;top:${by}pt;width:170pt;height:${BH}pt`) + Ivory.capBlock(D, id, x, by + BH, 170, 'row' + i, 1));
 
   h += Ivory.card(D, {x:36, y:656, w:540, h:100, nameSize:26, phoneSize:16, lineSize:8.5, officeSize:15, qr:0, brkShift:9, logoH:36, gap:18, brkMin:230,
                       top:{name:8, title:39, callLbl:51, phone:59}});
@@ -81,6 +87,7 @@ Ivory.whenFonts(function(){
   const f = Ivory.frame(D, 612, 792, h);
   document.getElementById('pages').innerHTML = f.html;
   Ivory.shapeLogos();
+  Ivory.fitTags();
   window.pieceSize = {W:f.W, H:f.H, bleed:f.bleed};
   const cardIssues = Ivory.layoutCards();
   window.brochureCheck = () => Ivory.check(cardIssues);

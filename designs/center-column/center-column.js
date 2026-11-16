@@ -161,7 +161,7 @@
   // The standard Right panel card, with and without a headshot. The card carries the spread's one brokerage logo.
   AT.card = function(D, box, fine, o){
     const A = D.agent || {}, hs = AT.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
-    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, Object.assign({layout:'panel', fine: fine || '', bottomGap: 0.5}, o || {}));
+    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, Object.assign({layout:'panel', fine: fine || '', bottomGap: 0.5}, !o && box[3] <= 80 ? {size: 'half', grow: 0, s: {panelW: 160}} : {}, o || {}));   // a box 80 pt or shorter is the half-height card (owner 11/15/2026); the back's own short-card settings win
   };
 
   // ---------- print checks (read by the renderer) ----------

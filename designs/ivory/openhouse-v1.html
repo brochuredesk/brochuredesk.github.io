@@ -66,11 +66,13 @@ Ivory.whenFonts(function(){
   h += Ivory.fullRule(D, 612, y);
 
   // photo grid: hero 3:2-ish at left, two stacked 3:2 photos at right; the grid grows into whatever the strip leaves
-  const g = y + 12, gh = Math.min(272, 652 - 72 - g), sh = (gh - 8)/2, sw = Math.round(sh*1.5), hw = 540 - 8 - sw;
-  h += Ivory.photo(D, '', hero, `left:36pt;top:${g}pt;width:${hw}pt;height:${gh}pt`);
-  h += Ivory.photo(D, '', s1, `left:${36+hw+8}pt;top:${g}pt;width:${sw}pt;height:${sh}pt`);
-  h += Ivory.photo(D, '', s2, `left:${36+hw+8}pt;top:${g+sh+8}pt;width:${sw}pt;height:${sh}pt`);
-  const a = g + gh + 12;
+  // every photo carries its caption (owner 11/10/2026): the hero's sits level with the lower side photo's; the grid takes a
+  // little of the write-up's room for them, and the photos shrink to fit
+  const CH = Ivory.CAPH, g = y + 12, T = Math.min(272, 652 - 72 - g) + 6, sh = (T - 8 - 2*CH)/2, sw = Math.round(sh*1.5), hw = 540 - 8 - sw, gh = T - CH;
+  h += Ivory.photo(D, '', hero, `left:36pt;top:${g}pt;width:${hw}pt;height:${gh}pt`) + Ivory.capBlock(D, hero, 36, g + gh, hw, 'grid.hero');
+  h += Ivory.photo(D, '', s1, `left:${36+hw+8}pt;top:${g}pt;width:${sw}pt;height:${sh}pt`) + Ivory.capBlock(D, s1, 36+hw+8, g + sh, sw, 'grid.side0');
+  h += Ivory.photo(D, '', s2, `left:${36+hw+8}pt;top:${g+sh+CH+8}pt;width:${sw}pt;height:${sh}pt`) + Ivory.capBlock(D, s2, 36+hw+8, g + 2*sh + CH + 8, sw, 'grid.side1');
+  const a = g + T + 10;
   h += `<div class="abs display address" style="top:${a}pt" data-slot="address" data-lines="1">${esc(PS(L.address))}</div>`;
   h += `<div class="abs place placeline" style="top:${a+34}pt" data-slot="place" data-lines="1" data-fine="1">${esc(Ivory.placeZip(L))}</div>`;
   h += `<div class="abs factline" style="top:${a+47}pt" data-slot="oh.facts" data-lines="1">${esc(Ivory.factsShort(L))}</div>`;
@@ -87,6 +89,7 @@ Ivory.whenFonts(function(){
   const f = Ivory.frame(D, 612, 792, h);
   document.getElementById('pages').innerHTML = f.html;
   Ivory.shapeLogos();
+  Ivory.fitTags();
   // hairlines run from the margins to 16 pt either side of the label
   const lb = document.getElementById('evLabel'), m = document.createElement('span');
   m.style.cssText = 'position:absolute;white-space:nowrap;visibility:hidden'; const cs = getComputedStyle(lb);

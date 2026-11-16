@@ -23,6 +23,7 @@
 -->
 </head>
 <body data-mode="email">
+<script src="capfit.js"></script>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
 <script>
@@ -48,7 +49,7 @@ window.brochureReady = (async function(){
       const st = AT.stats(L);
       bottom = `<div class="stk">${st.slice(0, 4).map((t, i) => `<div data-slot="stat${i}" data-lines="1">${esc(t)}</div>`).join('')}</div>`;
     } else {
-      bottom = `<div><div class="dsp" style="font-size:19pt;line-height:21pt;color:var(--signal)" data-slot="sold.cta" data-lines="2">${esc(PC.cta1 || 'Thinking of selling?')}<br>${esc(PC.cta2 || 'Let’s talk.')}</div>
+      bottom = `<div><div class="dsp" style="font-size:19pt;line-height:21pt;color:var(--signal)" data-slot="sold.cta" data-lines="2">${esc(PC.cta1 || 'Thinking of selling?')}<br>${esc(PC.cta2 || 'Let’s talk it over soon.')}</div>
         <div class="dsp" id="agname" style="margin-top:8pt;font-size:19pt;line-height:22pt" data-slot="agent.name" data-lines="1">${esc(A.name || '')}</div>
         <div style="font:700 14pt/17pt var(--font-body);color:var(--ink);letter-spacing:.3pt;white-space:nowrap;overflow:hidden;margin-top:1pt" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div></div>`;
     }
@@ -136,6 +137,7 @@ window.brochureReady = (async function(){
   window.proofNotes = [{paragraphs: [...document.querySelectorAll('[data-para]')].map(el => { const ls = AT.lineBoxes(el), w = el.getBoundingClientRect().width, last = ls[ls.length-1];
     return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, wPt: Math.round(AT.pt(w))}; })}];
   window.photoPlacements = AT.placements;
+  if(window.CapFit) (window.proofNotes = window.proofNotes || []).push({capFit: CapFit.run(((typeof D !== "undefined" && D.copy) || {}).extra)});
   window.brochureCheck = () => AT.checkSingle(D, issues);
 })();
 </script>

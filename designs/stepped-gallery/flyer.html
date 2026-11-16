@@ -14,11 +14,12 @@
   Same family as the fold-over: the ink-navy field, Lora titles over a pale-sky hairline, tracked sky kickers, Nunito Sans text, and
   UNEQUAL FRAMES THAT STEP DOWN THE PAGE: every row of photos is a big frame and smaller ones, each starting a step lower, bottoms and
   captions on one line; the plan sits on its white board beside a framed photo.
-  FRONT  top band (place line, the one logo in white), hairline, the whole house, the address with the facts beside it, a hairline,
-         the write-up beside the places list, three stepped captioned photos, the card with the office lines level with its name
-         and phone lines, fine print.
-  BACK   With a plan: header, a framed photo beside the plan board, three stepped photos, the note. Without: the rooms floor by floor,
-         two stepped photos, three stepped photos, the note.
+  FRONT  top band (place line), hairline, the whole house, the address with the facts beside it, a hairline, the write-up (every
+         sentence, justified) beside the places list, three stepped captioned photos down to the fine print. No contact card and no
+         logo on the front (owner 11/10).
+  BACK   With a plan: header, a framed photo beside the plan board (as tall as the plan needs), three stepped photos. Without: two
+         mirrored pairs of stepped photos. Both close on a band: the room sizes floor by floor beside a narrow contact card (about
+         half the old width; the side's one logo).
   Rules: no price, no QR, no photo numbers, no "virtually staged", room sizes in feet only, the ½ at full size (BD.baths), text fills
   its space, a row of captions runs the same number of lines.
   Data: companion.flyer = {desc[], places[{n,d}], placesTitle, front{hero,photos[3]}, photos{id:{title,dims,sentences[]}}, note{label,text[]},
@@ -29,8 +30,11 @@
   .fc .h{font:600 11pt/14pt var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;letter-spacing:-.05pt;padding-top:6pt;height:20pt;box-sizing:border-box}
   .fc .h i{font:700 8pt/14pt var(--font-body);font-style:normal;letter-spacing:1pt;text-transform:uppercase;color:var(--accent);margin-left:7pt}
   .fc .a{font-size:8.5pt;line-height:11.5pt;color:var(--text);overflow:hidden;margin-top:1.5pt}
+  body[data-side=back] .fc .a{line-height:12.5pt}
+  body[data-side=back] .fc .h{font-size:12pt}
   .fc.big .a{font-size:9pt;line-height:12.5pt}
   .ptxt{font-size:9.75pt;line-height:14pt;color:var(--text)}
+  .ptxt[data-justify]{text-align:justify}
   .pn{font:600 9.5pt/12pt var(--font-body);color:var(--ink);overflow:hidden;flex:1;min-width:0}
   .pd{font:700 8pt/12pt var(--font-body);letter-spacing:.9pt;text-transform:uppercase;color:var(--accent);flex:none}
   .rr2{display:flex;align-items:center;justify-content:space-between;border-bottom:.5pt dotted var(--line);white-space:nowrap;overflow:hidden}
@@ -66,17 +70,29 @@ const FX = (function(){
     const rg = document.createRange(); rg.selectNodeContents(ms);
     const rows = []; [...rg.getClientRects()].filter(r => r.width > .5).forEach(r => { const row = rows.find(x => Math.abs(x.top - r.top) < lh*.5); if(row) row.right = Math.max(row.right, r.right); else rows.push({top: r.top, right: r.right}); });
     const box = ms.getBoundingClientRect(), last = rows.length ? rows[rows.length-1] : null;
-    return {lines: rows.length, last: last && box.width ? Math.min(1, (last.right - box.left)/box.width) : 0};
+    return {lines: rows.length, last: last && box.width ? Math.min(1, (Math.min(...rows.map(q => q.right)) - box.left)/box.width) : 0};   // every line counts, set ragged (owner 11/8: text under a photo runs the photo's width)
   };
   // room sizes in feet only, inches dropped and never rounded: 18' x 12'
   const feetOnly = FX.feetOnly = t => String(t).replace(/(\d+)(?:\.\d+)?(?:'\s?\d+(?:\.\d+)?"?)?'?\s*x\s*(\d+)(?:\.\d+)?(?:'\s?\d+(?:\.\d+)?"?)?'?/g, "$1' x $2'");
   FX.BAN = /\b(generous(ly)?|spacious|boasts?|nestled|perfect for|character|enhances?|within easy reach|soaring|glows?|moments away|set the tone|abundant|steps away|brings? in (day)?light|natural light|brighten(s|ed)?|rich|space to entertain|adds? privacy|opens? the entry|daylight|with light|ready for|set up for a crowd|minutes from|year-round comfort|ways to unwind|get ready at once|carry through the space|virtually|staged|ideal for|master|kids?|children)\b/i;
-  FX.sentences = s => (Array.isArray(s) ? s : String(s || '').match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || []).map(x => feetOnly(x).trim()).filter(x => x && !FX.BAN.test(x));
+  // owner 11/10 (rule 7): no phrase repeats inside a caption and no two sentences open the same way: a sentence that shares
+  // three words in a row (not all small words) or its first two words with an earlier one in the same pool is left out
+  const SMALL = new Set('a an the and of to in on with at by it its is are or for from this that as up off'.split(' '));
+  const wordsOf = t => String(t).toLowerCase().match(/[a-z0-9']+/g) || [];
+  const tri = t => { const w = wordsOf(t), g = new Set(); for(let i = 0; i + 2 < w.length; i++) if(!(SMALL.has(w[i]) && SMALL.has(w[i+1]) && SMALL.has(w[i+2]))) g.add(w.slice(i, i + 3).join(' ')); return g; };
+  FX.tri = tri;
+  FX.open3 = t => wordsOf(t).slice(0, 3).join(' ');
+  FX.sentences = s => { const out = [], seen = new Set(), opens = new Set();
+    (Array.isArray(s) ? s : String(s || '').match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || []).map(x => feetOnly(x).trim()).filter(x => x && !FX.BAN.test(x)).forEach(x => {
+      const g = tri(x), o = wordsOf(x).slice(0, 2).join(' '), cw = wordsOf(x).filter(w => /\d/.test(w) || (w.length >= 4 && !SMALL.has(w))), pr = cw.slice(1).map((w, i) => cw[i] + ' ' + w);
+      if(opens.has(o) || [...g].some(k => seen.has(k)) || pr.some(k => seen.has('p:' + k))) return;   // also two content words side by side ("attached garage")
+      out.push(x); opens.add(o); g.forEach(k => seen.add(k)); pr.forEach(k => seen.add('p:' + k)); });
+    return out; };
   const sentences = FX.sentences;
   const subsets = arr => { const n = Math.min(arr.length, 9), out = [];
     for(let m = 1; m < (1 << n); m++){ const pick = []; for(let i = 0; i < n; i++) if(m & (1 << i)) pick.push(arr[i]); out.push({m, pick}); }
     return out.sort((a, c) => (a.m & -a.m) - (c.m & -c.m) || c.pick.length - a.pick.length || a.m - c.m); };
-  const FILLS = [.8, .765];
+  const FILLS = [.9, .8];   // every line 90%+ of the width, else 80%+ (owner 11/8)
   const ADJ = [0, .25, -.25, .5, -.5];
   const fitOne = (sents, f, n, fill) => { let best = null; const all = subsets(sents);
     for(const adj of ADJ){ const fs = f.fs + adj; if(fs < 8 || (f.fsMin && fs < f.fsMin)) continue;
@@ -95,9 +111,11 @@ const FX = (function(){
     for(const fill of FILLS) for(const n of ns){
       const rs = sn.map((s, i) => s.length ? fitOne(s, fw[i], n, fill) : null);
       if(rs.every(r => r && r.last >= fill)) return {rs, n, ok: true}; }
+    // none fills: every caption still runs the same number of lines (owner 11/10), the one where the most reach 80%
     let best = null;
-    for(const n of ns){ const rs = sn.map((s, i) => s.length ? (fitOne(s, fw[i], n, 0) || FX.fillBox(s, fw[i], [n])) : {text: '', lines: 0, last: 0});
-      const bad = rs.filter(r => r.lines !== n || r.last < FILLS[1]).length; if(!best || bad < best.bad) best = {rs, n, bad}; }
+    for(const n of ns){ const rs = sn.map((s, i) => s.length ? (fitOne(s, fw[i], n, FILLS[1]) || FX.fillBox(s, fw[i], [n])) : {text: '', lines: 0, last: 0});
+      const even = rs.every((r, i) => !sn[i].length || r.lines === n), bad = rs.filter(r => r.lines !== n || r.last < FILLS[1]).length;
+      if(!best || (even && !best.even) || (even === best.even && bad < best.bad)) best = {rs, n, bad, even}; }
     return {rs: best.rs, n: best.n, ok: false}; };
 
   // ---------- logo: one per side ----------
@@ -135,7 +153,8 @@ window.brochureReady = (async function(){
   const planOK = !!(D.plan && D.plan.levels && D.plan.levels.length);
   const {X, W, BOT} = FX, P = D.photos || {};
   const {fillBox, fillRow, sentences, feetOnly} = FX;
-  const DB = 11.5, FBOT = 645, STEP = 16;
+  document.body.dataset.side = front ? 'front' : 'back';
+  const DB = front ? 11.5 : 12.5, FBOT = front ? 752 : 645, STEP = 16;   // the back's captions run bigger (owner 11/10 p60)   // the front carries no contact card and no logo (owner 11/10): its frames run down to the fine print
   const capH = n => 6 + 14 + 1.5 + n*DB;
 
   // ---------- the fold-over's copy by photo, and the flyer's own ----------
@@ -145,7 +164,13 @@ window.brochureReady = (async function(){
   const FP = FL.photos || {};
   const titleOf = id => (FP[id] && FP[id].title) || (ALL[id] && ALL[id].name) || '';
   const dimsOf = id => (FP[id] && FP[id].dims !== undefined ? FP[id].dims : (ALL[id] && /\d+'\s*x\s*\d+'/.test(ALL[id].tag || '') ? ALL[id].tag : '')) || '';
-  const poolOf = id => (FP[id] && FP[id].sentences) || (ALL[id] && ALL[id].text) || '';
+  const poolArr = id => (FP[id] && Array.isArray(FP[id].sentences) && FP[id].sentences) || (CP.capPool && CP.capPool[id]) || null;   // the flyer's own true lines first
+  const poolOf = id => poolArr(id) || (FP[id] && FP[id].sentences) || (ALL[id] && ALL[id].text) || '';   // CP.capPool: the true lines about the photo (owner 11/8)
+  // never shorter (owner 11/10): a caption holds at least the writer's own caption, and at least companion.flyer.photos[id].minFront /
+  // .minBack characters (that side) when the data records the length an earlier version printed
+  const minLen = id => Math.max(sentences((ALL[id] && ALL[id].text) || '').join(' ').length - 2, +((FP[id] || {})[front ? 'minFront' : 'minBack']) || 0);
+  const holdsMin = (ids, g) => !!g && g.rs.every((r, i) => !ids[i] || ((r && r.text) || '').length >= (+((FP[ids[i]] || {})[front ? 'minFront' : 'minBack']) || 0));   // the front's row: only a recorded length
+  const holds = (ids, g) => !!g && g.rs.every((r, i) => !ids[i] || ((r && r.text) || '').length >= minLen(ids[i]));
   const has = id => id && AT.src(D, id);
   const used = new Set();
   const hero = (FL.front && FL.front.hero && has(FL.front.hero)) ? FL.front.hero : ((C.front||{}).photo || Object.keys(P)[0]);
@@ -156,7 +181,7 @@ window.brochureReady = (async function(){
   // ---------- pieces ----------
   const cap = (id, slot, r, x, y, w) => { const d = dimsOf(id);
     return `<div class="abs fc" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.h" data-lines="1">${esc(titleOf(id))}${d ? `<i>${esc(feetOnly(d))}</i>` : ''}</div>`
-      + `<div class="a" data-slot="${slot}.a" data-para="1" data-min="2" data-lines="${r.lines}" style="height:${r.lines*DB}pt${r.fs ? `;font-size:${r.fs}pt` : ''}">${esc(r.text)}</div></div>`; };
+      + `<div class="a" data-slot="${slot}.a" data-para="1" data-min="2" data-lines="${r.lines}"${poolArr(id) ? ` data-pool='${esc(JSON.stringify(sentences(poolArr(id)))).replace(/'/g, '&#39;')}'` : ''} style="height:${r.lines*DB}pt${r.fs ? `;font-size:${r.fs}pt` : ''}">${esc(r.text)}</div></div>`; };
   const ph = (id, slot, x, y, w, h) => AT.photo(D, id, `position:absolute;left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt`, slot, '');
   const kick = (t, x, y, w, slot) => `<div class="abs kicker" style="left:${x}pt;top:${y}pt;width:${w}pt;height:10pt" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
   const hair = y => `<div class="abs" style="left:${X}pt;top:${y}pt;width:${W}pt;height:.8pt;background:var(--line)"></div>`;
@@ -189,61 +214,81 @@ window.brochureReady = (async function(){
     const need = bx ? Math.min(1, (bx[3] - bx[1]) + 0.02) : (AT.fullHouse(D, hero) ? 0.8 : 0.6);
     const Hneed = Math.round(Math.min(330, Math.max(222, W*need/asp + 2)));
     const desc = sentences(FL.desc || (C.front||{}).intro);
-    const DW = 296, PX = X + DW + 18, PWd = X + W - PX;
+    // the write-up keeps every sentence (owner 11/10: never shorter): the type grows up to 12% until the last line reaches 90%
+    // (else 80%, else the fullest), and the lines above it are justified
+    const aboutOne = (t, f) => { let best = null;
+      for(let fs = f.fs; fs <= f.fs*1.12 + .01; fs += .25){ const r = FX.measure(t, f.w, fs, f.lh, f.wt), q = {text: t, lines: r.lines, last: r.last, fs};
+        if(r.last >= .9) return Object.assign(q, {ok: true}); if(!best || r.last > best.last) best = q; }
+      return Object.assign(best, {ok: best.last >= .8}); };
+    // a write-up running the full width (no nearby list) takes more true lines about the listing until it runs four lines or more
+    // with every line full (companion.flyer.descMore: other write-ups' true sentences about the same house)
+    const aboutFit = f => { const t = desc.join(' '); if(!t) return {text: '', lines: 0, last: 0, ok: false};
+      const r0 = aboutOne(t, f); if(r0.ok && r0.lines >= 4) return r0;   // short of full lines: more true lines about the house, any width (owner 11/10)
+      const LMAX = f.w < 500 ? 7 : 5;
+      const capT = new Set(); trio.forEach(id => sentences(poolOf(id)).forEach((x, i) => { if(i < 4) FX.tri(x).forEach(k => capT.add(k)); (x.match(/\d{2,}/g) || []).forEach(k => capT.add('#' + k)); }));   // never the photos' own lines
+      const more = (FL.descMore || []).filter(x => ![...FX.tri(x)].some(k => capT.has(k)) && !(x.match(/\d{2,}/g) || []).some(k => capT.has('#' + k))); let fall = null;
+      const mm = more.slice(0, 10), combos = [];
+      for(let m = 1; m < (1 << mm.length); m++) combos.push(mm.filter((_, i) => m >> i & 1));
+      combos.sort((a, b) => a.length - b.length || a.join(' ').length - b.join(' ').length);
+      for(const c of combos){ const t = sentences(desc.concat(c)).join(' '); if(t.length > 620) continue; const r = aboutOne(t, f);
+        if(r.lines >= 4 && r.lines <= LMAX && r.ok && r.last >= .9) return r; if(r.lines >= 4 && r.lines <= LMAX && r.ok && (!fall || r.last > fall.last)) fall = r; }
+      return fall || r0; };
+    // owner 11/10 (rule 9): a nearby place prints only with a real distance or drive time; with none the write-up takes the full width
+    const places0 = (FL.places || ((C.front||{}).around || []).map(a => ({n: a.p, d: a.d && !/minutes|short drive/i.test(a.d) ? a.d + (a.u ? ' ' + a.u : '') : ''}))).filter(p => p.d && /\d/.test(p.d));
+    const DW = places0.length >= 2 ? 296 : W, PX = X + DW + 18, PWd = X + W - PX;
     const DF = {w: DW, fs: 9.75, lh: 14, wt: 400};
     const gap = 10, TW = stepWs(3, gap), CF = TW.map(w => ({w, fs: 8.5, lh: DB, wt: 400}));
-    const places0 = (FL.places || ((C.front||{}).around || []).map(a => ({n: a.p, d: a.d && !/minutes|short drive/i.test(a.d) ? a.d + (a.u ? ' ' + a.u : '') : ''})));
     const plHTML = (cx, cw, ply, avail, pls) => `<div class="abs sect" style="left:${cx}pt;top:${ply}pt;width:${cw}pt;height:10pt;border-bottom:1.1pt solid var(--accent);padding-bottom:3pt;box-sizing:content-box" data-slot="front.placesTitle" data-lines="1">${esc(FL.placesTitle || (C.front||{}).aroundHead || 'Around the house')}</div>`
       + `<div class="abs" style="left:${cx}pt;top:${ply + 14}pt;width:${cw}pt;height:${avail}pt;display:flex;flex-direction:column">${pls.map((p, i) => `<div style="flex:1 1 0;display:flex;align-items:center;gap:6pt;border-bottom:.6pt solid var(--line);white-space:nowrap"><span class="pn" data-slot="front.place${i}.n" data-lines="1">${esc(p.n)}</span>${p.d ? `<span class="pd" data-slot="front.place${i}.d" data-lines="1">${esc(p.d)}</span>` : ''}</div>`).join('')}</div>`;
     const trioHTML = (py, Hp, n, cr, hh) => stepRow(trio, TW, gap, py, py + Hp, n, 'front.photo', cr);
     if(asp < 1){
       const Wh = 250, cx = X + Wh + 18, cw = X + W - cx, DFt = {w: cw, fs: 9.75, lh: 14, wt: 400};
       let best = null;
-      outerT: for(const dn of [8, 7, 6, 5]){ const d1 = fillBox(desc, DFt, [dn]);
-        for(const n of [4, 3, 5]){ const fr = fillRow(trio.map(poolOf), CF, [n]), ch = capH(n), Hp = 116, Hh = FBOT - 66 - 12 - ch - Hp;
+      outerT: for(const dn of [0]){ const d1 = aboutFit(DFt);
+        for(const n of [4, 3, 5]){ const fr = fillRow(trio.map(poolOf), CF, [n]), ch = capH(n), Hp = 150, Hh = FBOT - 66 - 12 - ch - Hp;
           const used2 = 46 + 8 + GH + 12 + d1.lines*14 + 12 + 14 + 2*19; if(used2 > Hh) continue;
-          const c1 = {n, cr: fr.rs, ch, Hp, Hh, d1, th: d1.lines*14}; if(fr.ok && d1.ok){ best = c1; break outerT; } if(!best) best = c1; } }
-      if(!best){ const d1 = fillBox(desc, DFt, [5]); best = {n: 3, cr: fillRow(trio.map(poolOf), CF, [3]).rs, ch: capH(3), Hp: 116, Hh: FBOT - 66 - 12 - capH(3) - 116, d1, th: d1.lines*14}; }
+          const c1 = {n, cr: fr.rs, ch, Hp, Hh, d1, th: d1.lines*14}; if(fr.ok && holdsMin(trio, fr) && d1.ok){ best = c1; break outerT; } if(!best) best = c1; } }
+      if(!best){ const d1 = aboutFit(DFt); best = {n: 3, cr: fillRow(trio.map(poolOf), CF, [3]).rs, ch: capH(3), Hp: 150, Hh: FBOT - 66 - 12 - capH(3) - 150, d1, th: d1.lines*14}; }
       const {cr, Hp, Hh, d1, th} = best, hy = 66; fitlog.push(['front-tall', best.n, d1.lines, Math.round(Hh), d1.ok]);
       h += ph(hero, 'front.hero', X, hy, Wh, Hh);
       h += `<div class="abs dsp" id="addr" style="left:${cx - 1}pt;top:${hy}pt;width:${cw}pt;height:46pt;font-size:34pt;line-height:46pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
       h += `<div class="abs fk" style="left:${cx}pt;top:${hy + 54}pt;width:${cw}pt;height:${GH}pt">${rows.map((t, i) => `<div data-slot="front.facts${i}" data-lines="1"><span>${t}</span></div>`).join('')}</div>`;
       const dy = hy + 54 + GH + 12;
-      h += `<div class="abs ptxt" id="blurb" style="left:${cx}pt;top:${dy}pt;width:${cw}pt;height:${th}pt;font-size:${d1.fs || 9.75}pt" data-slot="front.about" data-para="1" data-min="4" data-fillbox="1" data-lines="${d1.lines}">${esc(d1.text)}</div>`;
+      h += `<div class="abs ptxt" id="blurb" style="left:${cx}pt;top:${dy}pt;width:${cw}pt;height:${th}pt;font-size:${d1.fs || 9.75}pt" data-slot="front.about" data-para="1" data-justify="1" data-min="4" data-fillbox="1" data-lines="${d1.lines}">${esc(d1.text)}</div>`;
       const ply = dy + th + 12, avail = hy + Hh - ply - 14, k = Math.max(2, Math.min(places0.length, Math.floor(avail/19)));
-      h += plHTML(cx, cw, ply, avail, places0.slice(0, k));
+      if(places0.length >= 2) h += plHTML(cx, cw, ply, avail, places0.slice(0, k));
       h += trioHTML(hy + Hh + 12, Hp, best.n, cr);
     } else {
       let layout = null, bestL = null;
-      outer: for(const dn of [7, 6, 5]){
-        const d1 = fillBox(desc, DF, [dn]), th = d1.lines*14;
+      outer: for(const dn of [0]){
+        const d1 = aboutFit(DF), th = d1.lines*14;
         for(const n of [4, 3, 5, 6]){
           const fr = fillRow(trio.map(poolOf), CF, [n]), ch = capH(n);
           const fixed = 66 + 12 + 68 + 10 + th + 12 + ch;
           let Hp = FBOT - fixed - Hneed, Hh = Hneed;
-          if(Hp > 128){ Hh += Hp - 128; Hp = 128; }
+          if(Hp > 172){ Hh += Hp - 172; Hp = 172; }
           const L1 = {n, cr: fr.rs, ch, Hp, Hh, d1, th};
           if(Hp < 100) continue;
-          if(fr.ok && d1.ok){ layout = L1; break outer; }
-          if(!bestL) bestL = L1;
+          if(fr.ok && holdsMin(trio, fr) && d1.ok){ layout = L1; break outer; }
+          L1.score = (fr.ok ? 2 : 0) + (holdsMin(trio, fr) ? 2 : 0) + (d1.ok ? 1 : 0); if(!bestL || L1.score > bestL.score) bestL = L1;   // a full caption row first
         }
       }
       if(!layout && !bestL){
         // a whole house that needs more height than the full-width frame gives: the photo on the left, the facts and places on the right
         const Wh = 372, cx = X + Wh + 16, cw = X + W - cx, DFs = {w: W, fs: 9.75, lh: 14, wt: 400};
         let best = null;
-        outerS: for(const dn of [5, 4, 6]){ const d1 = fillBox(desc, DFs, [dn]);
-          for(const n of [3, 4]){ const fr = fillRow(trio.map(poolOf), CF, [n]), ch = capH(n), Hp = 116, Hh = FBOT - 66 - 12 - 54 - 10 - d1.lines*14 - 12 - ch - Hp;
-            const c1 = {n, cr: fr.rs, ch, Hp, Hh, d1, th: d1.lines*14}; if(fr.ok && d1.ok){ best = c1; break outerS; } if(!best) best = c1; } }
+        outerS: for(const dn of [0]){ const d1 = aboutFit(DFs);
+          for(const n of [3, 4]){ const fr = fillRow(trio.map(poolOf), CF, [n]), ch = capH(n), Hp = 150, Hh = FBOT - 66 - 12 - 54 - 10 - d1.lines*14 - 12 - ch - Hp;
+            const c1 = {n, cr: fr.rs, ch, Hp, Hh, d1, th: d1.lines*14}; if(fr.ok && holdsMin(trio, fr) && d1.ok){ best = c1; break outerS; } if(!best) best = c1; } }
         const {cr, Hp, Hh, d1, th} = best, hy = 66, y1 = hy + Hh + 12; fitlog.push(['front-side', best.n, d1.lines, Math.round(Hh), d1.ok]);
         h += ph(hero, 'front.hero', X, hy, Wh, Hh);
         h += `<div class="abs fk" style="left:${cx}pt;top:${hy}pt;width:${cw}pt;height:${rows.length*17}pt">${rows.map((t, i) => `<div data-slot="front.facts${i}" data-lines="1"><span>${t}</span></div>`).join('')}</div>`;
         const ply = hy + rows.length*17 + 14, avail = Hh - (rows.length*17 + 14) - 14, k = Math.max(2, Math.min(places0.length, Math.floor(avail/20)));
-        h += plHTML(cx, cw, ply, avail, places0.filter(p => (p.n + (p.d || '')).length <= 26).slice(0, k));
+        if(places0.length >= 2) h += plHTML(cx, cw, ply, avail, places0.filter(p => (p.n + (p.d || '')).length <= 26).slice(0, k));
         h += `<div class="abs dsp" id="addr" style="left:${X-1}pt;top:${y1}pt;width:${W}pt;height:46pt;font-size:38pt;line-height:46pt" data-slot="address" data-lines="1">${esc(L.address)}</div>`;
         h += hair(y1 + 52);
         const ty = y1 + 62;
-        h += `<div class="abs ptxt" id="blurb" style="left:${X}pt;top:${ty}pt;width:${W}pt;height:${th}pt;font-size:${d1.fs || 9.75}pt" data-slot="front.about" data-para="1" data-min="3" data-fillbox="1" data-lines="${d1.lines}">${esc(d1.text)}</div>`;
+        h += `<div class="abs ptxt" id="blurb" style="left:${X}pt;top:${ty}pt;width:${W}pt;height:${th}pt;font-size:${d1.fs || 9.75}pt" data-slot="front.about" data-para="1" data-justify="1" data-min="3" data-fillbox="1" data-lines="${d1.lines}">${esc(d1.text)}</div>`;
         h += trioHTML(ty + th + 12, Hp, best.n, cr);
       } else {
         if(!layout) layout = bestL;
@@ -256,47 +301,86 @@ window.brochureReady = (async function(){
         h += `<div class="abs fk" style="left:420pt;top:${y1}pt;width:156pt;height:${GH + 4}pt">${rows.map((t, i) => `<div data-slot="front.facts${i}" data-lines="1"><span>${t}</span></div>`).join('')}</div>`;
         h += hair(S);
         const ty = S + 10;
-        h += `<div class="abs ptxt" id="blurb" style="left:${X}pt;top:${ty}pt;width:${DW}pt;height:${th}pt;font-size:${d1.fs || 9.75}pt" data-slot="front.about" data-para="1" data-min="4" data-fillbox="1" data-lines="${d1.lines}">${esc(d1.text)}</div>`;
-        h += plHTML(PX, PWd, ty, th - 14, places);
+        h += `<div class="abs ptxt" id="blurb" style="left:${X}pt;top:${ty}pt;width:${DW}pt;height:${th}pt;font-size:${d1.fs || 9.75}pt" data-slot="front.about" data-para="1" data-justify="1" data-min="4" data-fillbox="1" data-lines="${d1.lines}">${esc(d1.text)}</div>`;
+        if(places.length >= 2) h += plHTML(PX, PWd, ty, th - 14, places);
         h += trioHTML(ty + th + 12, Hp, layout.n, cr);
       }
     }
-    h += FX.footer(D);
     h += fine(FINE, 764, 'fineprint');
     document.body.dataset.layout = 'front';
   } else {
     // ================= BACK =================
     const BK = FL[planOK ? 'plan' : 'noplan'] || {};
     const B = C.back || {};
-    const note = FL.note || {label: 'About the house', text: ''};
     const kicker = BK.kicker || B.kicker || 'Inside the house';
     const headline = BK.headline || B.title || 'Room by Room';
     h += kick(`${kicker} · ${L.address}`.toUpperCase(), X, 33, W, 'back.kicker');
     h += `<div class="abs title" id="btitle" style="left:${X}pt;top:46pt;width:${W}pt;height:32pt" data-slot="back.title" data-lines="1">${esc(headline)}</div>`;
     h += hair(84);
-    const NF = {w: W, fs: 8.5, lh: DB, wt: 400};
-    const noteR = fillBox(note.text, NF, [3, 4, 2, 5]); fitlog.push(['note', noteR.lines, noteR.ok]);
-    const NH = 10 + 5 + noteR.lines*DB, noteY = BOT - NH;
-    h += `<div class="abs" style="left:${X}pt;top:${noteY}pt;width:${W}pt;height:${NH}pt"><div class="sect" style="margin-bottom:5pt" data-slot="back.noteTitle" data-lines="1">${esc(note.label)}</div><div class="nb" data-slot="back.note" data-para="1" data-min="2" data-lines="${noteR.lines}" style="font-size:${noteR.fs || 8.5}pt;line-height:${DB}pt;height:${noteR.lines*DB}pt">${esc(noteR.text)}</div></div>`;
-    h += hair(noteY - 8);
-    h += FX.footer(D);
+    // the bottom band (owner 11/10): a narrow contact card (about half the old width; it carries the side's one logo) at the
+    // right, the room sizes floor by floor at its left; the photos and the plan above grow into the freed height
+    const ORD = ['First', 'Second', 'Third', 'Fourth', 'Fifth'];
+    const floors = (FL.rooms || (B.rooms || []).filter(f => f.rooms && f.rooms.length).map(f => ({floor: f.label, rows: f.rooms})));
+    const roomsData = floors.length ? floors : (() => { const by = {}; (L.rooms || []).forEach(r => { const k = +r.level || 1; (by[k] = by[k] || []).push([r.name, r.size || '']); });
+      const ks = Object.keys(by).sort((a, c) => a - c); return ks.map(k => ({floor: ks.length > 1 ? `${ORD[k - 1] || k} floor` : '', rows: by[k]})); })();
+    const items = []; roomsData.forEach((f, fi) => { if(f.floor) items.push({lab: f.floor, fi}); f.rows.forEach((r, ri) => items.push({r, fi, ri})); });
+    // two columns: whole floors stay together when the columns come out within a line of an even split; else the rows split
+    // evenly (never leaving a floor label at a column's foot)
+    const half = Math.ceil(items.length/2);
+    let cut = half;
+    const bounds = items.map((it, i) => i).filter(i => i > 0 && items[i].lab);
+    const bb = bounds.length ? bounds.reduce((m, i) => Math.max(i, items.length - i) < Math.max(m, items.length - m) ? i : m, bounds[0]) : 0;
+    if(bb && Math.max(bb, items.length - bb) <= half + 1) cut = bb;
+    else for(const d of [0, 1, -1]){ const c = half + d; if(c > 0 && c < items.length && !items[c - 1].lab){ cut = c; break; } }
+    const rcols = [items.slice(0, cut), items.slice(cut)], maxCol = Math.max(1, ...rcols.map(c => c.length));
+    // owner 11/10 (p60, standing rule 1): the contact block is SHORTER top to bottom, full width again (round 2's side-to-side
+    // narrowing undone); a plan back drops the room-size list (the plan carries the sizes), a back without a plan keeps it in a
+    // low band of four columns over the card; everything above grows into the freed height
+    const NC = 4, rcolsN = []; { const per = Math.ceil(items.length/NC); let i = 0; for(let k = 0; k < NC; k++){ let c = items.slice(i, i + per); if(c.length && c[c.length - 1].lab && i + per < items.length){ c = c.slice(0, -1); } rcolsN.push(c); i += c.length; } if(i < items.length) rcolsN[NC - 1] = rcolsN[NC - 1].concat(items.slice(i)); }
+    const showRooms = !planOK && items.length, maxN = Math.max(1, ...rcolsN.map(c => c.length));
+    const CH = 70, CY = 756 - CH, CW = W, RBH = showRooms ? 18 + maxN*13 : 0, RY = CY - 10 - RBH, RX = X, RW = W, NB = (showRooms ? RY : CY) - 14, gap = 10, y0 = 96, NARROW = 208, WIDE = W - NARROW - gap;
+    const roomsBand = (x, y, w, hh) => {
+      if(!items.length) return '';
+      const cg = 16, cw = (w - cg)/2, top = y + 18, RH = Math.min(18, Math.floor((y + hh - top)/maxCol*2)/2), nfs = RH < 15 ? 9.5 : 10;
+      let out = `<div class="abs sect" style="left:${x}pt;top:${y}pt;width:${w}pt;height:10pt;border-bottom:1.1pt solid var(--accent);padding-bottom:3pt;box-sizing:content-box" data-slot="back.roomsTitle" data-lines="1">${esc(FL.roomsTitle || 'Room sizes')}</div>`;
+      rcols.forEach((c, k) => { let cy = top; c.forEach(it => {
+        if(it.lab) out += `<div class="abs sect" style="left:${x + k*(cw + cg)}pt;top:${cy}pt;width:${cw}pt;height:${RH}pt;line-height:${RH}pt;font-size:7.5pt" data-slot="back.floor${it.fi}" data-lines="1">${esc(it.lab)}</div>`;
+        else out += `<div class="abs rr2" style="left:${x + k*(cw + cg)}pt;top:${cy}pt;width:${cw}pt;height:${RH}pt"><span class="n" data-slot="back.floor${it.fi}.r${it.ri}.n" data-lines="1" style="font-size:${nfs}pt;line-height:${RH - 1}pt">${esc(it.r[0])}</span>${it.r[1] ? `<span class="d" data-slot="back.floor${it.fi}.r${it.ri}.d" data-lines="1">${esc(feetOnly(it.r[1]))}</span>` : ''}</div>`;
+        cy += RH; }); });
+      return out; };
+    if(showRooms){
+      const cg = 14, cw = (RW - cg*(NC - 1))/NC, top = RY + 18;
+      h += `<div class="abs sect" style="left:${RX}pt;top:${RY}pt;width:${RW}pt;height:10pt;border-bottom:1.1pt solid var(--accent);padding-bottom:3pt;box-sizing:content-box" data-slot="back.roomsTitle" data-lines="1">${esc(FL.roomsTitle || 'Room sizes')}</div>`;
+      rcolsN.forEach((c, k) => { let cy = top; c.forEach(it => {
+        if(it.lab) h += `<div class="abs sect" style="left:${RX + k*(cw + cg)}pt;top:${cy}pt;width:${cw}pt;height:13pt;line-height:13pt;font-size:7.5pt" data-slot="back.floor${it.fi}" data-lines="1">${esc(it.lab)}</div>`;
+        else h += `<div class="abs rr2" style="left:${RX + k*(cw + cg)}pt;top:${cy}pt;width:${cw}pt;height:13pt"><span class="n" data-slot="back.floor${it.fi}.r${it.ri}.n" data-lines="1" style="font-size:9.5pt;line-height:12pt">${esc(it.r[0])}</span>${it.r[1] ? `<span class="d" data-slot="back.floor${it.fi}.r${it.ri}.d" data-lines="1">${esc(feetOnly(it.r[1]))}</span>` : ''}</div>`;
+        cy += 13; }); });
+    }
+    h += hair(CY - 6);
+    const A = D.agent || {}, hsrc = (D.photos && D.photos[A.headshot] && D.photos[A.headshot].src) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
+    h += ContactCard.html([X, CY, CW, CH], Object.assign({}, A, {headshot: hsrc}), D.brand || {}, {layout: 'panel', size: 'short', bottomGap: .5, grow: 0});
     h += fine(FINE, 764, 'fineprint');
-    const NB = noteY - 14, gap = 10, y0 = 96, NARROW = 208, WIDE = W - NARROW - gap;
     // a pair of frames like the fold-over's rows: the narrower one starts a step lower, bottoms and captions on one line
     const pairRow = (ids, ws, yb, yTop, slot, rs) => { let out = '', x = X;
       ids.forEach((id, i) => { const top = yTop + (ws[i] < ws[1 - i] ? STEP : 0); out += ph(id, `${slot}${i}`, x, top, ws[i], yb - top) + cap(id, `${slot}${i}`, rs[i], x, yb, ws[i]); x += ws[i] + gap; });
       return out; };
-    const BF = w => ({w, fs: 8.5, lh: DB, wt: 400});
-    const bigCap = (id, slot, r, x, y, w) => `<div class="abs fc big" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.h" data-lines="1">${esc(titleOf(id))}${dimsOf(id) ? `<i>${esc(feetOnly(dimsOf(id)))}</i>` : ''}</div><div class="a" data-slot="${slot}.a" data-para="1" data-min="2" data-lines="${r.lines}" style="height:${r.lines*12.5}pt${r.fs ? `;font-size:${r.fs}pt` : ''}">${esc(r.text)}</div></div>`;
-    const rowFit = (ids, ws) => { for(const n of [4, 5, 3, 6, 7]){ const g1 = fillRow(ids.map(poolOf), ws.map(BF), [n]); if(g1.ok) return g1; } return fillRow(ids.map(poolOf), ws.map(BF), [4]); };
+    const BF = w => ({w, fs: 9.2, lh: DB, wt: 400});
+    const bigCap = (id, slot, r, x, y, w) => `<div class="abs fc big" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.h" data-lines="1">${esc(titleOf(id))}${dimsOf(id) ? `<i>${esc(feetOnly(dimsOf(id)))}</i>` : ''}</div><div class="a" data-slot="${slot}.a" data-para="1" data-min="2" data-lines="${r.lines}"${poolArr(id) ? ` data-pool='${esc(JSON.stringify(sentences(poolArr(id)))).replace(/'/g, '&#39;')}'` : ''} style="height:${r.lines*13}pt;line-height:13pt${r.fs ? `;font-size:${r.fs}pt` : ''}">${esc(r.text)}</div></div>`;
+    // never shorter (owner 11/10): the first line count, in the usual order, that fills and still holds at least the writer's own
+    // caption for every photo; else the first that fills (padding with every pool line would only repeat the same facts)
+    const pickFit = (ids, ns, fit, dflt) => { const all = ns.map(n => [n, fit(n)]).filter(([, g]) => g.ok);
+      const full = all.filter(([, g]) => holds(ids, g));
+      return (full[0] || all[0] || [0, null])[1] || dflt(); };
+    const rowFit = (ids, ws, room) => pickFit(ids, [4, 5, 3, 6].filter(n => !room || room(n)), n => fillRow(ids.map(poolOf), ws.map(BF), [n]), () => fillRow(ids.map(poolOf), ws.map(BF), [4, 5, 3, 6]));
     if(planOK){
       const main = pick(BK.main ? [BK.main] : [], 1, folIds)[0], steps = pick(BK.steps, 2, folIds);
-      const H = 296, pr0 = PG.plan(D, {x: 0, y: 0, w: 330, h: H - 26});
+      const prA = PG.plan(D, {x: 0, y: 0, w: 330, h: 270}), H = prA.used.h >= 262 ? 340 : Math.round(Math.max(230, Math.min(340, prA.used.h + 40)));   // the board is as tall as the plan needs
+      const pr0 = PG.plan(D, {x: 0, y: 0, w: 330, h: H - 26});
       const BW = Math.max(190, Math.min(330, Math.ceil(pr0.used.w) + 16)), LW = W - BW - gap;
-      const fm = fillRow([poolOf(main)], [{w: LW, fs: 9, lh: 12.5, wt: 400}], [5, 4, 6, 3]), mn = fm.n;
-      const mh = 6 + 14 + 1.5 + mn*12.5;
-      const ws2 = [BW, LW], fr = rowFit(steps, ws2);
-      const yB = y0 + H + 14, Hs = NB - capH(fr.n) - yB;
+      const MF = [{w: LW, fs: 9.6, lh: 13, wt: 400}], fm = pickFit([main], [5, 4, 6, 3], n => fillRow([poolOf(main)], MF, [n]), () => fillRow([poolOf(main)], MF, [5, 4, 6, 3])), mn = fm.n;
+      const mh = 6 + 14 + 1.5 + mn*13;
+      const yB = y0 + H + 14, ws2 = [BW, LW], fr = rowFit(steps, ws2, n => NB - capH(n) - yB >= 112);   // the frames keep 112 pt
+      const Hs = NB - capH(fr.n) - yB;
       fitlog.push(['plan', mn, fm.ok, fr.n, fr.ok, Math.round(Hs)]);
       const stepBoard = BW > LW ? 0 : STEP, stepPh = BW > LW ? STEP : 0;
       h += ph(main, 'back.main', X, y0 + stepPh, LW, H - mh - stepPh);
@@ -307,28 +391,19 @@ window.brochureReady = (async function(){
       h += `<div class="pnote" style="left:${bx}pt;top:${y0 + H - 16}pt;width:${BW}pt;height:10pt;position:absolute"><div class="pnote" style="position:relative" data-slot="back.plannote" data-fine="1" data-lines="1">${esc(FL.planNote || B.planNote || 'Approximate; not to scale.')}</div></div>`;
       h += pairRow(steps, ws2, yB + Hs, yB, 'back.photo', fr.rs);
       document.body.dataset.layout = 'back-plan';
-      document.body.dataset.geom = JSON.stringify({Hs, H, BW, noteLines: noteR.lines});
+      document.body.dataset.geom = JSON.stringify({Hs, H, BW});
     } else {
-      // rooms floor by floor in a narrow board beside the lead photo, then a mirrored pair of frames
-      let floors = (FL.rooms || (B.rooms || []).filter(f => f.rooms && f.rooms.length).map(f => ({floor: f.label, rows: f.rooms})));
-      const nr = floors.reduce((a, f) => a + f.rows.length, 0), nf = floors.length;
-      const lead = pick(BK.features, 1, folIds)[0], pair = pick(BK.row, 2, folIds);
-      const need = (rh) => nf*(24) + nr*rh + (nf - 1)*8 + 10;
-      const fl = fillRow([poolOf(lead)], [{w: WIDE, fs: 9, lh: 12.5, wt: 400}], [4, 3, 5, 6]), ln = fl.n, lh2 = 6 + 14 + 1.5 + ln*12.5;
-      let ph1 = 190; while((ph1 + lh2 - STEP - 2 - 10 - nf*28)/nr < 14 && ph1 < 235) ph1 += 3;
-      const bhh = ph1 + lh2 - STEP - 2, RH = Math.min(21, Math.floor((bhh - 10 - nf*28)/nr*2)/2), ws1 = [WIDE, NARROW];
-      const H1 = ph1 + lh2, yB = y0 + H1 + 14, ws2 = [NARROW, WIDE], fr = rowFit(pair, ws2), Hs = NB - capH(fr.n) - yB;
-      fitlog.push(['noplan', nr, RH, ln, fl.ok, fr.n, fr.ok, Math.round(Hs)]);
-      h += ph(lead, 'back.lead', X, y0, WIDE, ph1) + bigCap(lead, 'back.lead', fl.rs[0], X, y0 + ph1, WIDE);
-      const bx = X + WIDE + gap, by = y0 + STEP, bh = H1 - STEP - 2;
-      h += `<div class="abs" style="left:${bx}pt;top:${by}pt;width:${NARROW}pt;height:${bh}pt;background:rgba(255,255,255,.045);border-top:1.1pt solid var(--accent)"></div>`;
-      let cy = by + 8;
-      floors.forEach((f, ci) => { h += `<div class="abs sect" style="left:${bx + 9}pt;top:${cy}pt;width:${NARROW - 18}pt;height:12pt" data-slot="back.floor${ci}" data-lines="1">${esc(f.floor)}</div>`; cy += 20;
-        f.rows.forEach((r, ri) => { h += `<div class="abs rr2" style="left:${bx + 9}pt;top:${cy}pt;width:${NARROW - 18}pt;height:${RH}pt"><span class="n" data-slot="back.floor${ci}.r${ri}.n" data-lines="1" style="font-size:10pt;line-height:${RH - 1}pt">${esc(r[0])}</span>${r[1] ? `<span class="d" data-slot="back.floor${ci}.r${ri}.d" data-lines="1">${esc(feetOnly(r[1]))}</span>` : ''}</div>`; cy += RH; });
-        cy += 8; });
-      h += pairRow(pair, ws2, yB + Hs, yB, 'back.pair', fr.rs);
+      // two mirrored pairs of stepped frames (the room sizes moved to the band beside the card)
+      const top0 = pick(BK.features, 2, folIds), pair0 = pick(BK.row, 2, folIds);
+      // the photo with the longer caption to keep takes the wide frame of its row
+      const top = minLen(top0[1]) > minLen(top0[0]) + 40 ? [top0[1], top0[0]] : top0, pair = minLen(pair0[0]) > minLen(pair0[1]) + 40 ? [pair0[1], pair0[0]] : pair0;
+      const ws1 = [WIDE, NARROW], ws2 = [NARROW, WIDE], f1 = rowFit(top, ws1, n => n <= 5), fr = rowFit(pair, ws2, n => n <= 5);
+      const Hrow = (NB - y0 - 14 - capH(f1.n) - capH(fr.n))/2, yA = y0 + Hrow, yB = yA + capH(f1.n) + 14;
+      fitlog.push(['noplan', f1.n, f1.ok, fr.n, fr.ok, Math.round(Hrow)]);
+      h += pairRow(top, ws1, yA, y0, 'back.lead', f1.rs);
+      h += pairRow(pair, ws2, yB + Hrow, yB, 'back.pair', fr.rs);
       document.body.dataset.layout = 'back-photos';
-      document.body.dataset.geom = JSON.stringify({ph1, Hs, rows: nr, RH, noteLines: noteR.lines});
+      document.body.dataset.geom = JSON.stringify({Hrow});
     }
   }
   document.body.dataset.fitlog = JSON.stringify(fitlog);
@@ -336,6 +411,14 @@ window.brochureReady = (async function(){
   document.getElementById('pages').innerHTML = f.html;
   window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
   await AT.settle();
+  document.querySelectorAll('.a[data-pool]').forEach(el => { el.dataset.floor = el.textContent.trim().length; });   // CapFit never sets less than the fitter chose
+  CapFit(document.querySelectorAll('.a[data-pool]'));   // text under a photo fills the photo's width (owner 11/8)
+  // no two captions on the page open the same way (owner 11/10, rule 7): a later caption that does is set again without that opening
+  { const seenO = new Set();
+    document.querySelectorAll('.fc .a').forEach(el => { const k = FX.open3(el.textContent); if(!k || !seenO.has(k)){ seenO.add(k); return; }
+      try { const p = JSON.parse(el.dataset.pool || '[]').filter(x => FX.open3(x) !== k); if(p.length){ el.dataset.pool = JSON.stringify(p); CapFit([el]); } } catch(e){}
+      if(FX.open3(el.textContent) === k){ const ss = FX.sentences(el.textContent); if(ss.length > 1) el.textContent = ss.slice(1).concat(ss[0]).join(' '); }
+      seenO.add(FX.open3(el.textContent)); }); }
   AT.fitLine(document.getElementById('addr') || document.createElement('div'), 28);
   AT.fitLine(document.getElementById('btitle') || document.createElement('div'), 20);
   issues.push(...AT.fitHouse(D));

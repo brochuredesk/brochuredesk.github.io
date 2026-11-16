@@ -346,7 +346,7 @@ FXP.start(['300 20pt "Montserrat"', '400 20pt "Montserrat"', '500 20pt "Montserr
     { const labH = tp({slot: 'oh.label', text: E.label.toUpperCase(), css: `font-family:Oswald;font-weight:600;letter-spacing:2.6pt;text-transform:uppercase`, x: LXl, y: 0, w: CWl, max: 50*SC, min: F.ev, lines: 1, lh: 1.0}).h/K;
       const hb0 = Math.max(TOP + hh, y) + 18*SC + labH + 16*SC, sTop0 = (items.length ? hb0 + gp*.5 + perkH : hb0) + gp*.6, extra = (fy - 12*SC - gp*.6) - sTop0;
       if(extra > 0 && extra < 150*SC){ let h2 = hh + extra; while(h2 > hh && !heroFit(hw, h2)) h2 -= 6; hh = h2; } }
-    const dy = Math.max(0, (hh - heroH)/2), sh = h => h.replace(/top:([\d.]+)pt/, (m0, v) => `top:${(+v + p(dy)).toFixed(2)}pt`);
+    const dy = Math.max(0, (hh - heroH)/2), sh = h => h.replace(/top:([\d.]+)pt/, (m0, v) => `top:${(+v + p(dy + 12*SC)).toFixed(2)}pt`);   /* 11/13: +12 centers the stack top to bottom beside the house */
     // under the house: the label (one line) and the address
     let ly = Math.max(TOP + hh, y + dy) + (items.length ? 9 : 18)*SC;   /* the label clears the date block above it (owner review 11/8) */
     const lab = tp({slot: 'oh.label', text: E.label.toUpperCase(), css: `font-family:Oswald;font-weight:600;letter-spacing:2.6pt;text-transform:uppercase;color:${BG};text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:5pt`, x: LXl, y: ly, w: CWl, max: 50*SC, min: F.ev, lines: 1, lh: 1.0});

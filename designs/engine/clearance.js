@@ -113,11 +113,17 @@
     // box (its center inside the rule's box) is the box's own border
     const nearBox = (x, y, el, lab) => { const er = el.getBoundingClientRect();
       if(/^(IMG|CANVAS|VIDEO)$/.test(el.tagName) || el.classList.contains('photo') || getComputedStyle(el).backgroundImage !== 'none') return;
+      // a filled box holding its own text laid across another (P17's leaning label tag on the header band) is layout, not a line
+      if(boxes.some(b => b.e === el)) return;
       for(const {e, r, text} of boxes){ if(e === el || el.contains(e) || e.contains(el)) continue;
       if((r.left + r.right)/2 > er.left && (r.left + r.right)/2 < er.right && (r.top + r.bottom)/2 > er.top && (r.top + r.bottom)/2 < er.bottom && lab === 'rule') continue;
       // at the box's outline only (a rule drawn well inside a box is the box's own furniture; letters have their own check)
       const deep = x > r.left + pad && x < r.right - pad && y > r.top + pad && y < r.bottom - pad;
-      if(!deep && x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad && shows(x, y, el))
+      // a shape that starts on the same edge as the box (both run off the sheet, or both stop at the home file's white
+      // margin) only meets the box at that shared edge: layout, not a hit (owner 11/13 review, P17 header band and photo)
+      const flush = (Math.abs(y - r.top) <= pad && Math.abs(er.top - r.top) <= pad) || (Math.abs(y - r.bottom) <= pad && Math.abs(er.bottom - r.bottom) <= pad) ||
+        (Math.abs(x - r.left) <= pad && Math.abs(er.left - r.left) <= pad) || (Math.abs(x - r.right) <= pad && Math.abs(er.right - r.right) <= pad);
+      if(!deep && !flush && x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad && shows(x, y, el))
         report('box|' + name(e) + '|' + Math.round(r.top) + '|' + name(el), {kind: 'line-hits-text-box', text, by: lab + ' of ' + name(el), at: [Math.round(x * 0.75), Math.round(y * 0.75)]}); } };
     root.querySelectorAll('*').forEach(el => {
       if(!visible(el) || el.closest('[data-twin],[data-clear-skip]')) return;

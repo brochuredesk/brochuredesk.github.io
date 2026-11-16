@@ -61,7 +61,7 @@ window.brochureReady = (async function(){
         <div class="kicker" style="margin-top:7pt;height:10pt" data-slot="place" data-lines="1">${esc(AT.placeZip(L).toUpperCase())}</div></div>
       ${bottom}</div>`;
     const tw = sold ? xR - M : W - 2*M, tt = ph - 9 + 9, flh = sold ? (big ? 16.5 : 15) : 15.5;
-    h += `<div class="abs ptxt2 jt" style="left:${M}pt;top:${tt}pt;width:${tw}pt;height:${3*flh + 1}pt;line-height:${flh}pt${sold ? (big ? ';font-size:11.5pt' : '') : ';font-size:11pt'}" data-slot="front.about" data-para="1" data-min="3" data-fillbox="1" data-nobal="1">${esc(big ? PC.front11 : PC.front9)}</div>`;
+    h += `<div class="abs ptxt2 jt" style="left:${M}pt;top:${tt}pt;width:${tw}pt;height:${3*flh + 1}pt;line-height:${flh}pt${sold ? (big ? ';font-size:11.5pt' : '') : ';font-size:11pt'}" data-slot="front.about" data-para="1" data-min="3" data-fillbox="1" data-nobal="1" data-maxn="3"${Array.isArray(big ? PC.front11v : PC.front9v) ? ` data-variants='${esc(JSON.stringify(big ? PC.front11v : PC.front9v)).replace(/'/g, '&#39;')}'` : ''}>${esc(big ? PC.front11 : PC.front9)}</div>`;   /* front9v/front11v: true variants, the first one first (owner 11/10) */
     // the staircase of interiors: each frame narrower and a step lower than the last, bottoms level, the room name above each
     const sids = (PC.strip || []).slice(0, big ? 4 : 3), names = PC.stripNames || [], g = 9, STEP = 12, tot = W - 2*M - g*(sids.length - 1);
     const wts = big ? [1.55, 1.25, 1, .8] : [1.5, 1.2, 1], sum = wts.slice(0, sids.length).reduce((a, b) => a + b, 0);
@@ -77,13 +77,13 @@ window.brochureReady = (async function(){
     // the light mail panel (postage, return address, address block) and the barcode strip's panel; the sky edge strip runs across the top and steps down once
     h += `<div class="mailp" style="left:${W - 252}pt;top:-9pt;width:${261}pt;height:${309}pt"></div><div class="mailp" style="left:${zB[0] - 4}pt;top:386pt;width:${W - zB[0] + 4 + 9}pt;height:55pt"></div>`;
     h += `<div class="bnd" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:15pt"></div><div class="bnd" style="left:-9pt;top:6pt;width:${W - 252 + 9}pt;height:4pt"></div>`;
-    h += `<div class="abs mret" style="left:${zA[0]}pt;top:20pt;width:${zP[0] - 8 - zA[0]}pt;height:34pt;overflow:hidden" data-slot="return" data-lines="3">${b.brokerage ? '<b>' + esc(b.brokerage) + '</b>' : ''}${ret.map(r => '<br>' + esc(r)).join('')}</div>`;
+    h += `<div class="abs mret" style="left:${zA[0]}pt;top:20pt;width:${zP[0] - 8 - zA[0]}pt;height:34pt;overflow:hidden" data-slot="return" data-lines="3" data-small="1">${b.brokerage ? '<b>' + esc(b.brokerage) + '</b>' : ''}${ret.map(r => '<br>' + esc(r)).join('')}</div>`;
     h += `<div class="abs dsp" style="left:${zA[0]}pt;top:70pt;width:${zP[0] - 10 - zA[0]}pt;height:70pt;font-size:32pt;line-height:34pt;color:#1b2333;letter-spacing:-1pt" data-slot="status" data-lines="2">${status[0]}<br><span style="color:var(--sky-dk)">${status[1]}</span></div>`;
     h += `<div class="abs dsp" id="st" style="left:${zA[0]}pt;top:146pt;width:${zP[0] - 10 - zA[0]}pt;height:14pt;font-size:11pt;line-height:14pt;color:#1b2333;letter-spacing:0" data-slot="back.street" data-lines="1">${esc(L.address)}</div>`;
     h += `<div class="abs kicker" style="left:${zA[0]}pt;top:163pt;width:${zP[0] - 10 - zA[0]}pt;height:10pt;color:var(--sky-dk)" data-slot="back.place" data-lines="1">${esc(AT.placeZip(L).toUpperCase())}</div>`;
     const slab = PC.slab || {};
-    h += `<div class="slab" data-blk="1" style="left:${zP[0]}pt;top:116pt;width:${W - zP[0] + 9}pt;height:68pt;padding:6pt 18pt 6pt 9pt"><div class="big" data-slot="slab.big" data-lines="2">${esc(slab.big || '')}</div><div class="sub" data-slot="slab.sub" data-lines="3">${esc(slab.sub || '')}</div></div>`;
-    const cap = (c, x, y, w, slot, lines) => `<div class="abs cap2 bk" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="${slot}" data-para="1" data-min="2" data-lines="${lines}">${esc(big && c.a11 ? c.a11 : c.a)}</div></div>`;
+    h += `<div class="slab" data-blk="1" style="left:${zP[0]}pt;top:116pt;width:${W - zP[0] + 9}pt;height:68pt;padding:6pt 18pt 6pt 9pt"><div class="big" data-slot="slab.big" data-lines="2">${esc(slab.big || '')}</div><div class="sub" data-slot="slab.sub" data-lines="3"${Array.isArray(slab.sub) ? ` data-variants='${esc(JSON.stringify(slab.sub)).replace(/'/g, '&#39;')}'` : ''}>${esc([].concat(slab.sub || '')[0])}</div></div>`;
+    const cap = (c, x, y, w, slot, lines) => `<div class="abs cap2 bk" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="${slot}" data-para="1" data-min="2" data-lines="${lines}"${c.pool ? ` data-pool='${esc(JSON.stringify(c.pool)).replace(/'/g, '&#39;')}'` : ''}>${esc(big && c.a11 ? c.a11 : c.a)}</div></div>`;
     if(!sold){
       // captions under their own photos; the frames step: each narrower and a step lower, bottoms level so the captions line up
       const bk = (PC.back || []).slice(0, big ? 3 : 2), g = 10, STEP = 10, wts = big ? [1.3, 1.1, .9] : [1.25, .95], sum = wts.reduce((a, b) => a + b, 0).valueOf();
@@ -96,7 +96,7 @@ window.brochureReady = (async function(){
       const items = (big ? (PC.services11 || PC.services) : PC.services) || [], lh = big ? 15.5 : 14.5, nl = 3, ty = bot0 - nl*lh, sy = ty - 14 - 10 - 52 - 15, ph1 = sy - 12 - top0;
       ids.slice(0, 2).forEach((id, i) => { const top = top0 + 4 + 10*i; h += AT.photo(D, id, `position:absolute;left:${(X + (i ? pws[0] + g : 0)).toFixed(2)}pt;top:${top}pt;width:${pws[i].toFixed(2)}pt;height:${(top0 + ph1 - top)}pt`, 'back.photo' + i, 'bp'); });
       h += `<div class="abs kicker" style="left:${X}pt;top:${sy}pt;width:${avail}pt;height:10pt" data-slot="sold.servicesLabel" data-lines="1">${esc(PC.servicesLabel || 'What I do for sellers')}</div>`;
-      h += `<div class="abs svc" style="left:${X}pt;top:${sy + 15}pt;width:${avail}pt;height:52pt;display:grid;grid-template-columns:1fr 1fr;column-gap:14pt;row-gap:4pt;align-content:space-between">${items.map((s, i) => `<div class="it"><span class="bx"></span><span data-slot="sold.svc${i}" data-lines="${big ? 1 : 2}">${esc(s)}</span></div>`).join('')}</div>`;
+      h += `<div class="abs svc" style="left:${X}pt;top:${sy + 15}pt;width:${avail}pt;height:52pt;display:grid;grid-template-columns:1fr 1fr;column-gap:14pt;row-gap:4pt;align-content:space-between">${items.map((s, i) => `<div class="it"><span class="bx"></span><span data-slot="sold.svc${i}" data-lines="${big ? 1 : 2}"${Array.isArray(s) ? ` data-variants='${esc(JSON.stringify(s)).replace(/'/g, '&#39;')}'` : ''}>${esc([].concat(s)[0])}</span></div>`).join('')}</div>`;
       const my = sy + 15 + 52 + 10;
       h += `<div class="abs kicker" style="left:${X}pt;top:${my}pt;width:${avail}pt;height:10pt" data-slot="sold.meetLabel" data-lines="1">${esc(PC.meetLabel || 'When we meet')}</div>`;
             h += `<div class="abs ptxt jt" style="left:${X}pt;top:${ty}pt;width:${avail}pt;height:${nl*lh}pt;font-size:${big ? 11 : 10}pt;line-height:${lh}pt" data-slot="sold.meet" data-para="1" data-min="2" data-fillbox="1" data-nobal="1">${esc(big ? PC.meet11 : PC.meet9)}</div>`;
@@ -118,13 +118,22 @@ window.brochureReady = (async function(){
   document.getElementById('pages').innerHTML = f.html;
   window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
   await AT.settle();
+  // a line with options (true variants): the one that sets on one line, else the one whose last line runs 82%+ (owner 11/10)
+  document.querySelectorAll('[data-variants]').forEach(el => { let o; try { o = JSON.parse(el.dataset.variants); } catch(e){ return; }
+    const fill = () => { const r = document.createRange(); r.selectNodeContents(el); const box = el.getBoundingClientRect(), rows = {};
+      [...r.getClientRects()].filter(q => q.width > .5).forEach(q => { const k = Math.round(q.top); rows[k] = Math.max(rows[k] || 0, q.right - box.left); });
+      const ks = Object.keys(rows).map(Number).sort((a, b) => a - b); return {n: ks.length, last: ks.length ? rows[ks[ks.length - 1]]/box.width : 0}; };
+    let pick = null; for(const t of o){ el.textContent = t; const f = fill(); if((f.n === 1 || f.last >= .82) && (!el.dataset.maxn || f.n <= +el.dataset.maxn)){ pick = t; break; } }
+    el.textContent = pick || o[0]; });
   const fitLines = (el, lo) => { let s = parseFloat(getComputedStyle(el).fontSize)*72/96; while((AT.lines(el) > 2 || el.scrollWidth > el.clientWidth + .5) && s > lo){ s -= .5; el.style.fontSize = s + 'pt'; } };
   const ad = document.getElementById('addr'); if(ad) fitLines(ad, 20);
   const hd = document.getElementById('head'); if(hd) AT.fitLine(hd, 40);
   const an = document.getElementById('agname'); if(an) AT.fitLine(an, 14);
   const sk = document.getElementById('st'); if(sk) AT.fitLine(sk, 9);
   issues.push(...AT.fitHouse(D));
-  AT.fitRow([...document.querySelectorAll('.cap2 .a')]);
+  // a caption with a pool of true lines sets the ones that fill its lines (owner 11/10: every line 80%+); fitted ones keep their spacing
+  if(window.CapFit){ const pe = [...document.querySelectorAll('.cap2 .a[data-pool]')]; CapFit(pe); pe.forEach(el => { if(el.dataset.capfit === 'ok') el.dataset.nobal = '1'; }); }
+  AT.fitRow([...document.querySelectorAll('.cap2 .a:not([data-capfit="ok"])')]);
   document.querySelectorAll('[data-para]:not([data-nobal])').forEach(el => AT.balance(el));
   if(window.mailZones){
     const sh = document.querySelector('.sheet').getBoundingClientRect(), P = r => ({l:(r.left - sh.left)/PT, r:(r.right - sh.left)/PT, t:(r.top - sh.top)/PT, b:(r.bottom - sh.top)/PT});

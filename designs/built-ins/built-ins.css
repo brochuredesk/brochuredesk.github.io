@@ -78,7 +78,7 @@ img{display:block}
 .places .pr span{overflow:hidden}
 
 /* plan */
-.planframe{flex:none;border:.7pt solid var(--hair);background:#fff;position:relative}
+.planframe{flex:none;border:.7pt solid var(--hair);background:transparent;position:relative}   /* owner 11/10: the plan sits on the paper (PlanInk), a thin rule frame only */
 .planlayer{position:absolute;left:0;top:0;width:612pt;height:792pt;pointer-events:none;--paper:#fff;--ink:#222}
 .plan-svg{position:absolute;overflow:visible}
 .plan-room{position:absolute;text-align:center;font:400 8pt/9.5pt var(--font-body);color:var(--ink);white-space:nowrap}
@@ -98,7 +98,8 @@ img{display:block}
 .half.r .panel{left:0}
 
 /* tighter nearby-places table inside a text column; room-size table */
-.places.col{margin-top:10pt;padding-top:5pt}
+.places.col{margin-top:auto;padding-top:5pt}
+.txt > .a:has(+ .places.col){margin-bottom:10pt}
 .places.col .grid{grid-template-columns:1fr;margin-top:2pt}
 .places.col .pr{font:500 8pt/11.5pt var(--font-body)}
 .places.sizes .pr{font:500 8.5pt/13pt var(--font-body)}

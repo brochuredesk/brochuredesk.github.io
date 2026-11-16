@@ -110,3 +110,11 @@ img{display:block}
 .rooms.narrow .sec{padding-top:5pt}
 .rooms.narrow .sec .h{font-size:11.5pt;line-height:14pt;margin-bottom:1pt}
 .rooms.narrow .sec .a{font-size:9pt;line-height:12.4pt;margin-top:2pt}
+
+/* The real-home samples (data.version ends in -real; scripts/r2/chronicle_build.py --real) only: the headline box has the height two lines need
+   at 24 pt, a label sits 1.5 pt lower under its fact so a comma never comes within 3 pt of it, and every write-up runs the full width of its
+   photo or column, set justified once the layout is set (body.real-fill, added by foldover.html; the owner's caption and write-up fill rules).
+   The Wren Hollow samples are unaffected. */
+body[data-version$="-real"] .lede{height:58pt !important}
+body[data-version$="-real"] .facts .l{margin-top:1.5pt}
+body.real-fill [data-para]{max-width:none !important;text-align:justify}

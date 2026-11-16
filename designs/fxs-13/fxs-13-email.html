@@ -55,7 +55,7 @@ FXP.start(['500 20pt "Bodoni Moda"', '600 20pt "Bodoni Moda"', '400 20pt "Cormor
   h.push(`<div class="abs evl" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${lab1 ? 25 : 50}pt;white-space:${lab1 ? 'nowrap' : 'normal'}" data-slot="oh.label" data-lines="${lab1 ? 1 : 2}">${lab1 ? esc(E.label.toUpperCase()) : OHL.labelLines(E.label.toUpperCase(), 2).map(esc).join('<br>')}</div>`); y += (lab1 ? 25 : 50) + 6;
   h.push(`<div class="abs wk" data-bg="${TK.paper}" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:18pt" data-slot="oh.weekday" data-lines="1">${esc(E.weekday)}</div>`); y += 23;
   const dText = String(E.monthDay || E.long); let S = 50; while(S > 30 && FXP.width(dText, `font-family:'Cormorant Garamond';font-weight:700;font-size:${S}pt`) > CW) S -= .5;
-  h.push(`<div class="abs dt" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${S*1.1}pt;font-size:${S}pt;line-height:${S*1.1}pt" data-slot="oh.date" data-lines="1">${esc(dText)}</div>`); y += S*1.1 + 6;
+  h.push(`<div class="abs dt" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${S*1.25}pt;font-size:${S}pt;line-height:${S*1.1}pt" data-slot="oh.date" data-lines="1">${esc(dText)}</div>`); y += S*1.1 + 6;
   if(E.time){ const TS = S*.6; h.push(`<div class="abs tm" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${TS*1.15}pt;font-size:${TS}pt;line-height:${TS*1.15}pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`); y += TS*1.15 + 10; }
   const perks = [[E.refreshments, 'oh.refreshments', 'evb b'], [E.note, 'oh.note', 'evb']].filter(p => p[0]);
   if(perks.length){ const ph = 10 + perks.length*22 + 8; h.push(`<div class="card" data-box="oh.box" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${ph}pt"></div>`);

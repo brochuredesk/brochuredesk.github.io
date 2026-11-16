@@ -54,13 +54,14 @@ window.brochureReady = (async function(){
 
   // a write-up beside two interiors
   const ps = (C.photos || []).slice(0, 2), pw = 128, gx = 10, tx = X + W - 2*pw - gx - 18;
-  h += `<div class="abs ab" style="left:${X}pt;top:579pt;width:${tx - X}pt;height:75pt" data-slot="oh.blurb" data-para="1" data-min="4" data-fillbox="1">${esc(C.text || '')}</div>`;
+  h += `<div class="abs ab" style="left:${X}pt;top:579pt;width:${tx - X}pt;height:75pt" data-slot="oh.blurb" data-para="1" data-min="4" data-fillbox="1" data-lines="5" data-nobal="1"${C.pool ? ` data-pool='${esc(JSON.stringify(C.pool)).replace(/'/g, '&#39;')}'` : ''}>${esc(C.text || '')}</div>`;
   h += `<div class="abs" data-gapcheck="oh.photos" style="left:0;top:0">${ps.map((id, i) => SP.photo(D, id, X + W - 2*pw - gx + i*(pw + gx), 580, pw, 78, 'oh.photo' + i)).join('')}</div>`;
 
   h += SP.card(D, [X, 670, W, 88], {layout: 'panel', fieldAccent: true});
   h += `<div class="abs" style="left:${X}pt;top:764pt;width:${W}pt;height:8pt;font-size:6pt;line-height:8pt;color:var(--muted);white-space:nowrap;overflow:hidden" data-slot="fineprint" data-lines="1" data-fine="1">${esc(PC.fineprint || 'Information deemed reliable but not guaranteed.')}</div>`;
 
-  await SP.finish(D, 612, 792, h, issues);
+  // the write-up fills its five lines from the listing's own true lines (owner 11/10/2026: every Open House flyer complete, no blank band)
+  await SP.finish(D, 612, 792, h, issues, async () => { if(window.CapFit) CapFit([...document.querySelectorAll('[data-pool]')]); });
 })();
 </script>
 </body>

@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="survey-book-cards.css">
 <script src="../engine/baths.js"></script>
 <script src="survey-book.js"></script>
+<script src="capfit.js"></script>
 <script src="survey-book-cards.js"></script>
 <!--
   The Survey Book · Just Listed and Just Sold postcards. data.piece: card "listed" | "sold", size "6x9" (trim 648 x 432 pt) | "6x11"
@@ -81,10 +82,10 @@ window.brochureReady = (async function(){
     h += `<div class="slab" data-blk="1" style="left:${zP[0] - 12}pt;top:113pt;width:${W - zP[0] + 21}pt;height:72pt;padding:3pt 18pt 3pt 9pt"><div class="big" data-slot="slab.big" data-lines="2">${esc(slab.big || '')}</div><div class="sub" data-slot="slab.sub" data-lines="3">${esc(slab.sub || '')}</div></div>`;
     const cap = (c, x, y, w, slot, lines) => `<div class="abs cap2 bk" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.title" data-lines="1">${esc(c.t)}${c.dims ? `<i>${esc(c.dims)}</i>` : ''}</div><div class="a" data-slot="${slot}" data-para="1" data-min="2" data-lines="${lines}">${esc(big && c.a11 ? c.a11 : c.a)}</div></div>`;
     if(!sold){
-      const bk = (PC.back || []).slice(0, big ? 3 : 2), g = 10, pw = (avail - g*(bk.length - 1))/bk.length, capH = 6 + 14 + 1 + 3*12, phh = bot0 - top0 - capH;
+      const bk = (PC.back || []).slice(0, big ? 3 : 2), g = 10, pw = (avail - g*(bk.length - 1))/bk.length, NL = big && bk.some(c => (c.a11 || c.a).length > 128) ? 4 : 3, capH = 6 + 14 + 1 + NL*12, phh = bot0 - top0 - capH;
       bk.forEach((c, i) => { const x = X + i*(pw + g);
         h += AT.photo(D, c.id, `position:absolute;left:${x.toFixed(2)}pt;top:${top0}pt;width:${pw.toFixed(2)}pt;height:${phh.toFixed(2)}pt`, 'back.photo' + i, 'bp');
-        h += cap(c, x.toFixed(2), top0 + phh, pw.toFixed(2), 'back.cap' + i, 3); });
+        h += cap(c, x.toFixed(2), top0 + phh, pw.toFixed(2), 'back.cap' + i, NL); });
     } else {
       const ids = PC.photos || [], g = 10, pw = (avail - g)/2;
       const items = (big && PC.services11) || PC.services || [], lh = big ? 15.5 : 14.5, nl = 3, ty = bot0 - nl*lh, sy = ty - 14 - 10 - 52 - 15, ph1 = sy - 12 - top0;
@@ -137,6 +138,7 @@ window.brochureReady = (async function(){
   window.proofNotes = [{paragraphs: [...document.querySelectorAll('[data-para]')].map(el => { const ls = AT.lineBoxes(el), w = el.getBoundingClientRect().width, last = ls[ls.length-1];
     return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, wPt: Math.round(AT.pt(w))}; })}];
   window.photoPlacements = AT.placements;
+  if(window.CapFit) window.capFitLog = CapFit.run((D.copy || {}).extra); (window.proofNotes = window.proofNotes || []).push({capFit: window.capFitLog});
   window.brochureCheck = () => AT.checkSingle(D, issues);
 })();
 </script>

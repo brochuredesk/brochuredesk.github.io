@@ -105,7 +105,7 @@
   // ---------- floor plan facts ----------
   // A design built around the plan: it needs a plan that lists rooms (owner 10/28).
   // A level lists rooms either as drawn rooms (L.rooms) or, for the agent's own plan image, by the room names printed on it (L.roomNames).
-  const listsRooms = l => (l.rooms||[]).length || (l.kind === 'image' && (l.roomNames||[]).length);
+  const listsRooms = l => l.kind === 'image' && !!l.src;   // the listing's own plan image only; never a drawing from room sizes (owner 11/10/2026)
   AT.planOK = D => !!(D.plan && (D.plan.levels||[]).some(listsRooms));
   AT.levels = D => ((D.plan && D.plan.levels) || []).filter(l => !l.inset && listsRooms(l));
   const footprint = L => L.kind === 'image' ? (L.feet ? L.feet.w*L.feet.d : L.w*L.h) : (L.rooms||[]).filter(r => r.kind !== 'outdoor').reduce((a, r) => a + r.w*r.d, 0);
@@ -176,7 +176,14 @@
   // The standard Right panel card, with and without a headshot. The card carries the spread's one brokerage logo.
   AT.card = function(D, box, fine){
     const A = D.agent || {}, hs = AT.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
-    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, {layout:'panel', fine: fine || '', bottomGap: 0.5});
+    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, Object.assign({layout:'panel', fine: fine || '', bottomGap: 0.5}, box[3] <= 80 ? {size: 'half', grow: 0} : {}));   // a box 80 pt or shorter is the half-height card (owner 11/15/2026)
+  };
+
+  // the narrow card for a back (owner 11/10/2026): the headshot (or stripe) beside the agent's lines stacked, the brokerage on a band below
+  AT.cardNarrow = function(D, box, fine, s){
+    const A = D.agent || {}, hs = AT.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
+    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, {layout:'band', size:'band', fine: fine || '', bottomGap: 0.5, grow: 0,
+      s: Object.assign({name: 21, nameFloor: 15, phone: 15, line: 9, hsW: 72, bandH: 36}, s || {})});
   };
 
   // ---------- print checks (read by the renderer) ----------

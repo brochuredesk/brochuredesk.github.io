@@ -246,7 +246,7 @@ FXP.start(['400 20pt "Oswald"', '400 20pt "Oswald"', '500 20pt "Oswald"', '600 2
         const r = tp({slot: 'address', text: addrT, parts: [mm2[1], mm2[2]], css: ACSS, x, y, w: cw, max: t2.s/K, minPx: t2.s/K, lines: 2, lh: 1.14}), pad = r.s*.12;   /* Oswald's caps rise above the line box: the box gets the room */
         return {h: (r.h + pad)/K + 2, html: r.html.replace(/height:([\d.]+)pt/, (m0, v) => `height:${(+v + pad).toFixed(2)}pt`)}; };
       if(kind === 'oh'){ f.push(wrap(y => addrOH(y, 60)));
-        f.push(wrap(y => { const out2 = []; let yy = y; const lines2 = OHL.labelLines(E.label.toUpperCase(), 2);
+        const evBlock = y => { const out2 = []; let yy = y; const lines2 = OHL.labelLines(E.label.toUpperCase(), 2);
           const single = FXP.width(E.label.toUpperCase(), `font:500 ${F.ev}pt Montserrat;letter-spacing:2.6pt`) <= p(cw);
           const labCss = caps(500, 2.6, '#fff') + ';text-decoration:underline;text-decoration-thickness:.75pt;text-underline-offset:5pt';
           let lab = tp({slot: 'oh.label', text: E.label.toUpperCase(), parts: single ? null : lines2, css: labCss, x, y: yy, w: cw, max: 46*SC*k, min: F.ev, lines: single ? 1 : 2, lh: 1.12});
@@ -257,7 +257,8 @@ FXP.start(['400 20pt "Oswald"', '400 20pt "Oswald"', '500 20pt "Oswald"', '600 2
           const wk = capsLn('oh.weekday', E.weekday, x + 1, yy, cw, 30*SC, 3.6, '#fff'); out2.push(wk.html); yy += wk.h + 2;
           const dt = tp({slot: 'oh.date', text: String(E.monthDay || E.long), css: `font-family:'Oswald';font-weight:500;letter-spacing:0;color:var(--fx-ink);${LN}`, x: x - 2, y: yy, w: cw + 2, max: 100*SC*k, min: F.ev*1.1, lh: 1.02}); out2.push(dt.html); yy += dt.h/K;
           if(E.time){ const ts = Math.max(dt.s*.6, F.ev); const tm = T({slot: 'oh.time', text: E.time, css: `font-family:'Oswald';font-weight:500;color:var(--fx-ink);${LN}`, x: p(x), y: p(yy), w: p(cw), max: ts, min: ts, lh: 1.05}); out2.push(tm.html); yy += tm.h/K; }
-          return {h: yy - y, html: out2.join('')}; }));
+          return {h: yy - y, html: out2.join('')}; };
+        f.push(wrap(y => { const r0 = evBlock(y); return sq && y + r0.h > hh ? evBlock(y - 10*SC) : r0; }));   /* 11/13 square: an event that runs past the foot of the house photo lifts a little so it sits centered between the address and the tiles */
         if(perkRight) f.push(wrap(y => { let yy = y + 12*SC; const o = []; items.forEach(([tx, slot, wt]) => { const r = tp({slot, text: tx, css: `font-family:'Oswald';font-weight:${wt};color:var(--fx-ink)`, x: x + 22*SC, y: yy, w: cw - 44*SC, max: perkF/K*Math.min(k, 1), min: F.body, lines: 2, lh: 1.1}); o.push(r.html); yy += r.h/K + 4*SC; });
           yy += 8*SC; return {h: yy - y, html: `<div class="card" data-box="oh.box" style="left:${p(x)}pt;top:${p(y)}pt;width:${p(cw)}pt;height:${p(yy - y)}pt"></div>` + o.join('')}; }));
         if(sq) f.push(wrap(y => { const it = FXS.statItems(L).slice(0, 3), rh = 118*SC*Math.max(k, .9), gp = 6*SC;

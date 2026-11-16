@@ -68,7 +68,7 @@ body[data-mode=print] .page{width:810pt;height:1242pt}
 
 /* white board under the plan */
 .board{position:absolute;background:var(--board)}
-.board .bnote{position:absolute;left:12pt;right:12pt;bottom:8pt;font:400 7pt/9pt var(--font-body);color:#4c5f5a}
+.board .bnote,.bnote{position:absolute;left:12pt;right:12pt;bottom:8pt;font:400 7pt/9pt var(--font-body);color:#4c5f5a}
 .plan{position:absolute}
 .plan.lv{position:absolute;overflow:visible}
 .plan.lv .in{position:absolute}
@@ -89,8 +89,17 @@ body[data-mode=print] .page{width:810pt;height:1242pt}
 .around .row{display:flex;justify-content:space-between;align-items:baseline;border-top:.6pt solid var(--line);height:14pt;padding-top:1pt}
 .around .row:first-child{border-top:none;padding-top:0}
 .around .p{font:600 9.5pt/13pt var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden}
+.around.big .row{height:21pt;padding-top:3pt}
+.around.big .p,.around.big .d{font-size:12pt;line-height:16pt}
 .around .d{font:400 9.5pt/13pt var(--font-display);color:var(--accent);white-space:nowrap;flex:none;margin-left:8pt}
 
 /* the standard contact card, in the set's colors */
 .cc{--cc-paper:#17403a;--cc-ink:#ffffff;--cc-muted:#d3e5dd;--cc-accent:#a9d6c5;--cc-line:rgba(255,255,255,.42)}
 .cc .cc-fine{font-size:6.5pt;line-height:8pt;color:#d3e5dd}
+
+/* owner 11/10/2026: the plan's background is clear so the dark paper shows through (lines and MLS coloured rooms never redrawn);
+   a plan with coloured rooms keeps the white board (body.plan-clear is only set for line plans) */
+body.plan-clear .board{background:transparent;border:.7pt solid var(--line)}
+body.plan-clear .plan.lv img{filter:invert(1);mix-blend-mode:screen}
+body.plan-clear .plan.flr{color:var(--ink)}
+body.plan-clear .board .bnote,body.plan-clear .bnote,body.plan-clear .fl-board-note{color:var(--muted)}

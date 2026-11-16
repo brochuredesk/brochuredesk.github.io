@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <title>BrochureDesk · The Neighborhood Atlas two-sided flyer</title>
 <link rel="stylesheet" href="atlas.css">
+<script src="../engine/planink.js"></script>
 <script src="atlas.js"></script>
+<script src="capfit.js"></script>
 <script src="atlas-plan.js"></script>
 <script src="atlas-map.js"></script>
 <script src="atlas-mapdata.js"></script>
@@ -49,6 +51,7 @@
   .fgrid div{flex:1 1 0;display:flex;align-items:center;border-bottom:.7pt dotted rgba(31,58,50,.55);font:600 9.5pt/1.2 var(--font-body);color:var(--ink);white-space:nowrap;letter-spacing:.1pt;overflow:hidden}
   .fgrid.four div{font-size:11.5pt}
   .fgrid div:first-child{border-top:.7pt dotted rgba(31,58,50,.55)}
+  .fnote{border-top:.7pt solid var(--line);padding-top:6pt;box-sizing:border-box}
   .fnote .sect{margin-bottom:5pt}
   .fnote .body{font-size:8.5pt;line-height:11.5pt;overflow:hidden}
   .fpn .d{font-size:8pt;line-height:10pt;color:var(--text);margin-top:3pt}
@@ -67,7 +70,7 @@ window.brochureReady = (async function(){
   document.body.dataset.mode = D.mode || 'email';
   const front = D.piece.side !== 'back';
   const planOK = AT.planOK(D), levels = planOK ? AT.levels(D) : [], flabels = planOK ? AT.floorLabels(D) : [];
-  const X = 36, W = 540, CARD_Y = 662, CARD_H = 94, BOT = 654;
+  const X = 36, W = 540, CARD_Y = 662, CARD_H = 94, BOT = 654, FBOT = 752;
   const P = D.photos || {};
 
   // ---------- measuring (the page's own fonts) ----------
@@ -87,7 +90,7 @@ window.brochureReady = (async function(){
   const subsets = arr => { const n = Math.min(arr.length, 9), out = [];
     for(let m = 1; m < (1 << n); m++){ const pick = []; for(let i = 0; i < n; i++) if(m & (1 << i)) pick.push(arr[i]); out.push({m, pick}); }
     return out.sort((a, c) => (a.m & -a.m) - (c.m & -c.m) || c.pick.length - a.pick.length || a.m - c.m); };
-  const FILLS = [.8, .745];   // the last line at least 4/5 full, else just over the checks' 73%
+  const FILLS = [.9, .85, .8, .745];   // the last line 90% full when the sentences allow it (owner 11/8: text under a photo fills its width), else 85, 80, and last just over the checks 73%
   // a subset of the sentences that sets in exactly n lines with the last line at least `fill` full
   const fitOne = (sents, f, n, fill) => { let best = null;
     for(const {pick} of subsets(sents)){ const t = pick.join(' '), r = measure(t, f.w, f.fs, f.lh, f.wt);
@@ -111,6 +114,15 @@ window.brochureReady = (async function(){
       const bad = rs.filter(r => r.lines !== n || r.last < FILLS[1]).length; if(!best || bad < best.bad) best = {rs, n, bad}; }
     return {rs: best.rs, n: best.n, ok: false}; };
 
+  // a row that keeps every sentence it is given (owner 11/10/2026, rule 5: never shorter; the 11/9 fitter dropped sentences): each
+  // caption sets all its sentences; the row runs as many lines as its longest caption; a shorter one is marked for the writer
+  const fillRowAll = (items, f) => {
+    const rs = items.map(src => { const t = sentences(src).join(' '); if(!t) return {text: '', lines: 0, last: 0}; const r = measure(t, f.w, f.fs, f.lh, f.wt); return {text: t, lines: r.lines, last: r.last}; });
+    const n = Math.max(1, ...rs.map(r => r.lines));
+    // a caption a line or two short of the row steps its type up (to 9.5 pt at most, same line spacing) until it runs the row's lines
+    rs.forEach(r => { if(!r.text || r.lines >= n) return;
+      for(let fs = f.fs + .1; fs <= 9.51; fs += .1){ const m = measure(r.text, f.w, fs, f.lh, f.wt); if(m.lines > n) break; if(m.lines === n){ r.lines = n; r.last = m.last; r.fs = +fs.toFixed(2); break; } } });
+    return {rs, n, ok: rs.every(r => r.lines === n)}; };
   // ---------- the fold-over's copy, by photo ----------
   const ALL = {};
   { const add = (arr) => (arr || []).forEach(it => { if(it && it.photo && !ALL[it.photo]) ALL[it.photo] = it; });
@@ -142,7 +154,7 @@ window.brochureReady = (async function(){
   const cap = (id, slot, r, w, withMini, big) => {
     const d = dimsOf(id), tw = w - (withMini ? MPG + MPW : 0);
     return `<div class="cap"><div class="t" style="width:${tw}pt;flex:none"><div class="h" data-slot="${slot}.h" data-lines="1">${esc(titleOf(id))}${d ? `<i>${esc(feetOnly(d))}</i>` : ''}</div>
-      <div class="a" data-slot="${slot}.a" data-para="1" data-min="2" data-lines="${r.lines}">${esc(r.text)}</div></div>${withMini ? mini(id, r.text) : ''}</div>`;
+      <div class="a" data-slot="${slot}.a" data-para="1" data-min="2" data-lines="${r.lines}"${r.fs ? ` style="--afs:${r.fs}pt"` : ''}>${esc(r.text)}</div></div>${withMini ? mini(id, r.text) : ''}</div>`;
   };
   const item = (id, slot, r, w, ph, withMini, big) => `<div class="item${big ? ' big' : ''}" style="width:${w}pt">${AT.photo(D, id, `height:${ph}pt;width:${w}pt`, slot + '.photo')}${cap(id, slot, r, w, withMini, big)}</div>`;
   const row = (x, y, gap, inner) => `<div class="row abs" style="left:${x}pt;top:${y}pt;gap:${gap}pt">${inner}</div>`;
@@ -176,17 +188,41 @@ window.brochureReady = (async function(){
     // the write-up and the captions give up a line at a time until the photos have the room they need (never under 72 pt)
     const CF = trio.map(() => ({w: planOK ? 168 - MPG - MPW : 168, fs: 8.5, lh: 11.5, wt: 400}));
     let layout = null, bestL = null, dr = null, TH = 0;
-    outer: for(const dn of [7, 6, 5]){
+    // first, every sentence of every caption (owner 11/10/2026, rule 5: never shorter): taken when the row runs even and the
+    // photos keep at least 72 pt; otherwise the fitter below picks sentences as before
+    { const fa = fillRowAll(trio.map(poolOf), CF[0]);
+      // the lines filled by type size alone (8.5 to 9.5 pt, never fewer words): every caption the same line count, each last line 80%+
+      if(fa.ok && !fa.rs.every(r => r.last >= .8)) for(const n of [fa.n, fa.n + 1]){
+        const rs = trio.map(poolOf).map(src => { const t = sentences(src).join(' ');
+          for(let fs = 8.5; fs <= 9.52; fs += .05){ const m = measure(t, CF[0].w, fs, 11.5, 400); if(m.lines > n) break; if(m.lines === n && m.last >= .8) return {text: t, lines: n, last: m.last, fs: +fs.toFixed(2)}; }
+          return null; });
+        if(rs.every(Boolean)){ fa.rs = rs; fa.n = n; break; }
+      }
+      if(fa.ok && fa.n <= 12 && fa.rs.every(r => r.last >= .8)) for(const dn of [7, 6, 5]){
+        const d1 = fillBox(desc, DF, [dn]), th = d1.lines*14.4, ch = capH(11.5, fa.n);
+        const rest = Hh => { const S = 36 + Hh + 12 + 75; return S + 10 + th + 3 + 8 + 12; };
+        let Hp = FBOT - ch - rest(Hneed), Hh = Hneed;
+        if(Hp > 120){ Hh += Hp - 120; Hp = 120; }
+        const Hmax = Math.floor(W / asp); if(Hh > Hmax){ Hp += Hh - Hmax; Hh = Hmax; }
+        if(Hp >= 72 && d1.ok){ layout = {n: fa.n, cr: fa.rs, ch, Hp, Hh, d1, th}; break; }
+      } }
+    if(!layout) outer: for(const dn of [7, 6, 5]){
       const d1 = fillBox(desc, DF, [dn]), th = d1.lines*14.4;
       for(const n of [5, 4, 3, 2]){
         const fr = fillRow(trio.map(poolOf), CF, [n]), ch = capH(11.5, n);
         const rest = Hh => { const S = 36 + Hh + 12 + 75; return S + 10 + th + 3 + 8 + 12; };
-        let Hp = BOT - ch - rest(Hneed), Hh = Hneed;
-        if(Hp > 112){ Hh += Hp - 112; Hp = 112; }
-        const L1 = {n, cr: fr.rs, ch, Hp, Hh, d1, th};
+        // no contact card or brokerage logo on a flyer front (owner 11/10/2026, p16): the page runs to the fine print
+        let Hp = FBOT - ch - rest(Hneed), Hh = Hneed;
+        if(Hp > 120){ Hh += Hp - 120; Hp = 120; }
+        const Hmax = Math.floor(W / asp);   // never taller than the photo at full width: the house is never cropped at the sides
+        if(Hh > Hmax){ Hp += Hh - Hmax; Hh = Hmax; }
+        const L1 = {n, cr: fr.rs, ch, Hp, Hh, d1, th, bad: fr.rs.filter(r => r.lines !== n).length};
         if(Hp < 72) continue;
         if(fr.ok && d1.ok){ layout = L1; break outer; }
-        if(!bestL) bestL = L1;
+        // the fallback keeps a row whose captions all run the same lines (owner rule: a caption row never runs uneven)
+        // (and, among those, the 11/9 choice: the first that left the trio 72 pt under the old card line)
+        L1.old = BOT - ch - rest(Hneed) >= 72;
+        if(!bestL || L1.bad < bestL.bad || (L1.bad === bestL.bad && L1.old && !bestL.old)) bestL = L1;
       }
     }
     if(!layout) layout = bestL || (() => { const d1 = fillBox(desc, DF, [5]), n = 2; return {n, cr: fillRow(trio.map(poolOf), CF, [n]).rs, ch: capH(11.5, n), Hp: 60, Hh: Hneed, d1, th: d1.lines*14.4}; })();
@@ -206,7 +242,6 @@ window.brochureReady = (async function(){
     h += `<div class="abs fine" style="left:314pt;top:${ty+TH+3}pt;width:262pt;height:8pt;white-space:nowrap;text-align:right" data-slot="front.credit" data-fine="1" data-lines="1">Street map drawn from OpenStreetMap data. © OpenStreetMap contributors</div>`;
     const py = ty + TH + 3 + 8 + 12, cw = 168, gx = (W - 3*cw)/2;
     h += row(X, py, gx, trio.map((id, i) => item(id, `front.photo${i}`, cr[i], cw, Hp, planOK, false)).join(''));
-    h += AT.cardBox(D, [X, CARD_Y, W, CARD_H], {layout: 'panel'});
     h += fine(((D.copy || {}).pc || {}).fineprint || FL.fineprint || 'Information deemed reliable but not guaranteed.', 764, 'fineprint');
     document.body.dataset.layout = 'front';
     document.body.dataset.geom = JSON.stringify({Hh, Hp, TH, rows: rows.length, capLines: layout.n, descLines: dr.lines});
@@ -223,49 +258,77 @@ window.brochureReady = (async function(){
     h += kick(`${L.address} · ${place}`.toUpperCase(), X + W - 300, 36, 300, 'back.address', 'color:var(--ink);text-align:right');
     h += `<div class="abs title" style="left:${X}pt;top:48pt;width:${W}pt" data-slot="back.title" data-lines="1">${esc(headline)}</div>`;
     h += hr(90);
-    // the note and the callout, side by side, same top and bottom
-    const NW = callout ? 340 : W, NF = {w: NW, fs: 8.5, lh: 11.5, wt: 400};
-    const noteR = fillBox(note.text, NF, callout ? [5, 6, 4, 7] : [4, 3, 5]); fitlog.push(['note', noteR.lines, noteR.ok]);
-    const NH = 10 + 5 + noteR.lines*11.5;
-    const noteY = BOT - NH;
-    const noteHTML = `<div class="abs fnote" style="left:${X}pt;top:${noteY}pt;width:${NW}pt;height:${NH}pt"><div class="sect" data-slot="back.noteTitle" data-lines="1">${esc(note.label)}</div><div class="body" data-slot="back.note" data-para="1" data-min="3" data-lines="${noteR.lines}">${esc(noteR.text)}</div></div>`
-      + (callout ? `<div class="abs callout fcall" style="left:${X + NW + 14}pt;top:${noteY}pt;width:${W - NW - 14}pt;height:${NH}pt"><div class="big" data-slot="back.callout.big" data-lines="1">${esc(callout.big)}</div>${callout.sub ? `<div class="sub" data-slot="back.callout.sub" data-lines="2">${esc(callout.sub)}</div>` : ''}</div>` : '');
-    h += AT.cardBox(D, [X, CARD_Y, W, CARD_H], {layout: 'panel'});
+    // the foot of the page (owner 11/10/2026, 11/9 book p15): the callout and a narrow contact card side by side in one band,
+    // the note full width over them; everything above grows into the room the full-width card used to take
+    // round 3 (owner 11/10/2026: "narrower" means SHORTER TOP TO BOTTOM): the contact card runs the full width again at the
+    // short size (about 1.1 in, was 128 pt beside the callout); the callout becomes one slim full-width strip over it (the big
+    // line and its sub line side by side); the note sits over the strip, and the photos and plan above grow into the room
+    const BH = 78, BY = 756 - BH, CLW = callout ? 196 : 0;
+    const NW = W - (callout ? CLW + 14 : 0), NF = {w: NW, fs: 8.5, lh: 11.5, wt: 400};
+    const noteR = fillBox(note.text, NF, [4, 3, 5, 2]); fitlog.push(['note', noteR.lines, noteR.ok]);
+    const NH = Math.max(21 + noteR.lines*11.5, callout ? 62 : 0), noteY = BY - 12 - NH;   // a hairline over the note closes the photo rows above it
+    const noteHTML = `<div class="abs fnote" style="left:${X}pt;top:${noteY}pt;width:${NW}pt;height:${NH}pt"><div class="sect" data-slot="back.noteTitle" data-lines="1">${esc(note.label)}</div><div class="body" data-slot="back.note" data-para="1" data-min="2" data-lines="${noteR.lines}">${esc(noteR.text)}</div></div>`
+      + (callout ? `<div class="abs callout fcall" style="left:${X + W - CLW}pt;top:${noteY}pt;width:${CLW}pt;height:${NH}pt"><div class="big" data-slot="back.callout.big" data-lines="1" style="font-size:22pt;line-height:26pt">${esc(callout.big)}</div>${callout.sub ? `<div class="sub" data-slot="back.callout.sub" data-lines="2">${esc(callout.sub)}</div>` : ''}</div>` : '');
+    h += AT.cardBox(D, [X, BY, W, BH], {layout: 'panel', size: 'short'});
     h += fine(((C.footnote) || FL.fineprint || 'Information deemed reliable but not guaranteed.'), 764, 'fineprint');
 
-    if(planOK){
+    const tallPlan = planOK && levels.length === 1 && levels[0].kind === 'image' && levels[0].w / levels[0].h < 0.75;
+    if(tallPlan){
+      // ---- one tall floor (owner 11/10/2026: the listing's own plan, centered and as large as it prints): the plan frame down
+      // the left side, the four captioned photos two by two beside it ----
+      const grid = pick(BK.grid, 4), B = C.back || {}, gap = 12, fy = 100, fbot = noteY - gap;
+      const FHt = fbot - fy - 16, lv = levels[0], a = lv.w / lv.h;
+      let ph = FHt - 40;   // under the frame's label
+      while(ph > 200 && lv.w / (ph * a / 72) < 300) ph -= 6;   // never past 300 ppi
+      const PW = Math.max(200, Math.min(270, Math.round(ph * a + 28)));
+      const plan = AtlasPlan.draw(D.plan, {x: X + 12, y: fy + 30, w: PW - 24, h: FHt - 42}, {allowRotate: false});
+      issues.push(...plan.issues);
+      h += `<div class="planframe" style="left:${X}pt;top:${fy}pt;width:${PW}pt;height:${FHt}pt"></div><div class="panel" style="left:0;top:0">${plan.html.replace(/<div class="abs plan-level"[^>]*>[^<]*<\/div>/g, '')}</div>
+        <div class="abs" style="left:${X + 12}pt;top:${fy + 10}pt;width:${PW - 24}pt"><div class="fpn"><div class="sect" data-slot="back.planTitle" data-lines="1">Floor plan</div></div></div>
+        <div class="abs fine" style="left:${X}pt;top:${fy + FHt + 4}pt;width:${PW}pt;height:8pt;text-align:center;white-space:nowrap" data-slot="back.planDisc" data-fine="1" data-lines="1">${esc(FL.planDisc || B.planDisc || 'Approximate; not to scale. Buyer to verify.')}</div>`;
+      const rx = X + PW + 14, rw = W - PW - 14, gw2 = (rw - 14) / 2;
+      const r1 = fillRowAll(grid.slice(0, 2).map(poolOf), {w: gw2, fs: 8.5, lh: 11.5, wt: 400}), r2 = fillRowAll(grid.slice(2, 4).map(poolOf), {w: gw2, fs: 8.5, lh: 11.5, wt: 400});
+      const Hg2 = Math.floor((fbot - fy - capH(11.5, r1.n) - capH(11.5, r2.n) - 14) / 2);
+      fitlog.push(['tall', r1.n, r2.n, Hg2]);
+      h += row(rx, fy, 14, grid.slice(0, 2).map((id, i) => item(id, `back.photo${i}`, r1.rs[i], gw2, Hg2, false, false)).join(''));
+      h += row(rx, fy + Hg2 + capH(11.5, r1.n) + 14, 14, grid.slice(2, 4).map((id, i) => item(id, `back.photo${i + 2}`, r2.rs[i], gw2, Hg2, false, false)).join(''));
+      h += noteHTML;
+      document.body.dataset.layout = 'back-plan-tall';
+    } else if(planOK){
       // ---- the floor plan version ----
       const grid = pick(BK.grid, 4), gw = (W - 3*14)/4, pick0 = grid;
       const B = C.back || {};
       const gap = 12;
-      const fy = 100, below = 4 + 8 + 10 + capH(11.5, 4) + gap + NH;     // under the frame: disclosure, gap, captions, gap, note row
+      const fy = 100, below = 4 + 8 + 10 + capH(11.5, 4) + gap;     // under the frame: disclosure, gap, captions, gap (the note row is in noteY)
       const multi = levels.length > 1, PX = 138;
       // the frame gets what the photos (at least 78 pt tall) leave
-      const FH = Math.min(levels.length >= 4 ? 316 : 292, BOT - fy - below - 78);
-      const draw = (hh, yy) => AtlasPlan.draw(D.plan, {x: X + PX, y: yy, w: W - PX - 12, h: hh}, {allowRotate: true});
+      const FH = Math.min(levels.length >= 4 ? 330 : 310, noteY - fy - below - 86);
+      // the plan sits centered in the whole frame (owner 11/10/2026, p15: it sat too far right); the note column keeps the left
+      // margin when the plan leaves it room, else the plan takes the frame right of the note
+      let low = 0;   // a plan that leaves under 90 pt each side drops 14 pt so the frame's label sits over it
+      const draw = (hh, yy) => { const c = AtlasPlan.draw(D.plan, {x: X + 12, y: yy, w: W - 24, h: hh}, {allowRotate: false});
+        if((W - 24 - c.usedW) / 2 >= 90){ low = 0; return c; }
+        low = 14; return AtlasPlan.draw(D.plan, {x: X + 12, y: yy + 14, w: W - 24, h: hh - 14}, {allowRotate: false}); };
       // the plan is never drawn bigger than its image prints at 300 ppi
       let hh = FH - 24, plan = draw(hh, fy + 12);
       while(plan.issues.some(i => i.kind === 'plan-under-300ppi') && hh > 150){ hh -= 6; plan = draw(hh, fy + 12); }
       let fh = Math.max(190, Math.min(FH, Math.ceil(plan.usedH) + 24));
-      { // photos never grow past 150 pt: the frame takes what is left, the plan centered in it, so no band stays empty
-        let nn0 = 3, g0 = null;
-        for(const nn of [7, 6, 5, 4, 3]){ const g1 = fillRow(pick0.map(poolOf), {w: gw, fs: 8.5, lh: 11.5, wt: 400}, [nn]); if(g1.ok && noteY - gap - capH(11.5, nn) - (fy + fh + 22) >= 86){ nn0 = nn; break; } }
-        const slack = noteY - gap - capH(11.5, nn0) - (fy + fh + 22) - 150;
-        if(slack > 0) fh += Math.min(slack, 60);
+      const gr = fillRowAll(grid.map(poolOf), {w: gw, fs: 8.5, lh: 11.5, wt: 400});
+      { // the frame takes what the captions and the photos (86 to 150 pt tall) leave, the plan centered in it, so no band stays empty
+        const slack = noteY - gap - capH(11.5, gr.n) - (fy + fh + 22) - 150;
+        if(slack > 0) fh += slack;
+        else fh = Math.max(190, Math.min(fh, noteY - gap - capH(11.5, gr.n) - 22 - fy - 86));
       }
-      plan = draw(fh - 24, fy + 12);
+      { const hp = Math.min(fh - 24, hh); plan = draw(hp, fy + 12 + (fh - 24 - hp) / 2); }   // never past 300 ppi; centered top to bottom
       if(!multi) plan.html = plan.html.replace(/<div class="abs plan-level"[^>]*>[^<]*<\/div>/g, '');
       issues.push(...plan.issues);
       const zs = AtlasPlan.zonesOf(D.plan), Z = AtlasPlan.ZONES;
       const legend = Object.keys(Z).filter(k => zs.includes(k)).map(k => `<span style="display:flex;align-items:center;margin:0 0 5pt"><i style="display:inline-block;width:10pt;height:10pt;margin-right:5pt;border:.6pt solid rgba(31,58,50,.45);background:color-mix(in srgb, ${Z[k].fill} ${Math.round(Z[k].op*100)}%, var(--paper))"></i>${esc(Z[k].label)}</span>`).join('');
       const pnote = FL.planNote || (plan.mixedScale ? 'Floors are drawn at different scales.' : '');
       h += `<div class="planframe" style="left:${X}pt;top:${fy}pt;width:${W}pt;height:${fh}pt"></div><div class="panel" style="left:0;top:0">${plan.html}</div>
-        <div class="abs" style="left:${X + 12}pt;top:${fy}pt;width:${PX - 26}pt;height:${fh}pt;display:flex;flex-direction:column;justify-content:center"><div class="fpn"><div class="sect" data-slot="back.planTitle" data-lines="1">Floor plan</div>${pnote ? `<div class="d" data-slot="back.planNote" data-lines="6">${esc(pnote)}</div>` : ''}</div><div style="margin-top:12pt;font:600 8pt/10pt var(--font-body);color:var(--ink);white-space:nowrap">${legend}</div></div>
+        <div class="abs" style="left:${X + 12}pt;top:${fy + 10}pt;width:${PX - 26}pt"><div class="fpn"><div class="sect" data-slot="back.planTitle" data-lines="1">Floor plan</div>${pnote ? `<div class="d" data-slot="back.planNote" data-lines="6">${esc(pnote)}</div>` : ''}</div><div style="margin-top:12pt;font:600 8pt/10pt var(--font-body);color:var(--ink);white-space:nowrap">${legend}</div></div>
         <div class="abs fine" style="left:${X}pt;top:${fy + fh + 4}pt;width:${W}pt;height:8pt;text-align:center;white-space:nowrap" data-slot="back.planDisc" data-fine="1" data-lines="1">${esc(FL.planDisc || B.planDisc || 'Approximate; not to scale. Buyer to verify.')}</div>`;
       const gy = fy + fh + 4 + 8 + 10;
-      // the captions run as many lines as the page has room for, keeping the photos at least 86 pt tall
-      let gr = null;
-      for(const nn of [7, 6, 5, 4, 3]){ const g1 = fillRow(grid.map(poolOf), {w: gw, fs: 8.5, lh: 11.5, wt: 400}, [nn]); if(!gr) gr = g1; if(g1.ok && noteY - gap - capH(11.5, nn) - gy >= 86){ gr = g1; break; } }
       const cr = gr.rs, n = gr.n; fitlog.push(['grid', n, gr.ok]);
       const ch = capH(11.5, n);
       const Hg = Math.min(150, noteY - gap - ch - gy);
@@ -286,6 +349,7 @@ window.brochureReady = (async function(){
       const ry = fy + Hf + fch + gap;
       h += row(X, ry, 14, rw.map((id, i) => item(id, `back.row${i}`, rcr[i], rw3, Hr, false, false)).join(''));
       h += noteHTML;
+      window.bpPlan = {ry, gap, noteY, NH};
       document.body.dataset.layout = 'back-photos';
       document.body.dataset.geom = JSON.stringify({Hf, Hr, featLines: fn, rowLines: rn, noteLines: noteR.lines});
     }
@@ -299,16 +363,37 @@ window.brochureReady = (async function(){
   AT.fitLine(document.getElementById('addr') || document.createElement('div'), 28);
   document.querySelectorAll('.fcall .big').forEach(el => AT.fitLine(el, 16));
   issues.push(...AT.drawMaps(D));
+  AT.capFit(document);   // captions under photos: full column, justified, type up to 12% so the last line reaches the photo's width (owner 11/8/2026)
+  // the photos version of the back: a caption that runs a line or two under the lines its row was planned for gives that room to
+  // its photos (taller), and a short note moves down against the card, so no gap opens under any caption (owner 11/10/2026: no blank space)
+  if(window.bpPlan){
+    const PT = 96/72, sh = document.querySelector('.sheet').getBoundingClientRect(), rows = [...document.querySelectorAll('.sheet .row')];
+    const grow = (rowEl, targetPt) => { const d = targetPt - (rowEl.getBoundingClientRect().bottom - sh.top)/PT;
+      if(d > .4) rowEl.querySelectorAll('.ph').forEach(e => { e.style.height = (parseFloat(e.style.height) + d) + 'pt'; }); return Math.max(0, d); };
+    if(rows.length >= 2){
+      const B = window.bpPlan, fn = document.querySelector('.fnote'), fc = document.querySelector('.fcall');
+      grow(rows[0], B.ry - B.gap);
+      const body = fn && fn.querySelector('.body'), need = Math.max(body ? (body.getBoundingClientRect().bottom - sh.top)/PT - B.noteY : 0, fc ? 62 : 0);
+      const d3 = Math.max(0, B.NH - need - (body ? 0 : 0));
+      if(fn && d3 > .4){ fn.style.top = (B.noteY + d3) + 'pt'; fn.style.height = (B.NH - d3) + 'pt'; if(fc){ fc.style.top = (B.noteY + d3) + 'pt'; fc.style.height = (B.NH - d3) + 'pt'; } }
+      if(fn && fc && d3 <= .4 && body){   // the callout holds the note's box taller than its text: the text takes the room in looser leading (14.5 pt at most)
+        const free = B.NH - (body.getBoundingClientRect().bottom - sh.top) / PT + B.noteY, nl = AT.lines(body), cur = parseFloat(getComputedStyle(body).lineHeight) * 72 / 96;
+        if(nl > 0 && free > .6) body.style.lineHeight = Math.min(cur + free / nl, 14.5) + 'pt';
+      }
+      grow(rows[1], B.noteY + (fn && d3 > .4 ? d3 : 0) - 12);
+    }
+  }
   issues.push(...AT.fitHouse(D));
   ContactCard.fit(document);
   // sizes in feet only: the plan's own room labels too
   document.querySelectorAll('.plan-room span').forEach(e => { e.textContent = feetOnly(e.textContent); });
   // layout guard: nothing printed runs into the card or the fine print
   const guard = () => { const out = [], top = pt(document.querySelector('.cc') ? document.querySelector('.cc').getBoundingClientRect().top - document.querySelector('.sheet').getBoundingClientRect().top : 0);
-    document.querySelectorAll('.row,.fnote,.fcall,.planframe,#blurb,#map').forEach(el => { const r = el.getBoundingClientRect(), s = document.querySelector('.sheet').getBoundingClientRect();
+    document.querySelectorAll('.row,.fnote,.planframe,#blurb,#map').forEach(el => { const r = el.getBoundingClientRect(), s = document.querySelector('.sheet').getBoundingClientRect();
       const bottom = pt(r.bottom - s.top); if(top && bottom > top - 4) out.push({slot: el.id || el.className, kind: 'runs-into-card', bottomPt: +bottom.toFixed(1), cardTopPt: +top.toFixed(1)}); });
     return out; };
   window.photoPlacements = AT.placements;
+  if(window.PlanInk) PlanInk.applyAll(D, false);   // owner 11/10/2026 (p2): the listing plan's background is clear
   window.brochureCheck = () => AT.checkSingle(D, [...issues, ...guard()]);
 })();
 </script>

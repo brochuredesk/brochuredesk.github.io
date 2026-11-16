@@ -266,7 +266,7 @@
   };
   AT.card = function(D, box, fine){
     const A = D.agent || {}, hs = AT.src(D, A.headshot) || (/^(file|https?|data):/.test(A.headshot || '') ? A.headshot : '');
-    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, {layout:'panel', fine: fine || '', bottomGap: 0.5});
+    return ContactCard.html(box, Object.assign({}, A, {headshot: hs}), D.brand || {}, Object.assign({layout:'panel', fine: fine || '', bottomGap: 0.5}, box[3] <= 80 ? {size: 'half', grow: 0} : {}));   // a box 80 pt or shorter is the half-height card (owner 11/15/2026)
   };
 
   // ---------- print checks (read by the renderer) ----------

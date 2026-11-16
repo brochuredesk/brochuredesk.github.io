@@ -63,6 +63,14 @@ img{display:block}
 .board{position:absolute;background:#fff;--paper:#fff;--ink:#1c2436;--accent:#1c2436;--text:#33394c;--muted:#59627a;--signal:#8c5b12;--line:rgba(28,36,54,.28)}
 .boardvars{position:absolute;left:0;top:0;width:612pt;height:792pt;pointer-events:none;--paper:#fff;--ink:#1c2436;--accent:#1c2436;--text:#33394c;--muted:#59627a;--signal:#8c5b12;--line:rgba(28,36,54,.28)}
 .boardvars .lg,.boardvars .disc,.boardvars .pt{position:absolute}
+/* the listing plan's background is clear (owner 11/10/2026, PlanInk): a line-only plan sits straight on the navy field in light lines,
+   inside a thin amber frame, its title, floor names and note in the field's light type; a plan with colored rooms keeps the white panel */
+.board.clear{background:transparent;border:.75pt solid rgba(226,180,94,.55)}
+.boardvars.clear{--paper:transparent;--ink:#ffffff;--accent:#ffffff;--text:#d9dde7;--muted:#c4cbd9;--signal:#e2b45e;--line:rgba(217,221,231,.35)}
+.boardvars.clear .pt{color:#e2b45e}
+.boardvars .plan-rule{border-top:.6pt solid rgba(140,91,18,.4)}   /* a hairline under the plan's title, across the board */
+.boardvars.clear .plan-rule{border-top-color:rgba(226,180,94,.5)}
+.boardvars.clear .lg,.boardvars.clear .disc{color:#c4cbd9}
 .boardvars .lg{position:absolute;text-align:center;font:600 8pt/10pt var(--font-body);color:#1c2436;white-space:nowrap}
 .boardvars .disc{position:absolute;text-align:center;white-space:nowrap}
 .boardvars .pt{position:absolute;font:700 8.5pt/10pt var(--font-body);letter-spacing:1.4pt;text-transform:uppercase;color:#8c5b12;white-space:nowrap}
@@ -88,3 +96,6 @@ img{display:block}
 .half.r .panel{left:0}
 
 .stack{display:flex;flex-direction:column;gap:8pt}
+
+/* the places' title sits under an amber hairline across the full width, so the row of captions above ends at a line, not open space */
+.fplaces > .sect, .places > .sect{border-top:.6pt solid rgba(226,180,94,.45);padding-top:4pt}

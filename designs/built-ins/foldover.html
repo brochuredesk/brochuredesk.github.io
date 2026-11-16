@@ -5,7 +5,10 @@
 <title>Built-In Details fold-over</title>
 <link rel="stylesheet" href="built-ins.css">
 <script src="built-ins.js"></script>
+<script src="lastfix.js"></script>
 <script src="plan.js"></script>
+<script src="capfit.js"></script>
+<script src="../engine/planink.js"></script>
 <!--
   Built-In Details · 11 x 17 fold-over (laid 17 wide, folded down the middle into four upright 8.5 x 11 pages that open like a book)
     outside spread: back (left) + cover (right)        inside spread: first rooms (left) + the rest (right)
@@ -47,12 +50,12 @@ window.brochureReady = (async function(){
   const header = (P, which) => `${kick(P.kicker, which + '.kicker')}${title(P.title, which + '.title')}<div class="hrule" style="top:78pt"></div>`;
   // a caption under a photo: name and size on one line, then the paragraph
   const cap = (it, slot, min) => `<div class="cap"><div class="h" data-slot="${slot}.h" data-lines="1">${esc(it.title)}${it.dims ? `<i>${esc(dm(it.dims))}</i>` : ''}</div>` +
-    `<div class="a" data-slot="${slot}.a" data-para="1" data-min="${min || 3}">${esc(it.body)}</div></div>`;
+    `<div class="a"${it.x ? ` data-x="${esc(JSON.stringify(it.x))}"` : ''} data-slot="${slot}.a" data-para="1" data-min="${min || 3}">${esc(it.body)}</div></div>`;
   const item = (it, slot, style, min) => `<div class="item" style="${style || 'flex:1 1 0'}">${AT.photo(D, it.photo, '', slot)}${cap(it, slot, min)}</div>`;
   // a photo with its text column beside it (the photo takes the text's height)
   const spread = (it, slot, w, sub, mh) => `<div class="spread" data-fill="1" data-target="${mh || 0}" data-cap="${slot === 'left.strip' ? 2.8 : 2.4}" style="flex:none">${AT.photo(D, it.photo, `flex:0 0 ${w}pt;min-height:${mh || 24}pt`, slot)}<div class="txt">` +
     `<div class="h" data-slot="${slot}.h" data-lines="1">${esc(it.title)}</div>${it.dims ? `<div class="d" data-slot="${slot}.d" data-lines="1">${esc(dm(it.dims))}</div>` : ''}` +
-    `<div class="a" data-slot="${slot}.a" data-para="1" data-min="${slot === 'left.big' ? 3 : 2}">${esc(it.body)}</div>` +
+    `<div class="a"${it.x ? ` data-x="${esc(JSON.stringify(it.x))}"` : ''} data-slot="${slot}.a" data-para="1" data-min="${slot === 'left.big' ? 3 : 2}">${esc(it.body)}</div>` +
     (sub && it.subTitle ? `<div class="sh" data-slot="${slot}.sh" data-lines="1">${esc(it.subTitle)}</div><div class="a2" data-slot="${slot}.a2" data-para="1" data-min="2">${esc(it.subBody)}</div>` : '') + `</div></div>`;
   const placesBlock = (B, col) => (B.places && B.places.length) ? `<div class="places${col ? ' col' : ''}"><div class="sect" data-slot="back.placesTitle" data-lines="1">${esc(B.placesTitle)}</div><div class="grid">` +
     B.places.map((p, i) => `<div class="pr"><span data-slot="back.place${i}.n" data-lines="1" style="min-width:0">${esc(p.n)}</span><b data-slot="back.place${i}.d" data-lines="1">${esc(p.d)}</b></div>`).join('') + `</div></div>` : '';
@@ -83,7 +86,7 @@ window.brochureReady = (async function(){
   function left(){
     const P = C.left || {};
     return `${header(P, 'left')}
-      <div class="flow" style="top:92pt;bottom:29pt;gap:14pt">
+      <div class="flow" style="top:92pt;bottom:29pt;gap:7pt">
         ${spread(P.big, 'left.big', 316, true, P.big.mh || 200)}
         <div class="row" style="flex:1 1 0">${P.pair.map((it, i) => item(it, `left.pair${i}`, 'flex:1 1 0', 2)).join('')}</div>
         ${spread(P.strip, 'left.strip', 236, false, P.strip.mh || 120)}
@@ -95,28 +98,32 @@ window.brochureReady = (async function(){
     const P = C.right || {}, its = P.items || [];
     const rows = []; for(let i = 0; i < its.length; i += 2) rows.push(its.slice(i, i + 2));
     return `${header(P, 'right')}
-      <div class="flow" style="top:92pt;bottom:29pt;gap:12pt">
+      <div class="flow" style="top:92pt;bottom:29pt;gap:7pt">
         ${rows.map((r, ri) => r.length === 2 ? `<div class="row" style="flex:1 1 0">${r.map((it, i) => item(it, `right.item${ri * 2 + i}`, 'flex:1 1 0', 2)).join('')}</div>`
-          : `<div class="spread" data-fill="1" data-target="170" data-cap="2.3" style="flex:none">${AT.photo(D, r[0].photo, 'flex:0 0 330pt;min-height:24pt', `right.item${ri * 2}`)}<div class="txt" style="justify-content:center"><div class="h" data-slot="right.item${ri * 2}.h" data-lines="1">${esc(r[0].title)}</div>${r[0].dims ? `<div class="d" data-slot="right.item${ri * 2}.d" data-lines="1">${esc(dm(r[0].dims))}</div>` : ''}<div class="a" data-slot="right.item${ri * 2}.a" data-para="1" data-min="2">${esc(r[0].body)}</div></div></div>`).join('')}
+          : `<div class="spread" data-fill="1" data-target="170" data-cap="2.3" style="flex:none;flex-direction:row-reverse">${AT.photo(D, r[0].photo, 'flex:0 0 330pt;min-height:24pt', `right.item${ri * 2}`)}<div class="txt"><div class="h" data-slot="right.item${ri * 2}.h" data-lines="1">${esc(r[0].title)}</div>${r[0].dims ? `<div class="d" data-slot="right.item${ri * 2}.d" data-lines="1">${esc(dm(r[0].dims))}</div>` : ''}<div class="a" data-slot="right.item${ri * 2}.a" data-para="1" data-min="2">${esc(r[0].body)}</div></div></div>`).join('')}
       </div>`;
   }
 
   // ---------- back ----------
+  // owner 11/10/2026 (round 3, rule 1): the back's contact card runs the full width, shorter top to bottom (two rows), with the brokerage
+  // logo and office lines inside it; the nearby places run the full width above it (three columns), and the photos and plan grow
   function back(){
     const B = C.back || {}, pair = B.pair || [];
-    const planH = levels.length >= 4 ? 292 : 213, yardCol = planOK && levels.length === 3;
+    const planH = levels.length >= 4 ? 292 : 213, yardCol = planOK && levels.length === 3, colPlaces = planOK && levels.length >= 3;   // the places sit in the write-up's column (as the 11/9 page)
     const pairHTML = pair.length === 2 ? `<div class="row" style="flex:1 1 0">${pair.map((it, i) => item(it, `back.pair${i}`, 'flex:1 1 0', 2)).join('')}</div>`
       : pair.length === 1 ? `<div style="flex:1 1 0;display:flex;min-height:0">${spread(pair[0], 'back.pair0', 300, !!pair[0].subTitle, 100).replace(/class="spread" data-fill="1" data-target="100" data-cap="[\d.]+" style="flex:none"/, 'class="spread" data-fill="1" data-cap="2.3" style="flex:1"').replace(/<\/div><\/div>$/, (B.sizes ? gridBlock(B.sizesTitle || 'More room sizes', B.sizes, true) : '') + '</div></div>')}</div>` : '';
     const planBox = `<div class="planframe" id="planbox"${yardCol || levels.length >= 4 ? ' data-keep="1"' : ''} style="${yardCol ? 'flex:1 1 0;min-width:0' : `height:${planH}pt`}"><div class="sect abs" style="left:12pt;top:8pt" data-slot="back.planTitle" data-lines="1">Floor plan</div><div class="legend" id="planbox-leg"></div><div class="fine abs" id="planbox-disc" style="left:0;right:0;bottom:5pt;text-align:center;white-space:nowrap" data-slot="back.planDisc" data-fine="1" data-lines="1"></div></div>`;
     // with a three- or four-level plan: the yard photo runs the full width, and below it the plan board sits beside the write-up and the nearby places
-    const yardRow = `<div class="row" style="flex:none;gap:12pt;align-items:stretch">${planBox}<div class="txt" style="flex:0 0 ${B.colW || 150}pt;display:flex;flex-direction:column"><div class="h" data-slot="back.big.h" data-lines="1">${esc(B.big.title)}</div>${B.big.dims ? `<div class="d" data-slot="back.big.d" data-lines="1">${esc(dm(B.big.dims))}</div>` : ''}<div class="a" data-slot="back.big.a" data-para="1" data-min="2">${esc(B.big.body)}</div>${placesBlock(B, true)}</div></div>`;
+    const yardRow = `<div class="row" style="flex:none;gap:12pt;align-items:stretch;min-height:${B.yardPlanH || 236}pt">${planBox}<div class="txt" style="flex:0 0 ${B.colW || 150}pt;display:flex;flex-direction:column;justify-content:flex-start"><div class="h" data-slot="back.big.h" data-lines="1">${esc(B.big.title)}</div>${B.big.dims ? `<div class="d" data-slot="back.big.d" data-lines="1">${esc(dm(B.big.dims))}</div>` : ''}<div class="a" data-slot="back.big.a" data-para="1" data-min="2">${esc(B.big.body)}</div>${placesBlock(B, true)}</div></div>`;
     return `${kick(B.kicker, 'back.kicker')}${title(B.title, 'back.title')}<div class="hrule" style="top:78pt"></div>
-      <div class="flow" style="top:92pt;bottom:166pt;gap:12pt">
-        ${yardCol ? AT.photo(D, B.big.photo, 'flex:1 1 0;min-height:0', 'back.big') + yardRow : planOK && levels.length >= 4 ? `<div class="spread" style="flex:1 1 0">${AT.photo(D, B.big.photo, `flex:0 0 ${B.bigW || 300}pt`, 'back.big')}<div class="txt" style="justify-content:center"><div class="h" data-slot="back.big.h" data-lines="1">${esc(B.big.title)}</div><div class="a" data-slot="back.big.a" data-para="1" data-min="2">${esc(B.big.body)}</div>${placesBlock(B, true)}</div></div>` : item(B.big, 'back.big', 'flex:1.25 1 0', 2)}
+      <div class="flow" style="top:92pt;bottom:${792 - (colPlaces ? 684 : 623)}pt;gap:7pt">
+        ${yardCol ? AT.photo(D, B.big.photo, 'flex:1 1 0;min-height:0', 'back.big') + yardRow : planOK && levels.length >= 4 ? `<div class="spread" data-fill="1" data-cap="2.3" style="flex:1 1 0">${AT.photo(D, B.big.photo, `flex:0 0 ${B.bigW || 300}pt`, 'back.big')}<div class="txt" style="justify-content:flex-start"><div class="h" data-slot="back.big.h" data-lines="1">${esc(B.big.title)}</div><div class="a" data-slot="back.big.a" data-para="1" data-min="2">${esc(B.big.body)}</div>${placesBlock(B, true)}</div></div>` : item(B.big, 'back.big', 'flex:1.25 1 0', 2)}
         ${yardCol ? '' : planOK ? planBox : pairHTML}
-                ${yardCol || (planOK && levels.length >= 4) ? '' : placesBlock(B)}
       </div>
-      ${AT.card(D, [29, 636, 554, 121], C.footnote || '')}`;
+      ${colPlaces ? '' : `<div class="abs" style="left:29pt;top:623pt;width:554pt;height:58pt;display:flex;flex-direction:column;justify-content:flex-end">${placesBlock(B, false)}</div>`}
+      ${AT.card(D, [29, 691, 554, 66], '', {layout: 'panel', size: 'short', grow: 0,
+        s: {name: 20, nameFloor: 15, desigInline: true, wrap: false, phone: 13.5, line: 9.5, office: 9.5, hsW: 50, hsGap: 14, pad: [6, 14, 5], panelW: 160, panelPad: [5, 8], logo: {wide: [140, 30], square: [32, 32], tall: [34, 34]}}})}
+      <div class="abs fine" style="left:29pt;top:762pt;width:554pt;height:8pt;white-space:nowrap" data-slot="back.footnote" data-fine="1" data-lines="1">${esc(C.footnote || 'Information deemed reliable but not guaranteed.')}</div>`;
   }
 
   const panels = {front: cover(), left: left(), right: right(), back: back()};
@@ -166,6 +173,27 @@ window.brochureReady = (async function(){
     ph.style.flexBasis = (best || base) + 'pt';
   });
   document.querySelectorAll('[data-para]').forEach(el => AT.balance(el));
+  // owner 11/10/2026 (p110): a write-up beside a photo runs down to the photo's bottom; when it ends short the type grows (at most 12%)
+  document.querySelectorAll('.spread').forEach(sp => {
+    const ph = sp.querySelector(':scope > .ph'), tx = sp.querySelector(':scope > .txt'); if(!ph || !tx) return;
+    const paras = [...tx.querySelectorAll('.a, .a2')]; if(!paras.length) return;
+    const bot = () => { const r = document.createRange(); r.selectNodeContents(tx); return r.getBoundingClientRect().bottom; };
+    const pb = () => ph.getBoundingClientRect().bottom, H0 = ph.getBoundingClientRect().height;
+    if(pb() - bot() <= 4 * 96 / 72) return;
+    const base = paras.map(el => [parseFloat(getComputedStyle(el).fontSize), parseFloat(getComputedStyle(el).lineHeight)]);
+    let ok = 1;
+    for(let k = 1.01; k <= 1.121; k += .01){
+      paras.forEach((el, i) => { el.style.maxWidth = ''; el.style.fontSize = (base[i][0] * k) + 'px'; el.style.lineHeight = (base[i][1] * k) + 'px'; });
+      if(bot() > pb() + .5 || ph.getBoundingClientRect().height > H0 + .5) break;
+      ok = k; if(pb() - bot() <= 3 * 96 / 72) break; }
+    paras.forEach((el, i) => { el.style.fontSize = (base[i][0] * ok) + 'px'; el.style.lineHeight = (base[i][1] * ok) + 'px'; AT.balance(el); });
+    // then the leading opens a little (at most 12%) so the last line sits on the photo's bottom
+    let lk = 1;
+    for(let k = 1.01; k <= 1.121 && pb() - bot() > 2 * 96 / 72; k += .01){
+      paras.forEach((el, i) => { el.style.lineHeight = (base[i][1] * ok * k) + 'px'; });
+      if(bot() > pb() + .5 || ph.getBoundingClientRect().height > H0 + .5){ paras.forEach((el, i) => { el.style.lineHeight = (base[i][1] * ok * lk) + 'px'; }); break; }
+      lk = k; }
+  });
   issues.push(...AT.fitPhotos(D));
   // the plan, drawn into its box where the layout put it (the agent's own plan, placed as given)
   const bk = document.getElementById('planbox');
@@ -185,6 +213,8 @@ window.brochureReady = (async function(){
     issues.push(...pl.issues);
     if(levels.length === 1) pl.html = pl.html.replace(/<div class="abs plan-level"[^>]*>[^<]*<\/div>/g, '');   // a one-story plan carries no floor name
     const layer = document.createElement('div'); layer.className = 'planlayer'; layer.innerHTML = pl.html; panelEl.appendChild(layer);
+    AT.fixPlanLabels();
+    if(window.PlanInk) PlanInk.applyAll(D, false);   // owner 11/10: clear plan background on the white paper
     const Z = PlanDraw.ZONES, zs = PlanDraw.zonesOf(D.plan);
     document.getElementById('planbox-leg').innerHTML = Object.keys(Z).filter(k => zs.includes(k)).map(k => `<span style="display:inline-flex;align-items:center;margin:0 9pt"><i style="display:inline-block;width:10pt;height:10pt;margin-right:5pt;border:.6pt solid rgba(34,34,34,.45);background:color-mix(in srgb, ${Z[k].fill} ${Math.round(Z[k].op * 100)}%, var(--paper))"></i>${esc(Z[k].label)}</span>`).join('');
     document.getElementById('planbox-disc').textContent = (C.back && C.back.planDisc) || 'Approximate; not to scale. Buyer to verify.';
@@ -200,6 +230,8 @@ window.brochureReady = (async function(){
   window.proofNotes.push({gaps: [...document.querySelectorAll('.spread, .row')].map(sp => { const ph = sp.querySelector(':scope > .ph'), tx = sp.querySelector(':scope > .txt'); if(!ph || !tx) return null; const r = document.createRange(); r.selectNodeContents(tx); return {slot: ph.dataset.slotPhoto, gap: Math.round(pt(ph.getBoundingClientRect().bottom - r.getBoundingClientRect().bottom))}; }).filter(Boolean)});
   window.proofNotes.push({photos: [...document.querySelectorAll('.ph')].map(el => ({slot: el.dataset.slotPhoto, w: Math.round(pt(el.clientWidth)), h: Math.round(pt(el.clientHeight))}))});
   ContactCard.fit(document);
+  await document.fonts.ready; CapFit.run(document.querySelectorAll('.cap .a, .fc .a, .tx .a'));
+  if(window.LastFix){ await document.fonts.ready; LastFix.run(document, ((D.copy || {}).pc || {}).alts || {}); }   // no last line under 80% (owner 11/10)
   window.brochureCheck = () => AT.check(D, issues);
   window.photoPlacements = AT.placements;
 })();

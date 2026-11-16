@@ -65,7 +65,8 @@ window.brochureReady = (async function(){
   if(front){
     // ---------- front ----------
     const pw = big ? 450 : 396, ph = 266, sx = pw + 10, sw = W + 9 - sx, sh = (ph + 9 - 10)/2;
-    const sd = C.side || [];
+    // the two side windows: the writer's picks, else the listing's first two interior photos (an empty photo slot never ships)
+    const sd = (C.side && C.side.length ? C.side : Object.keys(D.photos || {}).filter(id => id !== (C.hero || 'front') && !/front|exterior|street|aerial|plan/i.test(id + ' ' + ((D.photos[id] || {}).tags || '')))).slice(0, 2);
     h += `<div class="abs" data-gapcheck="front.windows" style="left:0;top:0">${SP.photo(D, C.hero || 'front', -9, -9, pw + 9, ph + 9, 'front.hero')}${SP.photo(D, sd[0], sx, -9, sw, sh, 'front.side0')}${SP.photo(D, sd[1], sx, -9 + sh + 10, sw, sh, 'front.side1')}</div>`;
     const ry = ph + 14;
     if(!sold) h += `<div class="abs facts" style="left:${M}pt;top:${ry}pt;width:${W - 2*M}pt">${SP.stats(L).map((t, i) => `<span data-slot="front.fact${i}" data-lines="1">${esc(t)}</span>`).join('')}</div>`;
@@ -86,6 +87,7 @@ window.brochureReady = (async function(){
     const Z = SP.mail(W), X = M, LZ = Z.zA[0] - 12, rW = Z.zP[0] - 12 - Z.zA[0], pTop = 56;
     h += `<div class="abs" data-blk="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:15pt;background:var(--accent)"></div>`;
     const ret = SP.returnLines(D);
+    if(ret.length < 3) issues.push({slot: 'address.return', kind: 'return-address-missing', detail: 'the brokerage street and city line are missing from the return address (brand.returnAddress); owner 11/10/2026 rule 10'});   // every mailer back: the full return address (owner 11/10/2026, rule 10)
     h += `<div class="abs ret" style="left:${Z.zA[0]}pt;top:16pt;width:${rW}pt;height:32pt${sold ? ';text-align:right' : ''}" data-slot="return" data-lines="3"><b>${esc(ret[0] || '')}</b>${ret.slice(1).map(r => '<br>' + esc(r)).join('')}</div>`;
     h += `<div class="abs bst" style="left:${X}pt;top:18pt;width:${LZ - X}pt;height:22pt"><span class="pillb" data-slot="back.status" data-lines="1">${esc(status)}</span><span class="a" data-slot="back.addr" data-lines="1" data-fit="11">${esc(L.address)}</span></div>`;
     const cap = (c, x, y, w, slot, row) => `<div class="abs cap bcap" style="left:${x}pt;top:${y + 4}pt;width:${w}pt"><div class="nm" data-slot="${slot}.t" data-lines="1">${esc(c.t)}</div></div>

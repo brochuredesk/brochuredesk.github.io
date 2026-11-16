@@ -284,7 +284,8 @@
   // and the one brokerage logo (right of the text when the block is wide enough, else under it). A set passes only colors and fonts.
   // o: w (pt, required); k (scale, default 1); ink, sub, bar (colors); disp, body, label (CSS font-family stacks);
   //    dw (name weight, default 600); fb, fs (smallest body / small sizes); nameMax (pt at k=1); tone ('light'|'dark'|'knockout' logo);
-  //    logoMaxH; barW (default 3); headshot (true: use D.agent.headshot); email, web (true to show); tight; logo:false to omit.
+  //    logoMaxH; barW (default 3); headshot (true: use D.agent.headshot); email, web (true to show); tight; logo:false to omit;
+  //    nameMin (pt, added 11/6: the name's smallest start size, default FB*1.45; a smaller contact where the owner asked for one).
   // Returns {h, w, bad, draw(x, y)}; h includes the logo row when stacked.
   SP.contact = (D, o) => {
     const A = D.agent || {}, r1 = SP.r1, wd = SP.width, fit = SP.fitSize, T = SP.T, esc = Ivory.esc, k = o.k || 1, w = o.w;
@@ -294,7 +295,7 @@
     const showLogo = o.logo !== false && !!(D.brand || {}).logo, wide = w >= 300;
     const logoW = showLogo ? (wide ? r1(Math.min(w*.3, 120*k)) : r1(Math.min(w*.5, 110*k))) : 0, logoH = showLogo ? r1(Math.min(o.logoMaxH || 44, logoW*.36)) : 0;
     const tx = barW + 8 + (hsd ? hsd + 8 : 0), tw = w - tx - (showLogo && wide ? logoW + 10 : 0);
-    const nS = fit(A.name || '', ncss, tw, r1(Math.max(FB*1.45, (o.nameMax || 22)*k)), FB), nH = r1(nS*(tight ? 1.12 : 1.22));
+    const nS = fit(A.name || '', ncss, tw, r1(Math.max(o.nameMin || FB*1.45, (o.nameMax || 22)*k)), FB), nH = r1(nS*(tight ? 1.12 : 1.22));
     const nar = A.nar || /realtor/i.test(A.designation || ''), dS = Math.max(FS, r1(10*k)), dH = r1(dS*(tight ? 1.2 : 1.5));
     const lab = (A.phoneLabel || 'Call / Text').toUpperCase(); let pS = r1(Math.max(FB*1.1, 16*k)); const lS = Math.max(FS, r1(9.5*k));
     const one = () => wd(lab, `${lcss};font-size:${lS}pt`) + 8 + wd(A.phone || '', `font-weight:700;${bcss};font-size:${pS}pt`) <= tw;

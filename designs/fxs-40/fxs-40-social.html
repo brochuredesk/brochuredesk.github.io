@@ -279,7 +279,7 @@ FXP.start(['400 20pt "Great Vibes"', '500 20pt Oswald', '600 20pt Oswald', '700 
         else { parts.forEach((pt2, i) => { const l = capsLn(i ? 'place' + i : 'place', pt2, x + 2, yy, cw, 28*SC, 1.2, GOLD); html += l.html; yy += l.h; h += l.h; }); }
         return {h, html}; };
       if(kind === 'oh'){ f.push(wrap(y => bBadge(x, y, cw, k)));
-        f.push(wrap(y => { const out2 = []; let yy = y; const lines2 = OHL.labelLines(E.label.toUpperCase(), 2);
+        f.push(wrap(y => { const out2 = []; if(shape === 'gbp') y -= 22*SC; let yy = y; const lines2 = OHL.labelLines(E.label.toUpperCase(), 2);   /* 11/13: the gbp event sits centered between the kicker and the page foot */
           const single = true;
           const lab = tp({slot: 'oh.label', text: E.label.toUpperCase(), parts: single ? null : lines2, css: caps(600, .3, TK.accent) + ';font-family:Oswald', x, y: yy, w: cw, max: 46*SC*k, min: F.ev, lines: single ? 1 : 2, lh: 1.12}); out2.push(lab.html); yy += lab.h/K + 6*SC;
           const wk = capsLn('oh.weekday', E.weekday, x + 1, yy, cw, 30*SC, 3.6, GOLD); out2.push(wk.html); yy += wk.h + 2;
@@ -343,7 +343,7 @@ FXP.start(['400 20pt "Great Vibes"', '500 20pt Oswald', '600 20pt Oswald', '700 
     // the Open House: the label across the panel, then the badge with the day, date and time beside it where they fit
     const ohD = Math.round(Math.max(210*SC, bNeed)), evW = Math.max(FXP.width(String(E.monthDay || E.long), `font-family:Oswald;font-weight:700;font-size:${F.ev}pt`), FXP.width(E.time || '', `font-family:Oswald;font-weight:700;font-size:${F.ev}pt`))/K + 8, ohSide = cw - ohD - 30*SC >= evW;
     const ohRow = (y, k) => { const d = Math.round(Math.max(ohD, Math.min(250*SC*k, cw - evW - 30*SC))), ex = x + d + 30*SC, ew = cw - d - 30*SC, e0 = ohEvent(0, k, ex, ew, 'when'), hh = Math.max(d, e0.h);
-      return {h: hh, html: badgeAt(x + d/2, y + (hh - d)/2 + d/2, d) + ohEvent(y + (hh - e0.h)/2, k, ex, ew, 'when').html}; };
+      return {h: hh, html: badgeAt(x + d/2, y + (hh - d)/2 + d/2, d) + ohEvent(y + (hh - e0.h)/2 + (shape === 'wide' ? 27*SC : 0), k, ex, ew, 'when').html}; };   /* 11/13: day, date and time centered top to bottom beside the badge */
     let ohFacts = true;   // the Open House adds the fact rows under the badge row where they fit (no empty field)
     const make = k => { if(kind === 'oh' && ohSide) return [wrap(y => ohEvent(y, k, x, cw, 'label')), wrap(y => ohRow(y, k))].concat(ohFacts ? [wrap(y => factRows(y, k))] : []);
       const f = [wrap(y => lockBadge(y, k))];

@@ -22,7 +22,7 @@
   function photos(){
     const out = [];
     const add = (el, src) => {
-      if(!visible(el) || SKIP.test(src || '') || skipped(el)) return;
+      if(!visible(el) || SKIP.test(String(src || '').split(/[\\/]/).pop()) || skipped(el)) return;
       const r = el.getBoundingClientRect(); if(r.width < 60 * PT || r.height < 45 * PT) return;
       out.push({el, r, page: el.closest('.page, [data-page], .pg') || document.body});
     };

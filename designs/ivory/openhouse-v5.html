@@ -52,7 +52,9 @@ Ivory.whenFonts(function(){
   h += `<div class="bar" style="left:${inset}pt;top:${inset}pt;width:${612-2*inset}pt;height:${62-inset}pt"></div>`;
   h += `<div class="abs label ev-label" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
   // tall hero down the left, from the bar to just above the address
-  h += Ivory.photo(D, '', hero, `left:${inset}pt;top:62pt;width:${288-inset}pt;height:440pt`);
+  // the hero's own caption under it (owner 11/10/2026: every photo gets a caption); the photo gives up the room
+  const HH = 440 - Ivory.CAPH + 4, HB = 62 + HH + Ivory.CAPH;
+  h += Ivory.photo(D, '', hero, `left:${inset}pt;top:62pt;width:${288-inset}pt;height:${HH}pt`) + Ivory.capBlock(D, hero, 36, 62 + HH, 252, 'hero');
   // the right column
   if(O.weekday){
     h += `<div class="abs display ev-wd" data-slot="oh.weekday" data-lines="1">${esc(O.weekday)}</div>`;
@@ -93,6 +95,27 @@ Ivory.whenFonts(function(){
     for(let n = sn.length; n >= 1; n--){ const t = sn.slice(0, n).join('').trim(), z = fitNote(t); if(z){ noteSize[id] = z; return t; } }
     return ''; };
   [s1, s2].forEach(id => { if(id && !notes[id]) notes[id] = roomCopy(id); });
+  // three full lines under each photo (owner 11/10/2026, p8: a third line under Family Room): the note's own sentences
+  // first, then true sentences from that room's write-up in the brochure copy, at the size (8.5 to 10 pt) that sets three
+  // lines with a full last line
+  const fit3 = t => { const m = document.createElement('div'); m.className = 'body'; document.body.appendChild(m);
+    m.style.cssText = 'position:absolute;left:-9999pt;top:0;width:272pt;height:auto;white-space:normal;text-align:left';
+    let out = null; for(let z = 8.5; z <= 10.001 && !out; z += .25){ m.textContent = t; m.style.fontSize = z + 'pt'; m.style.lineHeight = (z*1.2) + 'pt';
+      const rg = document.createRange(); rg.selectNodeContents(m); const bw = m.getBoundingClientRect(), rows = [];
+      [...rg.getClientRects()].filter(q => q.width > 1).forEach(q => { const o = rows.find(x => Math.abs(x.top - q.top) < 3); if(o) o.right = Math.max(o.right, q.right); else rows.push({top:q.top, right:q.right}); });
+      if(rows.length === 3 && (rows[2].right - bw.left)/bw.width >= .85) out = z; }
+    m.remove(); return out; };
+  const sents = t => (String(t||'').match(/[^.!?]+[.!?]+["”’)]*/g) || []).map(x => x.trim()).filter(Boolean);
+  [s1, s2].forEach(id => { if(!id) return;
+    const K = D.copy || {}, all = []; Object.values(K).forEach(v => { if(v && typeof v === 'object') ['features','tiles'].forEach(k => (v[k]||[]).forEach(f => all.push(f))); });
+    const f = all.find(f => f.photo === id) || {}, own = sents(notes[id]), pool = own.slice();
+    sents(f.body).concat(sents(f.caption)).forEach(x => { const k = x.toLowerCase().replace(/[^a-z0-9 ]/g, ''); if(!pool.some(p => p.toLowerCase().replace(/[^a-z0-9 ]/g, '') === k)) pool.push(x); });
+    // the note's own sentences always stay; more come in order, then any pick of the rest in order
+    const rest = pool.slice(own.length), picks = [];
+    for(let m = 0; m < (1 << Math.min(rest.length, 6)); m++) picks.push(rest.filter((x, i) => m & (1 << i)));
+    picks.sort((a, c) => a.length - c.length);
+    for(const ex of picks){ const t = own.concat(ex).join(' '), z = fit3(t); if(z){ notes[id] = t; noteSize[id] = z; break; } } });
+
   [[s1,p0],[s2,p0+ph+capH]].forEach(([id,py],i)=>{
     const c = Ivory.caption(D, id);
     h += Ivory.photo(D, '', id, `left:304pt;top:${py}pt;width:272pt;height:${ph}pt`);
@@ -112,9 +135,10 @@ Ivory.whenFonts(function(){
   const f = Ivory.frame(D, 612, 792, h);
   document.getElementById('pages').innerHTML = f.html;
   Ivory.shapeLogos();
+  Ivory.fitTags();
   // street (1-3 lines), city and state at the same size, then the facts: one block, centered between the hero and the card
   { const ad = document.querySelector('.address'), used = Math.min(3, Ivory.linesNeeded('display address', PS(L.address), 254, 35)),
-        blockH = used*35 + 26 + 8 + 20, top = Math.round(502 + (650 - 502 - blockH)/2);
+        blockH = used*35 + 26 + 8 + 20, top = Math.round(HB + (650 - HB - blockH)/2);
     ad.style.top = top+'pt'; ad.style.height = (used*35+1.5)+'pt';
     document.querySelector('.cityline').style.top = (top + used*35)+'pt';
     document.querySelector('.factline').style.top = (top + used*35 + 26 + 8)+'pt'; }

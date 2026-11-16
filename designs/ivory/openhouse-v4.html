@@ -78,7 +78,7 @@ Ivory.whenFonts(function(){
 
   // the four room photos sit right under the rule (10/30: moved up) and fill down to the card; each has its label and two lines about the room
   const blurb = (C.openHouse||{}).blurb || (C.listing||{}).body || '';
-  const CARD = 636, TXT = 36.5, pbot = CARD - 6 - TXT;
+  const CARD = 636, TXT = [s1,s2,s3,s4].some(i => (((C.roomLines||{})[i])||{}).long) ? 46.5 : 36.5, pbot = CARD - 6 - TXT;
   const withBlurb = !!blurb && (pbot - 84 - 10 - (A + 64)) >= 28;
   let ph = withBlurb ? 84 : pbot - (A + 66);
   if(!withBlurb && ph > 118){ A += (ph - 118)/2; ph = 118; }
@@ -93,7 +93,8 @@ Ivory.whenFonts(function(){
     h += Ivory.photo(D, '', id, `left:${x}pt;top:${pt}pt;width:${pw}pt;height:${ph}pt`);
     const c = Ivory.caption(D, id), two = (((C.roomLines||{})[id])||{}).long || c.detail;
     h += c.name ? `<div class="abs cap-name" style="left:${x}pt;top:${pt+ph+4}pt;width:${pw}pt;height:10.5pt" data-slot="row${i}.name" data-lines="1">${esc(c.name)}</div>` : Ivory.ghost(x, pt+ph+4, pw*0.55, 1, 10);
-    h += two ? `<div class="abs cap-detail rm-desc" style="left:${x}pt;top:${pt+ph+15.5}pt;width:${pw}pt" data-slot="row${i}.detail" data-lines="2">${esc(two)}</div>` : '';
+    const long = (((C.roomLines||{})[id])||{}).long;   // without the writer's two lines, the photo's own true details fill two lines (owner 11/10/2026)
+    h += two ? `<div class="abs cap-detail rm-desc" style="left:${x}pt;top:${pt+ph+15.5}pt;width:${pw}pt;${long ? 'height:31pt' : ''}" data-slot="row${i}.detail" data-lines="${long ? 3 : 2}"${long ? '' : ` data-tags="${Ivory.tagsAttr(D, id)}" data-tl="2"`}>${esc(two)}</div>` : '';
   });
   // the write-up (when the writer gave one): fully justified between the rule and the photos
   const blTop = A + 64, blAvail = pt - 10 - blTop;
@@ -106,6 +107,7 @@ Ivory.whenFonts(function(){
   const f = Ivory.frame(D, 612, 792, h);
   document.getElementById('pages').innerHTML = f.html;
   Ivory.shapeLogos();
+  Ivory.fitTags();
   window.pieceSize = {W:f.W, H:f.H, bleed:f.bleed};
   const blEl = document.querySelector('[data-slot="oh.blurb"]');
   if(blEl){

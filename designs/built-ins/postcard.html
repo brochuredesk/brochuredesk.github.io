@@ -6,7 +6,9 @@
 <link rel="stylesheet" href="built-ins.css">
 <link rel="stylesheet" href="built-ins-cards.css">
 <script src="built-ins.js"></script>
+<script src="lastfix.js"></script>
 <script src="built-ins-cards.js"></script>
+<script src="capfit.js"></script>
 <!--
   Built-In Details · Just Listed and Just Sold postcards. data.piece: card "listed" | "sold", size "6x9" (trim 648 x 432 pt)
   | "6x11" (trim 792 x 432 pt), side "front" | "back". Print adds 0.125 in (9 pt) bleed on every edge (TrimBox set by the renderer).
@@ -36,7 +38,7 @@ window.brochureReady = (async function(){
   const esc = AT.esc, L = D.listing, A = D.agent || {}, b = D.brand || {};
   const issues = await AT.fontsReady(D);
   const sold = D.piece.card === 'sold', big = D.piece.size === '6x11', front = D.piece.side === 'front';
-  const PCall = ((D.copy || {}).pc || {}), PC = (sold ? PCall.js : PCall.jl) || {};
+  const PCall = AT.pcCopy(D), PC = (sold ? PCall.js : PCall.jl) || {};
   document.body.dataset.mode = D.mode || 'email';
   const PT = 96/72, W = big ? 792 : 648, H = 432, M = 27, status = sold ? 'Just Sold' : 'Just Listed';
   const dm = s => String(s);   // room sizes read 24' x 17' on every piece (owner 11/1 Round 4)
@@ -46,7 +48,10 @@ window.brochureReady = (async function(){
 
   if(front){
     // ---------- front ----------
-    const xR = big ? 497 : 420, ph = sold ? 330 : 261, cx = xR + 18, cw = W - M - cx, S = big ? (sold ? 64 : 46) : (sold ? 62 : 50), LH = Math.round(S*1.08);
+    // owner standing rule: the exterior keeps the whole house, roof and sides. A tall house (its box needs more of the photo's height than a
+    // wide frame shows) takes a narrower photo, and the column beside it grows
+    const ph = sold ? 330 : 261, hp0 = (D.photos || {})[(PC.hero || 'front')] || {}, hb0 = hp0.box, needH = hb0 ? Math.min(1, hb0[3] - hb0[1] + .04) : 0;
+    const xR = Math.min(big ? 497 : 420, hb0 && hp0.w ? Math.floor(ph * (hp0.w / hp0.h) / needH) - 9 : 999), cx = xR + 18, cw = W - M - cx, S = big ? (sold ? 64 : 46) : (sold ? 62 : 50), LH = Math.round(S*1.08);
     h += AT.photo(D, hero, `position:absolute;left:-9pt;top:-9pt;width:${xR + 9}pt;height:${ph}pt`, 'front.hero', 'hero');
     const AL = big ? 26 : 22;
     let bottom;
@@ -87,7 +92,7 @@ window.brochureReady = (async function(){
     h += `<div class="bnd" data-blk="1" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:15pt"></div><div class="bnd" data-blk="1" style="left:-9pt;top:-9pt;width:${bandR + 9}pt;height:53pt"></div>`;
     h += `<div class="abs bst" style="left:${X}pt;top:7pt;width:${bandR - X - 14}pt;height:32pt" data-slot="status" data-lines="1"><span class="st">${esc(status)}</span><span class="ln"></span><span class="ad">${esc(short)}</span>
       <span class="ln" style="max-width:30pt"></span><span class="ret">${b.brokerage ? '<b>' + esc(b.brokerage) + '</b>' : ''}${ret.map(r => '<br>' + esc(r)).join('')}</span></div>`;
-    const cap = (c, id, x, y, w, slot, lines) => `<div class="abs bcap" id="${id}" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.title" data-lines="1">${esc(c.title)}</div>${c.dims ? `<div class="d" style="font:600 8pt/10pt var(--font-body);letter-spacing:.6pt;color:var(--signal);white-space:nowrap;overflow:hidden" data-slot="${slot}.dims" data-lines="1">${esc(dm(c.dims))}</div>` : ''}<div class="a" data-slot="${slot}" data-para="1" data-min="2" data-lines="${lines || 3}" data-nobal="1">${esc(c.text)}</div></div>`;
+    const cap = (c, id, x, y, w, slot, lines) => `<div class="abs bcap" id="${id}" style="left:${x}pt;top:${y}pt;width:${w}pt"><div class="h" data-slot="${slot}.title" data-lines="1">${esc(c.title)}</div>${c.dims ? `<div class="d" style="font:600 8pt/10pt var(--font-body);letter-spacing:.6pt;color:var(--signal);white-space:nowrap;overflow:hidden" data-slot="${slot}.dims" data-lines="1">${esc(dm(c.dims))}</div>` : ''}<div class="a"${c.x ? ` data-x="${esc(JSON.stringify(c.x))}"` : ''}${c.dims ? '' : ' data-grow="1"'} data-slot="${slot}" data-para="1" data-min="2" data-lines="${lines || (c.dims ? 3 : 4)}" data-nobal="1">${esc(c.text)}</div></div>`;
     const pTop = 54, avail = LZ - X;
     let slab;
     if(!sold){
@@ -98,20 +103,21 @@ window.brochureReady = (async function(){
       if(rItem){
         h += AT.photo(D, rItem.photo, `position:absolute;left:${zA[0]}pt;top:${pTop}pt;width:${rW}pt;height:66pt`, 'back.photoR', 'bp');
         h += cap(rItem, 'capR', zA[0], pTop + 66, rW, 'back.capR'); }
-      h += `<div class="abs kicker" id="jlk" style="left:${X}pt;width:${avail}pt;height:10pt" data-slot="about.label" data-lines="1">${esc(PC.aboutLabel || 'The house')}</div>`;
-      h += `<div class="abs ptxt" id="jlp" style="left:${X}pt;width:${avail}pt;font-size:9.5pt;line-height:13.5pt" data-slot="about" data-para="1" data-min="3" data-nobal="1">${esc(big ? PC.about11 : PC.about9)}</div>`;
+      // round 3: the label runs in at the start of the write-up and a brick hairline sits just under the captions, so no gap opens under them
+      h += `<div class="abs" id="jlr" style="left:${X}pt;width:${avail}pt;height:.8pt;background:var(--line)"></div>`;
+      h += `<div class="abs ptxt" id="jlp" style="left:${X}pt;width:${avail}pt;font-size:9.5pt;line-height:13.5pt" data-slot="about" data-para="1" data-min="3" data-nobal="1"><span class="runin" data-slot="about.label" data-lines="1">${esc(PC.aboutLabel || 'The house')}</span>${esc(big ? PC.about11 : PC.about9)}</div>`;
       slab = PC.slab || {};
     } else {
-      const ids = PC.photos || [], gap = 10, pw = (avail - gap)/2, ph1 = 124;
+      const ids = PC.photos || [], gap = 10, pw = (avail - gap)/2, ph1 = 158;   // round 3: the photos run down so the write-up ends just over the card
       ids.slice(0, 2).forEach((id, i) => { h += AT.photo(D, id, `position:absolute;left:${(X + i*(pw + gap)).toFixed(2)}pt;top:${pTop}pt;width:${pw.toFixed(2)}pt;height:${ph1}pt`, 'back.photo' + i, 'bp'); });
       const items = (big ? (PC.services11 || PC.services) : PC.services) || [];
       h += `<div class="abs kicker" style="left:${zA[0]}pt;top:${pTop}pt;width:${rW}pt;height:10pt" data-slot="sold.servicesLabel" data-lines="1">${esc(PC.servicesLabel || 'What I do for sellers')}</div>`;
       h += `<div class="abs svc" style="left:${zA[0]}pt;top:${pTop + 16}pt;width:${rW}pt;height:${182 - pTop - 16}pt">${items.map((s, i) => `<div class="it"><span class="bx"></span><span data-slot="sold.svc${i}" data-lines="3">${esc(s)}</span></div>`).join('')}</div>`;
       const my = pTop + ph1 + 10;
       h += `<div class="abs kicker" style="left:${X}pt;top:${my}pt;width:${avail}pt;height:10pt" data-slot="sold.meetLabel" data-lines="1">${esc(PC.meetLabel || 'When we meet')}</div>`;
-      const lh = 16, ty = my + 15, nl = 3;
-      h += `<div class="abs ptxt jt" style="left:${X}pt;top:${ty}pt;width:${avail}pt;height:${nl*lh}pt;font-size:11pt;line-height:${lh}pt" data-slot="sold.meet" data-para="1" data-min="2" data-fillbox="1" data-nobal="1">${esc(big ? PC.meet11 : PC.meet9)}</div>`;
-      h += `<div class="abs dsp" style="left:${X}pt;top:${ty + nl*lh + 12}pt;width:${avail}pt;height:24pt;font-size:19pt;line-height:24pt;color:var(--signal)" data-slot="sold.call" data-lines="1">${esc(PC.call || 'Call or text me anytime.')}</div>`;
+      // round 3: the call line runs on at the end of the write-up in the brick serif, so the text runs the full width down to the card
+      const lh = 16, ty = my + 15, nl = 4;
+      h += `<div class="abs ptxt jt" id="meet" style="left:${X}pt;top:${ty}pt;width:${avail}pt;height:${nl*lh}pt;font-size:11pt;line-height:${lh}pt" data-slot="sold.meet" data-para="1" data-min="2" data-fillbox="1" data-nobal="1">${esc(big ? PC.meet11 : PC.meet9)} <span class="dsp" style="font-size:13.5pt;line-height:1;color:var(--signal);white-space:nowrap" data-slot="sold.call">${esc(PC.call || 'Call or text me anytime.')}</span></div>`;
       slab = PC.slab || {};
     }
     h += `<div class="slab" data-blk="1" style="left:${zP[0]}pt;top:116pt;width:${W - zP[0] + 9}pt;height:68pt;padding:6pt ${9 + 9}pt 6pt 9pt"><div class="big" data-slot="slab.big" data-lines="2">${esc(slab.big || '')}</div><div class="sub" data-slot="slab.sub" data-lines="3">${esc(slab.sub || '')}</div></div>`;
@@ -137,20 +143,38 @@ window.brochureReady = (async function(){
   const hd = document.getElementById('head'); if(hd) AT.fitLine(hd, 34);
   const an = document.getElementById('agname'); if(an) AT.fitLine(an, 13);
   // Just Listed back: the write-up sits at the bottom of the left zone and the row of rooms takes whatever height is left
+  // captions fill every line and end level (owner 11/8, 11/10): a caption with no room size under its name may take one more true line
+  await document.fonts.ready; CapFit.run(document.querySelectorAll('.bcap .a'));
+  // the Just Sold write-up runs exactly its four lines: the type moves a little until it does
+  { const m = document.getElementById('meet'); if(m){ let done = false;
+      for(const n of [4, 5]){ const lh = 64 / n; m.style.lineHeight = lh + 'pt';
+        for(const fs of [11, 11.25, 11.5, 11.75, 12, 12.25, 12.5, 10.75, 10.5, 10.25, 10, 9.75, 9.5]){ if(fs > lh * .8) continue; m.style.fontSize = fs + 'pt'; const rg = document.createRange(); rg.selectNodeContents(m); const tb = rg.getBoundingClientRect().bottom, bb = m.getBoundingClientRect().bottom;
+          if(m.scrollHeight <= m.clientHeight + 1 && tb <= bb + 1 && bb - tb < lh * .7 * 96 / 72){ done = true; break; } }
+        if(done) break; } } }
   const jlp = document.getElementById('jlp');
+  // the write-up's last line runs 80%+ (owner 11/10): a small type step (at most +12%) or one of the copy's own true alternate wordings
+  if(jlp){ const lab = jlp.querySelector('.runin'), body0 = jlp.lastChild.textContent, W = () => jlp.getBoundingClientRect().width;
+    const rows = () => { const rg = document.createRange(); rg.selectNodeContents(jlp); const out = []; for(const b of rg.getClientRects()){ if(b.width < .5) continue; const r = out.find(x => Math.abs(x.top - b.top) < b.height*.5); if(r){ r.l = Math.min(r.l, b.left); r.r = Math.max(r.r, b.right); } else out.push({top: b.top, l: b.left, r: b.right}); } return out.sort((x, y) => x.top - y.top); };
+    const last = () => { const R = rows(), L = R[R.length - 1]; return {n: R.length, k: L ? (L.r - jlp.getBoundingClientRect().left) / W() : 0}; };
+    if(last().k < .8){ const alts = [body0].concat(((PCall.alts || {}).about || []).filter(Boolean)), n0 = last().n; let done = false;
+      for(const tx of alts){ jlp.lastChild.textContent = tx;
+        for(const sc of [1, 1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1, 1.11, 1.12]){ for(const ls of [0, .005, -.005, .01, -.01]){
+          jlp.style.fontSize = (9.5 * sc) + 'pt'; jlp.style.letterSpacing = ls ? ls + 'em' : ''; const f = last();
+          if(f.n <= n0 + 1 && f.k >= .82 && f.k <= 1.001){ done = true; jlp.dataset.fixed = '1'; break; } } if(done) break; }
+        if(done) break; }
+      if(!done){ jlp.lastChild.textContent = body0; jlp.style.fontSize = '9.5pt'; jlp.style.letterSpacing = ''; } } }
   if(jlp){
-    AT.balance(jlp);
     const lh = 13.5, nl = AT.lines(jlp), yB = 300, pT = yB - nl*lh;
     jlp.style.top = pT + 'pt'; jlp.style.height = (nl*lh) + 'pt';
-    document.getElementById('jlk').style.top = (pT - 14) + 'pt';
+    document.getElementById('jlr').style.top = (pT - 5) + 'pt';
     const caps = [...document.querySelectorAll('.bcap')].filter(c => c.id !== 'capR'), capH = Math.max(...caps.map(c => AT.pt(c.getBoundingClientRect().height)));
-    const phh = pT - 14 - 9 - 54 - capH;
+    const phh = pT - 9 - 54 - capH;
     document.querySelectorAll('.rowph').forEach(p => { p.style.height = phh + 'pt'; });
     caps.forEach(c => { c.style.top = (54 + phh) + 'pt'; });
   }
   issues.push(...AT.fitHouse(D));
   document.querySelectorAll('[data-para]:not([data-nobal])').forEach(el => AT.balance(el));
-  document.querySelectorAll('.bcap .a, .cap .a').forEach(el => AT.balance(el));
+  document.querySelectorAll('.bcap .a, .cap .a').forEach(el => { if(!el.dataset.fixed) AT.balance(el); });
   if(window.mailZones){
     const sh = document.querySelector('.sheet').getBoundingClientRect(), P = r => ({l:(r.left - sh.left)/PT, r:(r.right - sh.left)/PT, t:(r.top - sh.top)/PT, b:(r.bottom - sh.top)/PT});
     const hit = (q, z) => q.l < z[0] + z[2] - .5 && q.r > z[0] + .5 && q.t < z[1] + z[3] - .5 && q.b > z[1] + .5;
@@ -169,10 +193,13 @@ window.brochureReady = (async function(){
   { const cs = [...document.querySelectorAll('.cap .a')]; if(cs.length){ const base = cs.map(c => AT.lines(c));
     for(let s = 9; s <= 10; s += .5){ cs.forEach(c => { c.style.fontSize = s + 'pt'; c.style.lineHeight = (s*1.35) + 'pt'; });
       if(cs.some((c, i) => AT.lines(c) !== base[i])){ const p = s - .5; cs.forEach(c => { c.style.fontSize = p + 'pt'; c.style.lineHeight = (p*1.35) + 'pt'; }); break; } } } }
+  CapFit.run(document.querySelectorAll('.cap .a'));
   ContactCard.fit(document);
   window.proofNotes = [{paragraphs: [...document.querySelectorAll('[data-para]')].map(el => { const ls = AT.lineBoxes(el), w = el.getBoundingClientRect().width, last = ls[ls.length-1];
     return {slot: el.dataset.slot, lines: ls.length, last: last ? Math.round((last.r - last.l)/w*100) : 0, chars: el.textContent.trim().length, wPt: Math.round(AT.pt(w))}; })}];
   window.photoPlacements = AT.placements;
+  if(!front && ![].concat((D.brand || {}).returnAddress || (D.brand || {}).address || []).filter(Boolean).length) issues.push({slot: 'return', kind: 'return-address-missing'});   /* every mailer back carries the brokerage's full return address (owner 11/10) */
+  if(window.LastFix){ await document.fonts.ready; LastFix.run(document, ((D.copy || {}).pc || {}).alts || {}); }   // no last line under 80% (owner 11/10)
   window.brochureCheck = () => AT.checkSingle(D, issues);
 })();
 </script>

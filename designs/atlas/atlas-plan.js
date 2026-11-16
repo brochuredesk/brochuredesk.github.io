@@ -582,7 +582,7 @@
     return o ? `<svg style="position:absolute;inset:0;width:100%;height:100%;overflow:visible" viewBox="0 0 ${uw.toFixed(2)} ${uh.toFixed(2)}" preserveAspectRatio="none">${o}</svg>` : '';
   }
   // the drawing inside a floor's box, upright (uw x uh pt): the listing's own image, or our tinted layers and fixtures
-  const innerOf = (L, uw, uh, s)=>L.kind === 'image' ? `<img src="${L.src}" alt="" style="position:absolute;inset:0;width:100%;height:100%">`
+  const innerOf = (L, uw, uh, s)=>L.kind === 'image' ? `<img src="${L.src}" alt="" data-plan-img="1" style="position:absolute;inset:0;width:100%;height:100%">`
     : ['chase', 'bath', 'sleep', 'living', 'ink'].map(k=>L.layers && L.layers[k] ? `<div style="position:absolute;inset:0;background:${TINT[k]};-webkit-mask:url('${L.layers[k]}') 0 0/100% 100% no-repeat;mask:url('${L.layers[k]}') 0 0/100% 100% no-repeat"></div>` : '').join('') + fixturesSVG(L, uw, uh, s);
   // words to lines no wider than w pt at the label size
   const wrap = (t, w)=>{ const out = []; let line = ''; for(const wd of t.split(' ')){ const tr = line ? line + ' ' + wd : wd; if(!line || est(tr, '400') <= w) line = tr; else { out.push(line); line = wd; } } if(line) out.push(line); return out; };
@@ -738,9 +738,13 @@
     return {html, issues, scale:Math.min(...sc), mixedScale: Math.max(...sc) > 1.1 * Math.min(...sc), usedW:allW, usedH:allH, rotated:ang!==0, angle:ang, front:frontNow || '', insets:0, levels:lv.length,
             detached: G ? 1 : 0, detachedSmaller: !!(G && G.smaller)};
   }
-  const drawAny = (plan, box, opt) => plan && plan.kind === 'color' ? drawColor(plan, box, opt) : draw(plan, box, opt);
-  const zonesOf = plan => plan && plan.kind === 'color' ? [...new Set(plan.levels.flatMap(L=>Object.keys(L.layers||{}).filter(k=>k in ZONES)))]
-    : [...new Set(plan.levels.flatMap(l=>l.rooms.map(zoneOf)))];
+  // never a redrawn plan (owner 11/10/2026): only the listing's own plan images are placed; a level that is not an image draws nothing
+  const drawAny = (plan, box, opt) => {
+    const lv = ((plan && plan.levels) || []).filter(L => L.kind === 'image' && L.src);
+    if(!lv.length) return {html: '', issues: [], scale: 0, mixedScale: false, usedW: 0, usedH: 0, rotated: false, angle: 0, front: '', insets: 0, levels: 0, detached: 0, detachedSmaller: false};
+    return drawColor(Object.assign({}, plan, {kind: 'color', levels: lv, detached: (plan.detached || []).filter(L => L.kind === 'image' && L.src)}), box, opt);
+  };
+  const zonesOf = plan => [];   // no room-color legend on the listing's own plan (owner 11/10/2026)
 
   window.AtlasPlan = {draw: drawAny, check, bbox, ZONES, zoneOf, zonesOf};
 })();

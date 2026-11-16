@@ -26,6 +26,8 @@
     if(o.sample) return out;
     for(const el of document.querySelectorAll('[data-slot]')){
       if(el.querySelector('[data-slot]')) continue;
+      // a feedback card's questions (q.*) are the form's own labels for the broker to rate, not copy about the home (11/13)
+      if(/^q\./.test(el.dataset.slot || '')) continue;
       const t = allowed(el.textContent.trim(), el.dataset.slot, o), m = t.match(CONDITION);
       if(m) out.push({slot: el.dataset.slot, kind: 'banned-phrase', rule: 'condition', text: m[0]});
       const s = el.textContent.match(SCHOOL);
@@ -33,5 +35,17 @@
     }
     return out;
   }
-  window.CopyRules = {check, CONDITION, allowed};
+  /* Banned words (config/copy-rules.json "banned": "daylight", "generous", "no pressure"...; owner 11/10/2026 build must fail): any
+     [data-slot] text on the piece, sample data included. CopyRules.banned(patterns) -> [{slot, kind:'banned-word', text, level:'fail'}] */
+  function banned(pats){
+    const out = [], rx = (pats || []).map(p => new RegExp(`\\b(?:${p})\\b`, 'i'));
+    for(const el of document.querySelectorAll('[data-slot]')){
+      if(el.querySelector('[data-slot]')) continue;
+      const r = el.getBoundingClientRect(); if(r.width <= 0 || r.height <= 0 || getComputedStyle(el).visibility === 'hidden') continue;
+      const t = el.textContent.trim();
+      for(const x of rx){ const m = t.match(x); if(m){ out.push({slot: el.dataset.slot, kind: 'banned-word', level: 'fail', text: m[0], detail: `"${m[0]}" never prints (config/copy-rules.json banned): "${t.slice(0, 70)}"`}); break; } }
+    }
+    return out;
+  }
+  window.CopyRules = {check, CONDITION, allowed, banned};
 })();
