@@ -50,7 +50,12 @@ OHL.start(['600 10pt Fraunces', '400 10pt Outfit', '600 10pt Outfit'], D => {
   const E = OHL.event(D), hero = OHL.hero(D, 'straight');
   let h = '';
   // the house, its bottom edge sweeping up to the right (a curve sampled as a polygon, so the check is exact)
-  const ph = Math.max(372, OHL.minFrameH(D, hero, 612, 408)), lift = 0.17;
+  // A house that reaches lower in its photo than the 408 pt frame shows gets a taller frame, up to 440 pt and never
+  // taller than the photo's own shape (11/15/2026: a four-story townhome in a 4:3 photo was cut at the bottom, so the
+  // library held the flyer back). The block below then starts with its gaps tightened. Other houses are unchanged.
+  const P = (D.photos||{})[hero] || {}, base = Math.max(372, OHL.minFrameH(D, hero, 612, 408));
+  const needs = P.house && P.w && P.h && Ivory.fullHouse(D, hero) ? Math.min(440, Math.floor(612*P.h/P.w), Math.ceil(P.house.bottom*612*P.h/P.w + 6)) : 0;
+  const grown = needs > base, ph = grown ? needs : base, lift = 0.17;
   const curve = [...Array(13)].map((_, i) => { const x = i/12; return [x, 1 - lift*Math.pow(x, 1.7)]; });
   const poly = [[0,0],[1,0], ...curve.reverse()];
   const lifted = OHL.polyFits(D, hero, 612, ph, poly);
@@ -111,8 +116,8 @@ OHL.start(['600 10pt Fraunces', '400 10pt Outfit', '600 10pt Outfit'], D => {
   h += `<div class="abs place" style="left:${ax}pt;top:${ay+an*28+2}pt;width:${aw}pt;height:30pt" data-slot="place" data-lines="1">${esc(OHL.place(L))}</div>`;
   return {h, end: y + colH, top};
   };
-  let lo = lower(0);
-  if(lo.end > cy - 18) lo = lower(Math.min(24, Math.ceil(lo.end - (cy - 18))));
+  let lo = lower(grown ? 24 : 0);
+  if(!grown && lo.end > cy - 18) lo = lower(Math.min(24, Math.ceil(lo.end - (cy - 18))));
   h += lo.h;
   const end = lo.end;
   const shift = Math.max(0, (cy - 18 - end)/2);
