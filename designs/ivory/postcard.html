@@ -286,6 +286,13 @@ Ivory.whenFonts(function(){
     for(const x of hid.slice().reverse()){ x.style.display = ''; if(over()) x.style.display = 'none'; }
     about.dataset.sentences = sp.filter(x => x.style.display !== 'none').length; };
   fitAbout();
+  // 11/16 (blank-space rule, owner-approved Ivory pass): when the sentences that fit leave most of a line empty under the write-up, its
+  // leading opens (never past 1.75x the type) so the text runs to the box's foot; the box, the type size and the sentences stay as they are
+  if(about){ const cs = getComputedStyle(about), fs = parseFloat(cs.fontSize), lh0 = parseFloat(cs.lineHeight), rg = document.createRange(); rg.selectNodeContents(about);
+    const tops = new Set([...rg.getClientRects()].filter(q => q.height > .5).map(q => Math.round(q.top))), n = tops.size, ar = about.getBoundingClientRect(), sc = ar.height/(about.offsetHeight || ar.height);
+    const pg = about.closest('.page') || document.body, nxt = Math.min(...[...pg.querySelectorAll('*')].filter(e => !about.contains(e) && !e.contains(about)).map(e => e.getBoundingClientRect()).filter(q => q.height > .5 && q.width > .5 && q.top >= ar.bottom - 1 && q.left < ar.right && q.right > ar.left).map(q => q.top), pg.getBoundingClientRect().bottom);
+    const H = Math.max(about.clientHeight, (nxt - ar.top)/sc - lh0*.4);
+    if(n >= 2 && H - n*lh0 > lh0*.25){ const lh = Math.min(fs*1.75, H/n); if(lh > lh0 + .3){ const h0 = about.style.height; about.style.lineHeight = lh + 'px'; about.style.height = (lh*n) + 'px'; if(about.scrollHeight > about.clientHeight + 1){ about.style.lineHeight = lh0 + 'px'; about.style.height = h0; } } } }
   // the sold note grows (never shrinks) until it fills the column
   const lead = document.getElementById('soldlead');
   if(lead){ const colEl = document.getElementById('soldcol'), mx = +lead.dataset.grow;
