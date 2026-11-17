@@ -210,7 +210,7 @@
   AR.tag = (x, y, text, o) => { o = o || {}; const fs = o.fs || 8.6, ls = o.ls == null ? 1.8 : o.ls, h = o.h || Math.round(fs*1.8), pt = Math.round(h*0.42), pl = o.pl || 8, w = o.w || AR.tagW(text, fs, ls) + pl + pt + 6;
     return {w, h, html: `<div class="ar-tag" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;padding-left:${pl}pt;clip-path:polygon(0 0,${w - pt}pt 0,${w}pt 50%,${w - pt}pt 100%,0 100%);font-weight:600;font-size:${fs}pt;line-height:${h}pt;letter-spacing:${ls}pt;text-transform:uppercase"${o.slot ? ` data-slot="${o.slot}" data-lines="1"` : ''}>${o.html || esc(String(text))}</div>`}; };
   // a photo's name on its pointer tag with the plan's size beside it (once per size on a piece)
-  FO.nameTag = (D, c, x, y, w, slot) => { const L0 = FXS.leadLabel(c.lead); let n = L0.name; if(AR.tagW(n, 8.6, 1.8) + 30 > w) n = n.split(/ and |, /)[0];
+  FO.nameTag = (D, c, x, y, w, slot) => { const L0 = FXS.leadLabel(c.lead); let n = L0.name || FXS.leadLabel(FXS.labelFor(c.photo)).name;   // a live order's card may have no lead: the room's own name if(AR.tagW(n, 8.6, 1.8) + 30 > w) n = n.split(/ and |, /)[0];
     const t = AR.tag(x, y, n, {slot: slot + '.label'}), sz = L0.size && !(FXS.__sizes = FXS.__sizes || new Set()).has(L0.size) && t.w + 10 + FXS.width(L0.size, 'font-family:Jost;font-weight:500;font-size:9pt') <= w;
     if(sz) FXS.__sizes.add(L0.size);
     return t.html + (sz ? `<div class="abs" style="left:${x + t.w + 7}pt;top:${y}pt;height:${t.h}pt;line-height:${t.h}pt;font-weight:500;font-size:9pt;font-family:Jost;color:var(--fx-soft);white-space:nowrap" data-size="1">${esc(L0.size)}</div>` : ''); };
