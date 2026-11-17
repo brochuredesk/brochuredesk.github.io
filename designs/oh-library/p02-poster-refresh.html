@@ -90,8 +90,10 @@ OHL.start(['700 10pt Archivo', '400 10pt Archivo'], D => {
   const pqH = pq.text ? pq.n*22 + 12 : 0;
   const noteH = second && E.note ? Ivory.linesNeeded('ev', E.note, 508, 16)*16 + 18 + 8 : 0;
   if(RF) boxDy = anN > 1 ? anN*30 + 22 : 62;   // the facts line goes (it is extra); the box sits right under the time
-  const py0 = RF ? 174 : second ? 206 : 220;
-  const want = RF ? Math.min(360, 688 - py0 - (26 + boxDy + BH)) : second ? Math.min(360, 688 - py0 - (26 + boxDy + pqH + noteH)) : 360 - Math.min(64, Math.max(0, boxDy + evNeed + 6 - (688 - (220 + 360 + 26))));
+  // no food photo, refreshments or a note under the address: the frame starts where the second version's does (206), so no
+  // empty band opens under the headline (blank-band, 11/16/2026), and the house photo keeps the 14 pt it gains
+  const py0 = RF ? 174 : 206;
+  const want = RF ? Math.min(360, 688 - py0 - (26 + boxDy + BH)) : second ? Math.min(360, 688 - py0 - (26 + boxDy + pqH + noteH)) : 374 - Math.min(78, Math.max(0, boxDy + evNeed + 6 - (688 - (py0 + 374 + 26))));
   const minH = OHL.minFrameH(D, hero, 540, 360);
   // second version with nothing under the address (no pull quote, no note): the page's leftover room is shared between the gap
   // above the photo frame and the gap above the address, so nothing is left blank at the foot
