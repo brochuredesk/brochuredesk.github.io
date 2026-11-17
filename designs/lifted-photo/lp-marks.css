@@ -1,0 +1,50 @@
+/* Lifted Photo marks shared by every page (tokens in lp-tokens.css), read from the approved library flyer B11 and its sign-in sheet
+   and feedback card: the lifted print (a photo whose free edge sweeps up to one side, over a soft shadow), the eyebrow in tracked
+   accent caps, the two-tone Fraunces display line, Outfit tracked caps labels in the main color, hairline rules and column dividers
+   at a quarter ink, the soft-cornered tint panel, the round numeral. */
+@import url(lp-tokens.css);
+.lp-print{position:absolute;filter:drop-shadow(0 7pt 9pt rgba(0,0,0,.32))}
+.lp-print.s{filter:drop-shadow(0 3pt 5pt rgba(0,0,0,.26))}
+.lp-print > .ph{position:absolute;inset:0}
+.lp-eyebrow{position:absolute;font-family:var(--lp-font);font-weight:600;font-size:10pt;line-height:13pt;letter-spacing:3pt;text-transform:uppercase;color:var(--lp-accent);white-space:nowrap;overflow:hidden}
+.lp-title{position:absolute;font-family:var(--lp-disp);font-weight:600;font-size:40pt;line-height:1.12;letter-spacing:-.4pt;color:var(--lp-ink);white-space:nowrap;overflow:hidden}
+.lp-title.b{color:var(--lp-main)}
+.lp-k{position:absolute;font-family:var(--lp-font);font-weight:600;font-size:9pt;line-height:12pt;letter-spacing:2.4pt;text-transform:uppercase;color:var(--lp-main);white-space:nowrap;overflow:hidden}
+.lp-hair{position:absolute;height:1pt;background:var(--lp-rule)}
+.lp-vhair{position:absolute;width:1pt;background:var(--lp-rule)}
+.lp-panel{position:absolute;background:var(--lp-tint);border-radius:14pt}
+.lp-dot{position:absolute;border-radius:50%;background:var(--lp-accent);color:var(--lp-on-accent,#fff);font-family:var(--lp-disp);font-weight:600;display:flex;align-items:center;justify-content:center}
+.lp-num{font-family:var(--lp-disp);font-weight:600;color:var(--lp-main)}
+.taupe{position:absolute;background:var(--fx-taupe)}
+
+/* photo names: tracked caps in the main color, the flyer's "THE HOME" label */
+.lbl{display:inline-block;vertical-align:top;font-family:var(--lp-font);font-weight:600;font-size:8.6pt;line-height:12pt;letter-spacing:2pt;text-transform:uppercase;color:var(--lp-main);height:13pt;white-space:nowrap;overflow:hidden}
+.lbl.sz{color:var(--lp-text);letter-spacing:1pt;margin-left:8pt;font-weight:500}
+.body{font-family:var(--lp-font);font-weight:400;font-size:10.5pt;line-height:16pt;color:var(--lp-text);overflow:hidden}
+.wu{font-family:var(--lp-font);font-weight:400;font-size:11.5pt;line-height:17pt;color:var(--lp-text);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font-family:var(--lp-font);font-weight:400;font-size:6.6pt;line-height:8pt;color:var(--lp-text);white-space:nowrap;overflow:hidden;opacity:.75}
+
+/* photos: square corners; a print casts a soft shadow */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--lp-font);font-weight:400;font-size:9.5pt;line-height:12.5pt;color:var(--lp-text);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:600;color:var(--lp-ink)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+.abs > .ph{box-shadow:0 2.5pt 5pt rgba(0,0,0,.2)}
+.lp-print > .ph, .lp-noshadow > .ph{box-shadow:none}
+
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-family:var(--lp-font);font-weight:400;font-size:10.5pt;line-height:14pt;color:var(--lp-text);white-space:nowrap;overflow:hidden;border-bottom:1pt solid var(--fx-rule)}
+.bul:before{content:"";width:5.5pt;height:5.5pt;border-radius:50%;background:var(--lp-accent);flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font-family:var(--lp-disp);font-weight:600;font-size:18pt;line-height:1;color:var(--lp-ink)}
+.stat .l{font-family:var(--lp-font);font-weight:600;font-size:8.6pt;line-height:1;letter-spacing:1.6pt;text-transform:uppercase;color:var(--lp-main)}

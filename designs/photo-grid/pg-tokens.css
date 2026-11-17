@@ -1,0 +1,29 @@
+/* Photo Grid tokens: THE one source for the set's palette, type and marks. The look is the approved Open House library flyer
+   B14 Photo Grid (templates/oh-library/b14-photo-grid*.html) and its sign-in sheet and feedback card (b14-* looks,
+   oh-extras/looks-lib-b.js): the paper as the page, a locked grid of tiles 24 pt in from the trim with 10 pt gutters; photo tiles;
+   tiles of the agent's main color carrying IBM Plex Sans Condensed 700 caps; a tile of the brand's dark color for numerals; the
+   accent only for the small tracked line, numerals and the short bar; white cells with a thin main-color line (the refreshments
+   cell) for prints with captions and for lists; the sign-in sheet's numbered square chips and main-color label band.
+   The brand colors are set at run time from data.brand (PG.brand in pg.js); these are the sample kit's. */
+:root{
+  --pg-main:#1f4e5f; --pg-dark:#14232a; --pg-accent:#e0a64a; --pg-paper:#eef2f4; --pg-on-main:#ffffff; --pg-on-dark:#ffffff;
+  --pg-acc-main:#e0a64a; --pg-acc-dark:#e0a64a; --pg-main-ink:#1f4e5f; --pg-ink:#161616; --pg-text:#2a2f31; --pg-tint:#e3eaed;
+  --pg-line:rgba(31,78,95,.9); --pg-rule-on:rgba(255,255,255,.45);
+  --pg-cond:'Plex Condensed','IBM Plex Sans Condensed',Helvetica,Arial,sans-serif; --pg-font:'Manrope',Helvetica,Arial,sans-serif;
+  --fx-paper:#eef2f4; --fx-taupe:#1f4e5f; --fx-taupe-d:#d9e1e4; --fx-on:#161616; --fx-soft:#2a2f31; --fx-card:#ffffff; --fx-mail:#f4f4f2;
+  --fx-seal:#ffffff; --fx-ink:#161616; --fx-text:#2a2f31; --fx-mute:#1f4e5f; --fx-accent:#e0a64a; --fx-rule:rgba(20,35,42,.22); --fx-rule-d:#d8d8d4; --fx-on-ink:#ffffff;
+  --fx-script:var(--pg-cond); --fx-serif:var(--pg-cond); --fx-display:var(--pg-cond); --fx-font:var(--pg-font);
+  --fx-label-w:700; --fx-label-track:1.2pt; --fx-rule-w:.9pt; --fx-gap:10pt; --fx-m:24pt;
+  --cc-paper:#ffffff; --cc-ink:#161616; --cc-muted:#2a2f31; --cc-accent:#1f4e5f; --cc-line:rgba(20,35,42,.22);
+  --cc-display:'Plex Condensed'; --cc-body:'Manrope';
+  --font-display:var(--pg-cond); --font-body:var(--pg-font);
+  --ink:#14232a; --muted:#2a2f31; --accent:#1f4e5f; --paper:#ffffff; --navy:#14232a; --gold:#e0a64a; --gold-ink:#1f4e5f;
+}
+@font-face{font-family:'Manrope';font-weight:400;src:url(../../fonts/pool/manrope-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Manrope';font-weight:500;src:url(../../fonts/pool/manrope-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Manrope';font-weight:600;src:url(../../fonts/pool/manrope-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Manrope';font-weight:700;src:url(../../fonts/pool/manrope-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Plex Condensed';font-weight:400;src:url(../../fonts/pool/ibm-plex-sans-condensed-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Plex Condensed';font-weight:500;src:url(../../fonts/pool/ibm-plex-sans-condensed-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Plex Condensed';font-weight:600;src:url(../../fonts/pool/ibm-plex-sans-condensed-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Plex Condensed';font-weight:700;src:url(../../fonts/pool/ibm-plex-sans-condensed-latin-700-normal.woff2) format('woff2')}

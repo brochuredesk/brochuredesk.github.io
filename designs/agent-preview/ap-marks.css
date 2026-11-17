@@ -1,0 +1,87 @@
+/* Agent Preview marks shared by every page (tokens in ap-tokens.css): the closed hairline frame, the accent eyebrow, Spectral caps
+   labels, the short accent rule, Spectral numerals, Manrope body on the dark field, and the white box with a thin accent line. */
+@import url(ap-tokens.css);
+.ap-fr{position:absolute;background:var(--ap-frame);z-index:5}
+.ap-eyebrow{position:absolute;font-family:var(--ap-font);font-weight:700;font-size:9.5pt;line-height:12pt;letter-spacing:4.4pt;text-transform:uppercase;color:var(--ap-accent);white-space:nowrap;overflow:hidden}
+.ap-label{position:absolute;font-family:var(--ap-label);font-weight:500;font-size:30pt;line-height:1.25;letter-spacing:1pt;text-transform:uppercase;color:var(--ap-on);white-space:nowrap;overflow:hidden}
+.ap-serif{position:absolute;font:500 30pt/1.25 var(--ap-serif);color:var(--ap-on);white-space:nowrap;overflow:hidden}
+.ap-caps{position:absolute;font:600 13pt/16pt var(--ap-font);letter-spacing:2.6pt;text-transform:uppercase;color:var(--ap-accent);white-space:nowrap;overflow:hidden}
+.ap-rule{position:absolute;height:1.2pt;background:var(--ap-accent)}
+.ap-hair{position:absolute;height:1pt;background:var(--ap-rule)}
+.ap-vhair{position:absolute;width:1pt;background:var(--ap-rule)}
+.ap-lift{position:absolute;background:linear-gradient(var(--ap-dark),transparent);opacity:.75;pointer-events:none}
+.ap-lift.up{background:linear-gradient(transparent,var(--ap-dark))}
+/* Design pass 11/15: the set's own panel. On this dark set a white box read as a pasted-in table, so lists, tables and notes sit on
+   the field lightened a step, with B01's thin accent line set in from the edge and light type. White stays for the mail zones only. */
+.ap-wbox{position:absolute;background:transparent}
+.ap-wbox:after{content:"";position:absolute;inset:0;border:1.2pt solid var(--ap-accent);pointer-events:none}
+.ap-ink .ap-eyebrow,.ap-ink .fo-kick{color:var(--ap-accent)}
+/* the one light moment of a piece: B01's white card with the thin accent line, dark type inside (once per piece, where it earns it) */
+.ap-wbox.lt{background:var(--ap-paper)}
+.ap-wbox.lt:after{border-color:var(--ap-paper-accent)}
+.ap-lt{--fx-on:var(--ap-paper-ink);--fx-soft:var(--ap-paper-text);--fx-rule:var(--ap-paper-rule);--ap-on:var(--ap-paper-ink);--ap-soft:var(--ap-paper-text);--ap-rule:var(--ap-paper-rule);--ap-accent:var(--ap-paper-accent)}
+.ap-cut{position:absolute;pointer-events:none}
+/* the dusk glow where the field meets a hero photo (AP.glow): accent and dark only */
+.ap-glow{position:absolute;pointer-events:none;z-index:3}
+.ap-glow.l{opacity:.9}
+/* the one display moment of a panel: Spectral, sentence case, two lines */
+.ap-head{position:absolute;font:500 34pt/1.16 var(--ap-serif);color:var(--ap-on);letter-spacing:-.2pt;text-wrap:balance}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.script{position:absolute;font-family:var(--ap-label);font-weight:400;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1.25;text-transform:uppercase;letter-spacing:4pt}
+
+/* labels: accent caps, tracked (the B01 eyebrow, smaller) */
+.lbl{display:inline-block;vertical-align:bottom;font-family:var(--ap-font);font-weight:700;font-size:8.6pt;line-height:12pt;letter-spacing:2.4pt;text-transform:uppercase;color:var(--ap-accent);white-space:nowrap;overflow:hidden}
+.lbl.sz{text-transform:none;color:var(--fx-soft);letter-spacing:1.4pt;margin-left:10pt;font-weight:400}
+.body{font:400 10.5pt/16.5pt var(--ap-font);color:var(--fx-soft);overflow:hidden}
+.wu{font:400 11pt/17pt var(--ap-font);color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font:400 6.6pt/8pt var(--ap-font);color:var(--fx-soft);white-space:nowrap;overflow:hidden;opacity:.85}
+
+/* photos: square corners on the dark field */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--ap-font);font-weight:400;font-size:9.5pt;line-height:12.5pt;color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:600;color:var(--fx-on)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font:400 10.5pt/14pt var(--ap-font);color:var(--fx-soft);white-space:nowrap;overflow:hidden;border-bottom:1pt solid var(--fx-rule)}
+.bul:before{content:"";width:5pt;height:5pt;box-sizing:border-box;border:1.2pt solid var(--ap-accent);background:transparent!important;background:var(--ap-accent);flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font:500 18pt/1 var(--ap-serif);color:var(--fx-on)}
+.stat .l{font:500 9pt/1 var(--ap-font);letter-spacing:2pt;text-transform:uppercase;color:var(--fx-soft)}
+
+.near{flex:none;display:flex;gap:0;border-top:var(--fx-rule-w) solid var(--fx-rule);padding-top:9pt}
+.near .c{flex:1;min-width:0;padding-left:14pt;border-left:var(--fx-rule-w) solid var(--fx-rule)}
+.near .c:first-child{padding-left:0;border-left:0}
+.near .d{font:500 15pt/18pt var(--ap-serif);color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.near .p{font:500 8pt/10pt var(--ap-font);letter-spacing:1.6pt;text-transform:uppercase;color:var(--fx-soft);overflow:hidden;margin-top:1pt;min-height:20pt}
+.logo.w img{filter:brightness(0) invert(1)}
+/* ===== Agent Preview marks (B26) ===== */
+.ap-disp{position:absolute;font-family:var(--ap-serif);font-weight:500;letter-spacing:1pt;text-transform:uppercase;color:var(--ap-on);white-space:nowrap;overflow:visible}
+.ap-disp .ac,.ac{color:var(--ap-accent)}
+.ap-eye{position:absolute;font-family:var(--ap-font);font-weight:700;font-size:9.5pt;line-height:12pt;letter-spacing:4.4pt;text-transform:uppercase;color:var(--ap-accent);white-space:nowrap;overflow:hidden}
+.ap-rule{position:absolute;height:1.4pt;background:var(--ap-accent)}
+.ap-mat{position:absolute;box-sizing:border-box;pointer-events:none}
+.ap-ticket{position:absolute;box-sizing:border-box;border:1.2pt solid var(--ap-accent)}
+.ap-ticket.lt{background:var(--ap-paper);border-color:var(--ap-paper-accent)}
+.ap-tdiv{position:absolute;width:1pt;background:var(--ap-accent);opacity:.55}
+.ap-tk{position:absolute;font-family:var(--ap-font);font-weight:700;letter-spacing:2.4pt;text-transform:uppercase;color:var(--ap-accent);white-space:nowrap;overflow:hidden}
+.ap-tv{position:absolute;font-family:var(--ap-serif);font-weight:500;color:var(--ap-on);white-space:nowrap;overflow:visible}
+.ap-tv.sans{font-family:var(--ap-font);font-weight:700}
+.ap-fade{position:absolute;pointer-events:none}
+/* the paper panel inside a gold outline (the sign-in sheet's writing area, the flyer's event box): the piece's one light moment */
+.ap-paper{position:absolute;box-sizing:border-box;background:var(--ap-paper);border:1.2pt solid var(--ap-paper-accent)}
+.ap-pp{--fx-on:var(--ap-paper-ink);--fx-soft:var(--ap-paper-text);--fx-rule:var(--ap-paper-rule);--ap-on:var(--ap-paper-ink);--ap-soft:var(--ap-paper-text);--ap-rule:var(--ap-paper-rule);--ap-accent:var(--ap-paper-accent)}
+.ap-num{position:absolute;font-family:var(--ap-serif);font-weight:500;color:var(--ap-accent);text-align:center;white-space:nowrap}
+.ap-band{position:absolute;box-sizing:border-box;border:1.2pt solid var(--ap-accent)}
+.card{border:1.2pt solid var(--ap-accent)!important}

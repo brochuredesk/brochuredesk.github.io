@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="uar-8">
+<title>BrochureDesk · Arrow fold-over</title>
+<link rel="stylesheet" href="ar.css">
+<link rel="stylesheet" href="ar-fo.css">
+<script src="ar.js"></script>
+<script>window.Ivory = {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="plan.js"></script>
+<script src="planink.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script src="../engine/agentcard.js"></script>
+<script src="ar-fo.js"></script>
+<!--
+  BrochureDesk · Arrow · 11 x 17 fold-over: one sheet folded once down the middle into four upright 8.5 x 11 panels, 0.125 in (9 pt)
+  bleed, text 0.5 in clear of the fold. The hand is the approved Open House library flyer B46A Arrow (templates/oh-library/b46a-arrow*.html)
+  and its sign-in sheet and feedback card: the brand's dark field, the main-color tab with the place set upright, the house in a
+  right-pointing arrow with its accent echo, main-color pointer tags, Jost throughout, the white box with the accent edge once.
+    FRONT  the tab on the fold as a spine, the house in a big arrow, the street as the one oversized line, the place and facts, three rooms in a chain of arrows.
+    LEFT   the kitchen in an arrow whose point stops short of the fold; under it the flyer's two columns: headline and the kitchen card | two rooms.
+    RIGHT  the primary room in an arrow whose notch starts past the fold (one pointer through the spread); two rooms | headline, caption, write-up.
+    BACK   the spine on the fold, the headline, the plan (or the outdoor photo in an arrow) with the write-up, a room | the lists, Nearby on pointer tags, the card.
+  Modes: proof = four panel pages 8.75 x 11.25 in; print = two spreads 17.25 x 11.25 in, each half clipped at the fold.
+-->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const mode = D.mode || 'proof', K = D.sw || {}, issues = [];
+  await SW.setup(D);
+  const photoIds = html => [...String(html).matchAll(/data-photo="([^"]+)"/g)].map(m => m[1]);
+  if(SW.resetFill) SW.resetFill();
+  const pF = FO.front(D, {intro: (K.front || {}).summary, lines: 4}), pL = FO.left(D), pR = FO.right(D), bk = FO.back(D, {}); issues.push(...bk.issues);
+  const panels = {front: pF, back: bk.html, left: pL, right: pR};
+  const panel = h => `<div class="panel"><div class="bg-paper"></div>${h}</div>`;
+  let html = '';
+  if(mode === 'print'){
+    html += `<div class="page" data-page="outside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.back)}</div><div class="half r">${panel(panels.front)}</div></div>`;
+    html += `<div class="page" data-page="inside" style="width:1242pt;height:810pt"><div class="half l">${panel(panels.left)}</div><div class="half r">${panel(panels.right)}</div></div>`;
+  } else for(const id of ['front','back','left','right']) html += `<div class="page" data-page="${id}" style="width:630pt;height:810pt">${panel(panels[id])}</div>`;
+  document.getElementById('pages').innerHTML = html;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  FO.prep3();
+  SW.fill();
+  FO.refit();
+  FO.grow();
+  FO.just3();
+  FO.capSnug();
+  FO.gaps();
+  if(FO.span && !document.querySelector('[data-span][data-spanned]')) FO.span();
+  FO.tallStack(); FO.rightSnug(); FO.capCenter(); FO.headFix(); FO.listCenter(); FO.leftCenter();
+  SW.fitLogos();
+  if(window.ContactCard) ContactCard.fit(document);
+  if(D.plan) PlanInk.applyAll(D, AR.k.light);
+  { const rep = SW.spaceRepeats(D, ['front', 'back', 'left', 'right'].flatMap(k => photoIds(panels[k]))); rep.forEach(([sp, ps]) => issues.push({slot: 'foldover.' + sp, kind: 'space-twice-in-foldover', detail: `${sp}: ${ps.join(' and ')} show one physical space twice`})); }
+  { const seenP = new Map(); for(const k of ['front', 'back', 'left', 'right']) photoIds(panels[k]).forEach(id => { if(seenP.has(id) && seenP.get(id) !== k) issues.push({slot: k + '.' + id, kind: 'photo-twice-in-foldover', detail: `${id} is on the ${seenP.get(id)} and on the ${k}`}); else seenP.set(id, k); }); }
+  issues.push(...SW.focus(D));
+  FO.tighten(D);
+  // a tile cropped tighter than its photo: data-zoom="z,fx,fy" (the crop shows 1/z of the photo, anchored at the focus fractions)
+  document.querySelectorAll('.ph[data-zoom]').forEach(el => { const [z, fx, fy] = el.dataset.zoom.split(',').map(Number), im = el.querySelector('img'); if(!im) return;
+    im.style.cssText = `position:absolute;max-width:none;width:${z*100}%;height:${z*100}%;left:${-(z - 1)*fx*100}%;top:${-(z - 1)*fy*100}%;object-fit:cover`; });
+  window.brochureCheck = () => SW.check(D, (window.planIssues || []).concat(issues, FXS.backTextBox(), FO.overlapCheck(), FO.factsCheck(), FO.fill3Check(), FXS.leftBoxCheck()));
+  window.photoPlacements = SW.placements;
+})();
+</script>
+</body>
+</html>

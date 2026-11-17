@@ -1,0 +1,71 @@
+/* Arrow marks shared by every piece (tokens in ar-tokens.css), all read from the approved B46A flyer, sign-in sheet and feedback card:
+   the main-color side tab with the place set upright; the photo in a right-pointing arrow with its accent echo; the main-color pointer
+   tag (the sign-in sheet's row numbers) for labels, numbers and distances; Jost 600 caps headings; accent caps place lines; the 1 pt
+   hairline that splits two columns; the white box with the accent edge (the flyer's event box) once per piece. */
+@import url(ar-tokens.css);
+.ar-fr{position:absolute;background:var(--ar-frame);z-index:5}
+.ar-cut{position:absolute;pointer-events:none}
+/* the side tab */
+.ar-tab{position:absolute;background:var(--ar-main)}
+.ar-tabt{position:absolute;height:16pt;transform:rotate(-90deg);font-weight:600;font-size:9pt;line-height:16pt;font-family:var(--ar-font);letter-spacing:4pt;text-transform:uppercase;text-align:center;white-space:nowrap;color:var(--ar-on-main);overflow:hidden}
+/* the arrow photo and its echo */
+.ar-arw{position:absolute;overflow:hidden}
+.ar-echo{position:absolute;overflow:visible;pointer-events:none}
+/* the pointer tag (the sign-in sheet's numbered rows): main color, pointing right */
+.ar-tag{position:absolute;background:var(--ar-main);color:var(--ar-on-main);display:flex;align-items:center;white-space:nowrap;overflow:hidden}
+/* eyebrows and caps lines in the accent (the flyer's place line and time) */
+.ar-eyebrow{position:absolute;font-weight:600;font-size:9.5pt;line-height:12pt;font-family:var(--ar-font);letter-spacing:3.4pt;text-transform:uppercase;color:var(--ar-accent);white-space:nowrap;overflow:hidden}
+.ar-caps{position:absolute;font-weight:600;font-size:13pt;line-height:16pt;font-family:var(--ar-font);letter-spacing:1.6pt;text-transform:uppercase;color:var(--ar-accent);white-space:nowrap;overflow:hidden}
+/* the display line: Jost 600 caps, lightly tracked (PUBLIC OPEN HOUSE, PLEASE SIGN IN) */
+.ar-head{position:absolute;font-weight:600;font-family:var(--ar-font);letter-spacing:1.5pt;text-transform:uppercase;color:var(--ar-on);white-space:nowrap;overflow:hidden}
+.ar-head .ac{color:var(--ar-accent)}
+/* the street: Jost 600, sentence case */
+.ar-addr{position:absolute;font-weight:600;font-family:var(--ar-font);color:var(--ar-on);white-space:nowrap;overflow:hidden}
+.ar-facts{position:absolute;font-weight:500;font-size:12.5pt;line-height:16pt;font-family:var(--ar-font);color:var(--ar-on);white-space:nowrap;overflow:hidden}
+.ar-label{position:absolute;font-weight:600;font-family:var(--ar-font);letter-spacing:1.5pt;text-transform:uppercase;color:var(--ar-on);white-space:nowrap;overflow:hidden}
+.ar-serif{position:absolute;font-weight:600;font-family:var(--ar-font);color:var(--ar-on);white-space:nowrap;overflow:hidden}
+.ar-rule{position:absolute;height:1.2pt;background:var(--ar-accent)}
+.ar-hair{position:absolute;height:1pt;background:var(--ar-rule)}
+.ar-vhair{position:absolute;width:1pt;background:var(--ar-rule)}
+/* the panel on the field: the dark lifted a step, no box line (lists and Nearby) */
+.ar-wbox{position:absolute;background:var(--ar-lift)}
+/* the one light moment of a piece: B46A's white event box with the 1.2 pt accent edge, dark type inside */
+.ar-wbox.lt{background:#fff;border:1.2pt solid var(--ar-accent)}
+.ar-lt{--fx-on:#161616;--fx-soft:#2c2c2c;--fx-rule:rgba(0,0,0,.2);--ar-on:#161616;--ar-soft:#2c2c2c;--ar-rule:rgba(0,0,0,.2);--ar-accent:var(--ar-main-on-paper)}
+.ar-glow{position:absolute;pointer-events:none;z-index:3}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.script{position:absolute;font-family:var(--ar-label);font-weight:600;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1.1;text-transform:uppercase;letter-spacing:1.5pt}
+
+/* photo labels: the pointer tag, white caps on the main color; the plan's size beside it in soft type */
+.lbl{display:inline-block;vertical-align:bottom;font-weight:600;font-size:8.6pt;line-height:15pt;font-family:var(--ar-font);letter-spacing:1.8pt;text-transform:uppercase;color:var(--ar-on-main);background:var(--ar-main);padding:0 13pt 0 7pt;clip-path:polygon(0 0,calc(100% - 7pt) 0,100% 50%,calc(100% - 7pt) 100%,0 100%);white-space:nowrap;overflow:hidden}
+.lbl.sz{text-transform:none;color:var(--fx-soft);background:none;clip-path:none;letter-spacing:.6pt;margin-left:4pt;padding:0;font-weight:500;font-size:9pt}
+.body{font-weight:400;font-size:10.5pt;line-height:16.5pt;font-family:var(--ar-font);color:var(--fx-soft);overflow:hidden}
+.wu{font-weight:400;font-size:11pt;line-height:17pt;font-family:var(--ar-font);color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font-weight:400;font-size:7.5pt;line-height:9pt;font-family:var(--ar-font);color:var(--fx-soft);white-space:nowrap;overflow:hidden}
+
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-weight:400;font-size:9.5pt;line-height:12.5pt;font-family:var(--ar-font);color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:600;color:var(--fx-on)}
+
+.card{position:absolute;border:1.5pt solid var(--fx-rule);background:transparent}   /* the plan box: a 1 pt border prints at 0.75 pt on screen; reversed rules stay 1 pt or more */
+/* list bullets: a small pointer in the main color's light step (the sign-in sheet's tags, small) */
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-weight:400;font-size:10.5pt;line-height:14pt;font-family:var(--ar-font);color:var(--fx-soft);white-space:nowrap;overflow:hidden;background:linear-gradient(var(--fx-rule),var(--fx-rule)) left bottom/100% 1pt no-repeat}
+.bul:before{content:"";width:7pt;height:8pt;background:var(--ar-accent);clip-path:polygon(0 0,45% 0,100% 50%,45% 100%,0 100%,0 0);flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font-weight:600;font-size:18pt;line-height:1;font-family:var(--ar-font);color:var(--fx-on)}
+.stat .l{font-weight:500;font-size:9pt;line-height:1;font-family:var(--ar-font);letter-spacing:2pt;text-transform:uppercase;color:var(--fx-soft)}
+.logo.w img{filter:brightness(0) invert(1)}
+/* the card's divider prints at 1.5 pt (a 1 pt border rounds to 0.75 pt on screen: reversed rules stay 1 pt or more) */
+body .cc .cc-panel:not(.cc-band){border-left-width:1.5pt}
+body .cc .cc-band{border-top-width:1.5pt}

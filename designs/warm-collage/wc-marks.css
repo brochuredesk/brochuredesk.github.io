@@ -1,0 +1,66 @@
+/* Warm Collage marks shared by every page (tokens in wc-tokens.css). One grid of tiles on the mat: photos and solid blocks of the main and
+   dark colors, 8 pt of mat between them; the accent anchor block set inside a main block; Bitter 700 caps for the one display line;
+   Schibsted Grotesk tracked caps labels; the white writing panel with the 1.1 pt accent line; small main-color squares as list marks and
+   numbered squares (the sign-in sheet's row numbers). No frames, no fades, no rules across photos. */
+@import url(wc-tokens.css);
+.wc-blk{position:absolute;background:var(--wc-main)}
+.wc-blk.dark{background:var(--wc-dark)}
+.wc-blk.accent{background:var(--wc-accent)}
+.wc-blk.tint{background:var(--wc-tint)}
+.wc-panel{position:absolute;background:#ffffff;border:1.1pt solid var(--wc-line)}
+/* type on a block: white (or near-black on a light kit) with the soft body tone; labels in the accent where it reads */
+.wc-onm{--fx-on:var(--wc-on-main);--fx-soft:var(--wc-soft-main);--fx-rule:var(--wc-rule-on);--wc-main-ink:var(--wc-on-main);--wc-lab:var(--wc-accent-on-main)}
+.wc-ond{--fx-on:var(--wc-on-dark);--fx-soft:var(--wc-soft-dark);--fx-rule:var(--wc-rule-on);--wc-main-ink:var(--wc-on-dark);--wc-lab:var(--wc-accent-on-dark)}
+.wc-ona{--fx-on:var(--wc-on-accent);--fx-soft:var(--wc-on-accent);--fx-rule:rgba(22,22,22,.35);--wc-main-ink:var(--wc-on-accent);--wc-lab:var(--wc-on-accent)}
+/* the one display line: Bitter 700 caps (the flyer's headline), tight */
+.wc-disp{position:absolute;font-family:var(--wc-display);font-weight:700;text-transform:uppercase;letter-spacing:.2pt;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1}
+.wc-num{position:absolute;font-family:var(--wc-display);font-weight:700;color:var(--fx-on);white-space:nowrap;line-height:1}
+/* the street in Bitter 700, sentence case (the flyer's address) */
+.wc-st{position:absolute;font-family:var(--wc-display);font-weight:700;color:var(--fx-on);white-space:nowrap;overflow:hidden}
+/* tracked caps: the flyer's "Come on by" and place line */
+.wc-sub{position:absolute;font-family:var(--wc-font);font-weight:500;letter-spacing:2.4pt;text-transform:uppercase;color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.wc-k{position:absolute;font-family:var(--wc-font);font-weight:700;font-size:8.6pt;line-height:11pt;letter-spacing:2pt;text-transform:uppercase;color:var(--wc-lab, var(--wc-main-ink));white-space:nowrap;overflow:hidden}
+.wc-hair{position:absolute;height:1pt;background:var(--fx-rule)}
+.wc-vhair{position:absolute;width:1pt;background:var(--fx-rule)}
+.wc-sq{position:absolute;background:var(--wc-main)}
+.wc-sqn{position:absolute;background:var(--wc-main);color:var(--wc-on-main);font-family:var(--wc-display);font-weight:700;text-align:center}
+.wc-cut{position:absolute;pointer-events:none}
+/* the pilot's names the engine still writes (kept so the shared fill passes find them) */
+.wc-eyebrow{position:absolute;font-family:var(--wc-font);font-weight:500;font-size:9.5pt;line-height:12pt;letter-spacing:2.4pt;text-transform:uppercase;color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.wc-caps{position:absolute;font-family:var(--wc-font);font-weight:600;font-size:10pt;line-height:14pt;letter-spacing:1.4pt;text-transform:uppercase;color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.wc-serif{position:absolute;font-family:var(--wc-display);font-weight:700;color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.wc-label{position:absolute;font-family:var(--wc-display);font-weight:700;text-transform:uppercase;color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.wc-lt{--fx-on:#161616;--fx-soft:#2e2620;--fx-rule:rgba(22,22,22,.22)}
+.taupe{position:absolute;background:var(--fx-taupe)}
+
+/* labels under a photo: the sign-in sheet's tracked caps in the main color */
+.lbl{display:inline-block;vertical-align:bottom;font-family:var(--wc-font);font-weight:700;font-size:8.6pt;line-height:12pt;letter-spacing:1.8pt;text-transform:uppercase;color:var(--wc-main-ink);white-space:nowrap;overflow:hidden}
+.lbl.sz{text-transform:none;color:var(--fx-soft);letter-spacing:.6pt;margin-left:9pt;font-weight:500}
+.body{font-family:var(--wc-font);font-weight:400;font-size:10.5pt;line-height:16pt;color:var(--fx-soft);overflow:hidden}
+.wu{font-family:var(--wc-font);font-weight:400;font-size:11pt;line-height:17pt;color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font-family:var(--wc-font);font-weight:500;font-size:7.5pt;line-height:9pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden}
+
+/* photos: square corners, crisp, on the mat */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--wc-font);font-weight:400;font-size:9.5pt;line-height:12.5pt;color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:700;color:var(--fx-on)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+/* a list row: the sign-in sheet's small main-color square, then the item */
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-family:var(--wc-font);font-weight:400;font-size:10.5pt;line-height:14pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;border-bottom:1pt solid var(--fx-rule)}
+.bul:before{content:"";width:5pt;height:5pt;background:var(--wc-main);flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font-family:var(--wc-display);font-weight:700;font-size:18pt;line-height:1;color:var(--fx-on)}
+.stat .l{font-family:var(--wc-font);font-weight:600;font-size:9pt;line-height:1;letter-spacing:1.6pt;text-transform:uppercase;color:var(--fx-soft)}
+.logo.w img{filter:brightness(0) invert(1)}

@@ -1,0 +1,65 @@
+/* Night Fade marks shared by every page (tokens in nf-tokens.css), read from the approved library flyer B08 and its sign-in sheet:
+   the fade (a photo dissolving into the dark field at its foot), the eyebrow in wide-tracked accent caps, the display line in
+   Archivo bold caps, the solid accent bar with dark bold type and thin dividers, the lifted panel with a 5 pt accent edge, the
+   square accent numeral, accent tabs for photo names. */
+@import url(nf-tokens.css);
+/* the fade (design pass 11/15): the photo dissolves through the night (a deep blue drawn from the kit's dark, --nf-night) into the field,
+   with a fine grain so the gradient never bands on press. Stops: clear, half night at 40%, full night at 74%, the field at the end; the
+   type that is set into a fade sits where it is 70% dark or more (FO.overlapCheck reads data-solid). */
+.nf-fade{position:absolute;pointer-events:none;--nf-dir:to bottom;background-image:linear-gradient(var(--nf-dir), rgba(var(--nf-night-rgb),0) 0%, rgba(var(--nf-night-rgb),.5) 40%, rgba(var(--nf-night-rgb),.88) 70%, var(--nf-dark) 100%)}
+.nf-fade::after{content:"";position:absolute;inset:0;background-image:var(--nf-grain);-webkit-mask-image:linear-gradient(var(--nf-dir), transparent 0%, #000 30%, #000 62%, transparent 92%);mask-image:linear-gradient(var(--nf-dir), transparent 0%, #000 30%, #000 62%, transparent 92%)}
+.nf-fade.l{--nf-dir:to left}
+.nf-fade.r{--nf-dir:to right}
+.nf-fade.t{--nf-dir:to top}
+.nf-eyebrow{position:absolute;font:500 10pt/13pt var(--nf-font);letter-spacing:4.4pt;text-transform:uppercase;color:var(--nf-accent);white-space:nowrap;overflow:hidden;text-align:center}
+.nf-title{position:absolute;font:800 32pt/1.15 var(--nf-font);letter-spacing:.4pt;color:var(--nf-on);white-space:nowrap;overflow:hidden;text-align:center}
+.nf-bar{position:absolute;background:var(--nf-bar);color:var(--nf-on-bar);display:flex;align-items:center;justify-content:center;gap:13pt;white-space:nowrap;overflow:hidden;font:700 15pt/1 var(--nf-font);letter-spacing:.5pt;box-sizing:border-box;padding-top:1.4pt}
+.nf-bar i{width:1.2pt;height:48%;background:currentColor;opacity:.55;flex:none;margin-top:-1.4pt}
+.nf-bar span{white-space:nowrap}
+.nf-panel{position:absolute;background:var(--nf-lift);border-left:5pt solid var(--nf-bar);box-sizing:border-box}
+.nf-num{position:absolute;background:var(--nf-bar);color:var(--nf-on-bar);font:800 12pt/1 var(--nf-font);display:flex;align-items:center;justify-content:center}
+.nf-hl{position:absolute;font:800 44pt/1.1 var(--nf-font);color:var(--nf-on);white-space:nowrap;overflow:hidden}
+.nf-serif{position:absolute;font:800 24pt/1.2 var(--nf-font);color:var(--nf-on);white-space:nowrap;overflow:hidden}
+.nf-wd{position:absolute;font:700 9.5pt/12pt var(--nf-font);letter-spacing:2.6pt;text-transform:uppercase;color:var(--nf-accent);white-space:nowrap;overflow:hidden}
+.nf-rule{position:absolute;height:1.4pt;background:var(--nf-accent)}
+.nf-hair{position:absolute;height:1pt;background:var(--nf-rule)}
+.nf-vhair{position:absolute;width:1pt;background:var(--nf-rule)}
+.nf-ink{--fx-on:var(--nf-paper-ink);--fx-soft:var(--nf-paper-text);--fx-rule:var(--nf-paper-rule);--fx-mute:var(--nf-paper-main);--nf-on:var(--nf-paper-ink);--nf-soft:var(--nf-paper-text);--nf-rule:var(--nf-paper-rule);--nf-accent:var(--nf-paper-main)}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.script{position:absolute;font-family:var(--nf-font);font-weight:800;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1.2}
+
+/* photo names: an accent tab with dark bold caps (the flyer's bar, small) */
+.lbl{display:inline-block;vertical-align:top;font:700 8.6pt/12pt var(--nf-font);letter-spacing:1.5pt;text-transform:uppercase;background:var(--nf-bar);color:var(--nf-on-bar);padding:1.5pt 6pt 0;box-sizing:border-box;height:14pt;white-space:nowrap;overflow:hidden}
+.body{font:400 10.5pt/16.5pt var(--nf-font);color:var(--fx-soft);overflow:hidden}
+.wu{font:400 11pt/17pt var(--nf-font);color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font:500 7.5pt/9pt var(--nf-font);color:var(--fx-soft);white-space:nowrap;overflow:hidden}
+
+/* photos: square corners */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font:400 9.5pt/12.5pt var(--nf-font);color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:700;color:var(--fx-on)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font:400 10.5pt/14pt var(--nf-font);color:var(--fx-soft);white-space:nowrap;overflow:hidden;border-bottom:1pt solid var(--fx-rule)}
+.bul:before{content:"";width:5pt;height:5pt;background:var(--nf-bar);flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font:800 18pt/1 var(--nf-font);color:var(--fx-on)}
+.stat .l{font:700 8.6pt/1 var(--nf-font);letter-spacing:1.6pt;text-transform:uppercase;color:var(--fx-soft)}
+.logo.w img{filter:brightness(0) invert(1)}
+
+/* the sign-in sheet's panel: the brand kit's paper with the 5 pt accent edge; type on it reads dark */
+.nf-panel.paper{background:var(--nf-paper)}
+.nf-ink .bul{color:var(--nf-paper-ink);border-bottom-color:var(--nf-paper-rule)}
+.nf-ink .fo-kick{color:var(--nf-paper-main)}

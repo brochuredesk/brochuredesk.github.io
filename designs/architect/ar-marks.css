@@ -1,0 +1,66 @@
+/* Architect marks shared by every page (tokens in ar-tokens.css), read from the approved library flyer P08 and its sign-in sheet:
+   the four corner ticks around a photo (the flyer's drafting ticks), the wide-tracked Instrument Sans eyebrow, the one display line in
+   Libre Baskerville bold capitals set tight, the street in Baskerville regular, the 1 pt drafting rule with a pair set on it (left and
+   right ends: the flyer's date and address on one ruled line), the dimension line (a rule with end ticks and its figure set in a gap),
+   the numbered callout circle, and the white drafting sheet with ink hairlines (the sign-in sheet's body, the flyer's event box). */
+@import url(ar-tokens.css);
+.ar-tk{position:absolute;width:10pt;height:10pt;border:0 solid var(--ar-tick);box-sizing:border-box;pointer-events:none}
+.ar-eyebrow{position:absolute;font-family:var(--ar-label);font-weight:500;font-size:10pt;line-height:13pt;letter-spacing:3.2pt;text-transform:uppercase;color:var(--ar-on);white-space:nowrap;overflow:hidden;text-align:center}
+.ar-title{position:absolute;font-family:var(--ar-serif);font-weight:700;font-size:32pt;line-height:1.1;letter-spacing:-1pt;color:var(--ar-on);white-space:nowrap;overflow:hidden;text-align:center;text-transform:uppercase}
+.ar-street{position:absolute;font-family:var(--ar-serif);font-weight:400;color:var(--ar-on);white-space:nowrap;overflow:hidden}
+.ar-rule{position:absolute;height:1pt;background:var(--ar-rule)}
+.ar-hair{position:absolute;height:1pt;background:var(--ar-hair)}
+.ar-vhair{position:absolute;width:1pt;background:var(--ar-hair)}
+/* the dimension line: two runs of rule with end ticks (a short upright and a 45-degree slash), the figure centered in the gap */
+.ar-dl{position:absolute;height:1pt;background:var(--ar-rule)}
+.ar-dt{position:absolute;width:1pt;background:var(--ar-rule)}
+.ar-ds{position:absolute;width:1pt;height:9pt;background:var(--ar-on);transform:rotate(45deg)}
+.ar-dx{position:absolute;font-family:var(--ar-label);font-weight:600;font-size:9pt;line-height:12pt;letter-spacing:2pt;text-transform:uppercase;color:var(--ar-accent);white-space:nowrap;overflow:hidden;text-align:center}
+/* the numbered callout (a drawing's detail bubble): a 1.2 pt ring with a Baskerville figure */
+.ar-call{position:absolute;border:1.5pt solid var(--ar-on);border-radius:50%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-family:var(--ar-serif);font-weight:700;color:var(--ar-on);background:var(--ar-dark)}
+/* the drafting sheet: the light moment; type on it reads ink */
+.ar-sheet{position:absolute;background:var(--ar-paper);box-sizing:border-box}
+.ar-ink{--fx-on:var(--ar-paper-ink);--fx-soft:var(--ar-paper-text);--fx-rule:var(--ar-paper-rule);--fx-mute:var(--ar-paper-main);--ar-on:var(--ar-paper-ink);--ar-soft:var(--ar-paper-text);--ar-rule:var(--ar-paper-rule);--ar-hair:var(--ar-paper-rule);--ar-accent:var(--ar-paper-main);--ar-tick:var(--ar-paper-ink)}
+/* the engine's older names, kept for the shared fill passes */
+.ar-bar{position:absolute;color:var(--ar-accent);display:flex;align-items:center;justify-content:center;gap:13pt;white-space:nowrap;overflow:hidden;font-family:var(--ar-label);font-weight:600;font-size:12pt;line-height:1;letter-spacing:2pt;text-transform:uppercase;box-sizing:border-box;border-top:1pt solid var(--ar-rule);border-bottom:1pt solid var(--ar-rule)}
+.ar-bar i{width:1pt;height:44%;background:var(--ar-hair);flex:none}
+.ar-bar span{white-space:nowrap}
+.ar-panel{position:absolute;background:var(--ar-lift);box-sizing:border-box}
+.ar-num{position:absolute;border:1.5pt solid var(--ar-on);border-radius:50%;color:var(--ar-on);font-family:var(--ar-serif);font-weight:700;font-size:10pt;line-height:1;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+.ar-hl{position:absolute;font-family:var(--ar-serif);font-weight:700;font-size:44pt;line-height:1.1;letter-spacing:-1.2pt;color:var(--ar-on);white-space:nowrap;overflow:hidden;text-transform:uppercase}
+.ar-serif{position:absolute;font-family:var(--ar-serif);font-weight:400;font-size:24pt;line-height:1.2;color:var(--ar-on);white-space:nowrap;overflow:hidden}
+.ar-wd{position:absolute;font-family:var(--ar-label);font-weight:600;font-size:9.5pt;line-height:12pt;letter-spacing:2.6pt;text-transform:uppercase;color:var(--ar-accent);white-space:nowrap;overflow:hidden}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.script{position:absolute;font-family:var(--ar-serif);font-weight:700;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1.2}
+
+/* photo names: tracked caps on the field, the plan's size beside them in the accent (no tab: the flyer names its rooms in plain type) */
+.lbl{display:inline-block;vertical-align:top;font-family:var(--ar-label);font-weight:600;font-size:8.6pt;line-height:12pt;letter-spacing:2pt;text-transform:uppercase;color:var(--ar-on);height:13pt;white-space:nowrap;overflow:hidden}
+.body{font-family:var(--ar-font);font-weight:400;font-size:10.5pt;line-height:16.5pt;color:var(--fx-soft);overflow:hidden}
+.wu{font-family:var(--ar-font);font-weight:400;font-size:11pt;line-height:17pt;color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font-family:var(--ar-font);font-weight:500;font-size:7.5pt;line-height:9pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden}
+
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--ar-font);font-weight:400;font-size:9.5pt;line-height:12.5pt;color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:600;color:var(--fx-on)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-family:var(--ar-font);font-weight:400;font-size:10.5pt;line-height:14pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;border-bottom:1pt solid var(--fx-rule)}
+.bul:before{content:"";width:6pt;height:6pt;border:1.5pt solid var(--ar-on);box-sizing:border-box;flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font-family:var(--ar-serif);font-weight:400;font-size:18pt;line-height:1;color:var(--fx-on)}
+.stat .l{font-family:var(--ar-label);font-weight:600;font-size:8.6pt;line-height:1;letter-spacing:1.6pt;text-transform:uppercase;color:var(--fx-soft)}
+.logo.w img{filter:brightness(0) invert(1)}
+.ar-ink .bul{color:var(--ar-paper-ink);border-bottom-color:var(--ar-paper-rule)}
+.ar-ink .fo-kick{color:var(--ar-paper-main)}

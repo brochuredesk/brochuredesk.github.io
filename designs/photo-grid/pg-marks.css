@@ -1,0 +1,47 @@
+/* Photo Grid marks shared by every page (tokens in pg-tokens.css). Font properties are written one by one, never as a `font:`
+   shorthand with var(): Chrome drops such a shorthand when the shrink-to-fit pass later sets a size on the element. */
+@import url(pg-tokens.css);
+/* tiles: every block of a page is one, on the locked grid */
+.pg-t{position:absolute}
+.pg-t.main{background:var(--pg-main)}
+.pg-t.dark{background:var(--pg-dark)}
+.pg-t.acc{background:var(--pg-accent)}
+.pg-t.cell{background:#fff;box-shadow:inset 0 0 0 .9pt var(--pg-line)}
+.pg-t.band{background:var(--pg-main)}
+.pg-t.tint{background:var(--pg-tint)}
+/* display: IBM Plex Sans Condensed 700 caps, stacked tight (the flyer's event headline) */
+.pg-hl{position:absolute;font-family:var(--pg-cond);font-weight:700;font-size:40pt;line-height:1;letter-spacing:.2pt;text-transform:uppercase;white-space:nowrap}
+.pg-eb{position:absolute;font-family:var(--pg-font);font-weight:700;font-size:9pt;line-height:12pt;letter-spacing:2.2pt;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.pg-bar{position:absolute;height:1.5pt;width:40pt;opacity:.6}
+.on-main{color:var(--pg-on-main)} .on-dark{color:var(--pg-on-dark)} .acc-main{color:var(--pg-acc-main)} .acc-dark{color:var(--pg-acc-dark)} .ink-main{color:var(--pg-main-ink)}
+.pg-num{position:absolute;font-family:var(--pg-cond);font-weight:700;line-height:1;white-space:nowrap}
+.pg-chip{position:absolute;background:var(--pg-main);color:var(--pg-on-main);font-family:var(--pg-cond);font-weight:700;font-size:11pt;line-height:18pt;text-align:center;width:18pt;height:18pt}
+.pg-rev{font-family:var(--pg-font);font-weight:500;overflow:hidden}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+/* labels: the sign-in sheet's column labels (Plex Condensed 700 caps) in the main color on white */
+.lbl{display:inline-block;font-family:var(--pg-cond);font-weight:700;font-size:10pt;line-height:12pt;letter-spacing:1.2pt;text-transform:uppercase;color:var(--pg-main-ink);white-space:nowrap;overflow:hidden}
+.body{font-family:var(--pg-font);font-weight:500;font-size:10.5pt;line-height:16pt;color:var(--fx-soft);overflow:hidden}
+.wu{font-family:var(--pg-font);font-weight:500;font-size:11pt;line-height:17pt;color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font-family:var(--pg-font);font-weight:500;font-size:6.6pt;line-height:8pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;opacity:.8}
+
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--pg-font);font-weight:500;font-size:9.5pt;line-height:12.5pt;color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:700;color:var(--fx-on)}
+.cap.rev .a{color:var(--pg-on-main)}
+
+.card{position:absolute;background:#fff;box-shadow:inset 0 0 0 .9pt var(--pg-line)}
+.bul{position:absolute;display:flex;align-items:center;gap:8pt;font-family:var(--pg-font);font-weight:500;font-size:10pt;line-height:14pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden}
+.bul:before{content:"";width:5pt;height:5pt;background:var(--pg-main);flex:none}
+
+.near{flex:none;display:flex;gap:0}
+.logo.w img{filter:brightness(0) invert(1)}

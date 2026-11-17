@@ -1,0 +1,123 @@
+/* Arc marks shared by every page (tokens in ar-tokens.css), read off the approved P22 flyer, its sign-in sheet and feedback card:
+   the main-color page; the rising cut (.ar-cut: a photo whose edge follows AR.S) and the accent stripe riding it (.ar-stripe); Jost 700
+   caps set tight for the big word (.ar-disp), the two-tone headline (.ar-two: white line over an accent line); accent caps tracked for
+   labels and places; the sign-in sheet's numbered squares (.ar-sq) and its outline boxes (.ar-yn); P22's white event box with its 1.2 pt
+   accent line (.ar-wb); the kit's dark as the foot bar (.ar-bandbg / .ar-band). Font properties one by one, never a shorthand with var(). */
+@import url(ar-tokens.css);
+.ar-fr{position:absolute;background:var(--ar-frame);z-index:5}
+.ar-eyebrow{position:absolute;font-family:var(--ar-font);font-weight:700;font-size:10pt;line-height:12pt;letter-spacing:4pt;text-transform:uppercase;color:var(--ar-accent);white-space:nowrap;overflow:hidden}
+.ar-label{position:absolute;font-family:var(--ar-font);font-weight:700;font-size:30pt;line-height:1.25;letter-spacing:5pt;text-transform:uppercase;color:var(--ar-accent);white-space:nowrap;overflow:hidden}
+.ar-serif{position:absolute;font-family:var(--ar-font);font-weight:700;font-size:30pt;line-height:1.25;color:var(--ar-on);white-space:nowrap;overflow:hidden}
+.ar-caps{position:absolute;font-family:var(--ar-font);font-weight:700;font-size:13pt;line-height:16pt;letter-spacing:2.6pt;text-transform:uppercase;color:var(--ar-accent);white-space:nowrap;overflow:hidden}
+.ar-rule{position:absolute;height:1.4pt;background:var(--ar-accent)}
+.ar-hair{position:absolute;height:1pt;background:var(--ar-rule)}
+.ar-vhair{position:absolute;width:1pt;background:var(--ar-rule)}
+/* P13: a photo laid on the paper as a print, in a white mat with a soft shadow */
+.ar-mat{position:absolute;background:transparent}
+/* P13: the band of the main color, edge to edge; type on it is white, small caps on it gold */
+.ar-bandbg{position:absolute;background:var(--ar-dark)}
+.ar-band{--ar-on:var(--ar-on-dark);--ar-soft:var(--ar-soft-dark);--ar-accent:var(--ar-gold-dark);--fx-on:var(--ar-on-dark);--fx-soft:var(--ar-soft-dark);--ar-rule:rgba(255,255,255,.5);--fx-rule:rgba(255,255,255,.5)}
+.ar-band .fine{color:var(--ar-soft-dark);opacity:1}
+.ar-vr{position:absolute;width:1pt;background:currentColor;opacity:.6}
+.ar-wbox{position:absolute;background:#fff;border:1.2pt solid var(--ar-stripe);box-sizing:border-box}
+.ar-wbox.lt{background:#fff}
+.ar-lt{--ar-accent:var(--ar-main-ink)}
+.ar-cut{position:absolute;pointer-events:none}
+.ar-head{position:absolute;font-family:var(--ar-font);font-weight:700;font-size:34pt;line-height:1.05;color:var(--ar-on);letter-spacing:-.4pt;text-transform:uppercase}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.script{position:absolute;font-family:var(--ar-label);font-weight:700;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1.25;text-transform:uppercase;letter-spacing:4pt}
+
+/* labels: main-color caps, tracked (the sign-in sheet's column heads) */
+.lbl{display:inline-block;vertical-align:bottom;font-family:var(--ar-font);font-weight:700;font-size:8.6pt;line-height:12pt;letter-spacing:2pt;text-transform:uppercase;color:var(--ar-accent);white-space:nowrap;overflow:hidden}
+.lbl.sz{text-transform:none;color:var(--fx-soft);letter-spacing:.6pt;margin-left:10pt;font-weight:500}
+.body{font-family:var(--ar-font);font-weight:400;font-size:10.5pt;line-height:16.5pt;color:var(--fx-soft);overflow:hidden}
+.wu{font-family:var(--ar-font);font-weight:400;font-size:11pt;line-height:17pt;color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font-family:var(--ar-font);font-weight:500;font-size:6.6pt;line-height:8pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;opacity:.85}
+
+/* photos: square corners, sharp inside the mat */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--ar-font);font-weight:400;font-size:9.5pt;line-height:12.5pt;color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:700;color:var(--fx-on)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-family:var(--ar-font);font-weight:500;font-size:10.5pt;line-height:14pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;border-bottom:1pt solid var(--fx-rule)}
+.bul:before{content:"";width:9pt;height:1.4pt;background:var(--ar-accent);flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font-family:var(--ar-serif);font-weight:700;font-size:18pt;line-height:1;color:var(--fx-on)}
+.stat .l{font-family:var(--ar-font);font-weight:700;font-size:9pt;line-height:1;letter-spacing:2pt;text-transform:uppercase;color:var(--fx-soft)}
+
+.near{flex:none;display:flex;gap:0;border-top:var(--fx-rule-w) solid var(--fx-rule);padding-top:9pt}
+.near .c{flex:1;min-width:0;padding-left:14pt;border-left:var(--fx-rule-w) solid var(--fx-rule)}
+.near .c:first-child{padding-left:0;border-left:0}
+.near .d{font-family:var(--ar-serif);font-weight:700;font-size:15pt;line-height:18pt;color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.near .p{font-family:var(--ar-font);font-weight:700;font-size:8pt;line-height:10pt;letter-spacing:1.6pt;text-transform:uppercase;color:var(--fx-soft);overflow:hidden;margin-top:1pt;min-height:20pt}
+.logo.w img{filter:brightness(0) invert(1)}
+
+/* the display line: Jost 700 caps, tracked (P13's PUBLIC OPEN HOUSE / SATURDAY); the street: 700 mixed case (the flyer's
+   address line); the place: 700 tracked caps in the main color (on the band: gold); the second line: 500 (the flyer's date and time) */
+.ar-disp{position:absolute;font-family:var(--ar-font);font-weight:700;letter-spacing:-.5pt;text-transform:uppercase;color:var(--ar-on);white-space:nowrap;overflow:hidden;text-align:left}
+.ar-street{position:absolute;font-family:var(--ar-font);font-weight:700;color:var(--ar-on);white-space:nowrap;overflow:hidden;text-align:left}
+.ar-place{position:absolute;font-family:var(--ar-font);font-weight:600;letter-spacing:2.4pt;text-transform:uppercase;color:var(--ar-accent);white-space:nowrap;overflow:hidden;text-align:left}
+.ar-time{position:absolute;font-family:var(--ar-font);font-weight:500;color:var(--ar-on);white-space:nowrap;overflow:hidden;text-align:left}
+.ar-h{position:absolute;font-family:var(--ar-font);font-weight:700;color:var(--ar-on);letter-spacing:-.2pt;text-align:left}
+/* the flyer's short rule between centered facts */
+.ar-dv{position:absolute;height:1pt;background:var(--ar-accent);opacity:.55}
+.ar-dm{position:absolute;background:var(--ar-accent)}
+.ar-dmo{position:absolute;border:1.5pt solid var(--ar-accent);box-sizing:border-box;border-radius:50%}
+.ar-echo{position:absolute;overflow:visible;pointer-events:none;z-index:2}
+/* the sign-in sheet's white writing mat: white with the soft shadow, main-color caps labels, dark type */
+.ar-wb{position:absolute;background:#fff;border:1.2pt solid var(--ar-stripe);box-sizing:border-box}
+.ar-on-wb{--fx-on:#161616;--fx-soft:#2a2a2a;--fx-rule:rgba(0,0,0,.16);--ar-on:#161616;--ar-soft:#2a2a2a;--ar-rule:rgba(0,0,0,.16)}
+.ar-on-wb .ar-wl{color:var(--ar-main-ink)}
+.ar-wl{position:absolute;font-family:var(--ar-font);font-weight:700;font-size:8.6pt;line-height:11pt;letter-spacing:1.8pt;text-transform:uppercase;color:var(--ar-accent);white-space:nowrap;overflow:hidden}
+.ar-medal{position:absolute;display:flex;align-items:center;justify-content:center;font-family:var(--ar-font);font-weight:700;color:var(--ar-on);white-space:nowrap}
+.ar-ml{position:absolute;font-family:var(--ar-font);font-weight:700;font-size:8.6pt;line-height:11pt;letter-spacing:2pt;text-transform:uppercase;color:var(--ar-soft);white-space:nowrap;overflow:hidden;text-align:center}
+.ar-on-wb .bul:before,.bul.dm:before{width:9pt;height:1.4pt}
+
+/* P22: the rising cut. A photo wrapper clipped on AR.S; the accent stripe riding the cut (an SVG band, edge to edge) */
+.ar-cut{position:absolute;overflow:hidden}
+.ar-stripe{position:absolute;overflow:visible;pointer-events:none;z-index:3}
+/* the two-tone headline: line one in the page's type color, line two in the accent (the sign-in sheet's PLEASE / SIGN IN) */
+.ar-two{position:absolute;font-family:var(--ar-font);font-weight:700;text-transform:uppercase;letter-spacing:-.5pt;color:var(--ar-on);white-space:nowrap;overflow:hidden}
+.ar-two .a2{color:var(--ar-accent)}
+/* the sign-in sheet's numbered square: the main color, the number in white 700 */
+.ar-sq{position:absolute;display:flex;align-items:center;justify-content:center;background:var(--ar-main);color:var(--ar-on-main);font-family:var(--ar-font);font-weight:700;white-space:nowrap}
+.ar-sq.ac{background:var(--ar-stripe);color:#1b1b1b}
+.ar-sq.ol{background:transparent;border:1.2pt solid var(--ar-stripe);color:var(--ar-on)}
+.ar-mk{position:absolute;background:var(--ar-stripe)}
+.bul.sq:before{width:6pt;height:6pt;background:var(--ar-stripe)}
+
+/* ===================== Arc (P49) marks, 11/16 ===================== */
+/* the block: the kit's main color with one rounded corner; type on it white, small caps on it the accent where it reads (else white) */
+.ar-blk{position:absolute;background:var(--ar-main)}
+.ar-band{--ar-on:var(--ar-on-main);--ar-soft:var(--ar-soft-main);--ar-accent:var(--ar-gold);--fx-on:var(--ar-on-main);--fx-soft:var(--ar-soft-main);--ar-rule:rgba(255,255,255,.55);--fx-rule:rgba(255,255,255,.55)}
+/* P49's ruled row: the rules at 35% ink, the short vertical rules, the label cell (WHEN / HOME) */
+.ar-rl{position:absolute;height:1pt;background:var(--ar-on);opacity:.35}
+.ar-vrl{position:absolute;width:1pt;background:var(--ar-on);opacity:.35}
+.ar-band .ar-rl,.ar-band .ar-vrl{opacity:.55}
+.ar-when{position:absolute;font-family:var(--ar-font);font-weight:600;font-size:13pt;line-height:20pt;letter-spacing:2.5pt;text-transform:uppercase;color:var(--ar-accent);text-align:center;white-space:nowrap;overflow:hidden}
+/* P49's display: tall Spectral caps set tight, in the main color */
+.ar-hl{position:absolute;font-family:Spectral,Georgia,serif;font-weight:400;text-transform:uppercase;letter-spacing:-.5pt;color:var(--ar-accent);white-space:nowrap;overflow:hidden}
+.ar-band .ar-hl{color:var(--ar-on-main)}
+/* P49's address: Jost 600, the street name in the main color; the place in tracked caps under it */
+.ar-addr{position:absolute;font-family:var(--ar-font);font-weight:600;color:var(--ar-on);white-space:nowrap;overflow:hidden}
+.ar-addr b{font-weight:600;color:var(--ar-accent)}
+.ar-pl{position:absolute;font-family:var(--ar-font);font-weight:500;letter-spacing:1.6pt;text-transform:uppercase;color:var(--ar-soft);white-space:nowrap;overflow:hidden}
+/* Spectral numerals and lines (the flyer's date) */
+.ar-sp{position:absolute;font-family:Spectral,Georgia,serif;font-weight:500;color:var(--ar-on);white-space:nowrap;overflow:hidden}
+.ar-sp b{font-weight:600;color:var(--ar-accent)}
+.ar-field{position:absolute}
+/* a panel headline: Spectral 500 sentence case in the main color (the sign-in sheet's "Please sign in") */
+.ar-ph{font-family:Spectral,Georgia,serif;font-weight:500;letter-spacing:-.3pt;color:var(--ar-accent);overflow:hidden}

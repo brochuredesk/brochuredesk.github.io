@@ -1,0 +1,58 @@
+/* Itinerary marks shared by every page (tokens in it-tokens.css). */
+@import url(it-tokens.css);
+/* the title bar: the main color run in from the trim edge, a 3 pt accent line on its top edge, the words in Montserrat 800 caps */
+.it-bar{position:absolute;background:var(--it-main)}
+.it-bar:before{content:"";position:absolute;left:0;right:0;top:0;height:3pt;background:var(--it-accent)}
+.it-bar-t{position:absolute;font-family:var(--it-display);font-weight:800;letter-spacing:1.4pt;text-transform:uppercase;color:var(--it-on-main);white-space:nowrap;overflow:hidden}
+.it-tag{position:absolute;font-family:var(--it-display);font-weight:700;font-size:9pt;line-height:12pt;letter-spacing:3pt;text-transform:uppercase;color:var(--it-aom);white-space:nowrap;overflow:hidden}
+/* the ruled table: tracked caps labels in the main color, one vertical hairline, hairlines between rows, values in Playfair */
+.it-lab{position:absolute;font-family:var(--it-display);font-weight:700;font-size:8.6pt;line-height:12pt;letter-spacing:2.8pt;text-transform:uppercase;color:var(--it-mop);white-space:nowrap;overflow:hidden}
+.it-val{position:absolute;font-family:var(--it-serif);font-weight:600;color:var(--it-ink);white-space:nowrap;overflow:hidden}
+.it-adr{position:absolute;font-family:var(--it-serif);font-weight:700;color:var(--it-mop);white-space:nowrap;overflow:hidden}
+.it-plc{position:absolute;font-family:var(--it-display);font-weight:700;letter-spacing:2.6pt;text-transform:uppercase;color:var(--it-ink);white-space:nowrap;overflow:hidden}
+.it-num{position:absolute;font-family:var(--it-serif);font-weight:600;color:var(--it-mop);white-space:nowrap;line-height:1}
+.it-hr{position:absolute;height:.75pt;background:var(--it-rule)}
+.it-vr{position:absolute;width:.75pt;background:var(--it-rule)}
+.it-hair{position:absolute;height:.75pt;background:var(--it-rule)}
+.it-vhair{position:absolute;width:.75pt;background:var(--it-rule)}
+/* the stop number on a photo: a main-color square with a Playfair numeral, inside the photo's corner (the sign-in sheet's row numbers) */
+.it-stop{position:absolute;z-index:4;display:flex;align-items:center;justify-content:center;background:var(--it-main);color:var(--it-on-main);font-family:var(--it-serif);font-weight:600;line-height:1}
+/* the one bright moment: the flyer's white box with a thin accent edge */
+.it-wbox{position:absolute;background:#ffffff;border:1.2pt solid var(--it-accent)}
+.it-lt{}
+/* compatibility names the engine still writes */
+.it-eyebrow{position:absolute;font-family:var(--it-display);font-weight:700;font-size:9pt;line-height:12pt;letter-spacing:3pt;text-transform:uppercase;color:var(--it-mop);white-space:nowrap;overflow:hidden}
+.it-label{position:absolute;font-family:var(--it-display);font-weight:800;letter-spacing:1.4pt;text-transform:uppercase;color:var(--it-ink);white-space:nowrap;overflow:hidden}
+.it-serif{position:absolute;font-family:var(--it-serif);font-weight:600;color:var(--it-ink);white-space:nowrap;overflow:hidden}
+.it-caps{position:absolute;font-family:var(--it-display);font-weight:700;font-size:10pt;letter-spacing:2pt;text-transform:uppercase;color:var(--it-mop);white-space:nowrap;overflow:hidden}
+.it-rule{position:absolute;height:3pt;background:var(--it-accent)}
+.it-fr{display:none}
+.it-cut{position:absolute;pointer-events:none}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.lbl{display:inline-block;vertical-align:bottom;font-family:var(--it-display);font-weight:700;font-size:8.6pt;line-height:12pt;letter-spacing:2.4pt;text-transform:uppercase;color:var(--it-mop);white-space:nowrap;overflow:hidden}
+.lbl .n{font-family:var(--it-serif);font-weight:600;letter-spacing:0;font-size:11pt;margin-right:7pt;color:var(--it-mop)}
+.lbl.sz{text-transform:none;color:var(--it-soft);letter-spacing:1pt;margin-left:9pt;font-weight:500}
+.body{font-family:var(--it-font);font-weight:400;font-size:10.5pt;line-height:16pt;color:var(--fx-soft);overflow:hidden}
+.wu{font-family:var(--it-font);font-weight:400;font-size:11pt;line-height:16pt;color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font-family:var(--it-font);font-weight:400;font-size:6.6pt;line-height:8pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden}
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--it-font);font-weight:400;font-size:9.5pt;line-height:12.5pt;color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:600;color:var(--fx-on)}
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-family:var(--it-font);font-weight:400;font-size:10.5pt;line-height:14pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;border-bottom:.75pt solid var(--fx-rule)}
+.bul:before{content:"";width:4.5pt;height:4.5pt;background:var(--it-main);flex:none}
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font-family:var(--it-serif);font-weight:600;font-size:18pt;line-height:1;color:var(--fx-on)}
+.stat .l{font-family:var(--it-font);font-weight:700;font-size:8.6pt;line-height:1;letter-spacing:2pt;text-transform:uppercase;color:var(--it-mop)}
+.logo.w img{filter:brightness(0) invert(1)}
+.it-n{display:inline-block;vertical-align:bottom;font-family:var(--it-serif);font-weight:600;font-size:13pt;line-height:12pt;color:var(--it-mop);margin-right:8pt;min-width:18pt}

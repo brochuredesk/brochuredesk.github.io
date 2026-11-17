@@ -1,0 +1,60 @@
+/* Luncheon Band marks shared by every piece (tokens in lb-tokens.css). From B10: the band, its two-weight title, the tracked caps
+   label, the white box with the main-color line, the 25% hairlines, the icon facts, the numbered square. */
+@import url(lb-tokens.css);
+/* THE BAND: the brand kit's dark, edge to edge across the trim (it bleeds; on the inside spread it crosses the fold on purpose) */
+.lb-band{position:absolute;background:var(--lb-dark)}
+/* its title: Plex Condensed bold caps in the on-dark color, one part in the accent at regular weight (B10 "REALTOR® OPEN HOUSE LUNCHEON") */
+.lb-bt{position:absolute;font-family:var(--lb-cond);font-weight:700;text-transform:uppercase;color:var(--lb-on-dark);white-space:nowrap;overflow:hidden;letter-spacing:.3pt}
+.lb-bt .ac,.lb-ac{font-weight:400;color:var(--lb-acc-dark)}
+.lb-bt.c{text-align:center}
+/* the date line and the time line of B10, reused: bold on-dark, then regular accent */
+.lb-b2{position:absolute;font-family:var(--lb-cond);font-weight:700;color:var(--lb-on-dark);white-space:nowrap;overflow:hidden}
+.lb-b3{position:absolute;font-family:var(--lb-cond);font-weight:400;color:var(--lb-acc-dark);white-space:nowrap;overflow:hidden}
+.lb-b4{position:absolute;font-family:var(--lb-font);font-weight:600;color:var(--lb-on-dark);opacity:.92;white-space:nowrap;overflow:hidden}
+/* the label: Libre Franklin bold caps, wide tracked, main color on paper (B10 "JOIN US AT", "REFRESHMENTS") */
+.lb-k{position:absolute;font-family:var(--lb-font);font-weight:700;font-size:8.8pt;line-height:11pt;letter-spacing:2.2pt;text-transform:uppercase;color:var(--lb-main-paper);white-space:nowrap;overflow:hidden}
+.lb-band .lb-k,.lb-on-band .lb-k{color:var(--lb-acc-dark)}
+/* the street and other display words on paper: Plex Condensed bold, ink */
+.lb-st{position:absolute;font-family:var(--lb-cond);font-weight:700;color:var(--lb-ink);white-space:nowrap;overflow:hidden}
+.lb-st.u{text-transform:uppercase}
+.lb-pl{position:absolute;font-family:var(--lb-font);font-weight:400;color:var(--lb-ink);white-space:nowrap;overflow:hidden}
+/* the white box with the thin main-color line (B10 refreshments box) */
+.lb-box{position:absolute;background:#fff;border:.9pt solid var(--lb-box-line)}
+.lb-tintbox{position:absolute;background:var(--lb-tint)}
+/* hairlines: 25% ink, .9 pt (B10 .vr / .hr) */
+.lb-vr{position:absolute;width:.9pt;background:var(--lb-rule)}
+.lb-hr{position:absolute;height:.9pt;background:var(--lb-rule)}
+.lb-hr.ink{height:1.4pt;background:var(--lb-main-paper)}
+.lb-hr.head{height:2pt;background:var(--lb-main-paper)}
+/* the icon facts: a line icon in the main color, the value in Plex Condensed bold, the label in small tracked caps */
+.lb-fact{position:absolute;text-align:center}
+.lb-fact svg{width:20pt;height:20pt;stroke:var(--lb-main-paper);fill:none;stroke-width:1.5;display:block;margin:0 auto}
+.lb-fact .v{font-family:var(--lb-cond);font-weight:700;font-size:20pt;line-height:24pt;margin-top:3pt;color:var(--lb-ink);white-space:nowrap;overflow:hidden}
+.lb-fact .l{font-family:var(--lb-font);font-weight:700;font-size:8.8pt;line-height:11pt;letter-spacing:.9pt;text-transform:uppercase;color:var(--lb-ink);opacity:.72;white-space:nowrap;overflow:hidden}
+.lb-on-band .lb-fact svg{stroke:var(--lb-acc-dark)}
+.lb-on-band .lb-fact .v{color:var(--lb-on-dark)}
+.lb-on-band .lb-fact .l{color:var(--lb-on-dark);opacity:.9}
+.lb-on-band .lb-vr{background:rgba(255,255,255,.35);width:1pt}
+/* the sign-in sheet's numbered square: main color, on-main numeral in Plex Condensed bold */
+.lb-num{position:absolute;background:var(--lb-main);color:var(--lb-on-main);font-family:var(--lb-cond);font-weight:700;text-align:center}
+.lb-cut{position:absolute;pointer-events:none}
+
+/* the engine's names, in this hand */
+.taupe{position:absolute;background:var(--fx-taupe)}
+.lbl{display:inline-block;vertical-align:bottom;font-family:var(--lb-font);font-weight:700;font-size:8.6pt;line-height:12pt;letter-spacing:2pt;text-transform:uppercase;color:var(--lb-main-paper);white-space:nowrap;overflow:hidden}
+.lbl.sz{text-transform:none;color:var(--lb-text);letter-spacing:.6pt;margin-left:9pt;font-weight:400}
+.body{font-family:var(--lb-font);font-weight:400;font-size:10.5pt;line-height:16.5pt;color:var(--lb-text);overflow:hidden}
+.wu{font-family:var(--lb-font);font-weight:400;font-size:11pt;line-height:17pt;color:var(--lb-text);overflow:hidden}
+.hr{position:absolute;height:.9pt;background:var(--lb-rule)}
+.vr{position:absolute;width:.9pt;background:var(--lb-rule)}
+.fine{font-family:var(--lb-font);font-weight:400;font-size:6.6pt;line-height:8pt;color:var(--lb-ink);white-space:nowrap;overflow:hidden;opacity:.6}
+.ph{position:relative;overflow:hidden;background:var(--lb-tint);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--lb-font);font-weight:400;font-size:9.5pt;line-height:12.5pt;color:var(--lb-text);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:700;color:var(--lb-ink)}
+.card{position:absolute;border:0;background:transparent}
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-family:var(--lb-font);font-weight:400;font-size:10.5pt;line-height:14pt;color:var(--lb-text);white-space:nowrap;overflow:hidden;border-bottom:.9pt solid var(--lb-rule)}
+.bul:before{content:"";width:5pt;height:5pt;background:var(--lb-main-paper);flex:none}
+.logo.w img{filter:brightness(0) invert(1)}

@@ -1,0 +1,30 @@
+/* Angle tokens: THE one source for the set's palette, type, rules and marks. The look is the approved Open House library flyer
+   P17 Angle (templates/oh-library/p17-angle*.html) and its sign-in sheet and feedback card (p17-signin / p17-feedback in
+   templates/oh-extras/looks.js): the agent's brand-kit MAIN color as the field everywhere, photos cut on one slant (higher at the
+   right) with an accent stripe along the cut, accent tags leaning on the same slant (skewX -14deg) carrying the labels, tall
+   Asap Condensed caps for the street, headings and numerals, Outfit for details and body, hairline rules in the on-main color at
+   35%, a thin accent bar beside the facts and the write-ups, plain white boxes for the lists, and the brand's dark color as the
+   leaning foot band that carries the agent. The brand colors are set at run time from data.brand.colors (AN.brand in an.js);
+   these are the sample kit's (samples/oh-extras/lib-p17-public.json). */
+:root{
+  --an-main:#0f5257; --an-dark:#0a2f33; --an-on:#ffffff; --an-accent:#f2a541; --an-on-accent:#161616; --an-soft:#dbe6e6;
+  --an-rule:rgba(255,255,255,.35); --an-box-line:#0f5257; --an-tag:#f2a541; --an-deep:#0a2f33; --an-on-deep:#ffffff;
+  --an-cond:'Asap Condensed','Oswald',Helvetica,sans-serif;   /* street, headings, numerals, the status words */
+  --an-font:'Outfit',Helvetica,Arial,sans-serif;              /* tags, details, body */
+  --fx-paper:#0f5257; --fx-taupe:#0f5257; --fx-taupe-d:#1c5f63; --fx-on:#ffffff; --fx-soft:#dbe6e6; --fx-card:#ffffff; --fx-mail:#f4f6f5;
+  --fx-seal:#0f5257; --fx-ink:#161616; --fx-text:#333333; --fx-mute:#f2a541; --fx-accent:#f2a541; --fx-rule:rgba(255,255,255,.35); --fx-rule-d:#d8d8d4; --fx-on-ink:#ffffff;
+  --fx-script:'Asap Condensed',Helvetica,Arial,sans-serif; --fx-serif:'Asap Condensed',Helvetica,sans-serif; --fx-display:'Asap Condensed',Helvetica,sans-serif; --fx-font:'Outfit',Helvetica,Arial,sans-serif;
+  --fx-label-w:600; --fx-label-track:2.2pt; --fx-rule-w:.9pt; --fx-gap:12pt; --fx-m:18pt;
+  --cc-paper:#0a2f33; --cc-ink:#ffffff; --cc-muted:#dbe6e6; --cc-accent:#f2a541; --cc-line:rgba(255,255,255,.4);
+  --cc-display:'Asap Condensed',Helvetica,sans-serif; --cc-body:'Outfit',Helvetica,Arial,sans-serif;
+  --font-display:'Asap Condensed',Helvetica,sans-serif; --font-body:'Outfit',Helvetica,Arial,sans-serif;
+  --ink:#ffffff; --muted:#dbe6e6; --accent:#f2a541; --paper:#0f5257; --navy:#0a2f33; --gold:#f2a541; --gold-ink:#f2a541;
+}
+@font-face{font-family:'Asap Condensed';font-weight:400;src:url(../../fonts/pool/asap-condensed-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Asap Condensed';font-weight:500;src:url(../../fonts/pool/asap-condensed-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Asap Condensed';font-weight:600;src:url(../../fonts/pool/asap-condensed-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Asap Condensed';font-weight:700;src:url(../../fonts/pool/asap-condensed-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Outfit';font-weight:400;src:url(../../fonts/pool/outfit-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Outfit';font-weight:500;src:url(../../fonts/pool/outfit-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Outfit';font-weight:600;src:url(../../fonts/pool/outfit-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Outfit';font-weight:700;src:url(../../fonts/pool/outfit-latin-700-normal.woff2) format('woff2')}
