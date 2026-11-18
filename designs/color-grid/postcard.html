@@ -202,6 +202,7 @@ window.brochureReady = (async function(){
     el.style.fontSize = Math.max(7.5, fs) + 'pt'; }
   // the six steps: the largest size (12 pt down to 8.6) at which each sets in two lines or fewer inside the box, then the rows spread to fill it
   function fitSteps(){ const L = document.getElementById('stepslist'); if(!L) return; const x = +L.dataset.x, y0 = +L.dataset.y, w = +L.dataset.w, yB = +L.dataset.b, its = [...L.querySelectorAll('.it')], tx = 22;
+    if(big && its.length === 6 && fitSteps2(L, x, y0, w, yB, its, tx)) return;
     let best = null;
     for(let fs = 12*k + (big ? 1 : 0); fs >= 8.6 - 1e-6; fs -= 0.2){ const lh = fs*1.3; let tot = 0; const ns = its.map(it => { const s = it.querySelector('.stp'); s.style.cssText = `position:absolute;left:${tx}pt;top:0;width:${w - tx}pt;font-size:${fs}pt;line-height:${lh}pt`; const n = SW.lines(s).n; tot += n*lh; return n; });
       if(ns.every(n => n <= 2) && tot + (its.length - 1)*3 <= yB - y0){ best = {fs, lh, ns, tot}; break; } }
@@ -213,6 +214,27 @@ window.brochureReady = (async function(){
       y += n*best.lh + gap; });
     const box = document.getElementById('stepsbox'), call = document.getElementById('jscall'); const used = y - gap - (y0 - 28) + 12 + 22;
     if(box && used < +box.dataset.bh - 2){ const bh = used; box.style.height = bh + 'pt'; if(call) call.style.top = (parseFloat(box.style.top) + bh - 20) + 'pt'; } }
+  // the 6x11 (owner 11/18/2026: "fill the plain light patch"): the box is wide and short, so one column of steps leaves white beside
+  // every line. Two columns of three, numbered down the first then the second, at the largest size (15 pt down to 10) at which every
+  // step sets in three lines or fewer and each column fits the box; the rows of each column spread to fill its height.
+  function fitSteps2(L, x, y0, w, yB, its, tx){ const g = 20, cw = (w - g)/2; let best = null;
+    // the call line moves up beside the kicker (right-aligned on its line), so the steps take the box's bottom row too
+    const call = document.getElementById('jscall'), kick = document.querySelector('[data-slot="back.box.k"]');
+    if(call && kick){ call.style.top = kick.style.top; call.style.textAlign = 'right'; call.style.height = '14pt'; call.style.lineHeight = '14pt'; yB += 14; }
+    const H = yB - y0;
+    for(let fs = 16; fs >= 10 - 1e-6; fs -= 0.25){ const lh = fs*1.24, ns = its.map(it => { const s = it.querySelector('.stp'); s.style.cssText = `position:absolute;left:${tx}pt;top:0;width:${cw - tx}pt;font-size:${fs}pt;line-height:${lh}pt`; return SW.lines(s).n; });
+      const col = c => ns.slice(3*c, 3*c + 3).reduce((a, n) => a + n*lh, 0) + 2*6;
+      if(ns.every(n => n <= 3) && col(0) <= H && col(1) <= H){ best = {fs, lh, ns}; break; } }
+    if(!best) return false;
+    [0, 1].forEach(c => { const rows = its.slice(3*c, 3*c + 3), tot = rows.reduce((a, it, j) => a + best.ns[3*c + j]*best.lh, 0), gap = (H - tot)/2; let y = y0;
+      rows.forEach((it, j) => { const i = 3*c + j, s = it.querySelector('.stp'), n = best.ns[i]; s.style.fontSize = best.fs + 'pt'; s.style.lineHeight = best.lh + 'pt'; s.style.height = (n*best.lh) + 'pt'; s.dataset.lines = n;
+        it.style.left = (x + c*(cw + g)) + 'pt'; it.style.top = y + 'pt'; it.style.width = cw + 'pt'; it.style.height = (n*best.lh) + 'pt';
+        const dm = it.querySelector('.cg-dmo'), nm = it.querySelector('.num'), cy = best.lh/2; dm.style.top = (cy - 6) + 'pt'; dm.style.left = '1pt'; nm.style.top = (cy - 10) + 'pt'; nm.style.left = '-3pt';
+        y += n*best.lh + gap; }); });
+    // a rule in the main ink down the middle of the gutter, the box's height inside its border, clear of every line of text
+    const box = document.getElementById('stepsbox'); if(box){ const bt = parseFloat(box.style.top), bh = parseFloat(box.style.height), rx = x + cw + g/2 - 0.75;
+      box.insertAdjacentHTML('afterend', `<div class="abs" data-rule="steps-gutter" style="left:${rx}pt;top:${bt + 8}pt;width:1.5pt;height:${bh - 16}pt;background:var(--cg-main-ink)"></div>`); }
+    return true; }
   function backCheck(){ const out = [], pt = v => v*72/96, sh = document.querySelector('.sheet').getBoundingClientRect(), X0 = window.__cardX || 30;
     const cc = document.querySelector('.sheet .cc');
     if(!cc) out.push({slot: 'back.card', kind: 'no-contact-card', detail: 'the back has no standard contact card'});
