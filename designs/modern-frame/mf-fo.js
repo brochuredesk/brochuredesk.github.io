@@ -206,12 +206,22 @@
   FO.factLine = L => FXS.statItems(L).map(FO.factText).join('  ·  ');
   FO.placeTxt = L => [FXS.hood(L), FXS.placeLine(L).replace(/\s+\d{5}(-\d{4})?$/, '')].filter(Boolean).join('  ·  ');
 
+  // a write-up pool: the piece's own sentences first, then the listing's master write-up. A master sentence that says a fact the pool already
+  // has is left out (nothing said twice), and so is a master line with no verb (a clipped fragment never reaches a piece)
+  const VERB = /\b(is|are|was|were|has|have|had|runs?|ran|opens?|leads?|fills?|stands?|sits?|serves?|comes?|makes?|helps?|lines?|shares?|rises?|overlooks?|looks?|pulls?|reach(es)?|carr(y|ies)|keeps?|covers?|built|replaced|faces?|hangs?|wraps?|tops?|finish(es)?|gives?|holds?|brings?|connects?|steps?|shades?|lights?|frames?|backs?|seats?|includes?|offers?|adds?|takes?|gets?|goes|stays?|works?|closes?|lets?|puts?|sets?|starts?|ends?|flooded|updated|reworked|leveled|redone)\b/i;
+  FO.pool = (own, master) => { const out = []; const add = (x, strict) => { const l = [].concat(x).filter(t => t && !SW.BANNED.test(t) && (!strict || VERB.test(t))); if(!l.length) return;
+      if(out.some(y => [].concat(y).some(a => l.some(b => a === b || SW.sameFact(a, b))))) return; out.push(l.length > 1 ? l : l[0]); };
+    (own || []).forEach(x => add(x, true)); (master || []).forEach(x => add(x, true)); return out; };
+
   // COVER. The P16 flyer turned into a cover, on its center axis: the place in the flyer's tracked caps ("Please join us for a"), the street
   // as the flyer sets "Public Open House" (700, tight, in the main color, the page's one big word), the facts line under it as the flyer sets
   // its date; then the house runs edge to edge THROUGH the frame (the rails and the hairline stop at its edges and resume under it); under it,
   // "About this home" and the write-up, centered, as on the flyer. No agent, no brokerage.
   FO.front = (D, o) => { o = o || {};
-    const L = D.listing, K = (D.sw || {}).front || {}, F = ((D.companion || {}).flyer || {}).front || {}, intro = o.intro || K.summary || F.intro || [];
+    const L = D.listing, K = (D.sw || {}).front || {}, F = ((D.companion || {}).flyer || {}).front || {};
+    // the cover write-up's pool (owner 11/17: more words): the cover and flyer intros first, then the listing's master write-up; a fact
+    // already in the pool in other words is left out, so the longer paragraph never says one thing twice
+    const intro = FO.pool([].concat(o.intro || K.summary || F.intro || []), ((D.companion || {}).postcard || {}).master || []);
     const hero = FO.heroId(D, F.hero || K.hero || 'front'), R = FO.R;
     let h = FO.frameAll(R, 612, 792);
     const place = FO.placeTxt(L), ad = String(L.address || ''), as = FXS.fitSize(ad, `${HG};font-weight:700;letter-spacing:-1pt`, CW, 66, 36), ft = FO.factLine(L), fs = FXS.fitSize(ft, `${HG};font-weight:500`, CW, 17, 11);
@@ -219,14 +229,26 @@
     h += FO.eye(place, X0, y, CW, 'front.place', 10.5); y += 20;
     h += `<div class="mf-big" style="left:${X0 - 6}pt;top:${y}pt;width:${CW + 12}pt;height:${as*1.12}pt;font-size:${as}pt;line-height:${as*1.12}pt" data-slot="address" data-lines="1">${esc(ad)}</div>`; y += as*1.12 + 4;
     h += `<div class="mf-line" style="left:${X0}pt;top:${y}pt;width:${CW}pt;height:${fs*1.3}pt;font-size:${fs}pt;line-height:${fs*1.3}pt" data-slot="front.facts" data-lines="1">${esc(ft)}</div>`; y += fs*1.3;
-    const PT = Math.round(y + 24), lh = 17.5, n = 3, aboutH = 14 + 10 + n*lh; let HH = 400; while(HH < 470 && !SW.fits(D, hero, 630, HH)) HH += 6;
-    HH = Math.min(HH, 766 - 26 - aboutH - 22 - PT);
-    h += FXS.box(D, hero, -9, PT, 630, HH, 'front.house', '', 0);
+    // owner 11/17: the frame's rails run down BOTH sides of the house (the photo sits between them, the same margin left and right), and
+    // the write-up is the page's second voice: 14 pt, as many full lines as the room under the house holds (five to seven)
+    const PT = Math.round(y + 24), fsA = 14, lh = 21, PW = 612 - 2*R; let HH = 344; while(HH < 440 && !SW.fits(D, hero, PW, HH)) HH += 6;
+    HH = Math.min(HH, 766 - 22 - (24 + 4*lh) - 22 - PT);
+    const n = Math.max(4, Math.min(7, Math.floor((766 - PT - HH - 24 - 40)/lh))), aboutH = 24 + n*lh;
+    h += FXS.box(D, hero, R, PT, PW, HH, 'front.house', '', 0);
     const PB = PT + HH, ay = PB + (766 - PB - aboutH)/2;
-    h += FO.eye('About this home', X0, ay, CW, 'front.about', 10);
-    h += FO.full(FO.wu(intro, X0 + 18, ay + 24, CW - 36, n*lh + 0.01, 'front.summary', 11.5, lh, 'wu mf-c')).replace('data-slot="front.summary"', 'data-slot="front.summary" data-measures="1,.95,.9,.85,.8,.75"');
+    h += FO.eye('About this home', X0, ay, CW, 'front.about', 11);
+    const tries = []; for(let q = n; q >= 4; q--) tries.push(q);
+    h += FO.full(FO.wu(intro, X0, ay + 24, CW, n*lh + 0.01, 'front.summary', fsA, lh, 'wu mf-c')).replace('data-slot="front.summary"', `id="cv-wu" data-planned="${n*lh}" data-top0="${ay + 24}" data-slot="front.summary" data-measures="1,.97,.94,.91,.88,.85"`).replace(/data-try="[^"]*"/, `data-try="${tries.join(',')}"`).replace(/ data-h0="[^"]*"/, '').replace('class="mf-eye"', 'class="mf-eye"');
+    h = h.replace('data-slot="front.about"', 'id="cv-eye" data-slot="front.about"');
     return h;
   };
+
+  // after the fill: the cover write-up fills its room. When its true sentences set in fewer lines than planned, the leading opens (to 1.7)
+  // and the heading and the write-up sit centered top to bottom in the room under the house
+  FO.frontSnug = () => { const el = document.getElementById('cv-wu'), eye = document.getElementById('cv-eye'); if(!el || !el.textContent.trim()) return;
+    const planned = +el.dataset.planned, n = SW.lines(el).n, fs = parseFloat(el.style.fontSize), lh = Math.min(planned/n, fs*1.7), slack = planned - n*lh;
+    el.style.lineHeight = lh + 'pt'; el.style.height = (n*lh) + 'pt'; el.dataset.lines = n; el.style.top = (+el.dataset.top0 + slack/2) + 'pt';
+    if(eye) eye.style.top = (parseFloat(eye.style.top) + slack/2) + 'pt'; };
 
   // FLYER FRONT, its own composition: the house breaks out of the TOP of the frame (it bleeds off the head and both sides; the frame starts
   // under it); in the window the place and the street, centered; the kitchen beside the write-up; the frame's foot rail runs deep and

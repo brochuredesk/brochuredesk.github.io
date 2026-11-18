@@ -13,8 +13,11 @@
   // a stack of parts centered top to bottom in a box: [{h, html: y => ...}]
   T.vstack = (y, h, parts, gap) => { const tot = parts.reduce((s, p) => s + p.h, 0) + (parts.length - 1)*(gap || 0); let yy = y + (h - tot)/2, out = ''; parts.forEach(p => { out += p.html(yy); yy += p.h + (gap || 0); }); return out; };
   // the house number as a row of square numeral tiles (the sign-in sheet's numbered blocks), alternating dark and main
-  T.digits = (num, x, y, s, slot, tone0, gap) => { let h = ''; const g = gap == null ? G : gap, fs = s*0.84; String(num).split('').forEach((d, i) => { const tx = x + i*(s + g), tone = (i + (tone0 || 0)) % 2 ? '' : 'dk';
-      h += T.tile(tx, y, s, s, tone) + `<div class="cg-num" style="left:${tx}pt;top:${y}pt;width:${s}pt;height:${s}pt;font-size:${fs}pt;line-height:${s}pt" data-slot="${slot}.${i}" data-lines="1">${esc(d)}</div>`; });
+  // each tile tw wide (square on the 4-digit sample; wider for 1-3 digits, narrower for 5-6, so the row always runs the grid's full width)
+  T.digits = (num, x, y, s, slot, tone0, gap, tw) => { let h = ''; const g = gap == null ? G : gap, w = tw || s, ds = String(num).split('');
+    const fs = Math.min(s*0.84, ...ds.map(d => FXS.fitSize(d, `${SG};font-weight:700;letter-spacing:-1pt`, w - 14, s*0.84, 24)));
+    ds.forEach((d, i) => { const tx = x + i*(w + g), tone = (i + (tone0 || 0)) % 2 ? '' : 'dk';
+      h += T.tile(tx, y, w, s, tone) + `<div class="cg-num" style="left:${tx}pt;top:${y}pt;width:${w}pt;height:${s}pt;font-size:${fs}pt;line-height:${s}pt" data-slot="${slot}.${i}" data-lines="1">${esc(d)}</div>`; });
     return h; };
   T.gk = (t, x, w, slot, o) => { o = o || {}; const ls = o.ls == null ? 3 : o.ls, fs = FXS.fitSize(String(t).toUpperCase(), `${SG};font-weight:700;letter-spacing:${ls}pt`, w, o.max || 9.5, 8.6), lh = Math.max(12, fs*1.3);
     return {h: lh, html: yy => `<div class="cg-gk" style="left:${x}pt;top:${yy}pt;width:${w}pt;height:${lh}pt;font-size:${fs}pt;line-height:${lh}pt;letter-spacing:${ls}pt;text-align:${o.al || 'left'}${o.color ? ';color:' + o.color : ''}" data-slot="${slot}" data-lines="1">${esc(String(t).toUpperCase())}</div>`}; };
@@ -28,16 +31,30 @@
   // No agent, no brokerage, no facts (they are inside).
   FO.front = (D, o) => { const L = D.listing, K = (D.sw || {}).front || {}, F = ((D.companion || {}).flyer || {}).front || {}, P = (D.sw || {}).plan || {};
     const hero = FO.heroId(D, F.hero || K.hero || 'front'), strip = ((P.cg || {}).cover || P.strip || []).filter(id => id !== hero), A = T.addr(L), n = A.num.length;
-    const s = n ? Math.min(150, (W - (n - 1)*G)/n) : 0, BRmin = 150; let HH = 410; while(HH < 470 && !SW.fits(D, hero, W, HH)) HH += 4;
+    // the number row is always the 4-digit row's height and the grid's full width: 1-3 digits take wider tiles, 5-6 narrower ones
+    // (owner 11/17/2026, p40: the layout worked only with a 4-digit number)
+    const s = n ? (W - 3*G)/4 : 0, tw = n ? (W - (n - 1)*G)/n : 0, BRmin = 150; let HH = 410; while(HH < 470 && !SW.fits(D, hero, W, HH)) HH += 4;
     HH = Math.min(HH, 768 - X - G - (n ? s + G : 0) - BRmin);
     const yD = X + HH + G, yB = yD + (n ? s + G : 0), BR = 768 - yB;
     let h = FXS.box(D, hero, X, X, W, HH, 'front.house');
-    if(n){ const rowW = n*s + (n - 1)*G, x0 = X + (W - rowW)/2; h += T.digits(A.num, x0, yD, s, 'front.num', 0);
-      if(x0 - X - G >= 8) h += T.tile(X, yD, x0 - X - G, s, 'tn') + T.tile(x0 + rowW + G, yD, X + W - x0 - rowW - G, s, 'tn'); }
+    if(n) h += T.digits(A.num, X, yD, s, 'front.num', 0, G, tw);
     const PW = strip[0] ? 184 : 0, BW = W - (PW ? PW + G : 0), ix = X + 26, iw = BW - 52;
-    const hood = FXS.hood(L), ss = FXS.fitSize(A.street, `${SG};font-weight:700;letter-spacing:-.3pt`, iw, 54, 26), cs = Math.max(14, Math.min(18, ss*0.4));
+    // the street on one line at 34-54 pt; a long one drops its suffix (Boulevard, Road...) to stay on one line, else it runs on two
+    // balanced lines (the last two words together) at the biggest size the tile holds, never under 22 pt
+    const SCSS = `${SG};font-weight:700;letter-spacing:-.3pt`, fit1 = t => FXS.fitSize(t, SCSS, iw, 54, 34), ok1 = t => FXS.width(t, `${SCSS};font-size:${fit1(t)}pt`) <= iw;
+    const hood = FXS.hood(L); let street = A.street, ss = fit1(street), two = null;
+    if(!ok1(street)){ const dr = window.AddressFit && AddressFit.drop('0 ' + street), sh = dr && dr.replace(/^0 /, '');
+      if(sh && ok1(sh)){ street = sh; ss = fit1(sh); }
+      else { const w = street.split(/\s+/); let best = null;
+        for(let i = 1; i < w.length - 1; i++){ const a = w.slice(0, i).join(' '), b = w.slice(i).join(' '), m = Math.max(FXS.width(a, `${SCSS};font-size:10pt`), FXS.width(b, `${SCSS};font-size:10pt`)); if(!best || m < best.m) best = {a, b, m}; }
+        if(!best) best = {a: street, b: ''};
+        const room = BR - 28 - (hood ? 20 : 0) - 8 - 23;   // the tile less its padding, the place line and the city line
+        ss = Math.min(FXS.fitSize(best.a, SCSS, iw, 44, 22), FXS.fitSize(best.b || best.a, SCSS, iw, 44, 22), Math.max(22, Math.floor(room/(2*1.06)*2)/2)); two = best; } }
+    const cs = Math.max(14, Math.min(18, ss*0.4));
     const parts = []; if(hood) parts.push(T.gk(hood, ix, iw, 'front.place', {max: 11}));
-    parts.push(T.line(A.street, ix, iw, ss, n ? 'front.street' : 'address', {lh: 1.06}));
+    if(two){ const lh = +(ss*1.06).toFixed(2), nb = t => esc(t).replace(/ /g, '&nbsp;');
+      parts.push({h: 2*lh, html: yy => `<div class="cg-wt" style="left:${ix}pt;top:${yy}pt;width:${iw}pt;height:${2*lh}pt;font-size:${ss}pt;line-height:${lh}pt;white-space:normal" data-slot="${n ? 'front.street' : 'address'}" data-lines="2">${nb(two.a)} ${nb(two.b)}</div>`}); }
+    else parts.push(T.line(street, ix, iw, ss, n ? 'front.street' : 'address', {lh: 1.06}));
     parts.push(T.line(T.city(L), ix, iw, cs, 'front.city', {cls: 'cg-wm', lh: 1.25}));
     h += T.tile(X, yB, BW, BR) + T.on(T.vstack(yB, BR, parts, 8));
     if(PW) h += FXS.box(D, strip[0], X + BW + G, yB, PW, BR, 'front.strip0');

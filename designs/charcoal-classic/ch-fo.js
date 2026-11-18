@@ -253,7 +253,7 @@
     if(cityT){ y += 6; t += cline('ch-eyebrow', cityT, X0, y, CW, 9.6, 13, 'front.city', 'text-align:center;color:var(--ch-soft);letter-spacing:4.4pt;text-indent:4.4pt'); y += 13; }
     y += 15 + pad*0.6; t += CH.rule(MID, y, 300); y += 1;
     if(line){ y += 14 + pad*0.6; t += cline('ch-serif', line, X0 - 4, y, CW + 8, ls, llh, 'front.line', 'text-align:center'); }
-    if(strip.length){ const n = strip.length, g = 8, x0 = 18, sw_ = (612 - 2*x0 - (n - 1)*g)/n;
+    if(strip.length){ const n = strip.length, g = 8, x0 = -9, sw_ = (630 - (n - 1)*g)/n;   // owner 11/17 (p1): the cover's rooms run full bleed, edge to edge and across the fold
       strip.forEach((id, i) => { h += FO.tileT(D, id, x0 + i*(sw_ + g), RY, sw_, 801 - RY, 'front.strip' + i); }); }
     return h + t;
   };
@@ -295,7 +295,9 @@
   // Both inside pages open on a photo from the top bleed down to the same seam (FO.SEAM), its name in the tab, its caption under it at the
   // same depth; then the centered heading on one horizon (the eyebrow, the Crimson headline on two lines, the accent rule); then a locked
   // row of captioned rooms at the foot, starting at the same height on both pages.
-  FO.SEAM = 284; FO.CAPL = 3; FO.CAPLH = 16.5; FO.ROWY = 524;
+  // owner 11/17 (p3, too much blank space): everything on the inside spread is bigger: taller top photos, larger captions, the room rows wider
+  // (22 pt from the edges instead of the 44 pt margin) and starting right under the heading
+  FO.SEAM = 300; FO.CAPL = 3; FO.CAPLH = 17.5; FO.ROWY = 516; FO.IX0 = 22; FO.IX1 = 590;
   FO.headC = (kicker, title, slot, y) => { const t = String(title || '').replace(/\.$/, '').replace(/(^| )([AaI]) /g, '$1$2 '), fam = CRF(500) + ';letter-spacing:-.1pt';
     const words = q => new Set((String(q).toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => w.length > 2 && !['the', 'and', 'with'].includes(w))), kw = [...words(kicker)], tw = words(title), rep = kw.length > 0 && kw.every(w => tw.has(w) || tw.has(w.replace(/s$/, '')) || tw.has(w + 's'));
     const nl = (ff, ww) => FO.wrapN(t, `${fam};font-size:${ff}pt`, ww);
@@ -327,29 +329,29 @@
     const stem = w => w.replace(/^hardwood$/, 'wood').replace(/s$/, ''), cw = t => (String(t).toLowerCase().match(/[a-z0-9'-]+/g) || []).filter(w => !['new', 'a', 'the', 'and', 'of', 'with', 'in'].includes(w)).map(stem), says = (b, a) => { const bw = cw(b), aw = new Set(cw(a)); return bw.length > 0 && bw.every(w => aw.has(w)); };
     const SFb = FXS.sellingFacts(D), BXb = ((K.back || {}).boxes) || {}, backT = [].concat((BXb.inside || {}).items || SFb.inside, (BXb.outside || {}).items || SFb.outside).map(String), backG = new Set(backT.flatMap(t => SW.grams4(t)));
     const T = FO.tableRows2((box.items || []).slice(0, 10), a => SW.grams4(a).some(g => backG.has(g)) || backT.some(b => says(b, a)), {maxRows: 4, Vs: [184, 190, 196, 202, 208]});
-    const S = FO.SEAM, lh = FO.CAPLH, capB = S + 10 + FO.CAPL*lh, cardW = T.V + 36, g = 16, HR = X1 - cardW - g;
+    const S = FO.SEAM, lh = FO.CAPLH, capB = S + 10 + FO.CAPL*lh, cardW = T.V + 36, g = 16, HR = FO.IX1 - cardW - g;
     // the kitchen's caption says what the card beside it does not: the card's unused rows and the room's own lines, never a fact a shown row says
-    const shown = T.rows.map(r => r.t), clash = a => shown.some(b => SW.sameFact(a, b) || SW.sharedPhrase(a, b)), RL = (((D.companion || {}).roomLines || {})[heroC.photo] || {}).all || [];
+    const shown = T.rows.map(r => r.t), rowS = [].concat(...rowC.map(c => [].concat(...((FXS.augment(D, c) || c).s || []).map(x => [].concat(x))))), clash = a => shown.some(b => SW.sameFact(a, b) || SW.sharedPhrase(a, b)) || rowS.some(b => SW.sharedPhrase(a, b)),   /* nor a phrase a room caption under it can say */ RL = (((D.companion || {}).roomLines || {})[heroC.photo] || {}).all || [];
     const kOver = (a, b) => { const w = t => new Set((String(t).toLowerCase().match(/[a-z]{4,}/g) || []).filter(x => !['with','that','from','into','over','under','along','beside','kitchen','room'].includes(x).valueOf() && !['with','that','from','into','over','under','along','beside','kitchen','room'].includes(x))), A = w(a), B = w(b); let n = 0; A.forEach(x => { if(B.has(x)) n++; }); return n >= 2; };
     const kS = [].concat(heroC.s || [], (box.items || []).filter(it => !T.rows.some(r => r.l === it.l)).map(it => [].concat(it.s[0])), RL).map(x => [].concat(x).filter(a => !clash(a))).filter(a => a.length).filter((a, i, arr) => !arr.slice(0, i).some(b => SW.sameFact(a[0], b[0]) || kOver(a[0], b[0])));
     const kC = Object.assign({}, heroC, {s: kS, noAugment: true});
-    let h = FO.capT(D, kC, -9, -9, HR + 9, S + 9, FO.CAPL, 'left.wide', {tx: 22, tw: HR - 22, fs: 11.5, lh, min: 3});
+    let h = FO.capT(D, kC, -9, -9, HR + 9, S + 9, FO.CAPL, 'left.wide', {tx: 22, tw: HR - 22, fs: 12, lh, min: 3});
     h += FO.tableStack2(T, box.kicker || 'The kitchen', box.heading, HR + g, 24, cardW, capB - 24, 'left');
-    const hd = FO.headC(I.kicker, I.title, 'left', capB + 22); h += hd.html;
-    const y2 = FO.ROWY, L = 4, clh = 14, n = Math.max(1, rowC.length), W2 = (CW - (n - 1)*16)/n, RH = 766 - y2 - 10 - L*clh;
-    rowC.forEach((c, i) => { h += FO.capT(D, c, X0 + i*(W2 + 16), y2, W2, RH, L, 'left.photo' + i, {fs: 10.5, lh: clh, min: 3}); });
+    const hd = FO.headC(I.kicker, I.title, 'left', capB + 16); h += hd.html;
+    const IW = FO.IX1 - FO.IX0, y2 = FO.ROWY, L = 4, clh = 15.5, n = Math.max(1, rowC.length), W2 = (IW - (n - 1)*16)/n, RH = 766 - y2 - 10 - L*clh;
+    rowC.forEach((c, i) => { h += FO.capT(D, c, FO.IX0 + i*(W2 + 16), y2, W2, RH, L, 'left.photo' + i, {fs: 11.5, lh: clh, min: 3}); });
     return h;
   };
 
   // ---------------- INSIDE RIGHT (bedrooms and baths): the best room from the top bleed, heading, a triptych (the middle room larger) ----------------
   FO.right = (D) => { const K = D.sw || {}, R = K.right || {}, P = K.plan || {}, cs = FO.cards(D, P.right || []);
     const S = FO.SEAM, lh = FO.CAPLH, capB = S + 10 + FO.CAPL*lh;
-    let h = FO.capT(D, cs[0], X0, -9, 621 - X0, S + 9, FO.CAPL, 'right.photo0', {tx: X0, tw: CW, fs: 12.5, lh, min: 3});
-    const hd = FO.headC(R.kicker || '', R.title || '', 'right', capB + 22); h += hd.html;
-    const rest = cs.slice(1, 4), n = rest.length, g = 14, y2 = FO.ROWY, L = n > 2 ? 5 : 4, clh = n > 2 ? 13 : 14;
-    const ws = rest.map(() => (CW - (n - 1)*g)/Math.max(1, n));
-    const RH = 766 - y2 - 10 - L*clh; let x = X0;
-    rest.forEach((c, i) => { h += FO.capT(D, c, x, y2, ws[i], RH, L, 'right.photo' + (i + 1), {fs: n > 2 ? 10 : 10.5, lh: clh, min: 3}); x += ws[i] + g; });
+    let h = FO.capT(D, cs[0], -9, -9, 630, S + 9, FO.CAPL, 'right.photo0', {tx: FO.IX0, tw: FO.IX1 - FO.IX0, cx: MID, fs: 13.5, lh, min: 3});
+    const hd = FO.headC(R.kicker || '', R.title || '', 'right', capB + 16); h += hd.html;
+    const IW = FO.IX1 - FO.IX0, rest = cs.slice(1, 4), n = rest.length, g = 14, y2 = FO.ROWY, L = n > 2 ? 5 : 4, clh = n > 2 ? 14.5 : 15.5;
+    const ws = rest.map(() => (IW - (n - 1)*g)/Math.max(1, n));
+    const RH = 766 - y2 - 10 - L*clh; let x = FO.IX0;
+    rest.forEach((c, i) => { h += FO.capT(D, c, x, y2, ws[i], RH, L, 'right.photo' + (i + 1), {fs: n > 2 ? 11 : 11.5, lh: clh, min: 3}); x += ws[i] + g; });
     return h;
   };
   FO.rightFit = () => {}; FO.leftHead = () => {};
