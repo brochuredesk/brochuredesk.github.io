@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Tall Column postcards</title>
+<link rel="stylesheet" href="tc.css">
+<link rel="stylesheet" href="tc-fo.css">
+<script src="tc.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/agentcard.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script>window.Ivory = window.Ivory || {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="tc-fo.js"></script>
+<!--
+  BrochureDesk · Tall Column · Just Listed and Just Sold postcards (the hand of the approved Open House library flyer B01).
+  data.piece.card = "listed" | "sold", data.piece.size = "6x11" (trim 792 x 432 pt) | "6x9" (648 x 432 pt), data.piece.side = "front" | "back".
+  Print adds 0.125 in (9 pt) bleed. The agent's brand color (brand.accent) is the field on both sides; boxes are white.
+  Front: the whole house (roof to steps) on the right with a one-line-or-two caption and a white box under it, the status stacked large on the left over the address,
+  the fact rows and the brokerage logo (Just Listed) or the agent's name and number and the logo (Just Sold). No price, no QR.
+  Back: status line, interior photos with captions, a white box (the write-up, or the steps), the standard contact card (templates/_shared/agentcard.js,
+  band preset, which carries the back's one logo), the fine print. The right 289.5 pt (4.02 in) is the mail vendor's: return address, postage and address
+  zones; drawn as guides on proofs and left clear in print.
+  Copy comes from data.sw.pc.{jl|js}.{front|back} as a lead plus whole sentences; tc.js picks the sentences that fill each box.
+-->
+<style>
+  /* Tall Column postcards (tokens in tc-tokens.css). Fronts: white paper, the column in the main color's tint with the tall capitals,
+     the gallery square-cut 10 pt in from the trim. Backs: the column at the left, the main color through the whole mail side, the plinth
+     edge to edge under both; the mail zones are small white markups. */
+  .pc-wbox{color:var(--tc-text);padding:10pt 16pt 9pt;display:flex;flex-direction:column;overflow:hidden;--fx-on:#16191c;--fx-soft:var(--tc-text);--tc-on:#16191c;--tc-accent:var(--tc-main-ink)}
+  .pc-wbox .k{font-family:var(--tc-font);font-weight:600;font-size:9pt;line-height:12pt;letter-spacing:2.4pt;text-transform:uppercase;color:var(--tc-main-ink);white-space:nowrap;overflow:hidden;margin-bottom:3pt;align-self:flex-start}
+  .pc-steps .it{display:flex;gap:8pt;align-items:baseline;white-space:nowrap;overflow:hidden}
+  .pc-steps .tc-num{flex:none}
+  .pc-call{font-family:var(--tc-display);font-weight:700;font-size:15pt;line-height:18pt;color:var(--tc-main-ink);white-space:nowrap;overflow:hidden}
+  .pc-disc{position:absolute;font-size:6pt;line-height:10pt;color:var(--tc-on-main);overflow:hidden;white-space:nowrap}
+  .pc-ret{position:absolute;font-family:var(--tc-font);font-weight:500;font-size:9pt;line-height:11pt;letter-spacing:.2pt;color:var(--tc-on-main);overflow:hidden;height:34pt}
+  .pc-ret b{font-family:var(--tc-font);font-weight:700;letter-spacing:1.4pt;text-transform:uppercase;color:var(--tc-on-main)}
+  .p{font-family:var(--tc-font)}
+  .cap .a{font-weight:400}
+  #stepsbox:after{display:none}
+  body.pc-back{--fx-taupe:var(--tc-main);--cc-paper:transparent;--cc-ink:var(--tc-on-main);--cc-muted:var(--tc-on-main);--cc-accent:var(--tc-on-main);--cc-line:rgba(255,255,255,.5)}
+  .pc-back .cc{background:transparent}
+  .pc-back .cc .cc-lines{display:flex;column-gap:12pt}
+  .pc-back .cc .cc-panel{flex-direction:row;align-items:center;column-gap:10pt}
+  .pc-back .cc .cc-panel > div:last-child{text-align:left}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const esc = SW.esc, b = D.brand || {}, A = D.agent || {}, L = D.listing, P = D.piece || {};
+  document.body.dataset.mode = D.mode || 'email';
+  await SW.setup(D);
+  const sold = P.card === 'sold', big = P.size === '6x11', front = P.side === 'front';
+  const W = big ? 792 : 648, H = 432;
+  const K = ((D.sw || {}).pc || {})[sold ? 'js' : 'jl'] || {};
+  const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot) || '';
+  const statusWord = sold ? 'Just Sold' : 'Just Listed';
+  const issues = [];
+  const logo = (cls, src, area, maxh, style) => `<div class="logo ${cls}" data-area="${area}" data-maxh="${maxh}" style="${style||''}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="word" data-slot="broker.name" data-lines="1">${esc(b.brokerage||'')}</span>`}</div>`;
+  const CL = big ? 13.5 : 12.5, CF = big ? 'font-size:10.9pt;line-height:13.5pt;' : '';   // the 6x11 sets its type up from the 6x9 (11 pt against 9.5), not the same size with more room
+  const cap = (c, slot, lines, extra, min) => (c = (c.photo ? FXS.augment(D, c) : c), `<div class="cap" style="height:${5 + lines*CL}pt;${extra||''}"><div class="a" data-min="${min || 2}" data-nopair="1" data-slot="${slot}" data-narrow="0" data-nstep="6" data-lh="${CL}" data-lines="${lines}" data-lead="${esc(c.lead||'')}" data-s='${esc(JSON.stringify([].concat(c.s||[]))).replace(/'/g,'&#39;')}' style="height:${lines*CL}pt;${CF}"></div></div>`);
+  let h = '';
+
+  if(front){
+    // The FX14 hand on a postcard front. A white frame top and side, the whole house in it, a taupe block around it with the status in Pinyon Script.
+    // JL: "Just Listed" in script beside the house, the horizontal address, three facts; under the house the caption ("Front.", the draws) and the agent and logo along the foot.
+    // JS: sells the agent: "Just Sold" in the same script lockup, the name and phone big on the left, the house on the right with the agent's own note, the logo.
+    const F = K.front || {};
+    const draws = list => { const w = x => /gated|roof|pergola|deck|park|garage|island|stone|corner|pool/i.test([].concat(x)[0]) ? 0 : 1; return (list || []).map((x, i) => [w(x), i, x]).sort((p, q) => p[0] - q[0] || p[1] - q[1]).map(t => t[2]); };
+    const capC = sold ? {lead: '', s: (F.note || {}).s || (F.cap || {}).s} : (F.caption ? {lead: F.caption.lead, s: F.caption.s.concat(draws((F.about || {}).s || []))} : {lead: 'Front.', s: draws((F.about || {}).s || (F.cap || {}).s)});
+    const norm = x => String(x).toLowerCase().replace(/[^a-z0-9 ]/g, '').slice(0, 40), allAlts = list => [].concat(...(list || []).map(x => [].concat(x)));
+    const backSet = new Set([].concat(allAlts(((K.back || {}).about || {}).s), ...((K.back || {}).photos || []).map(c => allAlts(c.s)), allAlts((K.back || {}).steps6), allAlts((K.back || {}).steps)).map(norm));
+    const backAll = allAlts(((K.back || {}).about || {}).s).map(String);   // the back's About box
+    if(capC.s){ const kept = capC.s.filter(x => ![].concat(x).some(a => backSet.has(norm(a)))); if(kept.length >= 2) capC.s = kept; }
+    // the caption's own first sentence stays; a later one that says a fact the back's About box says (the deck and pergola, in other words) drops out
+    if(capC.s && capC.s.length > 2){ const tail = capC.s.slice(1).filter(x => ![].concat(x).some(a => backAll.some(b => SW.sameFact(String(a), b)))); if(tail.length >= 1) capC.s = [capC.s[0]].concat(tail); }
+    const roomIds = [...new Set([].concat(((D.sw||{}).back||{}).photos||[], ((D.sw||{}).left||{}).photos||[]).map(c => c.photo))].filter(id => (D.photos||{})[id] && !(D.photos[id]||{}).fullHouse && id !== F.cap.photo).slice(0, 2);
+    // ---- Tall Column fronts (the mailbox test). Two cards in one hand: white paper, THE COLUMN in the main color's 90% tint holding the
+    // words in the tall capitals, the vertical gallery square-cut 10 pt in from the trim.
+    // Just Listed: the column at the left the full height of the card: JUST / LISTED stacked as large as it allows, the street, the city,
+    // P26's 2 pt rule, two or three dated highlights on small main discs, the agent and the logo at its foot; the gallery beside it hangs
+    // the whole house large and two rooms under it.
+    // Just Sold: the house across the whole top laid over the column; under it the column holds JUST SOLD (about three times the agent's
+    // name) with the street right under it; beside it P26's white box with the main line holds the seller question, the agent's note and
+    // who to call, sized to its words. No house features. ----
+    const k = big ? 1.12 : 1, M = 10, pid = FO.heroId(D, F.cap.photo), ad = String(L.address || ''), city = FXS.placeLine(L).replace(/\s+\d{5}(-\d{4})?$/, '');
+    const cq = 'Thinking about selling?';
+    const desT = A.designation ? (A.nar || /realtor/i.test(A.designation) ? 'REALTOR®' : A.designation) : '';
+    const tags = (w, fs) => { const tg = FXS.tagFacts(D).tags.filter(t => FXS.width(t, `font-family:Barlow;font-weight:500;font-size:${fs}pt`) < w - 16).filter((t, i, arr) => !arr.slice(0, i).some(u => SW.sameFact(t, u))); const sc = t => (/\b(19|20)\d\d\b/.test(t) ? 4 : 0) + (/\d/.test(t) ? 1 : 0) + Math.min(t.length, 30)/30; return tg.map((t, i) => [sc(t), i, t]).sort((a, b) => b[0] - a[0] || a[1] - b[1]).map(x => x[2]); };
+    const hl = (list, x, y, fs, rh) => list.map((t, i) => `<div class="abs" style="left:${x}pt;top:${y + i*rh + rh/2 - 3.5*k}pt;width:${7*k}pt;height:${7*k}pt;border-radius:50%;background:var(--tc-main)"></div><div class="abs" style="left:${x + 15*k}pt;top:${y + i*rh}pt;width:${300}pt;height:${rh}pt;font-weight:500;font-size:${fs}pt;line-height:${rh}pt;font-family:var(--tc-font);color:var(--tc-ink);white-space:nowrap;overflow:hidden" data-slot="front.hl.${i}" data-lines="1">${esc(t)}</div>`).join('');
+    // the agent: name in the tall capitals' face (not caps), the designation in tracked caps, the cell; the logo beside or under
+    const agent = (x, y, w, ns, logoH, al) => { let s = `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;white-space:nowrap;line-height:${ns*1.15}pt;text-align:${al || 'left'}"><span style="font-family:var(--tc-display);font-weight:700;font-size:${ns}pt;color:var(--tc-main-ink)" data-slot="agent.name" data-lines="1">${esc(A.name || '')}</span>${desT ? `<span style="font-family:var(--tc-font);font-weight:600;font-size:${8.6*k}pt;letter-spacing:1.4pt;color:var(--tc-ink);margin-left:${7*k}pt" data-slot="agent.desig" data-lines="1">${esc(desT)}</span>` : ''}</div>`;
+      s += `<div class="abs" style="left:${x}pt;top:${y + ns*1.15 + 1}pt;width:${w}pt;white-space:nowrap;line-height:${ns*0.95}pt;font-family:var(--tc-font);font-weight:600;font-size:${ns*0.78}pt;color:var(--tc-ink);text-align:${al || 'left'}" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</div>`;
+      const ly = y + ns*1.15 + 1 + ns*0.95 + 7*k, src = TC.logoSrc(D);
+      s += `<div class="abs logo" data-area="${w*logoH}" data-maxh="${logoH}" style="left:${x}pt;top:${ly}pt;width:${w}pt;height:${logoH}pt;justify-content:${al === 'center' ? 'center' : 'flex-start'}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="word" data-slot="broker.name" data-lines="1">${esc(b.brokerage || '')}</span>`}</div>`;
+      return {html: s, h: ns*1.15 + 1 + ns*0.95 + 7*k + logoH}; };
+    const photoAt = (id, x, y, w, hh, slot) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hh}pt">${SW.photo(D, id, 'position:absolute;inset:0', slot)}</div>`;
+    h += `<div class="taupe" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:${H + 18}pt;background:#fff"></div>`;
+    const rooms = roomIds.filter(id => id !== pid).slice(0, 2);
+    if(!sold){
+      const CR = big ? 300 : 254, tx = 24, tw = CR - tx - 18, gx = CR + M, gw = W - M - gx;
+      h += FO.col(-9, CR, -9, H + 9);
+      const hh = Math.min(FO.heroH(D, pid, gw, Math.round(gw/1.42), 170), H - 2*M - (rooms.length ? 110*k : 0)), ry = M + hh + M, rh = H - M - ry, rw = (gw - (rooms.length - 1)*M)/Math.max(1, rooms.length);
+      h += photoAt(pid, gx, M, gw, rooms.length ? hh : H - 2*M, 'front.hero');
+      if(rooms.length) rooms.forEach((id, i) => { h += photoAt(id, gx + i*(rw + M), ry, rw, rh, 'front.room' + i); });
+      // the column, top to bottom; the agent block sits on the foot, the rest spread evenly above it
+      const ns = 14.5*k, logoH = 24*k, ag = agent(tx, 0, tw, ns, logoH), foot = H - 20 - ag.h;
+      const as = Math.min(FO.capsFit(ad, tw, 26*k, 14), 26*k), hf = 10.5*k, rhh = 17*k, tg = tags(tw, hf).slice(0, 3);
+      let smax = 104*k, st, parts, used, gap;
+      for(;;){ st = FO.stack(['Just', 'Listed'], tx, 0, tw, smax, 40, 'front.status', {flat: true}); parts = [['s', st.h], ['a', as + 4 + 13*k], ['r', 2], ['h', tg.length*rhh]]; used = parts.reduce((n, p) => n + p[1], 0); gap = (foot - 14 - 22 - used)/parts.length; if(gap >= 10 || smax <= 44) break; smax -= 2; }
+      gap = Math.max(6, gap);
+      let y = 22;
+      for(const [kd, hh0] of parts){
+        if(kd === 's') h += FO.stack(['Just', 'Listed'], tx, y, tw, smax, 40, 'front.status', {flat: true}).html;
+        if(kd === 'a') h += FO.tall(ad, tx, y, tw, as, 'front.address', {css: 'text-transform:none'}) + `<div class="tc-eye" style="left:${tx}pt;top:${y + as + 4}pt;width:${tw}pt;height:${13*k}pt;font-size:${9.5*k}pt;line-height:${13*k}pt;letter-spacing:2pt" data-slot="front.city" data-lines="1">${esc(city.toUpperCase())}</div>`;
+        if(kd === 'r') h += FO.rule(tx, y, tw);
+        if(kd === 'h') h += hl(tg, tx, y, hf, rhh);
+        y += hh0 + gap; }
+      h += agent(tx, foot, tw, ns, logoH).html;
+    } else {
+      const CR = big ? 336 : 286, tx = 24, tw = CR - tx - 18; let hh = Math.round(H*0.56), hw = W - 2*M; while(hw > 300 && !SW.fits(D, pid, hw, hh)) hw -= 6;
+      if(W - 2*M - hw > 0 && W - 2*M - hw < 160){ let h2 = hh; while(h2 > 196 && !SW.fits(D, pid, W - 2*M, h2)) h2 -= 4; if(SW.fits(D, pid, W - 2*M, h2)){ hh = h2; hw = W - 2*M; } else hw = Math.min(hw, W - 3*M - 160); }
+      h += FO.col(-9, CR, -9, H + 9) + photoAt(pid, M, M, hw, hh, 'front.hero');
+      if(W - 2*M - hw > 100 && rooms.length) h += photoAt(rooms[0], M + hw + M, M, W - 3*M - hw, hh, 'front.room0');   // a house too tall for the full width keeps its whole roof; a room fills the row beside it
+      const y0 = M + hh + M, room = H - 18 - y0;
+      // the column: JUST SOLD on one line as large as the column allows, the street right under it, the rule; centered in the room under the photo
+      const ss = Math.min(FO.capsFit('Just Sold', tw, 64*k, 30), (room - 46*k)/1.02), as = Math.min(FO.capsFit(ad, tw, 24*k, 13), 24*k), blk = ss + 6 + as + 10 + 2, by = y0 + (room - blk)/2;
+      h += FO.tall('Just Sold', tx, by, tw, ss, 'front.status') + FO.tall(ad, tx, by + ss + 6, tw, as, 'front.address', {css: 'text-transform:none'}) + FO.rule(tx, by + ss + 6 + as + 10, tw);
+      // the white box: the question, the note, who to call (sized after the fill, centered in its room)
+      const bx = CR + M, bw = W - M - bx, ix = bx + 16, iw = bw - 32, qs = Math.min(FO.capsFit(cq, iw, 20*k, 12), 20*k), ns = 13*k, logoH = 22*k, ag = agent(ix, 0, iw, ns, logoH, 'center');
+      const lh = 13.5*k, n = Math.max(3, Math.min(5, Math.floor((room - 22 - qs - 8 - 10 - ag.h)/lh)));
+      h += `<div class="tc-box" id="jsbox" style="left:${bx}pt;top:${y0}pt;width:${bw}pt;height:${room}pt"></div>`;
+      h += `<div id="jslabel" data-top="${y0}" data-h="${room}" style="position:absolute;left:0;top:0;width:0;height:0">`;
+      h += `<div class="abs tc-tall" style="left:${ix}pt;top:${y0 + 12}pt;width:${iw}pt;height:${qs}pt;font-size:${qs}pt;line-height:${qs}pt;text-transform:none;text-align:center" data-slot="front.cta" data-lines="1">${cq}</div>`;
+      h += `<div class="abs cap"><div class="a" style="position:absolute;left:${ix}pt;top:${y0 + 12 + qs + 8}pt;width:${iw}pt;height:${n*lh}pt;font-size:${10.2*k}pt;line-height:${lh}pt;color:var(--tc-text)" data-slot="front.note" data-measures="1,0.94,0.88,0.82" data-lh="${lh}" data-n0="${n}" data-lines="${n}" data-min="3" data-narrow="0" data-flexh="1" ${FXS.sd(capC.s || [])}></div></div>`;
+      h += `<div data-role="js-agent" style="position:absolute;left:0;top:${y0 + 12 + qs + 8 + n*lh + 10}pt;width:0;height:0">${ag.html}</div>`;
+      h += `</div>`;
+    }
+  } else {
+    // ---------------- BACK (owner 11/16/2026: the design runs the full width; the contact block is much shorter) ----------------
+    // The set's dark field, its photo band (Just Listed) or its lifted banner (Just Sold) and its footer band run edge to edge across the
+    // whole card, the mail side included. The postage box, the address block and the barcode strip keep their mail-rule sizes and places
+    // and are only small light markups set into the design (luminance 243: vendors print black ink and USPS needs a light field there).
+    // The contact block is one compact row, about half the old card's height, in the footer band beside nothing but the fine print.
+    // zones (pt, trim coordinates): postage 84 x 98.25 top right, address block 240 x 112.5, barcode strip 342 x 45 bottom right
+    // Tall Column back: THE COLUMN (the main color's tint, a step deeper so it carries ink on the mail run) stands at the left from the top
+    // bleed down to the plinth; the main color fills the whole mail side from the top bleed to the plinth (a room photo across its top on the
+    // Just Listed back), and the plinth (the solid main base) runs edge to edge under both with the one-row contact block. The postage box,
+    // the address block and the barcode strip are small white markups set into the main color; nothing light is left on the mail side.
+    const dx = W - 648, X = 18, B = K.back || {}, k = big ? 1.12 : 1;   // X: live type 0.25 in inside trim
+    const Z = {postage: [552 + dx, 12, 84, 98.25], address: [405 + dx, 187.5, 240, 112.5], barcode: [306 + dx, 387, 342, 45]};
+    window.__zones = Z; window.__cardX = X;
+    const rx = Z.address[0], MP = 5;
+    const FT = Z.address[1] + Z.address[3] + MP + 7, cardH = 44, cardY = FT + (Z.barcode[1] - MP - FT - cardH)/2;
+    const CB = big ? 384 : sold ? 330 : 306, tx = 24, tw = CB - tx - 18;   // the column: its words from 24 pt to 18 pt short of its edge
+    h += `<div class="taupe" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:${H + 18}pt;background:var(--tc-main)"></div>`;
+    h += `<div class="tc-col" style="left:-9pt;top:-9pt;width:${CB + 9}pt;height:${FT + 9}pt;background:var(--tc-col-deep)"></div>`;
+    h += `<div class="abs" style="left:-9pt;top:${FT - 2}pt;width:${W + 18}pt;height:2pt;background:var(--tc-on-main);opacity:.9"></div>`;   // P26's rule, white, where the column meets the plinth
+    const pnl = (x, y, w, hh) => `<div class="abs mailp" data-mail-panel="1" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hh}pt;background:var(--fx-mail);z-index:4"></div>`;
+    const ret = [b.brokerage || ''].concat([].concat(b.returnAddress || b.address || []).flatMap(a => String(a).split('\n'))).filter(Boolean).slice(0, 3);
+    const st = String(L.address || '');
+    if(!sold){
+      // the mail side's top: the rooms square-cut edge to edge from the top bleed, the postage markup set into the last one
+      const ps = (B.photos || []).slice(0, big ? 2 : 1), PB = Z.address[1] - MP - 8, n = ps.length, pw = (W + 9 - CB - (n - 1)*6)/Math.max(1, n);
+      ps.forEach((c, i) => { h += `<div class="abs" style="left:${CB + i*(pw + 6)}pt;top:-9pt;width:${pw}pt;height:${PB + 9}pt" data-band="1">${SW.photo(D, c.photo, 'position:absolute;inset:0', 'back.photo' + i)}</div>`; });
+      // the facts on white discs in the main field, beside the address block
+      const fx = CB + 14, fw = rx - MP - 12 - fx, items = [['bed', `${L.beds} Bed${L.beds == 1 ? '' : 's'}`], ['bath', window.BD && BD.bathsText ? BD.bathsText(L).main : `${L.baths} Full Baths`], ['area', `${Number(L.sqft).toLocaleString('en-US')} Sq Ft`]].filter(x => !/^undefined|^NaN/.test(x[1]));
+      const d = 20*k, rhf = 30*k, fy = PB + (FT - 2 - PB - (items.length*rhf - (rhf - d)))/2;
+      if(fw > 80) items.forEach(([ic, t], i) => { h += `<div class="tc-fact on-main" style="left:${fx}pt;top:${fy + i*rhf}pt;width:${fw}pt;height:${d}pt;gap:7pt"><div class="ic" style="width:${d}pt;height:${d}pt">${FO.icon(ic, d*0.58)}</div><span style="font-size:${9*k}pt;line-height:${12*k}pt;letter-spacing:.8pt" data-slot="back.fact.${i}" data-lines="1">${esc(t)}</span></div>`; });
+      // the column: JUST / LISTED stacked, the full street, the rule, About this home
+      const s2 = FO.stack(['Just', 'Listed'], tx, 20, tw, 46*k, 26, 'back.status', {flat: true}), as = Math.min(FO.capsFit(st, tw, 22*k, 12), 22*k);
+      h += s2.html + FO.tall(st, tx, 20 + s2.h + 4, tw, as, 'back.signature', {css: 'text-transform:none'}) + FO.rule(tx, 20 + s2.h + 4 + as + 9, tw);
+      const capAlts = ps.flatMap(c => FXS.augment(D, c).s.flatMap(x => [].concat(x))), aboutC = B.about && B.about.s ? Object.assign({}, B.about, {s: (() => { const kept = B.about.s.filter(x => ![].concat(x).some(a => capAlts.some(cs => SW.sameFact(a, cs)))); return kept.length >= 2 ? kept : B.about.s; })()}) : B.about;
+      const ay = 20 + s2.h + 4 + as + 9 + 2 + 14, ah = FT - 14 - ay, lh = big ? 16.5 : 15, lines = Math.max(2, Math.floor((ah - 16)/lh));
+      h += `<div class="abs tc-eye main" style="left:${tx}pt;top:${ay}pt;width:${tw}pt;height:12pt;font-size:8.8pt;line-height:12pt;letter-spacing:2.4pt" data-slot="back.box.k" data-lines="1">About this home</div>`;
+      h += `<div class="abs" id="aboutp" data-top="${ay + 16}" data-room="${ah - 16}" style="left:${tx}pt;top:${ay + 16}pt;width:${tw}pt">${SW.para(aboutC, 'back.box', lines, 'p', `font-family:var(--tc-font);font-size:${big ? 12.5 : 11.25}pt;color:var(--tc-ink);overflow:hidden`, lh).replace('data-lines="' + lines + '"', 'data-minl="2" data-lines="' + lines + '" data-try="' + Array.from({length: Math.max(1, lines - 2)}, (_, i) => lines - i).join(',') + '"')}</div>`;
+      // the return address on a small main tag over the photo, beside the postage box
+      const rw = Z.postage[0] - 12 - rx;
+      h += `<div class="abs" style="left:${rx - 12}pt;top:-9pt;width:${rw + 16}pt;height:${66}pt;background:var(--tc-main);z-index:3"></div>`;
+    } else {
+      // the column: JUST SOLD and the street, the rule, then the six steps on the sign-in sheet's numbered discs
+      const ss = Math.min(FO.capsFit('Just Sold', tw, 40*k, 24), 40*k), as = Math.min(FO.capsFit(st, tw, 20*k, 12), 20*k);
+      h += FO.tall('Just Sold', tx, 20, tw, ss, 'back.status') + FO.tall(st, tx, 20 + ss + 4, tw, as, 'back.signature', {css: 'text-transform:none'}) + FO.rule(tx, 20 + ss + 4 + as + 9, tw);
+      const steps = (B.stepsLong || B.help || B.steps6 || []).slice(0, 6), top0 = 20 + ss + 4 + as + 9 + 2 + 10;
+      if(steps.length < 6) issues.push({slot: 'back.steps', kind: 'fewer-than-six-bullets', detail: `${steps.length} bullets; the Just Sold back carries six`});
+      const sfs = big ? 11 : 9.6, slh = sfs*1.3;
+      const item = (e, i) => `<div class="it" style="white-space:normal;align-items:flex-start;gap:8pt"><span class="bx tc-num" style="position:relative;width:${15*k}pt;height:${15*k}pt;font-size:${9*k}pt;margin-top:${slh*.06}pt">${i + 1}</span><div class="stp" style="flex:1" data-nofit="1" data-fill="0.9" data-lfill="0.8" data-slot="back.step${i}" data-try="2,3,1" data-lines="2" data-lh="${slh}" data-narrow="24" data-nstep="3" data-s='${esc(JSON.stringify([e])).replace(/'/g, '&#39;')}'></div></div>`;
+      h += `<div class="pc-wbox" id="stepsbox" style="position:absolute;left:${tx - 4}pt;top:${top0}pt;width:${tw + 8}pt;height:${FT - 10 - top0}pt;padding:4pt 4pt 2pt;justify-content:space-between;background:transparent">
+        <div class="k" style="flex:none;margin-bottom:0" data-slot="back.box.k" data-lines="1">Here’s how I’d start</div>
+        <div class="pc-steps" id="stepslist" style="flex:none;display:grid;grid-template-columns:1fr;row-gap:${big ? 3 : 2}pt;font-size:${sfs}pt;line-height:${slh}pt;color:var(--tc-ink)">${steps.map((e, i) => item(e, i)).join('')}</div>
+        <div class="pc-call" style="flex:none" data-slot="back.call" data-lines="1">${esc(B.call || 'Call or text me anytime.')}</div></div>`;
+      // the seller question on the main field, between the postage box and the address block
+      const qx = CB + 16, qw = Z.postage[0] - MP - 12 - qx, qs = Math.min(FO.capsFit('Thinking about selling?', qw, 30*k, 14), 30*k), ask = 'Ask me what your home would bring today.', as_ = FXS.fitSize(ask, 'font-family:Barlow;font-weight:500', W - 16 - qx, big ? 12.5 : 11, 8.6);
+      const qy0 = Z.postage[1] + Z.postage[3] + MP + 6, qy1 = Z.address[1] - MP - 6, qb = qs + 8 + as_*1.3, qt = qy0 + (qy1 - qy0 - qb)/2;
+      h += `<div class="abs tc-tall on-main" style="left:${qx}pt;top:${qt}pt;width:${W - 16 - qx}pt;height:${qs}pt;font-size:${qs}pt;line-height:${qs}pt;text-transform:none" data-slot="back.cta" data-lines="1">Thinking about selling?</div>`;
+      h += `<div class="abs" style="left:${qx}pt;top:${qt + qs + 8}pt;width:${W - 16 - qx}pt;height:${as_*1.3}pt;font-family:var(--tc-font);font-weight:500;font-size:${as_}pt;line-height:${as_*1.3}pt;color:var(--tc-on-main);white-space:nowrap;overflow:hidden" data-slot="back.cta.ask" data-lines="1">${ask}</div>`;
+      // a short white rule and the neighborhood up beside the return address, so the top of the mail side carries the set's rule too
+      h += `<div class="abs" style="left:${qx}pt;top:${qt - 12}pt;width:46pt;height:2pt;background:var(--tc-on-main)"></div>`;
+    }
+    h += `<div class="pc-ret" data-small="1" data-fine="1" data-slot="back.return" style="left:${rx}pt;top:16pt;width:${Z.postage[0] - 12 - rx}pt;text-align:right;color:var(--tc-on-main);z-index:3"><b style="color:var(--tc-on-main)">${esc(ret[0] || '')}</b>${ret.slice(1).map(t => '<br>' + esc(t)).join('')}</div>`;
+    h += pnl(Z.postage[0] - MP, Z.postage[1] - MP, Z.postage[2] + 2*MP, Z.postage[3] + 2*MP);
+    h += pnl(Z.address[0] - MP, Z.address[1] - MP, Math.min(Z.address[2] + 2*MP, W + 9 - (Z.address[0] - MP)), Z.address[3] + 2*MP);
+    h += pnl(Z.barcode[0] - MP, Z.barcode[1] - MP, W + 9 - (Z.barcode[0] - MP), H + 9 - (Z.barcode[1] - MP));
+    // the contact row (owner 11/16: about half the old card's height): small headshot, name and REALTOR(R), the cell, email and web on one line, the one logo with the office line beside
+    h += ContactCard.html([X, cardY, W - 2*X, cardH], Object.assign({}, A, {headshot: hsSrc}), Object.assign({}, b, {logo: TC.logoOnMain(D)}), {postcard: true, fine: '', bottomGap: 0.5, grow: 0, fieldAccent: true, s: {inlineLabel: true, desigInline: true, pad: [3, 12, 3], hsGap: 10, hsW: 34, name: 17, nameFloor: 13, desig: 8.6, phone: big ? 12.5 : 11.5, label: 8.6, line: big ? 9 : 8.6, rowGap: big ? 14 : 10, panelW: big ? 236 : 196, panelPad: [2, 0], panelGap: big ? 10 : 8, office: 8.6, officeLH: 1.2, logo: {wide: big ? [116, 32] : [100, 28], square: [34, 34], tall: [36, 36]}}});
+    // the approved two-line disclaimer, bottom left beside the barcode strip, at the largest size that fits (8 pt down to 6)
+    const PL = Z.barcode[0] - MP - 8, dy = Math.min(Z.barcode[1] + (Z.barcode[3] - 20)/2, H - 16 - 20);   // centered top to bottom beside the barcode strip
+    h += `<div class="pc-disc" id="pcdisc" style="left:${X}pt;top:${dy}pt;width:${PL - X}pt;height:${2*10}pt" data-slot="back.fine" data-lines="2" data-fine="1"><div>Information deemed reliable but not guaranteed.</div><div>Not intended to solicit property listed with a broker.</div></div>`;
+    // proof guides for the mail vendor's zones (left clear in print)
+    if((D.mode || 'email') !== 'print'){
+      const gb = (z, extra) => `left:${z[0]}pt;top:${z[1]}pt;width:${z[2]}pt;height:${z[3]}pt;z-index:4;${extra||''}`;
+      h += `<div class="mg mg-stamp" style="${gb(Z.postage)}">Postage<br><span style="text-transform:none">mail vendor</span></div>
+        <div class="mg mg-addr" style="${gb(Z.address)}">${[0,1,2,3].map(i => `<div class="aline" style="left:12pt;right:12pt;top:${28 + i*17.25}pt"></div>`).join('')}<div class="gl" style="left:12pt;bottom:9pt">Address block · filled by the mail vendor</div></div>
+        <div class="mg mg-bar" style="${gb(Z.barcode)}"><div class="gl" style="left:0;right:0;top:50%;text-align:center;transform:translateY(-50%)">Barcode strip · keep clear</div></div>`;
+    }
+  }
+
+  if(!front) document.body.classList.add('pc-back');
+  const f = SW.frame(D, W, H, h);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  document.querySelectorAll('.cap .a[data-s]').forEach(el => { el.dataset.fill = 0.9; el.dataset.lfill = 0.82; el.dataset.min = Math.max(3, +el.dataset.min || 0); if(/^back\.photo/.test(el.dataset.slot || '')){ el.dataset.j3 = '1'; if(el.dataset.bleed) el.dataset.lfill = 0.92; } });   // the room captions on the back are justified after the fill, so each runs out to its photo's edge   // photo captions: three full lines, every line 80%+, the last 90%+
+  SW.fill();
+  FO.refit();
+  if(!front && !sold) bandSnug();
+  FO.just3();
+  FO.gaps();
+  if(!front && sold) fitSteps();
+  { const ab = document.getElementById('aboutp'), p0 = ab && ab.querySelector('[data-slot="back.box"]'); if(p0){ const n = SW.lines(p0).n, lh = parseFloat(p0.style.lineHeight); p0.style.height = (n*lh) + 'pt'; ab.style.top = (+ab.dataset.top + Math.max(0, (+ab.dataset.room - n*lh)/2)) + 'pt'; } }
+  if(front && sold){   // the wall label is sized to its words: the note's unused lines close up and the label's block sits centered top to bottom
+    const lab = document.getElementById('jslabel'), nt = document.querySelector('[data-slot="front.note"]');
+    if(lab && nt){ const n0 = +nt.dataset.n0, n = SW.lines(nt).n, lh = parseFloat(nt.style.lineHeight), d = Math.max(0, n0 - n)*lh; nt.style.height = (n*lh) + 'pt'; nt.dataset.lines = n;
+      document.querySelectorAll('[data-role="js-rule"], [data-role="js-agent"]').forEach(e => { e.style.top = (parseFloat(e.style.top) - d) + 'pt'; });
+      const kids = [...lab.querySelectorAll('[data-slot], .logo')].map(e => e.getBoundingClientRect()), t0 = Math.min(...kids.map(r => r.top)), b0 = Math.max(...kids.map(r => r.bottom)), card = lab.previousElementSibling.getBoundingClientRect();
+      const ext = (b0 - t0)*0.75, bx = document.getElementById('jsbox'), room = +lab.dataset.h, y0 = +lab.dataset.top, bh = Math.min(room, ext + 28), btop = y0 + (room - bh)/2;   // the box sized to its words, centered in its room
+      bx.style.top = btop + 'pt'; bx.style.height = bh + 'pt'; lab.style.top = ((card.top + (btop - y0 + bh/2)/0.75 - (t0 + b0)/2)*0.75) + 'pt'; } }
+  SW.fitLogos();
+  ContactCard.fit(document);
+  
+  // the About box is sized to its content: a write-up that sets in fewer lines than planned does not leave an empty strip at the foot of its box
+  if(!front) fitDisc();
+  issues.push(...SW.focus(D));
+  if(front) FO.tighten(D);
+  if(!front){ issues.push(...mailCheck()); issues.push(...panelCheck(), ...backCheck()); }
+  // the sold front's box and the listed boxes are checked like every paragraph: whole sentences, the last line at least 3/4 full
+  window.brochureCheck = () => SW.check(D, issues);
+  window.photoPlacements = SW.placements;
+
+  // ---- the Just Sold front: the facts sit centered between the address and the agent's name, measured on the letters (ink, from the font's own metrics) ----
+  function ink(el, noPunct){ const c = (ink.c || (ink.c = document.createElement('canvas').getContext('2d'))); let top = Infinity, bot = -Infinity;
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let nd; const rg = document.createRange();
+    while((nd = w.nextNode())){ const t = nd.textContent.trim(); if(!t) continue; const cs = getComputedStyle(nd.parentElement);
+      c.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`; const m = c.measureText(t.replace(/\s+/g, ' '));
+      let txt = cs.textTransform === 'uppercase' ? t.toUpperCase() : t; const m2 = c.measureText(txt), m3 = noPunct ? c.measureText(txt.replace(/[,.]/g, '')) : m2;   // a comma's tail is not a letter
+      rg.selectNodeContents(nd); const qs = [...rg.getClientRects()].filter(q => q.width > 1); if(!qs.length) continue;
+      const first = qs[0], last = qs[qs.length - 1];
+      top = Math.min(top, first.top + m2.fontBoundingBoxAscent - m2.actualBoundingBoxAscent);
+      bot = Math.max(bot, last.top + m2.fontBoundingBoxAscent + m3.actualBoundingBoxDescent); }
+    return [top, bot]; }
+  // the About box ends just under its last line: the room it frees goes to the photos above it (they grow down, captions and box move with them)
+  function aboutSnug(){ const bx0 = document.querySelector('.pc-wbox[data-want]'), p0 = bx0 && bx0.querySelector('[data-slot="back.box"]'); if(!bx0 || !p0) return;
+    const r = p0.getBoundingClientRect(), b = bx0.getBoundingClientRect(), L = SW.lines(p0), lh = parseFloat(getComputedStyle(p0).lineHeight)*0.75, textBottom = (r.top - b.top)*0.75 + L.n*lh, free = parseFloat(bx0.style.height) - textBottom - 6; if(free < 1) return;
+    bx0.style.top = (parseFloat(bx0.style.top) + free) + 'pt'; bx0.style.height = (parseFloat(bx0.style.height) - free) + 'pt'; bx0.style.paddingBottom = '0pt';
+    document.querySelectorAll('.cap .a[data-slot^="back.photo"]').forEach(c => { const ph = document.querySelector(`.ph[data-slot-photo="${c.dataset.slot}"]`), pb = ph && ph.parentElement; if(pb) pb.style.height = (parseFloat(pb.style.height) + free) + 'pt'; c.parentElement.style.top = (parseFloat(c.parentElement.style.top) + free) + 'pt'; }); }
+  // the photo band: captions that set in fewer lines than planned give their room to the photos (the band grows down, the captions move with it)
+  function bandSnug(){ const caps = [...document.querySelectorAll('.cap .a[data-slot^="back.photo"]')]; if(!caps.length) return;
+    const lh = parseFloat(caps[0].dataset.lh) || 13.5, n = Math.max(...caps.map(c => SW.lines(c).n)), d = (+caps[0].dataset.lines - n)*lh; if(d < 1) return;
+    document.querySelectorAll('[data-band]').forEach(pb => { pb.style.height = (parseFloat(pb.style.height) + d) + 'pt'; });
+    const ft = document.querySelector('[data-band-foot]'); if(ft) ft.style.top = (parseFloat(ft.style.top) + d) + 'pt';
+    caps.forEach(c => { c.parentElement.style.top = (parseFloat(c.parentElement.style.top) + d) + 'pt'; c.parentElement.style.height = (6 + n*lh) + 'pt'; c.style.height = (n*lh) + 'pt'; }); }
+  function pcSnug(){ const caps = [...document.querySelectorAll('.cap .a[data-slot^="back.photo"]')]; if(!caps.length) return;
+    const lh = parseFloat(caps[0].style.lineHeight) || CL, box = Math.max(...caps.map(c => parseFloat(c.parentElement.style.height) - 5)), n = Math.max(...caps.map(c => SW.lines(c).n)), wb = document.querySelector('.pc-wbox'), gap0 = wb ? parseFloat(wb.style.top) - (parseFloat(caps[0].parentElement.style.top) + parseFloat(caps[0].parentElement.style.height)) : 0, d = box - n*lh + Math.max(0, gap0 - 5); if(d < 1) return;
+    caps.forEach(c => { const sl = c.dataset.slot, ph = document.querySelector(`.ph[data-slot-photo="${sl}"]`), pb = ph && ph.parentElement; if(pb) pb.style.height = (parseFloat(pb.style.height) + d) + 'pt'; c.parentElement.style.top = (parseFloat(c.parentElement.style.top) + d) + 'pt'; c.parentElement.style.height = (5 + n*lh) + 'pt'; c.style.height = (n*lh) + 'pt'; }); }
+  function centerFacts(){
+    const col = document.querySelector('.pc-col'), addr = col.querySelector('.pc-addr'), st = col.querySelector('.pc-stats'), nm = col.querySelector('[data-slot="agent.name"]');
+    const k = 72/96, g = 12;   // g: the gap from each hairline to the letters beside it, start value
+    const rows = [...st.querySelectorAll('.r')]; if(!rows.length) return;
+    const set = (mt, mb) => { st.style.marginTop = mt + 'pt'; st.style.marginBottom = mb + 'pt'; };
+    set(0, 0);
+    const aib = ink(addr)[1], nit = ink(nm)[0], ab = addr.getBoundingClientRect().bottom, ag = col.querySelector('.pc-agent').getBoundingClientRect().top;
+    let mt = (aib + g/k - ab) * k, mb = (ag - (nit - g/k)) * k; mt = Math.max(2, mt); mb = Math.max(0, mb); set(mt, mb);
+    for(let i = 0; i < 6; i++){
+      const ft = ink(rows[0], 1)[0], fb = ink(rows[rows.length - 1], 1)[1], A = ft - aib, B = nit - fb, d = (B - A)/2*k;
+      if(Math.abs(B - A)*k < 0.05) break;
+      mt += d; mb -= d; set(mt, mb);
+    }
+    const ft = ink(rows[0], 1)[0], fb = ink(rows[rows.length - 1], 1)[1];
+    window.__facts = {aboveFacts: +((ft - aib)*k).toFixed(2), belowFacts: +((nit - fb)*k).toFixed(2)};
+  }
+  function fitDisc(){ const el = document.getElementById('pcdisc'); if(!el) return; let fs = 8;
+    const ok = () => [...el.children].every(c => { const r = document.createRange(); r.selectNodeContents(c); return r.getBoundingClientRect().width <= el.clientWidth; });
+    for(; fs > 6; fs -= .25){ el.style.fontSize = fs + 'pt'; if(ok()) break; }
+    el.style.fontSize = Math.max(6, fs) + 'pt'; el.dataset.fs = el.style.fontSize; }
+  // owner 11/7 back rule: the standard contact card runs full width, and the light mail panels stay around the three postal zones (they never grow into a plain light block)
+  // owner 11/7: the Just Sold back's six bullets are long (8 words or more) and the box is at least 85% filled with text (heading, bullet lines, call line against the box's inner height)
+  function jsCheck(){ const out = [], box = document.querySelector('.sheet .pc-wbox'); if(!box) return out;
+    const items = [...box.querySelectorAll('.stp, .hb .tx')], hOf = el => { const r = document.createRange(); r.selectNodeContents(el); return [...r.getClientRects()].reduce((m, q) => Math.max(m, q.bottom), 0) - [...r.getClientRects()].reduce((m, q) => Math.min(m, q.top), 1e9); };
+    items.forEach((el, i) => { const w = el.textContent.trim().split(/\s+/).filter(Boolean).length; if(w < 8) out.push({slot: 'back.step' + i, kind: 'js-bullet-too-short', detail: `${w} words: "${el.textContent.trim()}"`}); });
+    if(items.length < 6) out.push({slot: 'back.steps', kind: 'fewer-than-six-bullets', detail: items.length + ' bullets'});
+    const cs = getComputedStyle(box), inner = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom), line = el => { const r = document.createRange(); r.selectNodeContents(el); const rs = [...r.getClientRects()].filter(q => q.width > 1); const lh = parseFloat(getComputedStyle(el).lineHeight) || 0; const rows = new Set(rs.map(q => Math.round(q.top))).size; return rows*lh; };
+    let used = items.reduce((n, el) => n + line(el), 0); const k = box.querySelector('.k'), call = box.querySelector('.pc-call'); if(k) used += parseFloat(getComputedStyle(k).lineHeight) || 11; if(call) used += parseFloat(getComputedStyle(call).lineHeight) || 16;
+    const fill = used/inner; window.__jsFill = +fill.toFixed(2);
+    if(fill < .85) out.push({slot: 'back.steps', kind: 'js-box-under-85', detail: `the Just Sold box is ${Math.round(fill*100)}% full (85% minimum)`});
+    return out; }
+  // the Just Sold bullets take the largest size at which every one sets in full lines inside the box, then the leading opens until the box is at least 85% filled
+  function fitSteps(){ const box = document.getElementById('stepsbox'), list = document.getElementById('stepslist'); if(!box || !list) return;
+    if(false){   // 6x11: one column, every step one full line, the largest size from 15.5 pt down to the 6x9's x1.08; the box is sized to its content, set on the card's top, the call to action centered above it
+      const stp = [...list.querySelectorAll('.stp')], its = [...list.querySelectorAll('.it')];
+      let best = null;
+      for(let fs = 15.5; fs >= 14.1 - 1e-6; fs -= 0.1){ list.style.fontSize = fs + 'pt'; const lh = fs*1.45; list.style.lineHeight = lh + 'pt'; stp.forEach(e => { e.dataset.lh = lh; }); its.forEach(it => { it.querySelector('.bx').style.marginTop = (lh*.42) + 'pt'; }); SW.fill();
+        if(stp.every(e => SW.lines(e).n === 1)){ const fill = Math.min(...stp.map(e => (e.getBoundingClientRect().width ? (() => { const r = document.createRange(); r.selectNodeContents(e); const q = [...r.getClientRects()]; return q.length ? (Math.max(...q.map(x => x.right)) - Math.min(...q.map(x => x.left)))/list.getBoundingClientRect().width : 0; })() : 0))); best = {fs, lh, fill}; break; } }
+      if(!best) return;
+      box.style.justifyContent = 'flex-start'; box.style.gap = '8pt'; box.style.height = 'auto';
+      const hpt = box.getBoundingClientRect().height*0.75, bottom = parseFloat(box.style.top) + (+box.dataset.bh0 || 0), top0 = parseFloat(box.style.top), end = top0 + parseFloat(box.dataset.bh0 || 0);
+      const boxBottom = +box.dataset.bottom || 282, newTop = top0 + Math.max(0, (boxBottom - top0 - hpt)/2); box.style.top = newTop + 'pt'; box.style.height = hpt + 'pt';
+      const cta = document.getElementById('jscta'), st = document.querySelector('[data-slot="back.status"]'), sb = parseFloat(st.style.top) + parseFloat(st.style.height), room = newTop - sb;
+      if(cta && room >= 30){ const cs = Math.min(21, room - 12); cta.style.display = ''; cta.style.fontSize = cs + 'pt'; cta.style.lineHeight = (cs*1.3) + 'pt'; cta.style.height = (cs*1.3) + 'pt'; cta.style.top = (sb + (room - cs*1.3)/2) + 'pt'; }
+      return; }
+    const stp = [...list.querySelectorAll('.stp')], its = [...list.querySelectorAll('.it')], fits = () => box.scrollHeight <= box.clientHeight + .5;
+    const okLines = () => stp.every(e => { const L = SW.lines(e); return L.n === 1 || (L.fill >= .9 && L.min >= .8); });
+    const apply = (fs, m) => { list.style.fontSize = fs + 'pt'; list.style.lineHeight = (fs*m) + 'pt'; stp.forEach(e => { e.dataset.lh = fs*m; }); its.forEach(it => { it.querySelector('.bx').style.marginTop = Math.max(0, (fs*m - 15*(big ? 1.12 : 1))/2) + 'pt'; }); SW.fill(); };
+    const sizes = []; for(let f = big ? 13.5 : 13; f >= 9.5 - 1e-6; f -= 0.1) sizes.push(+f.toFixed(2));
+    for(const fs of sizes){ apply(fs, 1.25); if(!(okLines() && fits())) continue;
+      for(let m = 1.25; m <= 1.7; m += .03){ apply(fs, m); if(!fits() || !okLines()){ apply(fs, m - .03); break; } jsCheck(); if(window.__jsFill >= .87) break; }
+      return; }
+    apply(sizes[sizes.length - 1], 1.25); }
+  function backCheck(){ const out = [], pt = v => v*72/96, sh = document.querySelector('.sheet').getBoundingClientRect(), X0 = window.__cardX || 30;
+    const cc = document.querySelector('.sheet .cc');
+    if(!cc) out.push({slot: 'back.card', kind: 'no-contact-card', detail: 'the back has no standard contact card'});
+    else { const r = cc.getBoundingClientRect(), l = pt(r.left - sh.left), rr = pt(r.right - sh.left), Wt = pt(sh.width) - 18;
+      if(l > X0 + 1 || rr < Wt - X0 - 1) out.push({slot: 'back.card', kind: 'card-not-full-width', detail: `card spans ${l.toFixed(0)}-${rr.toFixed(0)} pt of ${Wt.toFixed(0)}`}); }
+    let area = 0; document.querySelectorAll('.sheet [data-mail-panel]').forEach(el => { const r = el.getBoundingClientRect(); const w = Math.min(pt(r.right - sh.left) - 9, pt(sh.width) - 18) - Math.max(pt(r.left - sh.left) - 9, 0), h = Math.min(pt(r.bottom - sh.top) - 9, 432) - Math.max(pt(r.top - sh.top) - 9, 0); area += Math.max(0, w)*Math.max(0, h); });
+    if(area > .25*(pt(sh.width) - 18)*432) out.push({slot: 'back.panels', kind: 'light-block-too-big', detail: `mail panels cover ${(100*area/((pt(sh.width) - 18)*432)).toFixed(0)}% of the card`});
+    if(sold) out.push(...jsCheck());
+    return out; }
+  // nothing but the proof guides may sit in the mail vendor's zones (postage, address block, barcode strip)
+  function lum(c){ const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c); return m ? .2126*m[1] + .7152*m[2] + .0722*m[3] : 0; }
+  function panelCheck(){ const out = [], Z = window.__zones, sh = document.querySelector('.sheet').getBoundingClientRect(), pt = v => v*72/96;
+    const panels = [...document.querySelectorAll('.mailp')].map(p => { const r = p.getBoundingClientRect(); return {l: pt(r.left - sh.left), t: pt(r.top - sh.top), r: pt(r.right - sh.left), b: pt(r.bottom - sh.top), lum: lum(getComputedStyle(p).backgroundColor)}; });
+    if(!panels.length) out.push({slot: 'back.panel', kind: 'mail-panel-missing', detail: 'no light panel under the mail zones'});
+    ['postage', 'address', 'barcode'].forEach(k => { const z = Z[k], p = panels.find(q => q.l <= z[0] + .5 && q.t <= z[1] + .5 && q.r >= z[0] + z[2] - .5 && q.b >= z[1] + z[3] - .5);
+      if(!p) out.push({slot: 'back.' + k, kind: 'mail-zone-not-light', detail: `the ${k} zone is not fully on a light panel`});
+      else if(p.lum < 200) out.push({slot: 'back.' + k, kind: 'mail-zone-not-light', detail: `the ${k} panel's luminance is ${Math.round(p.lum)} (200 minimum): vendors print black ink and USPS needs a light field`}); });
+    // the taupe runs to every edge: nothing outside the three panels is light
+    return out; }
+  // the Just Sold bullets: each takes the longest wording that sets in 3 lines (2 on the 6x9) so the six read as full sentences
+  function fitHelp(){
+    const hbs = [...document.querySelectorAll('.hb')], grid = document.querySelector('.pc-help'), call = grid.parentElement.querySelector('.pc-call');
+    const pick = maxL => hbs.forEach(el => { const tx = el.querySelector('.tx'), alts = JSON.parse(el.dataset.alts).slice().sort((p, q) => q.length - p.length); let best = null, bf = -1;
+      for(const a of alts){ tx.textContent = a; const L = SW.lines(tx); if(L.n > maxL) continue; if(L.n === 1 || L.fill >= .76){ best = a; bf = 9; break; } if(L.fill > bf){ best = a; bf = L.fill; } }
+      tx.textContent = best || alts[alts.length - 1]; });
+    const over = () => Math.max(...hbs.map(e => e.getBoundingClientRect().bottom)) > call.getBoundingClientRect().top - 5 || grid.parentElement.scrollHeight > grid.parentElement.clientHeight + .5;
+    const bad = () => hbs.filter(el => { const L = SW.lines(el.querySelector('.tx')); return L.n > 1 && L.fill < .75; });
+    // the bullets take the largest size at which all six set in full lines (last line 3/4 full) inside the box: no empty band under the heading
+    const base = big ? 8.5 : 8, top = big ? 15 : 12; let bestCfg = null;
+    const apply = fs => hbs.forEach(el => { el.style.fontSize = fs + 'pt'; el.style.lineHeight = (fs*1.32) + 'pt'; el.querySelector('.bx').style.marginTop = (fs*1.32/2 - 2) + 'pt'; });
+    // every size is tried; the one whose bullets keep the fullest wording (then the larger type) wins, all six on full last lines inside the box
+    for(let fs = top; fs >= base; fs -= .25) for(const maxL of (big ? [3, 2] : [3, 2])){
+      apply(fs); pick(maxL); if(over() || bad().length) continue;
+      const len = hbs.reduce((n, el) => n + el.querySelector('.tx').textContent.length, 0), sc = fs*1000 + len;
+      if(!bestCfg || sc > bestCfg.sc) bestCfg = {fs, maxL, sc}; }
+    if(bestCfg){ apply(bestCfg.fs); pick(bestCfg.maxL); } else { apply(base); pick(3); }
+    { const bxel = grid.parentElement; if(over() || bxel.scrollHeight > bxel.clientHeight + .5) issues.push({slot: 'back.steps', kind: 'steps-overflow', detail: 'the six bullets and the call line do not fit their box'}); }
+    hbs.forEach(el => { const tx = el.querySelector('.tx'), L = SW.lines(tx); delete el.dataset.slot;
+      if(L.n > 1 && L.fill < .75) issues.push({slot: 'back.step' + el.dataset.help, kind: 'last-line-short', detail: `last line is ${Math.round(L.fill*100)}% full (75% minimum): "${tx.textContent.slice(-24)}"`}); });
+  }
+  function mailCheck(){ const out = [], Z = window.__zones, pt = v => v*72/96, sh = document.querySelector('.sheet').getBoundingClientRect();
+    const hit = (r, z) => pt(r.left - sh.left) < z[0] + z[2] - .5 && pt(r.right - sh.left) > z[0] + .5 && pt(r.top - sh.top) < z[1] + z[3] - .5 && pt(r.bottom - sh.top) > z[1] + .5;
+    // owner 11/16: the photo band runs under the postage box; the light markup laid over it (z-index above the photo) covers the whole zone, so only
+    // type, boxes and cards count as in the zone, and a photo counts only where no light markup covers that zone
+    const covered = k => [...document.querySelectorAll('.sheet .mailp')].some(p => { const r = p.getBoundingClientRect(), z = Z[k]; return pt(r.left - sh.left) <= z[0] + .5 && pt(r.top - sh.top) <= z[1] + .5 && pt(r.right - sh.left) >= z[0] + z[2] - .5 && pt(r.bottom - sh.top) >= z[1] + z[3] - .5 && +getComputedStyle(p).zIndex >= 4; });
+    document.querySelectorAll('.sheet .ph, .sheet .pc-wbox, .sheet .cap, .sheet .cc, .sheet .pc-ret, .sheet .pc-bstatus, .sheet .pc-disc').forEach(el => {
+      const r = el.getBoundingClientRect(); for(const k in Z) if(hit(r, Z[k]) && !(el.classList.contains('ph') && covered(k))) out.push({slot: el.dataset.slot || el.className, kind: 'in-mail-zone', zone: k}); });
+    return out; }
+})();
+</script>
+</body>
+</html>

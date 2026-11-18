@@ -297,6 +297,40 @@
     h += '</div>';
     if(lab) h += `<div class="abs" style="left:${x - 6}pt;top:${py + ph + 3}pt;width:${W + 12}pt;height:10pt;font-family:var(--po-font);font-weight:700;font-size:8pt;line-height:10pt;letter-spacing:.2pt;text-align:center;color:var(--po-paper-ink);white-space:nowrap" data-slot="${slot}.floor" data-lines="1" data-fine="1">${esc(g.label)}</div>`;
     return h; };
+  // ---------------- a small plan on every room's photo (owner 11/17/2026, review Q1: "a small plan beside each room write-up on the
+  // spread, with that room lit, like the kitchen card") ----------------
+  // The kitchen card's small plan (the listing's own image, never redrawn, the room lit by an accent box from roomBoxes, the floor
+  // named on a multi-story home), set on a paper chip in the corner of the room's photo, right at the write-up; the write-ups keep
+  // their full width and length. A room is lit only when the plan names it for sure: by name (Master = Primary, "Living area" =
+  // "Living", W.I.C. = closet), then the floor the write-up names, then the size (the card's own, else the listing's room list)
+  // against the plan label's dims; only the room the photo's label names ("Primary bath and closet" prints as PRIMARY BATH). A room the plan doesn't name, or can't be told apart, gets no chip (never a wrong room).
+  const pk = t => rk(t).replace(/\bmaster\b/g, 'primary').replace(/\bprimary suite\b/g, 'primary bedroom').replace(/\bw i c\b|\bwalk in closet\b/g, 'closet')
+    .replace(/\b(first|second|third|fourth|main|top) floor\b/g, ' ').replace(/\s+\d+$/, '').replace(/\b(the|room|area)\b/g, ' ').replace(/\s+/g, ' ').trim() || (/\broom\b/.test(rk(t)) ? 'room' : '');   // a plan room named just "Room" = "Third-floor room"
+  const dimsOf = t => { const m = /(\d+)\s*'?(?:\s*\d+\s*")?\s*x\s*(\d+)/i.exec(String(t || '')); return m ? [+m[1], +m[2]].sort((a, b) => a - b).join('x') : ''; };
+  const listingRooms = D => { const r = (D.listing || {}).rooms; if(Array.isArray(r)) return r.map(x => ({name: x.name, size: x.size}));
+    return [...String(r || '').matchAll(/'name':\s*'([^']+)',\s*'size':\s*'([^']+)'/g)].map(m => ({name: m[1], size: m[2]})); };
+  FO.roomPlan = (D, c) => { const LV = FO.miniLevels(D); if(!LV || !c) return null; const ov = (((D.sw || {}).plan || {}).planRooms || {})[c.photo];
+    const lab = li => ((D.plan || {}).levels || []).length > 1 ? LV[li].name : '';
+    if(ov){ const li = Math.max(0, Math.min(LV.length - 1, ov.level || 0)); return {L: LV[li], li, hi: [].concat(ov.rooms), label: lab(li)}; }
+    const a = FXS.augment(D, c), L0 = FXS.leadLabel(a.lead || c.lead), text = ' ' + rk(L0.name + ' ' + (a.s || c.s || []).map(x => [].concat(x)[0]).join(' ')) + ' ';
+    const all = LV.flatMap((L, li) => L.roomBoxes.map((r, ri) => ({li, ri, k: pk(r.name), dims: dimsOf(r.dims || '')}))).filter(r => r.k);
+    const floorIn = LV.map((L, li) => text.includes(' ' + rk(L.name) + ' ') ? li : -1).filter(li => li >= 0);
+    const hits = String(L0.name).split(/ and |, /).slice(0, 1).map(part => { const k = pk(part); if(!k) return null;
+      let cand = all.filter(r => r.k === k), qual = false;
+      if(!cand.length && k.includes(' ')){ cand = all.filter(r => r.k === k.split(' ').pop()); qual = true; }
+      if(cand.length > 1 && floorIn.length === 1 && cand.some(r => r.li === floorIn[0])) cand = cand.filter(r => r.li === floorIn[0]);
+      if(cand.length > 1 || qual){ const want = dimsOf(L0.size) || dimsOf((listingRooms(D).find(r => pk(r.name) === k) || {}).size), by = want ? cand.filter(r => r.dims === want) : [];
+        if(by.length === 1) cand = by; else if(qual) cand = []; }
+      return cand.length === 1 ? cand[0] : null; }).filter(Boolean);
+    if(!hits.length) return null; const li = hits[0].li;
+    return {L: LV[li], li, hi: hits.filter(r => r.li === li).map(r => r.ri), label: lab(li)}; };
+  // the chip: paper, set inside the photo's own box (it moves with the photo when a caption takes or gives room at the photo's foot)
+  FO.planChip = (D, g, maxW, maxH, right, bottom, slot) => { if(!g) return ''; const pad = 5, lab = g.label ? 12 : 0, a = g.L.w/g.L.h, lw = g.label ? FXS.width(g.label, 'font-family:Archivo;font-weight:700;font-size:8pt;letter-spacing:.2pt') + 4 : 0;
+    let ph = maxH - 2*pad - lab, pw = ph*a; if(pw > maxW - 2*pad){ pw = maxW - 2*pad; ph = pw/a; }
+    const cw = Math.max(pw, lw) + 2*pad, ch = ph + lab + 2*pad;
+    return `<div class="po-pbox" data-plan-chip="${slot}" style="right:${right}pt;bottom:${bottom}pt;width:${cw}pt;height:${ch}pt">${FO.miniPlan(D, g, pad, pad, cw - 2*pad, ch - 2*pad, slot)}</div>`; };
+  // a room photo's box (FXS.box output: one div) with its chip set inside it
+  FO.chipIn = (boxHtml, chip) => chip ? boxHtml.slice(0, -6) + chip + '</div>' : boxHtml;
   FO.left = (D) => { const K = D.sw || {}, I = K.left || {}, box = I.box || {}, P = K.plan || {}, cs = FO.cards(D, P.left || []), [heroC, kit] = cs;
     const pt = pageTop(D, heroC, I, 'left', 'left.wide'); let h = pt.html; const RY = pt.y;
     window.__leftMissing = !kit;   // the page needs its second captioned photo beside the card (a photo id with no caption copy leaves a hole)
@@ -333,6 +367,7 @@
   FO.right = (D) => { const K = D.sw || {}, R = K.right || {}, P = K.plan || {}, cs = FO.cards(D, P.right || []), [c0, ...more] = cs;
     const pt = pageTop(D, c0, R, 'right', 'right.photo0'); let h = pt.html; const RY = pt.y, clh = 13.5, nL = 3, G = 16, ph = FOOT - RY - 25 - nL*clh;
     const tiles = more.slice(0, 3), fr = tiles.length === 3 ? [0.4, 0.3, 0.3] : tiles.map(() => 1/tiles.length), W = CW - (tiles.length - 1)*G; let x = X0;
+    // no small plans on the room photos (owner 11/17/2026, book 1 before-after p25-27: "take the small floor plans off; no need to show it again")
     tiles.forEach((c, i) => { const w = W*fr[i]; h += FXS.captioned(D, c, x, RY, w, ph, nL, 'right.photo' + (i + 1), {fs: 10, lh: clh, min: 3}); x += w + G; });
     return h; };
   FO.rightFit = () => {};
@@ -416,7 +451,7 @@
     return out; };
   // no text may sit under a photo or the agent card (the owner's clearance rule, 11/7): any text box that overlaps one fails
   FO.overlapCheck = () => { const out = [], els = [...document.querySelectorAll('.ph, .fo-acard:not(.abs)')].map(e => ({e, r: e.getBoundingClientRect()})).filter(x => x.r.width > 2 && x.r.height > 2), w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    for(let n = w.nextNode(); n; n = w.nextNode()){ const p = n.parentElement; if(!p || !n.textContent.trim() || p.closest('script, style, .plan-svg, .planwrap, .fo-acard, .logo')) continue;
+    for(let n = w.nextNode(); n; n = w.nextNode()){ const p = n.parentElement; if(!p || !n.textContent.trim() || p.closest('script, style, .plan-svg, .planwrap, .fo-acard, .logo, [data-plan-chip]')) continue;   // a room plan's floor name sits on its own paper chip
       const rg = document.createRange(); rg.selectNodeContents(n); [...rg.getClientRects()].forEach(q => { if(q.width < 2 || q.height < 2) return;
         els.forEach(({e, r}) => { if(e.contains(p)) return; const ox = Math.min(q.right, r.right) - Math.max(q.left, r.left), oy = Math.min(q.bottom, r.bottom) - Math.max(q.top, r.top);
           if(ox > 1.5 && oy > 3) out.push({slot: (p.closest('[data-slot]') || {dataset: {}}).dataset.slot || 'text', kind: 'text-under-element', detail: `"${n.textContent.trim().slice(0, 28)}" overlaps a ${e.className.split(' ')[0]}`}); }); }); }

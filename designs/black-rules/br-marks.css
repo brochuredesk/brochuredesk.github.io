@@ -1,0 +1,81 @@
+/* Black Rules marks shared by every page (tokens in br-tokens.css), read off the approved P39 flyer, its sign-in sheet and feedback card.
+   Font properties are written one by one (never a font: shorthand with var()). */
+@import url(br-tokens.css);
+
+/* THE RULES: the 5 pt bar that opens a face, the 4 pt bar that closes it, the 2 pt rules between its bands (all in the kit's dark) */
+.br-bar{position:absolute;background:var(--br-ink)}
+.br-r2{position:absolute;height:2pt;background:var(--br-ink)}
+.br-r1{position:absolute;height:.75pt;background:var(--br-ink)}
+.br-v1{position:absolute;width:.75pt;background:var(--br-ink)}
+/* the slab: the bar grown to a field (once per piece); type on it is white */
+.br-slab{position:absolute;background:var(--br-ink)}
+.br-onslab{--br-on:#ffffff;--br-accent:#ffffff;--fx-on:#ffffff;--fx-soft:var(--br-soft-main);--br-soft:var(--br-soft-main);--fx-rule:rgba(255,255,255,.7);--br-rule:rgba(255,255,255,.7)}
+.br-onslab .fine{color:var(--br-soft-main);opacity:1}
+
+/* THE DISPLAY LINE: Red Hat Display 700 caps, tracked wide, centered between rules (P39's OPEN HOUSE / PLEASE SIGN IN) */
+.br-disp{position:absolute;font-family:var(--br-disp);font-weight:700;text-transform:uppercase;color:var(--br-on);white-space:nowrap;overflow:hidden;text-align:center}
+/* a heading that wraps (inside panels): Red Hat Display 700 caps, lightly tracked */
+.br-head{position:absolute;font-family:var(--br-disp);font-weight:700;text-transform:uppercase;color:var(--br-on);letter-spacing:.6pt;text-align:center}
+/* THE SPLIT LINE: Libre Franklin 700 flush left, its partner flush right in the main color (P39's date | time) */
+.br-sl{position:absolute;font-family:var(--br-font);font-weight:700;color:var(--br-on);white-space:nowrap;overflow:hidden;text-align:left}
+.br-sr{position:absolute;font-family:var(--br-font);font-weight:600;color:var(--br-accent);white-space:nowrap;overflow:hidden;text-align:right}
+.br-caps{text-transform:uppercase;letter-spacing:1.6pt}
+/* the street (P39's address line): Red Hat Display 700 mixed case */
+.br-street{position:absolute;font-family:var(--br-disp);font-weight:700;color:var(--br-on);white-space:nowrap;overflow:hidden}
+/* THE LABEL: Libre Franklin 700 caps, tracked, in the main color (P39's YOUR AGENT, the sign-in sheet's column heads) */
+.br-k{position:absolute;font-family:var(--br-font);font-weight:700;font-size:8.6pt;line-height:11pt;letter-spacing:2pt;text-transform:uppercase;color:var(--br-accent);white-space:nowrap;overflow:hidden}
+/* THE TILE: the sign-in sheet's dark square with a white numeral */
+.br-tile{position:absolute;background:var(--br-ink);display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;white-space:nowrap;overflow:hidden}
+.br-tile .n{font-family:var(--br-disp);font-weight:700;color:#fff;line-height:1}
+.br-tile .u{font-family:var(--br-font);font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:1.2pt;line-height:1}
+/* THE BOX: P39's white refreshments box framed 2 pt in the dark */
+.br-box{position:absolute;background:#fff;border:2pt solid var(--br-ink);box-sizing:border-box}
+
+/* compatibility names the engine still writes */
+.br-eye{position:absolute;font-family:var(--br-font);font-weight:700;letter-spacing:2pt;text-transform:uppercase;color:var(--br-accent);white-space:nowrap;overflow:hidden;text-align:center}
+.br-big{position:absolute;font-family:var(--br-disp);font-weight:700;color:var(--br-on);white-space:nowrap;overflow:hidden;text-align:center}
+.br-line{position:absolute;font-family:var(--br-font);font-weight:500;color:var(--br-on);white-space:nowrap;overflow:hidden;text-align:center}
+.br-c{text-align-last:center}
+.br-rule{position:absolute;height:2pt;background:var(--br-ink)}
+.br-hair{position:absolute;height:.75pt;background:var(--br-ink)}
+.br-wb{position:absolute;background:#fff;border:2pt solid var(--br-ink);box-sizing:border-box}
+.br-on-wb{--fx-on:#161616;--fx-soft:#2e2e2e;--fx-rule:rgba(20,32,28,.4);--br-on:#161616;--br-soft:#2e2e2e}
+.br-wl{position:absolute;font-family:var(--br-font);font-weight:700;font-size:8.6pt;line-height:11pt;letter-spacing:2pt;text-transform:uppercase;color:var(--br-accent);white-space:nowrap;overflow:hidden}
+.br-ml{position:absolute;font-family:var(--br-font);font-weight:700;font-size:8.6pt;line-height:11pt;letter-spacing:1.6pt;text-transform:uppercase;color:var(--br-on);white-space:nowrap;overflow:hidden;text-align:center}
+.br-print{background:var(--fx-taupe-d)}
+.br-cut{position:absolute;pointer-events:none}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.script{position:absolute;font-family:var(--br-disp);font-weight:700;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1.25;text-transform:uppercase;letter-spacing:4pt}
+
+/* labels: main-color caps, tracked (the sign-in sheet's column heads) */
+.lbl{display:inline-block;vertical-align:bottom;font-family:var(--br-font);font-weight:700;font-size:8.6pt;line-height:12pt;letter-spacing:2pt;text-transform:uppercase;color:var(--br-accent);white-space:nowrap;overflow:hidden}
+.lbl.sz{text-transform:none;color:var(--fx-soft);letter-spacing:.4pt;margin-left:10pt;font-weight:500}
+.body{font-family:var(--br-font);font-weight:400;font-size:10.5pt;line-height:16.5pt;color:var(--fx-on);overflow:hidden}
+.wu{font-family:var(--br-font);font-weight:400;font-size:11pt;line-height:17pt;color:var(--fx-on);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font-family:var(--br-font);font-weight:400;font-size:6.6pt;line-height:8pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;opacity:.85}
+
+/* photos: square corners, clean-edged on the white */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--br-font);font-weight:400;font-size:9.5pt;line-height:12.5pt;color:#1f1f1f;overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:700;color:var(--fx-on)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+.card{position:absolute;border:2pt solid var(--br-ink);background:transparent}
+/* a list row: a small dark square, the item, a hairline under it (the sign-in sheet's row) */
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-family:var(--br-font);font-weight:500;font-size:10.5pt;line-height:14pt;color:var(--fx-on);white-space:nowrap;overflow:hidden;border-bottom:.75pt solid var(--br-ink)}
+.bul:before{content:"";width:5pt;height:5pt;background:var(--br-ink);flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font-family:var(--br-disp);font-weight:700;font-size:18pt;line-height:1;color:var(--fx-on)}
+.stat .l{font-family:var(--br-font);font-weight:700;font-size:9pt;line-height:1;letter-spacing:2pt;text-transform:uppercase;color:var(--fx-soft)}
+.logo.w img{filter:brightness(0) invert(1)}

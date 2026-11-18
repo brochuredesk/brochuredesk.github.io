@@ -1,0 +1,94 @@
+/* Serif Headline marks shared by every page (tokens in sh-tokens.css). From the approved P38 flyer and its sign-in sheet: the two-tone
+   EB Garamond headline, the ruled register, the outlined ring with a line icon, the main-color tracked caps label; and the set's floor.
+   Font properties are written one by one (never a font: shorthand with var()). */
+@import url(sh-tokens.css);
+/* the two-tone headline: EB Garamond roman, tight; the closing words (i) in the main color. On the floor: white, closing words gold */
+.sh-hl{position:absolute;font-family:var(--sh-serif);font-weight:500;font-style:normal;letter-spacing:-.018em;color:var(--sh-ink);white-space:nowrap;overflow:visible;text-align:center}
+.sh-hl i{font-style:normal;color:var(--sh-main)}
+.sh-fl .sh-hl{color:var(--sh-on)}
+.sh-fl .sh-hl i{color:var(--sh-gold)}
+/* a serif line: streets, numerals, the question */
+.sh-ser{position:absolute;font-family:var(--sh-serif);font-weight:500;font-style:normal;color:var(--sh-ink);white-space:nowrap;overflow:visible}
+.sh-fl .sh-ser{color:var(--sh-on)}
+/* the ruled register: thin rules holding a centered line (the flyer's date line) */
+.sh-ln{position:absolute;height:.9pt;background:var(--sh-ink);opacity:.5}
+.sh-fl .sh-ln,.sh-ln.on{height:1.5pt;background:var(--sh-on);opacity:.62}
+.sh-vln{position:absolute;width:.9pt;background:var(--sh-ink);opacity:.4}
+.sh-fl .sh-vln,.sh-vln.on{width:1.5pt;background:var(--sh-on);opacity:.55}
+/* the label: Manrope bold tracked capitals in the main color (the flyer's ABOUT THIS HOME); gold on the floor */
+.sh-caps{position:absolute;font-family:var(--sh-font);font-weight:700;font-size:9pt;line-height:12pt;letter-spacing:2.4pt;text-transform:uppercase;color:var(--sh-main);white-space:nowrap;overflow:hidden}
+.sh-fl .sh-caps{color:var(--sh-gold)}
+.sh-eyebrow{position:absolute;font-family:var(--sh-font);font-weight:700;text-transform:uppercase;letter-spacing:2.4pt;color:var(--sh-main);white-space:nowrap;overflow:hidden}
+.sh-fl .sh-eyebrow{color:var(--sh-gold)}
+/* the outlined ring with a line icon (the flyer's facts) and its fact */
+.sh-ring{position:absolute;border-radius:50%;border:1pt solid var(--sh-main);color:var(--sh-main);display:flex;align-items:center;justify-content:center}
+.sh-fl .sh-ring{border-color:var(--sh-on);border-width:1.5pt;color:var(--sh-on)}
+.sh-fact{position:absolute;font-family:var(--sh-font);font-weight:600;color:var(--sh-ink);white-space:nowrap;overflow:hidden;display:flex;align-items:center}
+.sh-fl .sh-fact{color:var(--sh-on)}
+.sh-num{position:absolute;font-family:var(--sh-serif);font-weight:500;color:var(--sh-main);white-space:nowrap;overflow:visible;text-align:center}
+.sh-fl .sh-num{color:var(--sh-gold)}
+/* the floor: the main color, edge to edge; everything on it turns white */
+.sh-floor{position:absolute;background:var(--sh-floor)}
+.sh-fl{--fx-rule-w:1.5pt;--fx-on:var(--sh-on);--fx-soft:var(--sh-on-soft);--fx-rule:rgba(255,255,255,.4);--fx-ink:var(--sh-on);--sh-ink:var(--sh-on);--sh-body:var(--sh-on-soft);--cc-paper:var(--sh-floor);--cc-ink:#ffffff;--cc-muted:var(--sh-on-soft);--cc-accent:var(--sh-gold);--cc-line:rgba(255,255,255,.45)}
+.sh-fl .cap .a{color:var(--sh-on-soft)}
+.sh-fl .cap .a b{color:var(--sh-on)}
+/* the ruled card: the sign-in sheet's pale tint of the main color, a main-color rule across its top and its foot */
+.sh-card{position:absolute;background:var(--sh-tint);border-top:2pt solid var(--sh-main);border-bottom:2pt solid var(--sh-main)}
+.sh-fl .sh-card{background:var(--sh-floor2);border-color:var(--sh-gold)}
+/* the gold line: the kit's accent, used once a page, where the paper meets the floor */
+.sh-gold{position:absolute;height:1.5pt;background:var(--sh-gold)}
+.sh-rule{position:absolute;height:1pt;background:var(--sh-main)}
+.sh-fl .sh-rule{height:1.5pt}
+.sh-fl .sh-rule{background:var(--sh-gold)}
+.sh-hair{position:absolute;height:1pt;background:var(--sh-ink);opacity:.3}
+.sh-fl .sh-hair{background:var(--sh-on);opacity:.45;height:1.5pt}
+.sh-vhair{position:absolute;width:1pt;background:var(--sh-ink);opacity:.3}
+.sh-fl .sh-vhair{background:var(--sh-on);opacity:.45;width:1.5pt}
+.sh-det{position:absolute;font-family:var(--sh-font);font-weight:600;color:var(--sh-ink);white-space:nowrap;overflow:hidden}
+.sh-numl{position:absolute;font-family:var(--sh-font);font-weight:600;font-size:8.6pt;line-height:12pt;letter-spacing:2pt;text-indent:2pt;text-transform:uppercase;color:var(--sh-mute);text-align:center;white-space:nowrap;overflow:hidden}
+.sh-fl .sh-numl{color:var(--sh-on-soft)}
+.sh-cut{position:absolute;pointer-events:none}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.script{position:absolute;font-family:var(--sh-serif);font-weight:500;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1.25}
+
+/* labels: main-color caps, tracked */
+.lbl{display:inline-block;vertical-align:bottom;font-family:var(--sh-font);font-weight:700;font-size:8.6pt;line-height:12pt;letter-spacing:2.2pt;text-transform:uppercase;color:var(--sh-main);white-space:nowrap;overflow:hidden}
+.sh-fl .lbl{color:var(--sh-gold)}
+.lbl.sz{text-transform:none;color:var(--fx-soft);letter-spacing:1pt;margin-left:10pt;font-weight:400}
+.body{font-family:var(--sh-font);font-weight:400;font-size:10.5pt;line-height:16pt;color:var(--fx-soft);overflow:hidden}
+.wu{font-family:var(--sh-font);font-weight:400;font-size:11pt;line-height:17pt;color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font-family:var(--sh-font);font-weight:400;font-size:6.6pt;line-height:8pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;opacity:.85}
+
+/* photos: square corners, crisp */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--sh-font);font-weight:400;font-size:9.5pt;line-height:12.5pt;color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+/* the caption's room name: EB Garamond, run in, in the main color (gold on the floor) */
+.cap .a b{font-family:var(--sh-serif);font-weight:600;font-size:1.18em;color:var(--sh-main);letter-spacing:0}
+.sh-fl .cap .a b{color:var(--sh-gold)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+/* a list row: a small ring, the item, a hairline under it */
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-family:var(--sh-font);font-weight:500;font-size:10.5pt;line-height:14pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;border-bottom:1pt solid var(--fx-rule)}
+.bul:before{content:"";width:5pt;height:5pt;border-radius:50%;border:1pt solid var(--sh-main);flex:none}
+.sh-fl .bul{border-bottom-width:1.5pt}
+.sh-fl .bul:before{border-color:var(--sh-gold);border-width:1.5pt}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font-family:var(--sh-serif);font-weight:500;font-size:18pt;line-height:1;color:var(--fx-on)}
+.stat .l{font-family:var(--sh-font);font-weight:600;font-size:9pt;line-height:1;letter-spacing:2pt;text-transform:uppercase;color:var(--fx-soft)}
+.logo.w img{filter:brightness(0) invert(1)}
+body .cc .cc-panel:not(.cc-band){border-left-width:1.5pt}
+body .cc .cc-band{border-top-width:1pt}
+/* the plan box: the design's own paper (planbox.js default), held between two register rules */
+.sh-planbox{background:var(--sh-paper);border:0;border-top:.9pt solid rgba(22,22,22,.5);border-bottom:.9pt solid rgba(22,22,22,.5)}

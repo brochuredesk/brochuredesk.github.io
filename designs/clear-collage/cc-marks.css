@@ -1,0 +1,126 @@
+/* Clear Collage marks shared by every page (tokens in cc-tokens.css), read off the approved P13 flyer and its sign-in sheet:
+   the paper field; photos as prints in white mats with a soft shadow (.cc-mat); the main-color band (.cc-band, white type, gold
+   small caps); Outfit 700 caps tracked wide for labels; short main-color rules between centered facts; the sign-in sheet's
+   white writing mat for lists and tables (.cc-wb). */
+@import url(cc-tokens.css);
+.cc-fr{position:absolute;background:var(--cc-frame);z-index:5}
+.cc-eyebrow{position:absolute;font-family:var(--cc-font);font-weight:700;font-size:10pt;line-height:12pt;letter-spacing:4pt;text-transform:uppercase;color:var(--cc-accent);white-space:nowrap;overflow:hidden}
+.cc-label{position:absolute;font-family:var(--cc-font);font-weight:700;font-size:30pt;line-height:1.25;letter-spacing:5pt;text-transform:uppercase;color:var(--cc-accent);white-space:nowrap;overflow:hidden}
+.cc-serif{position:absolute;font-family:var(--cc-font);font-weight:700;font-size:30pt;line-height:1.25;color:var(--cc-on);white-space:nowrap;overflow:hidden}
+.cc-caps{position:absolute;font-family:var(--cc-font);font-weight:700;font-size:13pt;line-height:16pt;letter-spacing:2.6pt;text-transform:uppercase;color:var(--cc-accent);white-space:nowrap;overflow:hidden}
+.cc-rule{position:absolute;height:1.4pt;background:var(--cc-accent)}
+.cc-hair{position:absolute;height:1pt;background:var(--cc-rule)}
+.cc-vhair{position:absolute;width:1pt;background:var(--cc-rule)}
+/* P13: a photo laid on the paper as a print, in a white mat with a soft shadow */
+.cc-mat{position:absolute;background:#fff;box-shadow:0 2pt 8pt rgba(0,0,0,.18)}
+/* P13: the band of the main color, edge to edge; type on it is white, small caps on it gold */
+.cc-bandbg{position:absolute;background:var(--cc-main)}
+.cc-band{--cc-on:var(--cc-on-main);--cc-soft:var(--cc-soft-main);--cc-accent:var(--cc-gold);--fx-on:var(--cc-on-main);--fx-soft:var(--cc-soft-main);--cc-rule:rgba(255,255,255,.6);--fx-rule:rgba(255,255,255,.6)}
+.cc-band .fine{color:var(--cc-soft-main);opacity:1}
+.cc-vr{position:absolute;width:1pt;background:currentColor;opacity:.6}
+.cc-wbox{position:absolute;background:#fff;box-shadow:0 2pt 8pt rgba(0,0,0,.16)}
+.cc-wbox.lt{background:#fff}
+.cc-lt{--cc-accent:var(--cc-main-ink)}
+.cc-cut{position:absolute;pointer-events:none}
+.cc-head{position:absolute;font-family:var(--cc-font);font-weight:700;font-size:34pt;line-height:1.12;color:var(--cc-on);letter-spacing:-.2pt;text-wrap:balance}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.script{position:absolute;font-family:var(--cc-label);font-weight:700;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1.25;text-transform:uppercase;letter-spacing:4pt}
+
+/* labels: main-color caps, tracked (the sign-in sheet's column heads) */
+.lbl{display:inline-block;vertical-align:bottom;font-family:var(--cc-font);font-weight:700;font-size:8.6pt;line-height:12pt;letter-spacing:2pt;text-transform:uppercase;color:var(--cc-accent);white-space:nowrap;overflow:hidden}
+.lbl.sz{text-transform:none;color:var(--fx-soft);letter-spacing:.6pt;margin-left:10pt;font-weight:500}
+.body{font-family:var(--cc-font);font-weight:400;font-size:10.5pt;line-height:16.5pt;color:var(--fx-soft);overflow:hidden}
+.wu{font-family:var(--cc-font);font-weight:400;font-size:11pt;line-height:17pt;color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font-family:var(--cc-font);font-weight:500;font-size:6.6pt;line-height:8pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;opacity:.85}
+
+/* photos: square corners, sharp inside the mat */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--cc-font);font-weight:400;font-size:9.5pt;line-height:12.5pt;color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:700;color:var(--fx-on)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-family:var(--cc-font);font-weight:500;font-size:10.5pt;line-height:14pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;border-bottom:1pt solid var(--fx-rule)}
+.bul:before{content:"";width:9pt;height:1.4pt;background:var(--cc-accent);flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font-family:var(--cc-serif);font-weight:700;font-size:18pt;line-height:1;color:var(--fx-on)}
+.stat .l{font-family:var(--cc-font);font-weight:700;font-size:9pt;line-height:1;letter-spacing:2pt;text-transform:uppercase;color:var(--fx-soft)}
+
+.near{flex:none;display:flex;gap:0;border-top:var(--fx-rule-w) solid var(--fx-rule);padding-top:9pt}
+.near .c{flex:1;min-width:0;padding-left:14pt;border-left:var(--fx-rule-w) solid var(--fx-rule)}
+.near .c:first-child{padding-left:0;border-left:0}
+.near .d{font-family:var(--cc-serif);font-weight:700;font-size:15pt;line-height:18pt;color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.near .p{font-family:var(--cc-font);font-weight:700;font-size:8pt;line-height:10pt;letter-spacing:1.6pt;text-transform:uppercase;color:var(--fx-soft);overflow:hidden;margin-top:1pt;min-height:20pt}
+.logo.w img{filter:brightness(0) invert(1)}
+
+/* the display line: Outfit 700 caps, tracked (P13's PUBLIC OPEN HOUSE / SATURDAY); the street: 700 mixed case (the flyer's
+   address line); the place: 700 tracked caps in the main color (on the band: gold); the second line: 500 (the flyer's date and time) */
+.cc-disp{position:absolute;font-family:var(--cc-font);font-weight:700;letter-spacing:3pt;text-transform:uppercase;color:var(--cc-on);white-space:nowrap;overflow:hidden;text-align:left}
+.cc-street{position:absolute;font-family:var(--cc-font);font-weight:700;color:var(--cc-on);white-space:nowrap;overflow:hidden;text-align:left}
+.cc-place{position:absolute;font-family:var(--cc-font);font-weight:700;letter-spacing:3pt;text-transform:uppercase;color:var(--cc-accent);white-space:nowrap;overflow:hidden;text-align:left}
+.cc-time{position:absolute;font-family:var(--cc-font);font-weight:500;color:var(--cc-on);white-space:nowrap;overflow:hidden;text-align:left}
+.cc-h{position:absolute;font-family:var(--cc-font);font-weight:700;color:var(--cc-on);letter-spacing:-.2pt;text-align:left}
+/* the flyer's short rule between centered facts */
+.cc-dv{position:absolute;height:1pt;background:var(--cc-accent);opacity:.55}
+.cc-dm{position:absolute;background:var(--cc-accent)}
+.cc-dmo{position:absolute;border:1.5pt solid var(--cc-accent);box-sizing:border-box;border-radius:50%}
+.cc-echo{position:absolute;overflow:visible;pointer-events:none;z-index:2}
+/* the sign-in sheet's white writing mat: white with the soft shadow, main-color caps labels, dark type */
+.cc-wb{position:absolute;background:#fff;border:1.5pt solid var(--cc-main);box-sizing:border-box}
+.cc-on-wb{--fx-on:#161616;--fx-soft:#2a2a2a;--fx-rule:rgba(0,0,0,.16);--cc-on:#161616;--cc-soft:#2a2a2a;--cc-rule:rgba(0,0,0,.16)}
+.cc-on-wb .cc-wl{color:var(--cc-main-ink)}
+.cc-wl{position:absolute;font-family:var(--cc-font);font-weight:700;font-size:8.6pt;line-height:11pt;letter-spacing:1.8pt;text-transform:uppercase;color:var(--cc-accent);white-space:nowrap;overflow:hidden}
+.cc-medal{position:absolute;display:flex;align-items:center;justify-content:center;font-family:var(--cc-font);font-weight:700;color:var(--cc-on);white-space:nowrap}
+.cc-ml{position:absolute;font-family:var(--cc-font);font-weight:700;font-size:8.6pt;line-height:11pt;letter-spacing:2pt;text-transform:uppercase;color:var(--cc-soft);white-space:nowrap;overflow:hidden;text-align:center}
+.cc-on-wb .bul:before,.bul.dm:before{width:9pt;height:1.4pt}
+
+/* ---------------- Clear Collage (P37) marks ----------------
+   The window: a solid frame of the main color round a clear white sheet (.cc-frm), one bar of the main color run frame to frame
+   (.cc-bar) with white Fraunces left and Outfit right; Fraunces 600 in the main color for the one display line (.cc-fra); Outfit
+   tracked caps for the address line and labels (.cc-caps2); the sign-in sheet's numbered circles (.cc-cn); the facts on line icons
+   (.cc-bf); the pale panel (.cc-cell: the main color a whisper on the white, the sign-in rows) is the one quiet field. */
+.cc-frm{position:absolute;background:var(--cc-main);z-index:3}
+.cc-bar{position:absolute;background:var(--cc-main)}
+.cc-t{position:absolute;background:var(--cc-main)}
+.cc-t.dk{background:var(--cc-dk)}
+.cc-t.tn{background:var(--cc-tint)}
+.cc-cell{position:absolute;background:var(--cc-tint)}
+.cc-wb{position:absolute;background:var(--cc-tint);border:0}
+.cc-on{--cc-on:var(--cc-on-main);--cc-soft:var(--cc-soft-main);--cc-accent:var(--cc-gold);--fx-on:var(--cc-on-main);--fx-soft:var(--cc-soft-main);--cc-rule:rgba(255,255,255,.6);--fx-rule:rgba(255,255,255,.6)}
+.cc-on .fine{color:var(--cc-soft-main);opacity:1}
+.cc-fra{position:absolute;font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.4pt;color:var(--cc-main-ink);white-space:nowrap;overflow:hidden}
+.cc-fra.on{color:var(--cc-on-main)}
+.cc-out{position:absolute;font-family:var(--cc-font);font-weight:500;color:var(--cc-main-ink);white-space:nowrap;overflow:hidden}
+.cc-out.on{color:var(--cc-on-main)}
+.cc-caps2{position:absolute;font-family:var(--cc-font);font-weight:500;text-transform:uppercase;color:#1e1e1e;white-space:nowrap;overflow:hidden}
+.cc-caps2.on{color:var(--cc-on-main)}
+.cc-caps2.on.gold{color:var(--cc-gold)}
+.cc-cn{position:absolute;box-sizing:border-box;border:1pt solid var(--cc-main-ink);border-radius:50%;text-align:center;font-family:Fraunces,Georgia,serif;font-weight:600;color:var(--cc-main-ink);white-space:nowrap}
+.cc-cn.on{border-color:var(--cc-on-main);color:var(--cc-on-main)}
+.cc-cn.in{position:relative;display:inline-block;vertical-align:bottom;width:14pt;height:14pt;font-size:8.6pt;line-height:12.5pt;margin:0 7pt -1pt 0}
+.cc-bf{position:absolute;display:flex;align-items:center;justify-content:center;gap:0;white-space:nowrap;overflow:hidden;color:var(--cc-on-main)}
+.cc-bf .ic{display:block;margin-right:9pt;color:var(--cc-on-main)}
+.cc-bf .n{font-family:Fraunces,Georgia,serif;font-weight:600;line-height:1;color:var(--cc-on-main);margin-right:7pt}
+.cc-bf .l{font-family:var(--cc-font);font-weight:600;line-height:1;letter-spacing:1.8pt;color:var(--cc-gold)}
+.cc-gk{position:absolute;font-family:var(--cc-font);font-weight:600;font-size:9pt;line-height:12pt;letter-spacing:2.4pt;text-transform:uppercase;color:var(--cc-gold);white-space:nowrap;overflow:hidden}
+.cc-num{position:absolute;font-family:Fraunces,Georgia,serif;font-weight:600;color:#fff;text-align:center;white-space:nowrap;overflow:hidden}
+.cc-wt{position:absolute;font-family:Fraunces,Georgia,serif;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;letter-spacing:-.3pt}
+.cc-wm{position:absolute;font-family:var(--cc-font);font-weight:500;color:#fff;white-space:nowrap;overflow:hidden}
+.cc-mk{position:absolute;font-family:var(--cc-font);font-weight:600;font-size:9pt;line-height:12pt;letter-spacing:2.4pt;text-transform:uppercase;color:var(--cc-main-ink);white-space:nowrap;overflow:hidden}
+.lbl{font-weight:600;letter-spacing:2pt;color:var(--cc-main-ink)}
+.bul:before{content:"";width:6pt;height:6pt;border-radius:50%;border:1pt solid var(--cc-main-ink);background:transparent;box-sizing:border-box}
+.cc-on-wb .bul:before,.bul.dm:before{width:6pt;height:6pt}
+.cc-h{font-family:Fraunces,Georgia,serif;font-weight:600;color:var(--cc-main-ink)}
+.cc-street{font-family:Fraunces,Georgia,serif;font-weight:600}
+.cc-place{font-weight:600}

@@ -1,0 +1,71 @@
+/* White Editorial marks shared by every page (tokens in we-tokens.css): running head, P24 double rule, tracked main-color caps,
+   Newsreader display and numerals, P24's box, the color block and the reversed-type scope inside it. */
+@import url(we-tokens.css);
+.we-fr{position:absolute;background:var(--we-rule);z-index:5}
+.we-r2{position:absolute;z-index:4}
+.we-run{position:absolute;font-family:var(--we-font);font-weight:600;font-size:8.6pt;line-height:11pt;letter-spacing:2.4pt;text-transform:uppercase;color:var(--we-accent);white-space:nowrap;overflow:hidden}
+.we-eyebrow{position:absolute;font-family:var(--we-font);font-weight:600;font-size:9pt;line-height:12pt;letter-spacing:2.4pt;text-transform:uppercase;color:var(--we-accent);white-space:nowrap;overflow:hidden}
+.we-label{position:absolute;font-family:var(--we-label);font-weight:500;font-size:30pt;line-height:1.2;letter-spacing:2pt;text-transform:uppercase;color:var(--we-on);white-space:nowrap;overflow:hidden}
+.we-serif{position:absolute;font-family:var(--we-serif);font-weight:500;font-size:30pt;line-height:1.2;color:var(--we-on);white-space:nowrap;overflow:hidden}
+.we-caps{position:absolute;font-family:var(--we-font);font-weight:600;font-size:12pt;line-height:16pt;letter-spacing:2pt;text-transform:uppercase;color:var(--we-accent);white-space:nowrap;overflow:hidden}
+.we-num{position:absolute;font-family:var(--we-serif);font-weight:500;color:var(--we-on);white-space:nowrap;overflow:hidden;letter-spacing:-.02em;font-feature-settings:"lnum" 1}
+.we-rule{position:absolute;height:1.2pt;background:var(--we-accent)}
+.we-hair{position:absolute;height:1pt;background:var(--we-rule)}
+.we-vhair{position:absolute;width:1pt;background:var(--we-rule)}
+.we-lift{display:none}
+/* P24's box (the refreshments box of the approved flyer): white, a thin main-color line, a heavy main-color top edge */
+.we-wbox{position:absolute;background:#fff;border:1pt solid var(--we-box-line);border-top:3pt solid var(--we-box-line);box-sizing:border-box}
+.we-wbox.tn{background:var(--we-tint);border:0;border-top:3pt solid var(--we-box-line)}
+/* the one color moment of a piece: a solid block of the brand main color, white type inside */
+.we-wbox.lt{background:var(--we-blk);border:0}
+.we-blk{position:absolute;background:var(--we-blk)}
+.we-lt{--fx-on:var(--we-onblk);--fx-soft:var(--we-onblk);--fx-rule:color-mix(in srgb, var(--we-onblk) 55%, transparent);--we-on:var(--we-onblk);--we-soft:var(--we-onblk);--we-rule:color-mix(in srgb, var(--we-onblk) 55%, transparent);--we-accent:var(--we-onblk)}
+.we-cut{position:absolute;pointer-events:none}
+.we-glow{display:none}
+/* the one display moment of a panel: Newsreader, sentence case, set tight */
+.we-head{position:absolute;font-family:var(--we-serif);font-weight:500;font-size:40pt;line-height:1.08;color:var(--we-on);letter-spacing:-.6pt;text-wrap:balance}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.script{position:absolute;font-family:var(--we-label);font-weight:500;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1.2;text-transform:uppercase;letter-spacing:2pt}
+
+/* labels: main-color caps, tracked */
+.lbl{display:inline-block;vertical-align:bottom;font-weight:600;font-size:8.6pt;line-height:12pt;font-family:var(--we-font);letter-spacing:2pt;text-transform:uppercase;color:var(--we-accent);white-space:nowrap;overflow:hidden}
+.lbl.sz{text-transform:none;color:var(--fx-soft);letter-spacing:1.4pt;margin-left:10pt;font-weight:400}
+.body{font-weight:400;font-size:10.5pt;line-height:16.5pt;font-family:var(--we-font);color:var(--fx-soft);overflow:hidden}
+.wu{font-weight:400;font-size:11pt;line-height:17pt;font-family:var(--we-font);color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font-weight:400;font-size:6.6pt;line-height:8pt;font-family:var(--we-font);color:var(--fx-soft);white-space:nowrap;overflow:hidden;opacity:.85}
+
+/* photos: square corners on the dark field */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-weight:400;font-size:9.5pt;line-height:12.5pt;font-family:var(--we-font);color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:600;color:var(--fx-on)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-weight:400;font-size:10.5pt;line-height:14pt;font-family:var(--we-font);color:var(--fx-soft);white-space:nowrap;overflow:hidden;border-bottom:var(--fx-rule-w) solid var(--fx-rule)}
+.bul:before{content:"";width:5pt;height:5pt;background:var(--we-accent);flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font-weight:500;font-size:18pt;line-height:1;font-family:var(--we-serif);color:var(--fx-on)}
+.stat .l{font-weight:500;font-size:9pt;line-height:1;font-family:var(--we-font);letter-spacing:2pt;text-transform:uppercase;color:var(--fx-soft)}
+
+.near{flex:none;display:flex;gap:0;border-top:var(--fx-rule-w) solid var(--fx-rule);padding-top:9pt}
+.near .c{flex:1;min-width:0;padding-left:14pt;border-left:var(--fx-rule-w) solid var(--fx-rule)}
+.near .c:first-child{padding-left:0;border-left:0}
+.near .d{font-weight:500;font-size:15pt;line-height:18pt;font-family:var(--we-serif);color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.near .p{font-weight:500;font-size:8pt;line-height:10pt;font-family:var(--we-font);letter-spacing:1.6pt;text-transform:uppercase;color:var(--fx-soft);overflow:hidden;margin-top:1pt;min-height:20pt}
+.logo.w img{filter:brightness(0) invert(1)}
+/* PR3: the contact card divider prints 1.5 pt (Chrome sets borders on whole px; the shared .45 pt line printed under 1 pt), a lighter tint keeps its weight */
+body .cc .cc-panel:not(.cc-band){border-left-width:1.5pt}
+body .cc .cc-band{border-top-width:1.5pt}
+/* back to ink inside a color block (P24's white box sitting on the block) */
+.we-dk{--fx-on:var(--we-ink);--fx-soft:#33383c;--we-on:var(--we-ink);--we-soft:#33383c;--we-rule:rgba(23,25,27,.34);--fx-rule:rgba(23,25,27,.3);--we-accent:var(--we-box-line)}
