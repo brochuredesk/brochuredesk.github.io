@@ -51,7 +51,13 @@ OHL.start(['400 10pt "DM Serif Display"', '600 10pt Manrope', '700 10pt Manrope'
   const PW = 280, X = 34, W = PW - X - 22;
   let h = '';
   // photos at right: the house at 3:2, a room under it
-  const rw = 612 - PW, hh = Math.round(rw/1.5);
+  const rw = 612 - PW, hh0 = Math.round(rw/1.5);
+  // A house that reaches lower in its photo than the 3:2 frame shows gets a taller frame, never taller than the photo's
+  // own shape (11/16/2026, carried from B11: a four-story townhome in a 4:3 photo was cut at the bottom). The photo
+  // under it gives up the same height. Other houses are unchanged.
+  const HP = (D.photos||{})[hero] || {};
+  const needs = HP.house && HP.w && HP.h && Ivory.fullHouse(D, hero) ? Math.min(280, Math.floor(rw*HP.h/HP.w), Math.ceil(HP.house.bottom*rw*HP.h/HP.w + 6)) : 0;
+  const hh = needs > hh0 ? needs : hh0;
   h += OHL.photo(D, hero, `left:${PW}pt;top:0;width:${rw}pt;height:${hh}pt`);
   h += OHL.photo(D, room, `left:${PW}pt;top:${hh+6}pt;width:${rw}pt;height:${548-hh-6}pt`);
 

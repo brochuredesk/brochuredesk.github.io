@@ -47,7 +47,16 @@ OHL.start(['600 10pt Jost', '500 10pt Jost', '400 10pt Jost'], D => {
   let h = '';
   h += `<div class="tab"></div><div class="tabt" data-slot="place.tab" data-lines="1">${esc(OHL.place(L))}</div>`;
   // the house in an arrow, its accent echo just behind
-  const fx = 54, fy = 40, fw = 540, fh = OHL.minFrameH(D, hero, 540, 360);
+  const fx = 54, fw = 540, fh0 = OHL.minFrameH(D, hero, 540, 360);
+  // A house that reaches lower in its photo than the 360 pt frame shows gets a taller frame, up to 390 pt and never
+  // taller than the photo's own shape (11/16/2026, carried from B11: a four-story townhome in a 4:3 photo was cut at
+  // the bottom). The arrow stays only when it clears the house; the block below starts a little closer. Other houses
+  // are unchanged.
+  const HP = (D.photos||{})[hero] || {};
+  const needs = HP.house && HP.w && HP.h && Ivory.fullHouse(D, hero) ? Math.min(390, Math.floor(fw*HP.h/HP.w), Math.ceil(HP.house.bottom*fw*HP.h/HP.w + 6)) : 0;
+  // When it grows, the photo starts higher (26 pt from the top, not 40) and the room photos below may be as short as a
+  // 3.2:1 frame, so the column under it stays full.
+  const grown = needs > fh0, fh = grown ? needs : fh0, fy = grown ? 26 : 40, minP = grown ? 72 : 90;
   const arrow = [[0,0],[.9,0],[1,.5],[.9,1],[0,1],[.1,.5]];   // a shallow point and a notched tail, both clear of most front shots
   const shaped = OHL.polyFits(D, hero, fw, fh, arrow);
   if(shaped){
@@ -57,14 +66,15 @@ OHL.start(['600 10pt Jost', '500 10pt Jost', '400 10pt Jost'], D => {
   } else h += OHL.photo(D, hero, `left:${fx}pt;top:${fy}pt;width:${fw}pt;height:${fh}pt`);
 
   // event left
-  let y = fy + fh + 22;   // moved up (the owner 10/30 evening)
+  let y = fy + fh + (grown ? 14 : 22);   // moved up (the owner 10/30 evening)
+  // a taller frame takes its extra height out of the gaps in the event column (8 pt under the headline, 26 under the time)
   const mid0 = h.length;
   const top0 = y, lines = OHL.labelLines(E.label);
   lines.forEach((t, i) => h += `<div class="abs hl" style="left:54pt;top:${y + i*38}pt;width:262pt;height:40pt" data-slot="oh.label" data-lines="1">${esc(t)}</div>`);
-  y += lines.length*38 + 14;
+  y += lines.length*38 + (grown ? 8 : 14);
   h += `<div class="abs date" style="left:54pt;top:${y}pt;width:262pt;height:34pt" data-fit="28,20" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
   y += 36;
-  if(E.time){ h += `<div class="abs time" style="left:54pt;top:${y}pt;width:262pt;height:24pt" data-fit="19,18" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`; y += 30; }
+  if(E.time){ h += `<div class="abs time" style="left:54pt;top:${y}pt;width:262pt;height:24pt" data-fit="19,18" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`; y += grown ? 26 : 30; }
   // a bigger box, so an agent has room to type more: 14 pt type and at least 150 pt tall when the page has the room;
   // a tall house (two stories) leaves less, so the type steps down to 12 pt and the box to what fits
   const room = 704 - 18 - (y + 6);
@@ -87,18 +97,18 @@ OHL.start(['600 10pt Jost', '500 10pt Jost', '400 10pt Jost'], D => {
   ry += 26;
   // the writer's own sentences fill the rest of the column, set larger (owner 10/28/2026)
   const cy = 704, wu = [6, 5, 7, 4, 3].map(n => OHL.writeup(D, 'body', rw, 15.5, n, [], {narrow:true})).find(w => !w.text || w.fill >= .75) || {text:'', n:0};
-  if(wu.text){ h += `<div class="abs body" style="left:${rx}pt;top:${ry}pt;width:${wu.w || rw}pt;height:${wu.n*15.5+4}pt" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`; ry += wu.n*15.5; }
+  if(wu.text){ h += `<div class="abs body" style="left:${rx}pt;top:${ry}pt;width:${wu.w || rw}pt;height:${wu.n*15.5+4}pt${grown ? ';text-align:justify' : ''}" data-slot="listing.body" data-lines="${wu.n}">${esc(wu.text)}</div>`; ry += wu.n*15.5; }
   // the best interior photo fills the blank space under the paragraph, down to the foot of the event box
   const rm = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id) && !/exterior|yard|lawn|aerial|street/i.test((D.photos[id]||{}).tags||''));
   const rid = rm.find(id => /kitchen|living|family|great/i.test(D.photos[id].tags||'')) || rm[0];
   const pbot = Math.max(y - 6, ry), ph2 = pbot - ry - 12;
-  if(rid && ph2 >= 90){ h += OHL.photo(D, rid, `left:${rx}pt;top:${ry + 12}pt;width:${rw}pt;height:${ph2}pt`); ry = pbot; }
+  if(rid && ph2 >= minP){ h += OHL.photo(D, rid, `left:${rx}pt;top:${ry + 12}pt;width:${rw}pt;height:${ph2}pt`); ry = pbot; }
   // public (no event box under the time): two rooms across the full width fill the space down to the card
   const low = Math.max(y, ry) + 16, rowH = cy - 24 - low;
   const kind = id => (/kitchen|living|family|great|dining|bed|bath|office/i.exec((D.photos[id]||{}).tags||'') || [id])[0].toLowerCase();
   const two = rid ? [rid] : [];
   rm.forEach(id => { if(two.length < 2 && !two.some(x => kind(x) === kind(id))) two.push(id); });
-  if(rowH >= 90 && two.length === 2){
+  if(rowH >= (grown ? 80 : 90) && two.length === 2){
     h += OHL.photo(D, two[0], `left:54pt;top:${low}pt;width:256pt;height:${rowH}pt`) + OHL.photo(D, two[1], `left:320pt;top:${low}pt;width:256pt;height:${rowH}pt`);
   }
   h += `<div class="vr" style="left:326pt;top:${top0+4}pt;height:${Math.max(y, ry) - top0 - 2}pt"></div>`;

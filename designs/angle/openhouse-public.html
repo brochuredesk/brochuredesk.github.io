@@ -34,6 +34,7 @@
   .crow b{font:600 13pt/14pt Outfit;margin-right:10pt}
   .crow i{font-style:normal;display:inline-block;width:1pt;height:10pt;background:currentColor;opacity:.35;margin:0 9pt;vertical-align:-1pt}
   .fine{font:400 6.6pt/8pt Outfit;white-space:nowrap;opacity:.6}
+  .wu{font:400 14.5pt/21pt Outfit;color:var(--on-main)}   /* the tall-house write-up (11/16) */
 </style>
 </head>
 <body>
@@ -51,14 +52,26 @@ OHL.start(['700 10pt "Asap Condensed"', '500 10pt "Asap Condensed"', '400 10pt O
   // for the facts, set on the same lean as the diagonal
   // the owner 10/31 (Round 3 Q1): the second version only when Refreshments and Good to know are both empty
   const second = !E.hasRefresh && !E.note;
-  const base = 350, ph = Math.max(OHL.minFrameH(D, hero, 612, 420), base), cut = 0.78;
+  const base = 350, ph0 = Math.max(OHL.minFrameH(D, hero, 612, 420), base), cut = 0.78;
+  // A house that reaches lower in its photo than the frame shows gets a taller frame, never taller than the photo's own
+  // shape (11/16/2026, carried from B11: a four-story townhome in a 4:3 photo was cut at the bottom). The diagonal can't
+  // clear a house that low, so the edge stays straight; the block under it takes the height back from its gaps, the
+  // headline's leading and the white box's padding (the event lines keep their size). Houses that fit today are unchanged.
+  const HP = (D.photos||{})[hero] || {}, hb0 = OHL.houseInFrame(D, hero, 612, ph0);
+  const G = !!(Ivory.fullHouse(D, hero) && hb0 && HP.house && hb0.bottom - .002 > 1);
+  const ph = G ? Math.max(ph0, Math.min(460, Math.floor(612*HP.h/HP.w), Math.ceil(HP.house.bottom*612*HP.h/HP.w + 6))) : ph0;
+  const GP = G ? (second && !(E.note || E.refreshments) ? 8 : 10) : 14, RG = G ? 6 : 8, BO = G ? 73 : 76;   // gap under the photo, around the rule, date to box
+  // (with no white box under a house that tall, the room left is too short for the write-up or photo strip: the headline takes it)
+  // with no white box under a house that tall, the second version's date steps down to the first version's size and the
+  // facts stack 1 pt tighter, so the write-up (or photo strip) below keeps three full lines of room
+  const G1 = G && second && !(E.note || E.refreshments), WO = G1 ? 76 : 92, FS = G1 ? 23 : 24;   // WO: date's top to the write-up
   const lines = OHL.labelLines(E.label);
   // the box text steps down (15, 14, 13 pt) only when long lines would squeeze the headline below ~44 pt leading
   let ELH = 20, EPX = 22, EPY = 14, EFS = 15, evBoxH = 0;
   for(const [fs, lh, px, py] of [[15, 20, 22, 14], [14, 18.5, 20, 12], [13, 17, 16, 10]]){
-    ELH = lh; EPX = px; EPY = py; EFS = fs;
-    evBoxH = [[E.refreshments,'ev b'],[E.note,'ev']].filter(l => l[0]).reduce((a,l) => a + Ivory.linesNeeded(l[1], l[0], 540 - 2*px, lh)*lh + 3, 0) + (E.note || E.refreshments ? 2*py : 0);
-    if((654 - (evBoxH + 10) - 119 - ph - 14)/lines.length >= 44) break;
+    ELH = lh; EPX = px; EPY = G ? py - 3 : py; EFS = fs;
+    evBoxH = [[E.refreshments,'ev b'],[E.note,'ev']].filter(l => l[0]).reduce((a,l) => a + Ivory.linesNeeded(l[1], l[0], 540 - 2*px, lh)*lh + 3, 0) + (E.note || E.refreshments ? 2*EPY : 0);
+    if(G ? (656 - evBoxH - BO - 2*RG - ph - GP)/lines.length >= 38 : (654 - (evBoxH + 10) - 119 - ph - 14)/lines.length >= 44) break;
   }
   { const st = document.createElement('style'); st.textContent = `.ev{font-size:${EFS}pt;line-height:${ELH}pt}`; document.head.appendChild(st); }
   // the white event box takes room from the photo's foot and the headline's leading; a house that sits low in its photo keeps its room
@@ -69,18 +82,19 @@ OHL.start(['700 10pt "Asap Condensed"', '500 10pt "Asap Condensed"', '400 10pt O
 
   // headline
   const evRoom = evBoxH ? evBoxH + 10 : (second ? 62 : 0);
-  const LH = Math.min(74, Math.max(38, (654 - evRoom - 71 - 16 - 16 - (ph + 14))/lines.length)), ht = ph + 14 + (2 - lines.length)*(74 - LH)/2;
+  const LH = G1 ? Math.max(33, Math.min(74, (654 - 58 - WO - 2*RG - (ph + GP))/lines.length)) : (G ? Math.min(74, Math.max(34, ((evBoxH ? 656 - evBoxH - BO - (second ? 12 : 0) : 654 - 16 - 71) - 2*RG - (ph + GP))/lines.length))
+    : Math.min(74, Math.max(38, (654 - evRoom - 71 - 16 - 16 - (ph + 14))/lines.length))), ht = ph + GP + (G ? 0 : (2 - lines.length)*(74 - LH)/2);
   lines.forEach((t, i) => h += `<div class="abs hl" style="left:32pt;top:${ht + i*LH}pt;width:330pt;height:${LH+4}pt;line-height:${LH}pt" data-slot="oh.label" data-lines="1">${esc(t)}</div>`);
   // ribbon on the diagonal's angle, running off the right edge
   const rib = String((C.listing||{}).kicker || '').trim() || Ivory.factsShort(L).replace(/  \/  /g, '  ·  ');
   h += `<div class="rib" style="left:330pt;top:${ph - 2}pt;width:320pt;height:34pt;transform:rotate(${-ang}deg)"><span data-slot="kicker" data-lines="1" style="width:270pt;height:16pt">${esc(rib)}</span></div>`;
 
   // date and time
-  let y = ht + lines.length*LH + 8;
+  let y = ht + lines.length*LH + RG;
   h += `<div class="abs" style="left:36pt;top:${y}pt;width:540pt;height:1pt;background:var(--on-main);opacity:.35"></div>`;
-  y += 8;
-  const DH = second ? 48 : 42;
-  h += `<div class="abs date" style="left:36pt;top:${y}pt;width:380pt;height:${DH}pt;${second ? 'line-height:48pt' : ''}" data-fit="${second ? 44 : 36},26" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
+  y += RG;
+  const DH = second && !G1 ? 48 : 42;
+  h += `<div class="abs date" style="left:36pt;top:${y}pt;width:380pt;height:${DH}pt;${second && !G1 ? 'line-height:48pt' : ''}" data-fit="${second && !G1 ? 44 : 36},26" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
   if(E.time) h += `<div class="abs time" style="left:36pt;top:${y+DH}pt;width:380pt;height:29pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
   // facts stacked at right, the event lines under them
   // the facts column is extra: it goes when the event lines need its room
@@ -90,28 +104,52 @@ OHL.start(['700 10pt "Asap Condensed"', '500 10pt "Asap Condensed"', '400 10pt O
     if(L.beds) cells.push([L.beds, L.beds == 1 ? 'Bed' : 'Beds']);
     if(L.baths) BD.bathCells(L).forEach(c => cells.push([c[0], c[1]]));
     if(L.sqft) cells.push([Number(L.sqft).toLocaleString('en-US'), 'Sq ft']);
-    h += `<div class="abs" style="left:${432}pt;top:${y+2}pt;width:1.4pt;height:${cells.length*24+6}pt;background:var(--accent-on-main);transform:rotate(${-ang*.8}deg);transform-origin:50% 50%"></div>`;
+    h += `<div class="abs" style="left:${432}pt;top:${y+2}pt;width:1.4pt;height:${cells.length*FS+6}pt;background:var(--accent-on-main);transform:rotate(${-ang*.8}deg);transform-origin:50% 50%"></div>`;
     cells.forEach(([v, k], i) => {
-      h += `<div class="abs fn" style="left:438pt;top:${y+4+i*24}pt;width:54pt;height:24pt" data-slot="fact.${i}" data-lines="1">${esc(v)}</div>`;
-      h += `<div class="abs fl" style="left:494pt;top:${y+4+i*24}pt;width:84pt;height:24pt" data-slot="fact.${i}.k" data-lines="1">${esc(k)}</div>`;
+      h += `<div class="abs fn" style="left:438pt;top:${y+4+i*FS}pt;width:54pt;height:24pt" data-slot="fact.${i}" data-lines="1">${esc(v)}</div>`;
+      h += `<div class="abs fl" style="left:494pt;top:${y+4+i*FS}pt;width:84pt;height:24pt" data-slot="fact.${i}.k" data-lines="1">${esc(k)}</div>`;
     });
     fl = [];
   } else {
   if(fl.length) h += `<div class="abs" style="left:424pt;top:${y+4}pt;width:.9pt;height:${fl.length*14+2}pt;background:var(--accent-on-main)"></div>`;
   fl.forEach((t, i) => h += `<div class="abs facts" style="left:432pt;top:${y+4+i*14}pt;width:144pt;height:15pt" data-slot="fact.${i}" data-lines="1">${esc(t)}</div>`);
   }
-  const ev = Ivory.eventBox([[E.refreshments,'oh.refreshments','ev b'],[E.note,'oh.note','ev']], 36, y + 76 + (second ? 12 : 0), 540, ELH, 3,
+  const ev = Ivory.eventBox([[E.refreshments,'oh.refreshments','ev b'],[E.note,'oh.note','ev']], 36, y + BO + (second ? 12 : 0), 540, ELH, 3,
     {bg:'#fff', padX:EPX, padY:EPY, scale:((D.openHouse||{}).box||{}).w});
   h += ev.html;
   // nothing in the box and no note: an interior photo cuts across the freed room on the diagonal's lean
-  const free = 654 - (y + 92);
-  if(second && !ev.h && free >= 40){
+  const free = 654 - (y + WO);
+  // under a house that tall the write-up still runs at least three full lines (last line 90%+, justified; owner 11/16)
+  const fullWU = (w, room) => {
+    const C = D.companion || {}, shown = Ivory.factsShort(L);
+    const master = ((C.postcard || {}).master || []).length ? C.postcard.master : String((C.listing || {}).body || '').trim().split(/(?<=[.!?])\s+(?=[A-Z0-9"“])/);
+    const pool = master.map(t => String(t).trim()).filter(Boolean).filter(t => !(window.FactRepeat && FactRepeat.repeats(t, shown).length));
+    let q = null;   // type from 13 to 16 pt so a pick fills its last line; the column stays full width
+    for(const fs of [13, 13.5, 14, 14.5, 15, 15.5, 16]){
+      const flh = Math.round(fs*1.3*2)/2, z = 'wuz' + Math.round(fs*10);
+      if(!document.getElementById(z)){ const st = document.createElement('style'); st.id = z; st.textContent = `.wu.${z}{font-size:${fs}pt;line-height:${flh}pt}`; document.head.appendChild(st); }
+      for(let mask = 1, kk = Math.min(pool.length, 10); mask < (1 << kk); mask += 2){
+        const text = pool.filter((_, i) => mask & (1 << i)).join(' '), m = OHL.measure('wu ' + z, text, w, flh);
+        if(m.n < 3 || m.n*flh > room || m.fill < .9) continue;
+        const sc = m.n*flh*10 - fs + m.fill;   // the most of the room filled, then the smaller type, then the fullest last line
+        if(!q || sc > q.sc) q = {text, n: m.n, fill: m.fill, sc, j: 1, lh: flh, z};
+      }
+    }
+    return q || {text: '', n: 0};
+  };
+  // under a house that tall the photo strip would be a sliver: a write-up of three full justified lines takes its place
+  const wu = G1 && free >= 40 ? fullWU(504, free) : {text: '', n: 0};
+  if(wu.text){
+    const ww = 504, wh = wu.n*wu.lh, wy = y + WO + (free - wh)/2 - 2;
+    h += `<div class="abs" style="left:36pt;top:${wy + 3}pt;width:3pt;height:${wh - 6}pt;background:var(--accent-on-main)"></div>`;
+    h += `<div class="abs wu ${wu.z}" style="left:52pt;top:${wy}pt;width:${ww}pt;height:${wh + 3}pt;text-align:justify" data-slot="writeup" data-lines="${wu.n}">${esc(wu.text)}</div>`;
+  } else if(second && !ev.h && free >= 40){
     const inner = OHL.photos(D).filter(id => id !== hero && !Ivory.fullHouse(D, id) && !/exterior|yard|lawn|aerial|street/i.test((D.photos[id]||{}).tags||''))[0];
     if(inner){ const sh = Math.min(128, free);
-      h += OHL.photo(D, inner, `left:36pt;top:${y+92}pt;width:540pt;height:${sh}pt;clip-path:polygon(${Math.min(8, sh*.07)/5.4}% 0,100% 0,${100 - Math.min(8, sh*.07)/5.4}% 100%,0 100%)`);
-      h += `<div class="abs" style="left:36pt;top:${y+92+sh+3}pt;width:540pt;height:1.4pt;background:var(--accent-on-main);opacity:.0"></div>`; }
+      h += OHL.photo(D, inner, `left:36pt;top:${y+WO}pt;width:540pt;height:${sh}pt;clip-path:polygon(${Math.min(8, sh*.07)/5.4}% 0,100% 0,${100 - Math.min(8, sh*.07)/5.4}% 100%,0 100%)`);
+      h += `<div class="abs" style="left:36pt;top:${y+WO+sh+3}pt;width:540pt;height:1.4pt;background:var(--accent-on-main);opacity:.0"></div>`; }
   }
-  const issues = (y + 76 + (second ? 12 : 0) + ev.h > 658) ? [{slot:'oh.note', kind:'overflow', detail:'event lines run into the address band'}] : [];
+  const issues = (y + BO + (second ? 12 : 0) + ev.h > 658) ? [{slot:'oh.note', kind:'overflow', detail:'event lines run into the address band'}] : [];
 
   // address and agent band (the one logo)
   const by = 664;

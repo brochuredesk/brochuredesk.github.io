@@ -60,7 +60,15 @@ OHL.start(['400 10pt Spectral', '500 10pt Spectral', '600 10pt Jost', '500 10pt 
   if(/acre/i.test(String(lot))) lotN = lotN * 43560;
   if(Number.isFinite(lotN) && lotN > 0) hcells.push([Math.round(lotN).toLocaleString('en-US'), 'sq ft lot']);
   const withHome = second && hcells.length >= 2;
-  const ph = withHome ? Math.max(384, Math.ceil(OHL.minFrameH(D, hero, 612, 384))) + (E.note ? 0 : 40) : 410, clear = 0.80, PX = 4/3, H = ph*PX, Wp = 612*PX;
+  const ph0 = withHome ? Math.max(384, Math.ceil(OHL.minFrameH(D, hero, 612, 384))) + (E.note ? 0 : 40) : 410;
+  // A house that reaches lower in its photo than the frame shows gets a taller frame, up to 440 pt and never taller
+  // than the photo's own shape (11/16/2026, carried from B11: a four-story townhome in a 4:3 photo was cut at the
+  // bottom). The curve stays only when the mask check proves it misses the house; the rows below then tighten.
+  // Other houses are unchanged.
+  const HP = (D.photos||{})[hero] || {};
+  const needs = HP.house && HP.w && HP.h && Ivory.fullHouse(D, hero) ? Math.min(440, Math.floor(612*HP.h/HP.w), Math.ceil(HP.house.bottom*612*HP.h/HP.w + 6)) : 0;
+  const grown = needs > ph0;
+  const ph = grown ? needs : ph0, clear = 0.80, PX = 4/3, H = ph*PX, Wp = 612*PX;
   const clip = `path('M0 0 H${Wp} V${H} C ${Wp*0.62} ${H} ${Wp*0.28} ${H*0.97} 0 ${H*clear} Z')`;
   const curved = OHL.maskFits(D, hero, 612, ph, clear);   // no proof the curve misses the house: a straight edge
   h += curved ? OHL.photo(D, hero, `left:0;top:0;width:612pt;height:${ph}pt;clip-path:${clip}`).replace('class="photo ', `data-clear="0,0,1,${clear}" class="photo `)
@@ -70,7 +78,12 @@ OHL.start(['400 10pt Spectral', '500 10pt Spectral', '600 10pt Jost', '500 10pt 
 
   // headline left, address right
   const lines = OHL.labelLines(E.label);
-  const RY = withHome ? ph + 156 : 574, ZT = ph + 16, ZH = RY - ph - 28;
+  // grown, with event lines: the When row sits 52 pt deep with a 6 pt gap under it (as the Home version), drops as far
+  // as the event box allows, and the headline zone keeps 10 pt clear of the photo and the row
+  const evH0 = grown && !withHome ? Ivory.eventBox([[E.refreshments,'oh.refreshments','ev b'],[E.note,'oh.note','ev']], 36, 0, 540, 16, 2,
+    {bg:'#fff', line:'var(--accent)', lineW:1, padX:16, padY:8, scale:((D.openHouse||{}).box||{}).w}).h : 0;
+  const RY = withHome ? ph + 156 : grown ? Math.min(574 + ph - 410, 688 - 52 - 6 - evH0) : 574;
+  const ZT = grown && !withHome ? ph + 10 : ph + 16, ZH = grown && !withHome ? RY - ph - 20 : RY - ph - 28;
   const top = ph + 20 + (2 - lines.length) * 36;
   lines.forEach((t, i) => h += `<div class="abs hl" style="left:32pt;top:${top + i*74}pt;width:310pt;height:78pt" data-slot="oh.label" data-lines="1">${esc(t)}</div>`);
   const m = /^(\S+\s+)(.+?)(\s+\S+)?$/.exec(L.address) || [], num = m[1] || '', street = m[2] || L.address, suffix = m[3] || '';
@@ -81,13 +94,13 @@ OHL.start(['400 10pt Spectral', '500 10pt Spectral', '600 10pt Jost', '500 10pt 
   if(!withHome) h += `<div class="abs facts" style="left:336pt;top:${ay+an*24+20}pt;width:240pt;height:14pt" data-slot="oh.facts" data-lines="1">${esc(Ivory.factsShort(L).replace(/  \/  /g, '  ·  '))}</div>`;
 
   // When row
-  const ry = RY, rh = withHome ? 52 : 56;
+  const ry = RY, rh = withHome || grown ? 52 : 56;
   h += `<div class="rule" style="top:${ry}pt"></div><div class="rule" style="top:${ry+rh}pt"></div>`;
   h += `<div class="vr" style="left:116pt;top:${ry+13}pt;height:${rh-26}pt"></div><div class="vr" style="left:360pt;top:${ry+13}pt;height:${rh-26}pt"></div>`;
   h += `<div class="abs when" style="left:36pt;top:${ry+19}pt;width:80pt;height:20pt">When</div>`;
   h += `<div class="abs date" style="left:122pt;top:${ry+13}pt;width:232pt;height:32pt" data-fit="26,19" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
   if(E.time) h += `<div class="abs time" style="left:366pt;top:${ry+16}pt;width:210pt;height:26pt" data-fit="20,18" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`;
-  let ey = ry + rh + 8;
+  let ey = ry + rh + (grown && !withHome ? 6 : 8);
   if(withHome){
     const hy = ry + rh, hh = 38, cw = (576 - 122)/hcells.length;
     h += `<div class="rule" style="top:${hy+hh}pt"></div><div class="vr" style="left:116pt;top:${hy+9}pt;height:${hh-18}pt"></div>`;
@@ -113,7 +126,8 @@ OHL.start(['400 10pt Spectral', '500 10pt Spectral', '600 10pt Jost', '500 10pt 
   f.issues = issues;
   f.after = () => {   // the headline block centered between the curve and the When row
     const els = [...document.querySelectorAll('.hl')];
-    const st = OHL.stack(els, 80, 40, 0, 0.92), hgt = st.bottom;
+    // grown: the headline never taller than its zone (it would touch the photo)
+    const st = OHL.stack(els, grown ? Math.min(80, ZH/((els.length - 1)*0.92 + 1.1)) : 80, 40, 0, 0.92), hgt = st.bottom;
     els.forEach(el => el.style.top = (parseFloat(el.style.top) + ZT + (ZH - hgt)/2)+'pt');
   };
   return f;

@@ -47,8 +47,19 @@ OHL.start(['700 10pt "Plex Condensed"', '400 10pt "Plex Condensed"', '600 10pt M
   const r1 = take(/kitchen/i), r2 = take(/living|family|great/i), r3 = take(/primary|bedroom|patio|\byard/i);
   const X = 24, G = 10, CW = 277, RH = 185;
   let h = '';
+  // A house that reaches lower in its photo than the 185 pt cell shows gets a taller cell, never taller than the
+  // photo's own shape (11/16/2026, carried from B11: a four-story townhome in a 4:3 photo was cut at the bottom). The
+  // room under it gives up the same height (rooms may lose a fifth), so the tile, the bottom row and everything below
+  // stay where they are. Other houses are unchanged.
+  const HP = (D.photos||{})[hero] || {};
+  const needs = HP.house && HP.w && HP.h && Ivory.fullHouse(D, hero) ? Math.min(2*RH - Math.ceil(RH*0.8), Math.floor(CW*HP.h/HP.w), Math.ceil(HP.house.bottom*CW*HP.h/HP.w + 6)) : 0;
+  if(needs > RH){
+    h += OHL.photo(D, hero, `left:${X}pt;top:24pt;width:${CW}pt;height:${needs}pt`);
+    h += OHL.photo(D, r1, `left:${X}pt;top:${24+needs+G}pt;width:${CW}pt;height:${2*RH-needs}pt`);
+  } else {
   h += OHL.photo(D, hero, `left:${X}pt;top:24pt;width:${CW}pt;height:${RH}pt`);
   h += OHL.photo(D, r1, `left:${X}pt;top:${24+RH+G}pt;width:${CW}pt;height:${RH}pt`);
+  }
   h += OHL.photo(D, r2, `left:${X}pt;top:${24+2*(RH+G)}pt;width:${CW}pt;height:${RH}pt`);
   h += OHL.photo(D, r3, `left:${X+CW+G}pt;top:${24+2*(RH+G)}pt;width:${CW}pt;height:${RH}pt`);
   // the event tile

@@ -45,9 +45,9 @@ Ivory.whenFonts(function(){
   const pick = (C.flyerPhotos && C.flyerPhotos.length>=4) ? C.flyerPhotos : ids;
   const [hero, s1, s2, s3] = pick;
 
-  let h = '', grow = 0;
+  let h = '', grow = 0, panelTop = 300;
   // hero: field edge to field edge, down to 310 pt (roofline pinned to the top, never cropped)
-  h += Ivory.photo(D, '', hero, `left:${inset}pt;top:${inset}pt;width:${612-2*inset}pt;height:${310-inset}pt`);
+  const heroAt = h.length;   // the hero goes in here once the panel's top is known (tall houses, below)
   // the solid event panel set into the hero's lower left corner
   h += `<div class="panel"></div>`;
   h += `<div class="abs label pn-label" data-slot="oh.label" data-lines="1">${esc(O.label)}</div>`;
@@ -70,8 +70,28 @@ Ivory.whenFonts(function(){
     const blockH = Math.max(INFO, boxH), top = B - PB - blockH - PT, y0 = top + PT;
     const dy = y0 + (blockH - INFO)/2 - 216;
     if(ls.length) ev = Ivory.eventBox(ls, 366, y0 + (blockH - boxH)/2, 196, 16, 3, o);
+    panelTop = top;
     h += `<style>.panel{width:540pt}.pn-label,.pn-wd,.pn-date,.pn-raw,.pn-time{margin-top:${dy}pt}.panel{top:${top}pt;height:${B - top}pt}</style>`;
     if(ev) h += ev.html; }
+  // The hero, edge to edge at 310 pt. A full-house photo too square for that frame (more than a quarter of its height
+  // would come off; Ivory's roofline rule) whose house outline is known: the hero narrows to the photo's own shape, just
+  // tall enough that the whole house shows above the panel, centered; room photos fill both sides to the page edge, so
+  // no paper shows (owner 11/16/2026: "more photos on the side of the main photo"). Other houses: unchanged.
+  { const P = (D.photos||{})[hero] || {}, ir = P.w && P.h ? P.w/P.h : 0, fw = 612-2*inset, fh = 310-inset;
+    const lost = ir && fw/fh > ir ? 1 - ir/(fw/fh) : 0;
+    const used = new Set([hero, s1, s2, s3]), spare = ids.filter(id => !used.has(id) && !Ivory.fullHouse(D, id));
+    let heroHtml = Ivory.photo(D, '', hero, `left:${inset}pt;top:${inset}pt;width:${fw}pt;height:${fh}pt`);
+    if(P.house && ir && Ivory.fullHouse(D, hero) && lost > 0.25 && spare.length >= 2){
+      const G = 6, hh = Math.min(fh, Math.floor(panelTop - inset - 8) / P.house.bottom);   // photo height that shows the house above the panel
+      const W = Math.min(fw - 2*(96 + G), Math.floor(hh*ir)), H = Math.round(W/ir), x = inset + (fw - W)/2;
+      heroHtml = Ivory.photo(D, '', hero, `left:${x}pt;top:${inset}pt;width:${W}pt;height:${H}pt`);
+      // side photos end on the panel's top edge, so all three photos stop on one line and none shows below the panel
+      const SH = Math.min(H, panelTop - inset);
+      const sw = x - G - inset, two = spare.length >= 4, n = two ? 2 : 1, ph = (SH - (n-1)*G)/n;
+      [[inset, 0], [x + W + G, n]].forEach(([sx, k]) => { for(let i = 0; i < n; i++)
+        heroHtml += Ivory.photo(D, '', spare[k + i], `left:${sx}pt;top:${inset + i*(ph + G)}pt;width:${sw}pt;height:${ph}pt`); });
+    }
+    h = h.slice(0, heroAt) + heroHtml + h.slice(heroAt); }
   h += `<div class="abs display address" data-slot="address" data-lines="1">${esc(PS(L.address))}</div>`;
   h += `<div class="abs place placeline" data-slot="place" data-lines="1" data-fine="1">${esc(Ivory.placeZip(L))}</div>`;
   h += `<div class="abs factline" data-slot="oh.facts" data-lines="1">${esc(Ivory.factsShort(L))}</div>`;

@@ -63,29 +63,40 @@ OHL.start(['700 10pt "Plex Condensed"', '400 10pt "Plex Condensed"', '400 10pt "
   let addrNeed = 22 + Ivory.linesNeeded('addr', L.address, aw0, 25)*25 + Ivory.linesNeeded('place', pl0, aw0, 12.5)*12.5 + 15;
   const refNeed = noteBox ? 38 + Ivory.linesNeeded('rx', E.note, tw0, 20)*20 : E.hasRefresh ? 38 + (E.refreshText ? Ivory.linesNeeded('rx', E.refreshText, tw0, 20)*20 : 28) : 0;
   const over = need => 36 + 360 + 18 + bandH + 20 + need + 14 - 696;
+  // A house that reaches lower in its photo than the 360 pt frame shows gets a taller frame, up to 400 pt and never
+  // taller than the photo's own shape (11/16/2026, carried from B11: a four-story townhome in a 4:3 photo was cut at
+  // the bottom). The extra height comes out of the band's padding and the gap above the boxes, only as much as the
+  // boxes need (up to 28 pt); other houses are unchanged.
+  const P = (D.photos||{})[hero] || {};
+  const needs = P.house && P.w && P.h && Ivory.fullHouse(D, hero) ? Math.min(400, Math.floor(540*P.h/P.w), Math.ceil(P.house.bottom*540*P.h/P.w + 6)) : 0;
+  const grown = needs > 360, TIGHT = 28, overG = need => over(need) + (needs - 360);
   // first the facts line under the address goes (it is extra), then the photo gives up ground
   // no refreshments: the left box carries the home's facts (icons) instead, so the address box drops its facts line
-  const showFacts = boxed && over(Math.max(addrNeed, refNeed)) <= 0;
+  const showFacts = boxed && (grown ? overG(Math.max(addrNeed, refNeed)) <= TIGHT : over(Math.max(addrNeed, refNeed)) <= 0);
   if(!showFacts && boxed) addrNeed -= 15;
   const boxNeed = Math.max(addrNeed, refNeed);
+  // grown: tf (0 to 1) is how far the band and the gaps tighten
+  const tf = grown ? Math.min(1, Math.max(0, overG(boxNeed))/TIGHT) : 0;
+  // (the title moves up with the date: 12 + 6 + 6 + 4 = 28 pt of height at most)
+  const gTtl = grown ? 18 - 10*tf : 18, gRow = grown ? 70 - 12*tf : 70, gPad = grown ? 16 - 6*tf : 16, gBox = grown ? 20 - 6*tf : 20, gEnd = grown ? 14 - 4*tf : 14;
   // the photo gives up ground; when the house leaves none, it gets smaller at 3:2 instead (nothing more is cropped)
-  const ph = 360 - Math.min(60, Math.max(0, over(boxNeed))), pw = ph >= OHL.minFrameH(D, hero, 540, 360) ? 540 : Math.round(ph*1.5);
+  const ph = grown ? needs : 360 - Math.min(60, Math.max(0, over(boxNeed))), pw = grown || ph >= OHL.minFrameH(D, hero, 540, 360) ? 540 : Math.round(ph*1.5);
   h += OHL.photo(D, hero, `left:${36 + (540-pw)/2}pt;top:36pt;width:${pw}pt;height:${ph}pt`);
 
   // the band: event and refreshment, date, time, special notes
   let y = 36 + ph + 18;
   const bandTop = y;
-  let band = `<div class="abs ttl" style="left:30pt;top:${y+18}pt;width:552pt;height:46pt" data-fit="40,24" data-slot="oh.label" data-lines="1">${esc(E.label)}${E.refreshTitle ? ` <span data-slot="oh.refreshType">${esc(E.refreshTitle)}</span>` : ''}</div>`;
-  y += 70;
+  let band = `<div class="abs ttl" style="left:30pt;top:${y+gTtl}pt;width:552pt;height:46pt" data-fit="40,24" data-slot="oh.label" data-lines="1">${esc(E.label)}${E.refreshTitle ? ` <span data-slot="oh.refreshType">${esc(E.refreshTitle)}</span>` : ''}</div>`;
+  y += gRow;
   band += `<div class="abs date" style="left:36pt;top:${y}pt;width:540pt;height:36pt" data-slot="oh.date" data-lines="1">${esc(E.long)}</div>`;
   y += 36;
   if(E.time){ band += `<div class="abs time" style="left:36pt;top:${y}pt;width:540pt;height:27pt" data-slot="oh.time" data-lines="1">${esc(E.time)}</div>`; y += 29; }
   const ev = Ivory.eventLines([[noteBox ? '' : E.note,'oh.note','ev']], 36, y + 4, 540, 13);
-  band += ev.html; y += (ev.h ? ev.h + 8 : 0) + 16;
+  band += ev.html; y += (ev.h ? ev.h + 8 : 0) + gPad;
   h += `<div class="band" style="top:${bandTop}pt;height:${y-bandTop}pt"></div>` + band;
 
   // refreshment box (left) and address box (right)
-  const by = y + 20, bh = 696 - by - 14;
+  const by = y + gBox, bh = 696 - by - gEnd;
   const cx = 324;
   let refreshBottom = 0;
   if(boxed){

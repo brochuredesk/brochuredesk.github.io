@@ -1,5 +1,5 @@
-/* Fold gap (owner 11/16/2026): on every 11 x 17 fold-over, in every design and every version, a photo never runs into the
-   center fold. Any photo whose edge lands at the fold, past it, or within 0.05 in of it is pulled back so it stops 0.05 in
+/* Fold gap (owner 11/16/2026; inside spread only since 11/17/2026): on the INSIDE spread of every 11 x 17 fold-over, in every
+   design and every version, a photo never runs into the center fold. The cover and back may run photos across the fold, full bleed. Any photo whose edge lands at the fold, past it, or within 0.05 in of it is pulled back so it stops 0.05 in
    short of the fold (about 1/10 in of clear paper across the crease), so a slightly off fold still looks clean.
    Only where photos meet: a photo with no photo facing it across the fold (a lone cover hero) stays as approved (11/16 correction).
    Bars, bands and color fields (anything that is not a photo) still run all the way across. A photo that deliberately
@@ -20,8 +20,10 @@
    fold: the piece's fold from pieces.json ('vertical' = portrait panels side by side, else top over bottom). */
 (function(){
   const PX = 96 / 72, OUT = 60, GAP_PT = 3.6, GAP = GAP_PT * PX, BLEED = 9 * PX, MIN = 12, TOL = 0.5;
-  const SIDE = {vertical: {back: 'right', left: 'right', front: 'left', right: 'left'},
-                horizontal: {front: 'top', back: 'top', bottom: 'top', top: 'bottom'}};
+  // owner 11/17/2026: the gap is for the INSIDE spread only. On the outside (cover and back) photos may run across the fold
+  // and to the edges full bleed, so the cover and back panels (and the print "outside" spread) are never measured or trimmed.
+  const SIDE = {vertical: {left: 'right', right: 'left'},
+                horizontal: {bottom: 'top', top: 'bottom'}};
   const PAIR = {back: 'front', front: 'back', left: 'right', right: 'left', top: 'bottom', bottom: 'top'};
   const axisOf = s => (s === 'left' || s === 'right') ? 'x' : 'y';
 
@@ -43,6 +45,7 @@
     const out = [], pages = [...document.querySelectorAll('.page')];
     for(const pg of pages){
       const halves = [...pg.children].filter(c => c.classList.contains('half'));
+      if(halves.length === 2 && pg.dataset.page === 'outside') continue;   // outside spread: no gap (owner 11/17/2026)
       if(halves.length === 2){   // print spread
         const two = halves.map(h => {
           const panel = h.querySelector('.panel') || h.firstElementChild || h, turned = panel.classList.contains('flip') || getComputedStyle(panel).transform !== 'none';

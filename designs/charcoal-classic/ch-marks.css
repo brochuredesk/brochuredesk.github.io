@@ -1,0 +1,68 @@
+/* Charcoal Classic marks shared by every page (tokens in ch-tokens.css). From the approved P10 flyer and its sign-in sheet:
+   the seam tab, the centered Crimson capitals, the thin accent rule, the ruled table, the pale card with the thin accent line.
+   Font properties are written one by one (never a font: shorthand with var()). */
+@import url(ch-tokens.css);
+/* the seam tab: the charcoal field rising into the photo above a seam (or hanging into the photo below one), a gold hairline on its open edge */
+.ch-tab{position:absolute;background:var(--ch-dark);z-index:4}
+.ch-tab:before{content:"";position:absolute;left:0;right:0;top:0;height:1.2pt;background:var(--ch-accent)}
+.ch-tab.dn:before{top:auto;bottom:0}
+.ch-tab-t{position:absolute;left:0;top:0;width:100%;text-align:center;color:var(--ch-accent);font-family:var(--ch-font);font-weight:500;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.ch-tab.dn .ch-tab-t{top:-1pt}
+.ch-tab:not(.dn) .ch-tab-t{top:.6pt}
+/* the invitation's thin accent rule, and the hairlines between table columns */
+.ch-rule{position:absolute;height:1pt;background:var(--ch-accent)}
+.ch-vhair{position:absolute;width:1pt;background:var(--ch-rule)}
+.ch-hair{position:absolute;height:1pt;background:var(--ch-rule)}
+/* the flyer's centered Crimson capitals, tracked */
+.ch-caps{position:absolute;font-family:var(--ch-label);font-weight:600;text-transform:uppercase;letter-spacing:3pt;color:var(--ch-on);white-space:nowrap;overflow:hidden}
+.ch-eyebrow{position:absolute;font-family:var(--ch-font);font-weight:500;text-transform:uppercase;letter-spacing:4.4pt;color:var(--ch-accent);white-space:nowrap;overflow:hidden}
+.ch-serif{position:absolute;font-family:var(--ch-serif);font-weight:500;color:var(--ch-on);white-space:nowrap;overflow:hidden}
+/* the one display moment of an inside panel: Crimson, sentence case, two lines, centered */
+.ch-head{position:absolute;font-family:var(--ch-serif);font-weight:500;color:var(--ch-on);letter-spacing:-.1pt;text-align:center}
+/* the facts table of the flyer front: a Crimson numeral in the accent over its tracked-caps word */
+.ch-fact{position:absolute;font-family:var(--ch-serif);font-weight:600;color:var(--ch-accent);text-align:center;white-space:nowrap;overflow:hidden}
+.ch-factl{position:absolute;font-family:var(--ch-font);font-weight:500;font-size:8.6pt;line-height:12pt;letter-spacing:2.4pt;text-indent:2.4pt;text-transform:uppercase;color:var(--ch-soft);text-align:center;white-space:nowrap;overflow:hidden}
+/* the one light moment: P10's pale card with a thin accent line set in from its edge, dark type inside */
+.ch-card{position:absolute;background:var(--ch-card)}
+.ch-card:after{content:"";position:absolute;inset:5pt;border:1pt solid var(--ch-box-line);pointer-events:none}
+.ch-lt{--fx-on:#161616;--fx-soft:#2c2c2c;--fx-rule:rgba(0,0,0,.24);--ch-on:#161616;--ch-soft:#2c2c2c;--ch-rule:rgba(0,0,0,.24);--ch-accent:var(--ch-ink-accent)}
+.ch-ink .fo-kick{color:var(--ch-accent)}
+.ch-cut{position:absolute;pointer-events:none}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.script{position:absolute;font-family:var(--ch-label);font-weight:600;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1.25;text-transform:uppercase;letter-spacing:3pt}
+
+/* labels: accent caps, tracked */
+.lbl{display:inline-block;vertical-align:bottom;font-family:var(--ch-font);font-weight:500;font-size:8.6pt;line-height:12pt;letter-spacing:2.6pt;text-transform:uppercase;color:var(--ch-accent);white-space:nowrap;overflow:hidden}
+.lbl.sz{text-transform:none;color:var(--fx-soft);letter-spacing:1.4pt;margin-left:10pt;font-weight:400}
+.body{font-family:var(--ch-font);font-weight:400;font-size:10.5pt;line-height:16.5pt;color:var(--fx-soft);overflow:hidden}
+.wu{font-family:var(--ch-font);font-weight:400;font-size:11pt;line-height:17pt;color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font-family:var(--ch-font);font-weight:400;font-size:6.6pt;line-height:8pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;opacity:.85}
+
+/* photos: square corners on the charcoal */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--ch-font);font-weight:400;font-size:9.5pt;line-height:12.5pt;color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:600;color:var(--fx-on)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+/* a ruled list row, the sign-in sheet's: a short accent dash, the item, a hairline under it */
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-family:var(--ch-font);font-weight:400;font-size:10.5pt;line-height:14pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;border-bottom:var(--fx-rule-w) solid var(--fx-rule)}
+.bul:before{content:"";width:7pt;height:1.2pt;background:var(--ch-accent);flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font-family:var(--ch-serif);font-weight:600;font-size:18pt;line-height:1;color:var(--fx-on)}
+.stat .l{font-family:var(--ch-font);font-weight:500;font-size:9pt;line-height:1;letter-spacing:2pt;text-transform:uppercase;color:var(--fx-soft)}
+.logo.w img{filter:brightness(0) invert(1)}
+/* PR3: the contact card divider prints 1.5 pt */
+body .cc .cc-panel:not(.cc-band){border-left-width:1.5pt}
+body .cc .cc-band{border-top-width:1.5pt}

@@ -1,0 +1,107 @@
+/* Modern Frame marks shared by every page (tokens in mf-tokens.css), read off the approved P13 flyer and its sign-in sheet:
+   the paper field; photos as prints in white mats with a soft shadow (.mf-mat); the main-color band (.mf-band, white type, gold
+   small caps); Hanken Grotesk 700 caps tracked wide for labels; short main-color rules between centered facts; the sign-in sheet's
+   white writing mat for lists and tables (.mf-wb). */
+@import url(mf-tokens.css);
+.mf-fr{position:absolute;background:var(--mf-frame);z-index:5}
+.mf-eyebrow{position:absolute;font-family:var(--mf-font);font-weight:700;font-size:10pt;line-height:12pt;letter-spacing:4pt;text-transform:uppercase;color:var(--mf-accent);white-space:nowrap;overflow:hidden}
+.mf-label{position:absolute;font-family:var(--mf-font);font-weight:700;font-size:30pt;line-height:1.25;letter-spacing:5pt;text-transform:uppercase;color:var(--mf-accent);white-space:nowrap;overflow:hidden}
+.mf-serif{position:absolute;font-family:var(--mf-font);font-weight:700;font-size:30pt;line-height:1.25;color:var(--mf-on);white-space:nowrap;overflow:hidden}
+.mf-caps{position:absolute;font-family:var(--mf-font);font-weight:700;font-size:13pt;line-height:16pt;letter-spacing:2.6pt;text-transform:uppercase;color:var(--mf-accent);white-space:nowrap;overflow:hidden}
+.mf-rule{position:absolute;height:1.4pt;background:var(--mf-accent)}
+.mf-hair{position:absolute;height:1pt;background:var(--mf-rule)}
+.mf-vhair{position:absolute;width:1pt;background:var(--mf-rule)}
+/* P13: a photo laid on the paper as a print, in a white mat with a soft shadow */
+.mf-mat{position:absolute;background:#fff;box-shadow:0 2pt 8pt rgba(0,0,0,.18)}
+/* P13: the band of the main color, edge to edge; type on it is white, small caps on it gold */
+.mf-bandbg{position:absolute;background:var(--mf-main)}
+.mf-band{--mf-on:var(--mf-on-main);--mf-soft:var(--mf-soft-main);--mf-accent:var(--mf-gold);--fx-on:var(--mf-on-main);--fx-soft:var(--mf-soft-main);--mf-rule:rgba(255,255,255,.6);--fx-rule:rgba(255,255,255,.6)}
+.mf-band .fine{color:var(--mf-soft-main);opacity:1}
+.mf-vr{position:absolute;width:1pt;background:currentColor;opacity:.6}
+.mf-wbox{position:absolute;background:#fff;box-shadow:0 2pt 8pt rgba(0,0,0,.16)}
+.mf-wbox.lt{background:#fff}
+.mf-lt{--mf-accent:var(--mf-main-ink)}
+.mf-cut{position:absolute;pointer-events:none}
+.mf-head{position:absolute;font-family:var(--mf-font);font-weight:700;font-size:34pt;line-height:1.12;color:var(--mf-on);letter-spacing:-.2pt;text-wrap:balance}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+.script{position:absolute;font-family:var(--mf-label);font-weight:700;color:var(--fx-on);white-space:nowrap;overflow:visible;line-height:1.25;text-transform:uppercase;letter-spacing:4pt}
+
+/* labels: main-color caps, tracked (the sign-in sheet's column heads) */
+.lbl{display:inline-block;vertical-align:bottom;font-family:var(--mf-font);font-weight:700;font-size:8.6pt;line-height:12pt;letter-spacing:2pt;text-transform:uppercase;color:var(--mf-accent);white-space:nowrap;overflow:hidden}
+.lbl.sz{text-transform:none;color:var(--fx-soft);letter-spacing:.6pt;margin-left:10pt;font-weight:500}
+.body{font-family:var(--mf-font);font-weight:400;font-size:10.5pt;line-height:16.5pt;color:var(--fx-soft);overflow:hidden}
+.wu{font-family:var(--mf-font);font-weight:400;font-size:11pt;line-height:17pt;color:var(--fx-soft);overflow:hidden}
+.hr{position:absolute;height:var(--fx-rule-w);background:var(--fx-rule)}
+.vr{position:absolute;width:var(--fx-rule-w);background:var(--fx-rule)}
+.fine{font-family:var(--mf-font);font-weight:500;font-size:6.6pt;line-height:8pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;opacity:.85}
+
+/* photos: square corners, sharp inside the mat */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--mf-font);font-weight:400;font-size:9.5pt;line-height:12.5pt;color:var(--fx-soft);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:700;color:var(--fx-on)}
+.cap.big .a{font-size:10.5pt;line-height:13.5pt}
+
+.card{position:absolute;border:var(--fx-rule-w) solid var(--fx-rule);background:transparent}
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-family:var(--mf-font);font-weight:500;font-size:10.5pt;line-height:14pt;color:var(--fx-soft);white-space:nowrap;overflow:hidden;border-bottom:1pt solid var(--fx-rule)}
+.bul:before{content:"";width:9pt;height:1.4pt;background:var(--mf-accent);flex:none}
+
+.stat{white-space:nowrap;display:flex;align-items:baseline;gap:6pt;color:var(--fx-on)}
+.stat .n{font-family:var(--mf-serif);font-weight:700;font-size:18pt;line-height:1;color:var(--fx-on)}
+.stat .l{font-family:var(--mf-font);font-weight:700;font-size:9pt;line-height:1;letter-spacing:2pt;text-transform:uppercase;color:var(--fx-soft)}
+
+.near{flex:none;display:flex;gap:0;border-top:var(--fx-rule-w) solid var(--fx-rule);padding-top:9pt}
+.near .c{flex:1;min-width:0;padding-left:14pt;border-left:var(--fx-rule-w) solid var(--fx-rule)}
+.near .c:first-child{padding-left:0;border-left:0}
+.near .d{font-family:var(--mf-serif);font-weight:700;font-size:15pt;line-height:18pt;color:var(--fx-on);white-space:nowrap;overflow:hidden}
+.near .p{font-family:var(--mf-font);font-weight:700;font-size:8pt;line-height:10pt;letter-spacing:1.6pt;text-transform:uppercase;color:var(--fx-soft);overflow:hidden;margin-top:1pt;min-height:20pt}
+.logo.w img{filter:brightness(0) invert(1)}
+
+/* the display line: Hanken Grotesk 700 caps, tracked (P13's PUBLIC OPEN HOUSE / SATURDAY); the street: 700 mixed case (the flyer's
+   address line); the place: 700 tracked caps in the main color (on the band: gold); the second line: 500 (the flyer's date and time) */
+.mf-disp{position:absolute;font-family:var(--mf-font);font-weight:700;letter-spacing:3pt;text-transform:uppercase;color:var(--mf-on);white-space:nowrap;overflow:hidden;text-align:left}
+.mf-street{position:absolute;font-family:var(--mf-font);font-weight:700;color:var(--mf-on);white-space:nowrap;overflow:hidden;text-align:left}
+.mf-place{position:absolute;font-family:var(--mf-font);font-weight:700;letter-spacing:3pt;text-transform:uppercase;color:var(--mf-accent);white-space:nowrap;overflow:hidden;text-align:left}
+.mf-time{position:absolute;font-family:var(--mf-font);font-weight:500;color:var(--mf-on);white-space:nowrap;overflow:hidden;text-align:left}
+.mf-h{position:absolute;font-family:var(--mf-font);font-weight:700;color:var(--mf-on);letter-spacing:-.2pt;text-align:left}
+/* the flyer's short rule between centered facts */
+.mf-dv{position:absolute;height:1pt;background:var(--mf-accent);opacity:.55}
+.mf-dm{position:absolute;background:var(--mf-accent)}
+.mf-dmo{position:absolute;border:1.5pt solid var(--mf-accent);box-sizing:border-box;border-radius:50%}
+.mf-echo{position:absolute;overflow:visible;pointer-events:none;z-index:2}
+/* the sign-in sheet's white writing mat: white with the soft shadow, main-color caps labels, dark type */
+.mf-wb{position:absolute;background:#fff;box-shadow:0 2pt 8pt rgba(0,0,0,.16);box-sizing:border-box}
+.mf-on-wb{--fx-on:#161616;--fx-soft:#2a2a2a;--fx-rule:rgba(0,0,0,.16);--mf-on:#161616;--mf-soft:#2a2a2a;--mf-rule:rgba(0,0,0,.16)}
+.mf-on-wb .mf-wl{color:var(--mf-main-ink)}
+.mf-wl{position:absolute;font-family:var(--mf-font);font-weight:700;font-size:8.6pt;line-height:11pt;letter-spacing:1.8pt;text-transform:uppercase;color:var(--mf-accent);white-space:nowrap;overflow:hidden}
+.mf-medal{position:absolute;display:flex;align-items:center;justify-content:center;font-family:var(--mf-font);font-weight:700;color:var(--mf-on);white-space:nowrap}
+.mf-ml{position:absolute;font-family:var(--mf-font);font-weight:700;font-size:8.6pt;line-height:11pt;letter-spacing:2pt;text-transform:uppercase;color:var(--mf-soft);white-space:nowrap;overflow:hidden;text-align:center}
+.mf-on-wb .bul:before,.bul.dm:before{width:9pt;height:1.4pt}
+
+/* ===== Modern Frame (P16) marks ===== */
+/* the deep frame: a rail of the main color at the trim, running into the bleed; the gold hairline 6 pt inside the paper window */
+.mf-rail{position:absolute;background:var(--mf-main)}
+.mf-hl{position:absolute;background:var(--mf-gold-p)}
+/* the flyer's eyebrow ("Please join us for a"): 600 caps tracked 3 pt in the main color, centered */
+.mf-eye{position:absolute;font-family:var(--mf-font);font-weight:600;letter-spacing:3pt;text-transform:uppercase;color:var(--mf-accent);white-space:nowrap;overflow:hidden;text-align:center}
+/* the flyer's headline ("Public Open House"): 700, tight, in the main color, centered */
+.mf-big{position:absolute;font-family:var(--mf-font);font-weight:700;letter-spacing:-1pt;color:var(--mf-accent);white-space:nowrap;overflow:hidden;text-align:center}
+/* the flyer's date line: 500 in ink, centered */
+.mf-line{position:absolute;font-family:var(--mf-font);font-weight:500;color:var(--mf-on);white-space:nowrap;overflow:hidden;text-align:center}
+.mf-c{text-align-last:center}
+/* the sign-in sheet's gold rule over its table, its white row bands, its numbered disks */
+.mf-rule{position:absolute;height:1.2pt;background:var(--mf-gold-p)}
+.mf-row{position:absolute;background:#fff}
+.mf-disk{position:absolute;border-radius:50%;background:var(--mf-main);text-align:center;white-space:nowrap;overflow:hidden}
+/* P16's event box: white with one gold line */
+.mf-wb{position:absolute;background:#fff;border:1pt solid var(--mf-gold-p);box-sizing:border-box}
+.mf-on-wb{--fx-on:#161616;--fx-soft:#2a2a2a;--fx-rule:rgba(0,0,0,.14);--mf-on:#161616;--mf-soft:#2a2a2a;--mf-rule:rgba(0,0,0,.14)}
+.mf-on-wb .mf-wl{color:var(--mf-main-ink)}
+.mf-print{background:var(--fx-taupe-d)}
