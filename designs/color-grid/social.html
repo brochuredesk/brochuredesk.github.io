@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>color-grid social set</title>
+<link rel="stylesheet" href="cg-tokens.css">
+<script src="../engine/baths.js"></script>
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/carousel.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script src="../engine/socialset.js"></script>
+<script>
+// this set's own carousel slide (owner 11/18/2026: hints of the main design on every slide); replaces the shared strip slide
+(function(){
+  const SS = window.SocialSet, esc = s => Ivory.esc(s);
+  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
+  const txt = (slot, t, x, y, w, h, size, min, css) => `<div class="abs nw" data-slot="${slot}" data-lines="1" data-fit="${size},${min}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;font-size:${size}pt;line-height:${h}pt;${css}">${esc(t)}</div>`;
+  const caps = (L, tr) => `text-transform:uppercase;letter-spacing:${tr}pt;`;
+  SS.slide = (D, L, W, H) => {
+    const bd = Object.assign({bg: L.page, ink: L.ink, accent: L.accent}, L.band || {}), id = D.piece.photo, word = SS.M, addr = D.listing.address;
+    const photo = st => OHL.photo(D, id, st);
+    const S = (D, L, W, H, X) => { const g = 8, th = 108, num = (X.addr.match(/^\s*(\d+[A-Za-z]?)\b/) || [])[1] || '';
+   let h = X.rect(0, 0, W, H, 'background:var(--ss-plate)') + X.photo(`left:${g}pt;top:${g}pt;width:${W - 2*g}pt;height:${H - 3*g - th}pt`);
+   const ty = H - g - th, nw = num ? Math.min(150, 34 + num.length*30) : 0, gw = W - 2*g - (num ? nw + g : 0);
+   h += X.rect(g, ty, gw, th, 'background:var(--ss-main)');
+   h += X.txt('moment', X.word, g + 18, ty + 16, gw - 36, 26, 18, 17, `font-family:${L.body};font-weight:700;${X.caps(L, 3)}color:var(--ss-anchor)`);
+   h += X.txt('address', X.addr, g + 18, ty + 50, gw - 36, 38, 30, 17.5, `font-family:${L.display};font-weight:700;color:#ffffff`);
+   if(num){ h += X.rect(W - g - nw, ty, nw, th, 'background:var(--ss-dark)');
+     h += `<div class="abs nw" data-slot="housenum" data-lines="1" data-fit="58,30" style="left:${W - g - nw + 8}pt;top:${ty + 16}pt;width:${nw - 16}pt;height:${th - 32}pt;font:700 58pt/${th - 32}pt ${L.display};color:#ffffff;text-align:center">${num}</div>`; }
+   return h; };
+    return S(D, L, W, H, {bd, photo, word, addr, rect, txt, caps});
+  };
+})();
+</script>
+<!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
+     solid green tiles on the paper with paper gutters between them, the dark tile, Schibsted Grotesk capitals, gold tracked labels.
+     The brand kit's colors (data.brand.colors, data.brand.paper) set the field, band and accents, as the set's other pieces do. -->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+SocialSet.start(D => {
+  const b = D.brand || {}, c = b.colors || {}, r = document.documentElement.style;
+  const rgb = h => { h = String(h||'').replace('#',''); if(h.length===3) h = h.split('').map(x=>x+x).join(''); const n = parseInt(h,16); return [n>>16&255, n>>8&255, n&255]; };
+  const hex = a => '#' + a.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+  const mix = (a, z, k) => { const p = rgb(a), q = rgb(z); return hex(p.map((v, i) => v*k + q[i]*(1 - k))); };
+  const lum = h => { const v = rgb(h).map(q => { q/=255; return q <= .03928 ? q/12.92 : Math.pow((q+.055)/1.055, 2.4); }); return .2126*v[0] + .7152*v[1] + .0722*v[2]; };
+  const con = (a, z) => { const x = lum(a), y = lum(z); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); };
+  const on = bg => con(bg, '#ffffff') >= con(bg, '#161616') ? '#ffffff' : '#161616';
+  const read = (fg, bg, k) => con(fg, bg) >= k ? fg : on(bg);
+  const K = {dark: c.dark || '#1b3d25', main: c.main || '#2f6b3f', accent: c.accent || '#f2b84b', paper: b.paper || '#f4f3ee'};
+  K.stone = mix(K.dark, '#8c8a84', .94);
+  const role = n => n.startsWith('tint:') ? mix(K.main, K.paper, parseFloat(n.slice(5))) : K[n];
+  const page = role('paper'), band = role('main');
+  r.setProperty('--ss-page', page); r.setProperty('--ss-ink', on(page)); r.setProperty('--ss-acc', read(K['main'], page, 3));
+  r.setProperty('--ss-band', band); r.setProperty('--ss-bandink', on(band)); r.setProperty('--ss-bandacc', read(K['accent'], band, 3));
+  r.setProperty('--ss-hair', read(K.accent, page, 1.8)); r.setProperty('--ss-plate', K.paper); r.setProperty('--ss-anchor', K.accent);
+  r.setProperty('--ss-main', K.main); r.setProperty('--ss-dark', K.dark);
+});
+</script>
+<script>
+const LANDFIX = (D, pg) => {
+  const js = D.piece.moment === 'js', gbp = D.piece.shape === 'gbp', P0 = pg.getBoundingClientRect(), k = .75;
+  const R = e => { const q = e.getBoundingClientRect(); return {l: (q.left - P0.left)*k, t: (q.top - P0.top)*k, r: (q.right - P0.left)*k, b: (q.bottom - P0.top)*k}; };
+  const H = P0.height*k, num = (e, p) => parseFloat(e.style[p]) || 0;
+  const band = [...pg.querySelectorAll('.abs')].find(e => /var\(--ss-band\)/.test(e.getAttribute('style') || '') && R(e).t < 1 && R(e).b > H - 1 && R(e).l > 4);
+  const word = pg.querySelector('[data-slot="moment"]'), facts = pg.querySelector('[data-slot="facts"]');
+  if(!band || !word) return false;
+  const B = R(band), cx = (B.l + B.r)/2, pad = num(word, 'left') - B.l, iw = B.r - B.l - 2*pad, fin = pg.querySelector('[data-frame]') ? 8 : 0;
+  const ink = e => { const rg = document.createRange(); rg.selectNodeContents(e); const q = [...rg.getClientRects()].filter(x => x.width > .5);
+    return q.length ? {l: (Math.min(...q.map(x => x.left)) - P0.left)*k, r: (Math.max(...q.map(x => x.right)) - P0.left)*k, t: (Math.min(...q.map(x => x.top)) - P0.top)*k, b: (Math.max(...q.map(x => x.bottom)) - P0.top)*k} : null; };
+  // type scaled from its as-set size (font, line, tracking), the element and its inline spans
+  const base = new Map();
+  const remember = e => [e, ...e.querySelectorAll('[style*="font"]')].forEach(x => { if(base.has(x)) return; const c = getComputedStyle(x);
+    base.set(x, {fs: parseFloat(c.fontSize)*k, lh: parseFloat(c.lineHeight)*k || 0, ls: parseFloat(c.letterSpacing)*k || 0, mr: parseFloat(c.marginRight)*k || 0, h: num(x, 'height'), w: num(x, 'width')}); });
+  const scale = (e, g) => [e, ...e.querySelectorAll('[style*="font"]')].forEach(x => { const o = base.get(x); if(!o) return;
+    x.style.fontSize = (o.fs*g).toFixed(2) + 'pt'; if(o.lh) x.style.lineHeight = (o.lh*g).toFixed(2) + 'pt'; if(o.ls) x.style.letterSpacing = (o.ls*g).toFixed(2) + 'pt'; if(o.mr) x.style.marginRight = (o.mr*g).toFixed(2) + 'pt'; });
+  const card = [...pg.querySelectorAll('[data-slot^="agent."], .sc-hs, .sc-logo')].filter(e => R(e).l >= B.l - 1);
+  const logo = card.find(e => e.classList.contains('sc-logo')), lines = card.filter(e => e !== logo);
+  if(!lines.length) return false;
+  const rule = [...pg.querySelectorAll('.abs')].find(e => /opacity:\s*\.35/.test(e.getAttribute('style') || '') && R(e).l > B.l && num(e, 'height') < 2);
+  // Just Sold Wide: a smaller agent block (never under the phone floors the engine set: the small print stays 10 px on a phone)
+  if(js && !gbp){
+    const ox = Math.min(...card.map(e => num(e, 'left'))), oy = Math.min(...card.map(e => num(e, 'top')));
+    // the floors the phone check uses on a wide card (330 px across): 12 px for lines, 10 px for small print
+    const ph = fs => fs*330/(P0.width*k), need = [];
+    lines.filter(e => !e.classList.contains('sc-hs')).forEach(e => [e, ...e.querySelectorAll('[style*="font"]')].forEach(x => { const fs = parseFloat(getComputedStyle(x).fontSize)*k;
+      need.push(((x.dataset.small || e.dataset.small) ? 10 : 12)/ph(fs)); }));
+    const c = Math.min(1, Math.max(.84, ...need.map(v => v*1.01)));
+    card.forEach(e => { remember(e); e.style.left = (ox + (num(e, 'left') - ox)*c) + 'pt'; e.style.top = (oy + (num(e, 'top') - oy)*c) + 'pt';
+      const cc = e === logo ? Math.min(c, .86) : c; e.style.width = (num(e, 'width')*cc) + 'pt'; e.style.height = (num(e, 'height')*cc) + 'pt'; if(e !== logo) scale(e, c); });
+  }
+  // the agent's block (headshot and its lines) centered side to side in the band
+  const blk = () => { const r = lines.map(e => e.classList.contains('sc-hs') ? R(e) : ink(e)).filter(Boolean); return {l: Math.min(...r.map(q => q.l)), r: Math.max(...r.map(q => q.r)), t: Math.min(...r.map(q => q.t)), b: Math.max(...r.map(q => q.b))}; };
+  let A = blk(); const dx = cx - (A.l + A.r)/2; lines.forEach(e => e.style.left = (num(e, 'left') + dx) + 'pt'); A = blk();
+  // the broker logo centered under the whole block (its box centers its drawn logo)
+  if(logo) logo.style.left = ((A.l + A.r)/2 - num(logo, 'width')/2) + 'pt';
+  if(!js && !gbp) return true;   // Just Listed Wide: approved sizes and places
+  // the moment word larger: on one line to the band's width, or stacked on two lines when that sets it larger and the band has the room
+  const save = [word, facts].filter(Boolean).map(e => [e, e.getAttribute('style'), e.className, e.dataset.lines, e.innerHTML]);
+  remember(word); if(facts) remember(facts);
+  // the facts packed whole into lines (a dot only between two facts on one line, never at a line's start or end), fewest lines
+  const items = facts ? facts.textContent.split(/\s+·\s+/).map(t => t.trim()).filter(Boolean) : [];
+  const fw = t => { const c = getComputedStyle(facts), sp = document.createElement('span'); sp.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:' + c.font + ';letter-spacing:' + c.letterSpacing; sp.textContent = t; pg.appendChild(sp); const v = sp.getBoundingClientRect().width*k; sp.remove(); return v; };
+  const pack = maxW => { const out = []; for(const it of items){ const t = out.length ? out[out.length - 1] + ' · ' + it : null; if(t && fw(t) <= maxW) out[out.length - 1] = t; else out.push(it); } return out; };
+  const w0 = ink(word), wl0 = base.get(word).lh || base.get(word).fs*1.15, cap = 2.4;
+  const tw = t => { const c = getComputedStyle(word), s = document.createElement('span'); s.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:' + c.font + ';letter-spacing:' + c.letterSpacing + ';text-transform:' + c.textTransform; s.textContent = t; pg.appendChild(s); const v = s.getBoundingClientRect().width*k; s.remove(); return v; };
+  const wds = word.textContent.trim().split(/\s+/), g1 = w0 && word.classList.contains('nw') ? iw*.97/(w0.r - w0.l) : 1, g2 = wds.length > 1 ? iw*.97/Math.max(...wds.map(tw)) : 0;
+  const top = Math.max(pad*1.6, H*.075) + fin, low = H - top;   // the same margin above the word and under the logo
+  const cardTop = () => Math.min(...card.map(e => num(e, 'top'))), cardBot = () => Math.max(...card.map(e => num(e, 'top') + num(e, 'height')));
+  const gap0 = facts ? Math.max(8, num(facts, 'top') - (num(word, 'top') + num(word, 'height'))) : 0;
+  const dy = low - cardBot(), need = cardTop() + dy - Math.max(18, H*.05);   // the lowest the words may reach once the block sits on the bottom margin
+  const lay = (n, g, gf) => {
+    scale(word, g); let wh = n*wl0*g + (n > 1 ? base.get(word).fs*g*.15 : 0);
+    word.classList.remove('nw', 'wr'); word.classList.add(n > 1 ? 'wr' : 'nw'); word.dataset.lines = n;
+    word.style.whiteSpace = n > 1 ? 'normal' : 'nowrap'; word.style.left = (B.l + pad + (n > 1 ? iw*.015 : 0)) + 'pt'; word.style.width = (n > 1 ? iw*.97 : iw) + 'pt';
+    word.style.height = wh + 'pt'; word.style.top = top + 'pt';
+    if(word.scrollWidth > word.clientWidth + 1) return -1;   // tracked caps past the box: too big
+    if(word.scrollHeight > word.clientHeight + 1){ wh = word.scrollHeight*k + 1; word.style.height = wh + 'pt'; }   // a face whose letters run taller than its line (Spectral)
+    let y = top + wh;
+    if(n > 1){ const q = ink(word); if(!q || Math.round((q.b - q.t)/(wl0*g)) > n) return -1; }
+    if(facts){ scale(facts, gf); const ls = pack(num(facts, 'width')*.98); if(ls.some(t => fw(t) > num(facts, 'width'))) return -1;
+      facts.innerHTML = ls.map(t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;')).join('<br>'); const lh = parseFloat(facts.style.lineHeight), m = ls.length;
+      facts.dataset.lines = m; facts.style.height = (m*lh + (m > 1 ? base.get(facts).fs*gf*.15 : 0)) + 'pt'; facts.style.top = (y + gap0) + 'pt'; y += gap0 + num(facts, 'height');
+      if(m > 4) return -1; }
+    return y;
+  };
+  // every way the words fit (one or two lines; the facts up to 1.3x on Just Listed GBP); the largest word wins, then the larger facts
+  let best = null;
+  for(const [n, gm] of [[1, word.classList.contains('nw') ? g1 : 0], [2, g2]]) for(const gf of (!js && gbp && facts ? [1.3, 1.25, 1.2, 1.15, 1.1, 1] : [1])){
+    for(let g = Math.min(cap, gm); g >= 1; g -= .02){ const y = lay(n, g, gf); if(y > 0 && y <= need){ const sc = g + gf; if(!best || sc > best.sc) best = {n, g, gf, sc}; break; } }
+  }
+  let yUp;
+  pg.dataset.landfix = best ? 'grown' : 'kept';
+  if(best) yUp = lay(best.n, best.g, best.gf);
+  else {   // no larger setting fits: the words as the engine set them; the block still goes lower when they leave the room
+    save.forEach(([e, st, cl, ln, html]) => { e.setAttribute('style', st); e.className = cl; e.dataset.lines = ln; e.innerHTML = html; });
+    yUp = Math.max(...save.map(([e]) => num(e, 'top') + num(e, 'height')));
+  }
+  const dd = yUp <= need ? dy : Math.max(0, Math.min(dy, cardTop() - yUp - Math.max(18, H*.05)));
+  card.forEach(e => e.style.top = (num(e, 'top') + dd) + 'pt');
+  if(rule) rule.style.top = ((yUp + cardTop())/2) + 'pt';
+  return true;
+};
+window.brochureReady = window.brochureReady.then(async () => {
+  const D = JSON.parse(document.getElementById('brochure-data').textContent || '{}'), pg = document.querySelector('.page');
+  if(!pg || !D.piece) return;
+  // a logo set under the agent's lines (not beside them) is centered on those lines, as the shared freespace check wants
+  // (measured as the shared freespace check does: the logo's drawn ink, the agent's text lines above it that it overlaps)
+  const lines = [...pg.querySelectorAll('[data-slot^="agent."]')].flatMap(e => { const out = [], tw = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
+    for(let n = tw.nextNode(); n; n = tw.nextNode()){ if(!n.textContent.trim()) continue; const rg = document.createRange(); rg.selectNodeContents(n); for(const q of rg.getClientRects()) if(q.width > .5) out.push(q); } return out; });
+  await Promise.all([...pg.querySelectorAll('.logo img')].map(i => (i.decode ? i.decode() : Promise.resolve()).catch(() => 0)));
+  const LAND = (D.piece.shape === 'wide' || D.piece.shape === 'gbp') && LANDFIX(D, pg);
+  if(!LAND) pg.querySelectorAll('.logo').forEach(lg => { const im = lg.querySelector('img'); if(!im || !im.naturalWidth) return;
+    for(let k = 0; k < 4; k++){
+      const q = im.getBoundingClientRect(), ar = im.naturalWidth/im.naturalHeight, dw = Math.min(q.width, q.height*ar), dh = dw/ar;
+      const pos = (getComputedStyle(im).objectPosition || '50% 50%').split(' ')[0], fx = /%/.test(pos) ? parseFloat(pos)/100 : .5;
+      const T = {l: q.left + (q.width - dw)*fx, r: q.left + (q.width - dw)*fx + dw, t: q.top + (q.height - dh)/2};
+      const U = lines.filter(o => o.bottom <= T.t + 1 && T.t - o.bottom < pg.getBoundingClientRect().height*.25 && o.right > T.l && o.left < T.r);
+      if(!U.length) return; if(U.some(o => o.bottom > T.t + 1)) return;
+      const dx = (Math.min(...U.map(o => o.left)) + Math.max(...U.map(o => o.right)))/2 - (T.l + T.r)/2; if(Math.abs(dx) < 1) return;
+      const cur = /translateX\(([-\d.]+)px\)/.exec(lg.style.transform || ''); lg.style.transform = `translateX(${((cur ? parseFloat(cur[1]) : 0) + dx).toFixed(2)}px)`;
+    } });
+  if(D.piece.shape === 'slide') return;
+  const P = pg.getBoundingClientRect(), pt = v => v*0.75, acc = getComputedStyle(document.documentElement).getPropertyValue('--ss-acc').trim();
+  const photos = [...pg.querySelectorAll('.photo')].map(e => [e, e.getBoundingClientRect()]).sort((a, b) => b[1].width*b[1].height - a[1].width*a[1].height);
+  if(!photos.length) return;
+  const [el, r] = photos[0], w = pt(r.width), h = pt(r.height), x0 = pt(r.left - P.left), y0 = pt(r.top - P.top);
+  const texts = [...pg.querySelectorAll('.nw,.wr,.cc')].filter(t => (t.textContent || '').trim()).map(t => t.getBoundingClientRect());
+  const clear = (x, y, ww, hh, pad) => !texts.some(t => { const a = {l: pt(t.left - P.left) - pad, t: pt(t.top - P.top) - pad, r: pt(t.right - P.left) + pad, b: pt(t.bottom - P.top) + pad};
+    return x < a.r && x + ww > a.l && y < a.b && y + hh > a.t; });
+  const atFoot = r.bottom > P.bottom - 4, atTop = r.top < P.top + 4, atL = r.left < P.left + 4, atR = r.right > P.right - 4;
+  const svg = inner => pg.insertAdjacentHTML('beforeend', `<svg class="sig" style="position:absolute;left:0;top:0;width:${pt(P.width)}pt;height:${pt(P.height)}pt;overflow:visible;pointer-events:none" viewBox="0 0 ${pt(P.width)} ${pt(P.height)}">${inner}</svg>`);
+  const box = (x, y, ww, hh, css) => pg.insertAdjacentHTML('beforeend', `<div class="abs sig" style="left:${x}pt;top:${y}pt;width:${ww}pt;height:${hh}pt;pointer-events:none;${css}"></div>`);
+  const id = el.dataset.photo || '';
+  const SIG = () => { (() => {
+   const g = 5;
+   if(!atFoot) box(x0, y0 + h - g/2, w, g, 'background:var(--ss-plate)');
+   if(!atR) box(x0 + w - g/2, y0, g, h, 'background:var(--ss-plate)');
+   if(!atL) box(x0 - g/2, y0, g, h, 'background:var(--ss-plate)');
+   // the dark tile with the house number at the free end of the green band that names the piece (the fold-over's number tiles)
+   const wd = pg.querySelector('[data-slot="moment"]'), num = ((D.listing.address || '').match(/^\s*(\d+[A-Za-z]?)\b/) || [])[1];
+   if(!wd || !num || /wide|gbp/.test(D.piece.shape)) return;
+   const b = [...pg.querySelectorAll('.abs')].find(e => /var\(--ss-band\)/.test(e.getAttribute('style') || '') && e.getBoundingClientRect().top < wd.getBoundingClientRect().top + 1 && e.getBoundingClientRect().bottom > wd.getBoundingClientRect().bottom - 1);
+   if(!b) return;
+   const rg = document.createRange(); rg.selectNodeContents(wd); const q = [...rg.getClientRects()].filter(x => x.width > .5); if(!q.length) return;
+   const B = b.getBoundingClientRect(), bx = pt(B.left - P.left), by = pt(B.top - P.top), bw = pt(B.width), bh = pt(B.height), ir = pt(Math.max(...q.map(x => x.right)) - P.left);
+   const fs0 = Math.max(17, bh*.8), tw = num.length*fs0*.64 + 22 + g; if(bx + bw - ir - 14 < tw) return;
+   box(bx + bw - tw, by, g, bh, 'background:var(--ss-plate)');
+   box(bx + bw - tw + g, by, tw - g, bh, 'background:var(--ss-dark)');
+   const fs = fs0;
+   pg.insertAdjacentHTML('beforeend', `<div class="abs nw sig" data-slot="housenum" data-lines="1" style="left:${bx + bw - tw + g}pt;top:${by}pt;width:${tw - g}pt;height:${bh}pt;font:700 ${fs.toFixed(1)}pt/${bh}pt ${getComputedStyle(wd).fontFamily.replace(/"/g, "'")};color:#ffffff;text-align:center">${num}</div>`);
+ })(); (() => {
+   if(!/^(post|square|pin)$/.test(D.piece.shape)) return;
+   const hb = pt(r.bottom - P.top), H0 = pt(P.height), W0 = pt(P.width), R = e => { const q = e.getBoundingClientRect(); return {e, t: pt(q.top - P.top), b: pt(q.bottom - P.top)}; };
+   const kids = [...pg.children].filter(e => { const q = e.getBoundingClientRect(); return pt(q.top - P.top) >= hb - .5 && pt(q.width) < W0*.95 && pt(q.height) > 0; }).map(R).sort((a, b) => a.t - b.t);
+   if(!kids.length) return;
+   // rows: items whose heights overlap ride together
+   const rows = []; kids.forEach(k => { const w = rows.find(rw => k.t < rw.b - .5 && k.b > rw.t + .5); if(w){ w.items.push(k); w.t = Math.min(w.t, k.t); w.b = Math.max(w.b, k.b); } else rows.push({t: k.t, b: k.b, items: [k]}); });
+   rows.sort((a, b) => a.t - b.t);
+   const used = rows.reduce((s, rw) => s + rw.b - rw.t, 0), free = H0 - hb - used, cap = H0*.028;
+   // room past an even 2.8% gap goes to the house photo (taller frame) when the whole house still fits; the seam marks move with it
+   let grow = Math.max(0, free - cap*(rows.length + 1)), top = hb;
+   if(grow > 2){
+     const ph = [...pg.querySelectorAll('.photo')].filter(e => Math.abs(pt(e.getBoundingClientRect().bottom - P.top) - hb) < 1.5);
+     const H1 = h + grow, cutOK = !id || !window.OHL || !OHL.houseInFrame || (() => { const b = OHL.houseInFrame(D, id, w, H1); return !b || (b.left >= .015 && b.right <= .985); })();
+     if(!cutOK) grow = 0;
+     if(grow > 2){
+       ph.forEach(e => e.style.height = (pt(e.getBoundingClientRect().height) + grow) + 'pt');
+       pg.querySelectorAll('.sig, .cv-echo').forEach(e => { const q = e.getBoundingClientRect(), t = pt(q.top - P.top);
+         if(e.tagName.toLowerCase() === 'svg') e.style.transform = `translateY(${grow}pt)`; else if(t >= hb - 16 && t <= hb + 16) e.style.top = (parseFloat(e.style.top) + grow) + 'pt'; });
+       top = hb + grow;
+     }
+   }
+   const gap = (H0 - top - used)/(rows.length + 1);
+   if(gap < 1) return;
+   let y = top + gap; rows.forEach(rw => { const dy = y - rw.t; rw.items.forEach(k => { const t = parseFloat(k.e.style.top); if(!isNaN(t)) k.e.style.top = (t + dy) + 'pt'; else k.e.style.transform = `translateY(${dy}pt)`; }); y += rw.b - rw.t + gap; });
+   // a gap taller than 2% of the card (its type boxes carry leading, so the ink gap runs larger) gets the set's own short accent rule at its middle (the hairline the set runs between blocks)
+   if(gap > H0*.02){ const ow = Math.max(40, W0*.16); let yy = top; rows.forEach((rw, i) => { if(i) pg.insertAdjacentHTML('beforeend', `<div class="abs sig" style="left:${(W0 - ow)/2}pt;top:${yy + gap/2 - .7}pt;width:${ow}pt;height:1.4pt;background:var(--ss-anchor);pointer-events:none"></div>`); yy += gap + rw.b - rw.t; }); }
+ })(); (() => {
+   if(!/^(wide|gbp)$/.test(D.piece.shape)) return;
+   const H0 = pt(P.height), W0 = pt(P.width), hr = pt(r.right - P.left), hb = pt(r.bottom - P.top);
+   // two groups: the band's column right of the hero, and the words under the hero; each box ends 3% above the foot at most (a logo box carries its own white room)
+   const all = [...pg.children].filter(e => { const q = e.getBoundingClientRect(); return pt(q.height) > 0 && pt(q.height) < H0*.9 && pt(q.width) < W0*.6; });
+   const groups = [all.filter(e => pt(e.getBoundingClientRect().left - P.left) >= hr - 1), all.filter(e => pt(e.getBoundingClientRect().right - P.left) <= hr + 1 && pt(e.getBoundingClientRect().top - P.top) >= hb - .5)];
+   groups.forEach(g => { if(!g.length) return; const B = Math.max(...g.map(e => pt(e.getBoundingClientRect().bottom - P.top))), dy = H0 - B - H0*.03;
+     if(dy > 2) g.forEach(e => { const t = parseFloat(e.style.top); if(!isNaN(t)) e.style.top = (t + dy) + 'pt'; }); });
+ })(); };
+  SIG();
+});
+</script>
+</body>
+</html>

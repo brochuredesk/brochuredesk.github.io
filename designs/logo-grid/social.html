@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>logo-grid social set</title>
+<link rel="stylesheet" href="lg-tokens.css">
+<script src="../engine/baths.js"></script>
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/carousel.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script src="../engine/socialset.js"></script>
+<script src="lg-social.js"></script>
+<!-- Logo Grid's Just Listed and Just Sold social sets (owner 11/18/2026). The shared engine (templates/_shared/socialset.js) loads the
+     fonts and the data and runs the checks; the layouts are Logo Grid's own (lg-social.js): prints in white mats on the brand paper,
+     the main-color band with the giant word, the facts tab, the note on the white writing mat. The colors come from the agent's
+     brand kit exactly as the set's print pieces read them (LG.colors / LG.brand in lg.js). -->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+SocialSet.portrait = LGSocial.portrait; SocialSet.landscape = LGSocial.landscape; SocialSet.slide = LGSocial.slide;
+SocialSet.start(D => {
+  const b = D.brand || {}, c = b.colors || {}, r = document.documentElement.style;
+  const rgb = h => { h = String(h||'').replace('#',''); if(h.length===3) h = h.split('').map(x=>x+x).join(''); const n = parseInt(h,16); return [n>>16&255, n>>8&255, n&255]; };
+  const lum = h => { const v = rgb(h).map(q => { q/=255; return q <= .03928 ? q/12.92 : Math.pow((q+.055)/1.055, 2.4); }); return .2126*v[0] + .7152*v[1] + .0722*v[2]; };
+  const con = (a, x) => { const p = lum(a), q = lum(x); return (Math.max(p,q)+.05)/(Math.min(p,q)+.05); };
+  const on = bg => con(bg, '#ffffff') >= con(bg, '#161616') ? '#ffffff' : '#161616';
+  const readable = (fg, bg, min) => con(fg, bg) >= (min || 3) ? fg : on(bg);
+  const mix = (a, x, t) => { const p = rgb(a), q = rgb(x); return '#' + p.map((v, i) => Math.round(v + (q[i] - v)*t).toString(16).padStart(2, '0')).join(''); };
+  // as LG.colors / LG.brand: the kit's paper is the field, the main color the band, the accent small caps on the band where it reads
+  const main = c.main || b.accent || '#4b3a2c', accent = c.accent || b.accent2 || main, paper = b.paper || mix(main, '#ffffff', .93);
+  r.setProperty('--lg-paper', paper); r.setProperty('--lg-main', main); r.setProperty('--lg-on-main', on(main)); r.setProperty('--lg-gold', readable(accent, main));
+  r.setProperty('--lg-lab', readable(main, paper)); r.setProperty('--lg-shade', mix(paper, '#161616', .08));
+});
+</script>
+</body>
+</html>
