@@ -131,7 +131,7 @@
   }
 
   // ---------- views ----------
-  const VIEWS = ['vSignin', 'vPassword', 'vWelcome', 'vHome', 'vStart', 'vGallery', 'vLib', 'vRough', 'vWriting', 'vFinal', 'vRebrand', 'vSold'];
+  const VIEWS = ['vSignin', 'vPassword', 'vWelcome', 'vHome', 'vStart', 'vGallery', 'vLib', 'vRough', 'vTellUs', 'vWriting', 'vFinal', 'vRebrand', 'vSold'];
   function show(id){
     VIEWS.forEach(v => $('#' + v).hidden = v !== id);
     closePop();
@@ -1480,7 +1480,7 @@
     const listing = Object.assign({}, pkg.listing, {details});
     const j = await ai({action: 'write', packageId: pkg.id, design: 'Just Listed postcards and social posts', style: pkg.copyStyle, listing,
       photos: Object.fromEntries(ids.map(id => [id, libData().photos[id].tags])), example: {copy: {}, companion: {justListed: exJL}},
-      draft: {copy: {}, companion: {justListed: draft}}, pieces: ['Just Listed postcard (front and back)', 'Just Listed social posts and stories']});
+      draft: {copy: {}, companion: {justListed: draft}}, pieces: ['Just Listed postcard (front and back)', 'Just Listed social posts and stories'], ...sourcesOf(pkg)});
     const jl = j.companion.justListed;
     jl.captions = Object.fromEntries((jl.captions || []).filter(c => ids.includes(c.photo)).map(c => [c.photo, c.text]));
     s.copy = jl; s.cost += j.cost || 0;
@@ -1751,7 +1751,94 @@
   $('#finalize').onclick = finalize;
   $('#writeRetry').onclick = finalize;
   $('#backToRough').onclick = () => openRough(finalPiece);
+  // ---------- before writing: "Tell us more" and the fact check (owner 11/18/2026) ----------
+  // package-ai 'sources' reads the listing into one fact sheet. Before the writer starts, the agent gets the "Tell us more"
+  // survey (scaled to the listing; "I don't know" and "Skip" on every question; one big opt-out), then ONE list of the hard
+  // facts their sources disagree on, each with "Use what I wrote" or "Use [the other source]". The list is a polite warning,
+  // never a blocker: they can write without picking, and an unpicked fact is left off every piece. Answers, notes and picks
+  // are kept with the listing for 2 years on every order, so a later order of the same listing skips the survey.
+  // ALL WORDING HERE IS DRAFT, the owner's call (TU below; the survey's own wording comes from survey.mjs).
+  const TU = {
+    loading: 'Looking over your listing…', checking: 'Checking a few details…',
+    notesQ: 'Anything else we should know?', notesHint: 'Anything you would tell a buyer at the door. We use the facts, not the exact words.',
+    conflictsTitle: 'Before we write: a few details to check', back: 'Back to my design', write: 'Write my listing',
+  };
+  const listingKey = p => String((p.listing || {}).mls || (p.listing || {}).address || '').trim().toLowerCase();
+  // what every writing call sends so the writers work from the agent's own facts and picks
+  const sourcesOf = p => { const t = p.tellUs || {}; return Object.assign({listingKey: listingKey(p)},
+    t.notes !== undefined ? {notes: t.notes} : {}, t.survey !== undefined ? {survey: t.survey} : {},
+    t.picks ? {picks: t.picks} : {}, t.grade ? {grade: t.grade} : {}); };
+  async function tellUs(){
+    if(pkg.tellUs && pkg.tellUs.done) return true;
+    show('vTellUs');
+    const box = $('#tuBody'), base = {packageId: pkg.id, listingKey: listingKey(pkg), listing: pkg.listing};
+    if(pkg.photoNotes) base.photoNotes = pkg.photoNotes;
+    box.innerHTML = `<div class="card narrow center"><p class="status">${esc(TU.loading)}</p></div>`;
+    let first;
+    try { first = await ai(Object.assign({action: 'sources', skipGrade: true}, base)); }
+    catch(e){ return true; }   // never hold up writing: the writer runs on what it has
+    let ans = {};
+    if(!first.reused.survey){ ans = await surveyStep(box, first.plan); if(!ans) { openRough(); return false; } }
+    box.innerHTML = `<div class="card narrow center"><p class="status">${esc(TU.checking)}</p></div>`;
+    let full = first;
+    try { full = await ai(Object.assign({action: 'sources'}, base, ans)); } catch(e){ /* first look's list still stands */ }
+    let picks = {};
+    if(full.conflicts && full.conflicts.length){ picks = await conflictStep(box, full); if(!picks){ openRough(); return false; } }
+    pkg.tellUs = Object.assign({done: true, at: new Date().toISOString(), status: full.surveyStatus, conflicts: (full.conflicts || []).length, picks},
+      ans.survey !== undefined ? {survey: ans.survey} : {}, ans.notes !== undefined ? {notes: ans.notes} : {}, full.grade && full.grade.graded ? {grade: full.grade} : {});
+    save();
+    return true;
+  }
+  function surveyStep(box, plan){
+    const W = plan.wording, qs = plan.questions;
+    const extra = (q, k) => `<div class="tu-small" role="group" aria-label="${esc(q.text)}: other answers"><button type="button" class="tu-chip" data-q="${esc(q.id)}" data-x="unknown">${esc(W.dontKnow)}</button><button type="button" class="tu-chip" data-q="${esc(q.id)}" data-x="skip">${esc(W.skip)}</button></div>`;
+    const body = q => q.kind === 'updates'
+      ? `<div class="tu-grid">${q.items.map(it => { const pre = (q.preselected || {})[it.key];
+          return `<div class="tu-item${pre ? ' on' : ''}" data-u="${esc(it.key)}"><button type="button" class="tu-tap" aria-pressed="${pre ? 'true' : 'false'}">${esc(it.label)}</button><input type="text" inputmode="numeric" maxlength="4" placeholder="${esc(W.yearHint)}" aria-label="${esc(it.label)} year" value="${pre ? esc(pre.year) : ''}"></div>`; }).join('')}</div>`
+      : q.kind === 'pick' ? `<div class="tu-opts">${q.options.map(o => `<button type="button" class="tu-chip" data-q="${esc(q.id)}" data-o="${esc(o)}" aria-pressed="false">${esc(o)}</button>`).join('')}</div>`
+      : `<textarea rows="2" data-q="${esc(q.id)}" aria-label="${esc(q.text)}"></textarea>`;
+    box.innerHTML = `<div class="tu-head"><h1>${esc(W.title)}</h1><p class="lede">${esc(W.intro)}</p></div>
+      ${qs.map(q => `<section class="card tu-q" data-qid="${esc(q.id)}"><h3>${esc(q.text)}</h3>${q.hint ? `<p class="fine">${esc(q.hint)}</p>` : ''}${body(q)}${extra(q)}</section>`).join('')}
+      <section class="card tu-q"><h3>${esc(TU.notesQ)}</h3><p class="fine">${esc(TU.notesHint)}</p><textarea rows="3" id="tuNotes" aria-label="${esc(TU.notesQ)}">${esc((pkg.tellUs || {}).notes || '')}</textarea></section>
+      <button type="button" class="tu-optout" id="tuOptOut">${esc(W.optOut)}</button>
+      <div class="tu-acts"><button type="button" class="btn big" id="tuGo">${esc(W.done)}</button><button type="button" class="link" id="tuBack">${esc(TU.back)}</button></div>`;
+    const marks = {};   // question id -> 'unknown' | 'skip'
+    const mark = (qid, v) => { marks[qid] = marks[qid] === v ? undefined : v;
+      box.querySelectorAll(`.tu-small [data-q="${qid}"]`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.x === marks[qid]))); };
+    box.querySelectorAll('.tu-small .tu-chip').forEach(b => { b.setAttribute('aria-pressed', 'false'); b.onclick = () => mark(b.dataset.q, b.dataset.x); });
+    box.querySelectorAll('.tu-opts .tu-chip').forEach(b => b.onclick = () => { b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); marks[b.dataset.q] = undefined; mark(b.dataset.q, undefined); });
+    box.querySelectorAll('.tu-item').forEach(it => { const t = it.querySelector('.tu-tap');
+      t.onclick = () => { const on = !it.classList.contains('on'); it.classList.toggle('on', on); t.setAttribute('aria-pressed', String(on)); if(on) it.querySelector('input').focus(); }; });
+    window.scrollTo({top: 0});
+    return new Promise(res => {
+      $('#tuBack').onclick = () => res(null);
+      $('#tuOptOut').onclick = () => res({survey: {optOut: true}, notes: $('#tuNotes').value.trim()});
+      $('#tuGo').onclick = () => {
+        const updates = {}, answers = {};
+        box.querySelectorAll('.tu-item.on').forEach(it => { const y = parseInt(it.querySelector('input').value, 10); updates[it.dataset.u] = y > 1900 && y < 2100 ? {year: y} : true; });
+        for(const q of qs){
+          if(q.kind === 'pick'){ const on = [...box.querySelectorAll(`.tu-opts [data-q="${q.id}"][aria-pressed="true"]`)].map(b => b.dataset.o); if(on.length) answers[q.id] = on; }
+          else if(q.kind === 'short'){ const v = box.querySelector(`textarea[data-q="${q.id}"]`).value.trim(); if(v) answers[q.id] = v; }
+          if(marks[q.id] && !(q.id in answers) && !(q.kind === 'updates' && Object.keys(updates).length)) answers[q.id] = marks[q.id];
+        }
+        res({survey: {updates, answers}, notes: $('#tuNotes').value.trim()});
+      };
+    });
+  }
+  function conflictStep(box, s){
+    const picks = Object.assign({}, (pkg.tellUs || {}).picks);
+    box.innerHTML = `<section class="card tu-warn"><h2>${esc(TU.conflictsTitle)}</h2><p>${esc(s.notice)}</p>
+      ${s.conflicts.map(c => `<div class="tu-c"><p class="tu-cq">${esc(c.question)}</p><div class="tu-opts" role="group" aria-label="${esc(c.label)}">
+        ${c.options.map(o => `<button type="button" class="tu-chip" data-k="${esc(c.key)}" data-id="${esc(o.id)}" aria-pressed="${picks[c.key] === o.id}">${esc(o.label)}</button>`).join('')}</div></div>`).join('')}</section>
+      <div class="tu-acts"><button type="button" class="btn big" id="tuGo">${esc(TU.write)}</button><button type="button" class="link" id="tuBack">${esc(TU.back)}</button></div>`;
+    box.querySelectorAll('.tu-chip').forEach(b => b.onclick = () => { picks[b.dataset.k] = b.dataset.id;
+      box.querySelectorAll(`.tu-chip[data-k="${CSS.escape(b.dataset.k)}"]`).forEach(x => x.setAttribute('aria-pressed', String(x === b))); });
+    window.scrollTo({top: 0});
+    return new Promise(res => { $('#tuBack').onclick = () => res(null); $('#tuGo').onclick = () => res(picks); });
+  }
+
   async function finalize(){
+    if(!(await tellUs())) return;
     show('vWriting');
     $('#writeErr').textContent = ''; $('#writeRetry').hidden = true;
     pkg.stage = 'writing'; save();
@@ -1765,11 +1852,11 @@
       const arr = arrangement(pkg, pkg.design);
       const ex = await exampleFor(pkg.design, arr.map(i => 'p' + i));
       const d = await dataFor(pkg.design, false);
-      const body = {action: 'write', packageId: pkg.id, design: pkg.design, style: pkg.copyStyle, listing: pkg.listing,
+      const body = Object.assign({action: 'write', packageId: pkg.id, design: pkg.design, style: pkg.copyStyle, listing: pkg.listing,
         photos: Object.fromEntries(arr.map(i => ['p' + i, pkg.photos[i].desc || ''])),
         allPhotos: Object.fromEntries(pkg.photos.map((p, i) => ['p' + i, [p.room, p.desc].filter(Boolean).join(': ')])),
         photoUrls: Object.fromEntries(pkg.photos.map((p, i) => ['p' + i, p.url]).filter(([, u]) => /^https:\/\//.test(u || ''))),   // the writers see every photo
-        example: ex, draft: {copy: d.copy, companion: d.companion}, pieces: piecesOf(pkg).map(pieceLabel), splitMaster: true};
+        example: ex, draft: {copy: d.copy, companion: d.companion}, pieces: piecesOf(pkg).map(pieceLabel), splitMaster: true}, sourcesOf(pkg));
       await notesJobs[pkg.id];   // started when the package was made; normally back long before Finalize
       if(pkg.photoNotes) body.photoNotes = pkg.photoNotes; else body.gallery = galleryOf(pkg);
       const j = await ai(body);
@@ -1840,7 +1927,7 @@
     return masterJobs[p.id] = ai({action: 'master', packageId: p.id, style: p.copyStyle, listing: p.listing,
         allPhotos: Object.fromEntries(p.photos.map((ph, i) => ['p' + i, [ph.room, ph.desc].filter(Boolean).join(': ')])),
         photoUrls: Object.fromEntries(p.photos.map((ph, i) => ['p' + i, ph.url]).filter(([, u]) => /^https:\/\//.test(u || ''))),
-        photoNotes: p.photoNotes, written: {copy: c.copy, companion: c.companion}})
+        photoNotes: p.photoNotes, written: {copy: c.copy, companion: c.companion}, ...sourcesOf(p)})
       .then(m => { if(m.master) p.master = m.master; if(p.copy[design]) p.copy[design].cost += m.cost || 0; if(p === pkg) save(true); })
       .catch(e => console.error('master set', e))
       .finally(() => { delete masterJobs[p.id]; });
