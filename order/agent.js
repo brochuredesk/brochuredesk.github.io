@@ -1353,13 +1353,7 @@
       <button class="btn" type="button" data-use="${d.id}"${live.length ? '' : ' disabled'}>Use this design</button></div><div class="minis${live.length + later.length === 1 ? ' one' : ''}"></div>
       ${later.length ? `<p class="fine soonline">Coming soon in this design: ${later.map(pieceLabel).join(', ')}</p>` : ''}</div>`).join('')
       || '<p class="empty">No design has this piece yet.</p>';
-    for(const {d, S, live, later} of list){
-      const ids = wanted(pkg, d.id).filter(lid => live.includes(lid) || later.includes(lid));
-      const parts = ids.map(lid => live.includes(lid) ? partsFor(S, lid, pkg)[0] : {piece: {file: null}, soon: true});
-      const box = $(`.dset[data-design="${d.id}"] .minis`);
-      drawParts(box, d.id, parts.map((pt, i) => Object.assign({}, pt, {label: pieceLabel(ids[i])})), await dataFor(d.id, false));
-      box.querySelectorAll('figcaption').forEach((c, i) => c.textContent = pieceLabel(ids[i]));
-    }
+    // buttons work right away, not after every design has drawn (70 designs took ~9 min headless, 11/18/2026)
     // plan-only designs (Room Proportions) are made for homes with a floor plan
     const hasPlan = !!(pkg.floorPlan && pkg.floorPlan.active);
     for(const {d} of list) if(d.planOnly && !hasPlan){
@@ -1367,6 +1361,13 @@
       el.querySelector('.row').insertAdjacentHTML('beforeend', `<button type="button" class="link" data-why="${d.id}">Why is this grayed out?</button>`); }
     $$('[data-why]').forEach(b => b.onclick = () => ask('<h2>Made for a floor plan</h2><p>This design is built around the floor plan. Add your floor plan on the listing step to use it.</p>', [['OK', 'ok', 'line']]));
     $$('[data-use]').forEach(b => b.onclick = () => { pkg.design = b.dataset.use; save(); openRough(); });
+    for(const {d, S, live, later} of list){
+      const ids = wanted(pkg, d.id).filter(lid => live.includes(lid) || later.includes(lid));
+      const parts = ids.map(lid => live.includes(lid) ? partsFor(S, lid, pkg)[0] : {piece: {file: null}, soon: true});
+      const box = $(`.dset[data-design="${d.id}"] .minis`);
+      drawParts(box, d.id, parts.map((pt, i) => Object.assign({}, pt, {label: pieceLabel(ids[i])})), await dataFor(d.id, false));
+      box.querySelectorAll('figcaption').forEach((c, i) => c.textContent = pieceLabel(ids[i]));
+    }
     // the Just Listed / Just Sold library: pieces picked one by one (test)
     const lib = designs.find(d => d.library);
     $('#libEntry').hidden = !lib;

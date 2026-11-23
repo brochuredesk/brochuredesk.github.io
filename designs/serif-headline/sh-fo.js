@@ -24,7 +24,7 @@
       if(fs === fs0 && !el.dataset.diag){ const n0 = SW.lines(el).n; if((n0 === T || n0 === T - 1) && n0*fs*1.7 >= H){ best = {fs, n: n0, pick: null}; break; } }   // the fill already filled it at this size: same answer, no second search
       for(const t of [T, T - 1]){ if(t*fs*1.7 < H) continue; const b = SW.pfN(el, t); if(b){ best = {fs, n: t, pick: b.pick}; break; } } }
     if(!best){ el.style.fontSize = fs0 + 'pt'; el.innerHTML = keep; el.style.lineHeight = (fs0*r) + 'pt'; best = {fs: fs0, n: SW.lines(el).n}; }
-    else if(best.pick){ el.style.fontSize = best.fs + 'pt'; el.innerHTML = best.pick.map(x => x.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))).join(' '); SW.noteGrams(el, best.pick.join(' ')); }
+    else if(best.pick){ el.style.fontSize = best.fs + 'pt'; el.innerHTML = (el.dataset.growlead && el.dataset.lead ? `<b>${SW.esc(el.dataset.lead)}</b> ` : '') + best.pick.map(x => x.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))).join(' '); SW.noteGrams(el, best.pick.join(' ')); }
     const lh = el.dataset.span ? best.fs*r : Math.min(H/best.n, best.fs*1.7);
     el.style.lineHeight = lh + 'pt'; el.style.height = (best.n*lh) + 'pt'; el.dataset.lines = best.n; el.style.textAlign = 'justify'; });
   // owner 11/8/2026 (FXS-14 versions review p3-p27, standing rule): every write-up runs at least three full lines at its full width (never narrowed, so no line
@@ -342,8 +342,8 @@
   // across the whole spread (through the fold) with each page's kicker centered between them. The page's big photo (the kitchen; the lead
   // bedroom) stands across one seam: the floor starts at the same height on both pages and runs through the fold. On the floor, white
   // type: the big photo's caption, then the left page's kitchen card and a room, the right page's rooms as a ledger (photo, caption beside).
-  FO.HZ = 168; FO.SEAM = 420; FO.PT = 186; FO.PH = 312; FO.COLW = 176;
-  const spreadTop = (D, I, slot, side) => { const F = HL.fit(I.title || '', CW, 46, 28, 2, {pen: -0.08, lh: 1.08}), top = 26 + Math.max(0, (FO.HZ - 12 - 26 - F.h)/2);
+  FO.TT = 12; FO.HZ = 112; FO.SEAM = 385; FO.PT = 130; FO.PH = 340; FO.COLW = 176;   // owner 11/17 (book 4 p42): the headings much tighter top to bottom, everything under them moved up and bigger
+  const spreadTop = (D, I, slot, side) => { const F = HL.fit(I.title || '', CW, 40, 28, 2, {pen: -0.08, lh: 1.0}), top = FO.TT + Math.max(0, (FO.HZ - 12 - FO.TT - F.h)/2);
     let h = HL.hl(F, X0, top, CW, slot + '.title');
     h += HL.reg(I.kicker || '', X0, FO.HZ - 10, CW, slot + '.kicker', {h: 24, fs: 9, ls: 3, rx0: side === 'left' ? -9 : -9, rx1: side === 'left' ? 621 : 621});
     return h; };
@@ -381,7 +381,7 @@
     const SFb = FXS.sellingFacts(D), BXb = ((K.back || {}).boxes) || {}, backT = [].concat((BXb.inside || {}).items || SFb.inside, (BXb.outside || {}).items || SFb.outside).map(String), backG = new Set(backT.flatMap(t => SW.grams4(t)));
     // the card's rows: the "What's new" story keeps four (foundation to roof), a kitchen three; a row goes back to the kitchen's caption when
     // the caption's own true sentences would not fill four lines beside it
-    const isNew = /new/i.test(box.kicker || ''), T0 = FO.tableRows2((box.items || []).slice(0, 10), a => SW.grams4(a).some(g => backG.has(g)) || backT.some(b => says(b, a)), {maxRows: isNew ? 4 : 3, Vs: isNew ? [196, 202, 208, 214, 220, 226, 232] : [206, 212, 218, 224], fs: isNew ? [9.75, 10] : undefined});
+    const isNew = /new/i.test(box.kicker || ''), T0 = FO.tableRows2((box.items || []).slice(0, 10), a => SW.grams4(a).some(g => backG.has(g)) || backT.some(b => says(b, a)), {maxRows: isNew ? 4 : 3, Vs: isNew ? [196, 202, 208, 214, 220, 226, 232] : [206, 212, 218, 224], fs: isNew ? [9.75, 10] : [10.75, 11, 11.25, 11.5, 11.75, 12]});
     const RL = (((D.companion || {}).roomLines || {})[heroC.photo] || {}).all || [];
     const STOP = ['with','that','from','into','over','under','along','beside','kitchen','room'], kOver = (a, b) => { const w = t => new Set((String(t).toLowerCase().match(/[a-z]{4,}/g) || []).filter(x => !STOP.includes(x))), A = w(a), B = w(b); let n = 0; A.forEach(x => { if(B.has(x)) n++; }); return n >= 2; };
     const poolFor = T => { const shown = T.rows.map(r => r.t), clash = a => shown.some(b => SW.sameFact(a, b) || SW.sharedPhrase(a, b));
@@ -399,8 +399,8 @@
     f += kitchenCard(D, T, box.kicker || 'The kitchen', box.heading, cx, zy, cwid, zh, 'left');
     // the inner column: the kitchen's caption right under the kitchen, then the second room and its caption (the room takes what is left)
     f += `<div data-stackbox="${g}" data-top="1" style="position:absolute;left:${ix}pt;top:${zy - 4}pt;width:${iw}pt;height:${zh + 4}pt"></div>`;
-    f += FO.sideCap(D, kC, ix, zy, iw, 7*14.35, 'left.wide', 7*14.35, true, 10.25).replace('data-sidecap=', `data-stack="${g}" data-gap="14" data-sidecap=`);
-    if(roomC){ const rl = 3, rlh = 13.5, html = FO.capT(D, roomC, ix, zy + 100, iw, 110, rl, 'left.room', {fs: 10, lh: rlh, min: 3});
+    f += FO.sideCap(D, kC, ix, zy, iw, 7*15.4, 'left.wide', 7*15.4, true, 11).replace('data-sidecap=', `data-stack="${g}" data-gap="14" data-sidecap=`);
+    if(roomC){ const rl = 3, rlh = 14.6, html = FO.capT(D, roomC, ix, zy + 100, iw, 110, rl, 'left.room', {fs: 10.75, lh: rlh, min: 3});
       f += html.replace('<div class="abs" style="left:', `<div class="abs" data-stack="${g}" data-grow="1" data-gap="8" style="left:`).replace('<div class="a" style="position:absolute;', `<div class="a" data-stack="${g}" data-gap="0" style="position:absolute;`); }
     return h + `<div class="sh-fl">${f}</div>`;
   };
@@ -412,16 +412,26 @@
     h += FXS.box(D, cs[0].photo, X0, FO.PT, CW, FO.PH, 'right.photo0');
     // on the floor, under the lead room: its caption in the outer column, and beside it the ledger (each room a photo with its caption beside it)
     const zy = FO.PT + FO.PH + 16, zh = 766 - zy, colW = 204, lx0 = X0, lw = CW - colW - 22, ccx = X1 - colW;
-    { const c0 = FXS.augment(D, cs[0]), nm = FXS.leadLabel(c0.lead).name, ns = FXS.fitSize(nm, GAR(500, '0'), colW, 22, 15), g = 'stk-right';
-      f += `<div data-stackbox="${g}" style="position:absolute;left:${ccx}pt;top:${zy}pt;width:${colW}pt;height:${zh}pt"></div>`;
-      f += cline('sh-ser', nm, ccx, zy, colW, ns, +(ns*1.2).toFixed(2), 'right.photo0.name', `color:var(--sh-gold)" data-stack="${g}" data-gap="8`);
-      f += `<div class="sh-rule" data-stack="${g}" data-gap="10" style="left:${ccx}pt;top:${zy}pt;width:40pt;height:1pt"></div>`;
-      f += FO.sideCap(D, Object.assign({}, c0, {lead: ''}), ccx, zy, colW, zh - 60, 'right.photo0', zh - 60, true, 11).replace('data-sidecap=', `data-stack="${g}" data-sidecap=`); }
-    const rest = cs.slice(1, 3), n = rest.length, g = 16, rh = (zh - (n - 1)*g)/Math.max(1, n), pw = Math.round(Math.min(lw*0.5, rh*1.45));
-    rest.forEach((c, i) => { const ry = zy + i*(rh + g);
-      if(i) f += `<div class="sh-hair" style="left:${lx0}pt;top:${ry - g/2 - .5}pt;width:${lw}pt"></div>`;
+    // the ledger first, so its rooms keep their own facts; the lead room's write-up then fills its column from what is left
+    // the lead bedroom's own bath: told in its write-up when its photo is not needed in the ledger (the fourth room)
+    const suite = SW.space(D, cs[0].photo) === 'primary' ? (cs.slice(3).find(c => SW.space(D, c.photo) === 'primarybath')) : null;
+    const rest = cs.slice(1).filter(c => c !== suite).slice(0, 2), n = rest.length, gL = 16, rh = (zh - (n - 1)*gL)/Math.max(1, n), pw = Math.round(Math.min(lw*0.5, rh*1.45));
+    rest.forEach((c, i) => { const ry = zy + i*(rh + gL);
+      if(i) f += `<div class="sh-hair" style="left:${lx0}pt;top:${ry - gL/2 - .5}pt;width:${lw}pt"></div>`;
       f += FXS.box(D, c.photo, lx0, ry, pw, rh, 'right.photo' + (i + 1));
       f += FO.sideCap(D, c, lx0 + pw + 16, ry, lw - pw - 16, rh, 'right.photo' + (i + 1), rh, false, 10.5); });
+    // owner 11/17 (book 4 p42: the primary bedroom write-up was weak, blank around it): the lead bedroom's write-up also tells its own bath
+    // when the bath's photo is not on the page (the suite read as one), set in bigger type that fills its column
+    const more = !suite && cs[3] ? FXS.augment(D, cs[3]) : null;
+    // the column's stack starts just under the photo (its name centered between the photo and its rule); when the bath is not the lead
+    // room's own, the page's fourth room follows as a second section (name, rule, write-up), so the column is full
+    { const c0 = FXS.augment(D, cs[0]), g = 'stk-right', sec = more ? 2 : 1, ch = (zh - 6 - sec*42)/sec - (sec - 1)*10;
+      f += `<div data-stackbox="${g}" data-top="1" style="position:absolute;left:${ccx}pt;top:${FO.PT + FO.PH + 4}pt;width:${colW}pt;height:${zh + 12}pt"></div>`;
+      [[c0, 'right.photo0', [].concat(c0.s || [], suite ? suite.s || [] : more ? [] : [].concat(R.intro || []))], more ? [more, 'right.photo3', more.s || []] : null].filter(Boolean).forEach(([c, slot, pool], k) => {
+        const nm = FXS.leadLabel(c.lead).name, ns = FXS.fitSize(nm, GAR(500, '0'), colW, 22, 15);
+        f += cline('sh-ser', nm, ccx, zy, colW, ns, +(ns*1.2).toFixed(2), slot + '.name', `color:var(--sh-gold)" data-stack="${g}" data-gap="8`);
+        f += `<div class="sh-rule" data-stack="${g}" data-gap="10" style="left:${ccx}pt;top:${zy}pt;width:40pt;height:1pt"></div>`;
+        f += FO.full(FO.sideCap(D, Object.assign({}, c, {lead: '', s: pool}), ccx, zy, colW, ch, slot, ch, true, more ? 11 : 12)).replace('data-sidecap=', `data-colcap="1" data-stack="${g}" data-gap="${k < sec - 1 ? 16 : 0}" data-sidecap=`); }); }   // a column write-up, not one of a row of captions
     f += `<div class="sh-vhair" style="left:${ccx - 11.5}pt;top:${zy + 6}pt;height:${zh - 12}pt"></div>`;
     return h + `<div class="sh-fl">${f}</div>`;
   };

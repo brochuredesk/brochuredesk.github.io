@@ -25,14 +25,17 @@
     return {lines: [t], f: minF, w: maxW}; };
   // the leaf card's rows: each row the fullest true wording that sets in two or three full lines (every line 80%+, the last 90%+), all
   // rows one size and measure; as many rows as fit the room (most rows first, then the bigger size)
-  FO.rowsN = (items0, taken, o) => { const ok = a => !taken || !taken(a); let best = null;
-    for(let f = 9.5; f <= 11.51; f += 0.25) for(const V of o.Vs){ const css = `font-family:WorkSans;font-weight:400;font-size:${f}pt`, lh = f*1.4;
-      const rows = items0.map(it => { const S = (it.s || []).map(x => [].concat(x).filter(ok)).filter(a => a.length); let bt = '', bs = -1, bn = 0;
-        const walk = (i, acc) => { if(i === S.length){ const t = acc.join(' '); if(!t || SW.sameFactIn(t)) return; const Lw = FO.wrapW(t, css, V), n = Lw.length; if(n < 2 || n > 4 || Lw.slice(0, -1).some(x => x < 0.8*V) || Lw[n - 1] < 0.9*V) return; const sc = (5 - n)*3 + Lw.reduce((a, b) => a + b, 0)/V/n; if(sc > bs){ bs = sc; bt = t; bn = n; } return; } walk(i + 1, acc); S[i].forEach(a => walk(i + 1, acc.concat(a))); };
-        walk(0, []); return {l: it.l, t: bt, n: bn}; }).filter(r => r.t);
-      const kept = []; let used = 0; for(const r of rows){ const hh = 13 + r.n*lh + 12; if(kept.length < o.maxRows && used + hh <= o.room){ kept.push(r); used += hh; } }
-      const score = Math.min(kept.length, 5)*100 + f*4 + V*0.05;
-      if(!best || score > best.score) best = {score, f, V, rows: kept}; }
+  FO.rowsN = (items0, taken, o) => { const ok = a => !taken || !taken(a); let best = null; const WC = new Map(), wd = (t, css) => { const k = css + '|' + t; let v = WC.get(k); if(v == null){ v = FXS.width(t, css); WC.set(k, v); } return v; };
+    const wrapW = (t, css, V) => { const out = []; let cur = ''; String(t).split(' ').forEach(w => { const tr = cur ? cur + ' ' + w : w; if(cur && wd(tr, css) > V - 0.5){ out.push(wd(cur, css)); cur = w; } else cur = tr; }); if(cur) out.push(wd(cur, css)); return out; };
+    // owner 11/17 (book 4 p3: "kitchen write-up longer, four and five lines"): every row the same number of full lines (2 to 5), the
+    // count, size and measure that fill the leaf best; the rows that fit are kept in order
+    for(let f = 9.5; f <= 12.01; f += 0.5) for(const V of o.Vs.filter((_, i) => i % 2 === 0)){ const css = `font-family:WorkSans;font-weight:400;font-size:${f}pt`, lh = f*1.4;
+      const opts = items0.map(it => { const S = (it.s || []).map(x => [].concat(x).filter(ok)).filter(a => a.length), byN = {};
+        const walk = (i, acc) => { if(i === S.length){ const t = acc.join(' '); if(!t || SW.sameFactIn(t)) return; const Lw = wrapW(t, css, V), n = Lw.length; if(n < 2 || n > 5 || Lw.slice(0, -1).some(x => x < 0.8*V) || Lw[n - 1] < 0.9*V) return; const sc = Lw.reduce((a, b) => a + b, 0)/V/n; if(!byN[n] || sc > byN[n].sc) byN[n] = {t, n, sc}; return; } walk(i + 1, acc); S[i].forEach(a => walk(i + 1, acc.concat(a))); };
+        walk(0, []); return {l: it.l, byN}; });
+      for(let N = 2; N <= 5; N++){ const kept = []; let used = 0; for(const r of opts){ const x = r.byN[N]; if(!x) continue; const hh = 13 + N*lh + 12; if(kept.length < o.maxRows && used + hh <= o.room){ kept.push({l: r.l, t: x.t, n: N}); used += hh; } }
+        if(kept.length < 2) continue; const score = (used/o.room)*300 + kept.length*12 + f*4 + V*0.02;
+        if(!best || score > best.score) best = {score, f, V, rows: kept}; } }
     return best; };
   FO.seam = (y, x0, x1, t) => { t = t || 4; return `<div class="mq-seam" style="left:${x0}pt;top:${y - t/2}pt;width:${x1 - x0}pt;height:${t}pt"></div>`; };
   FO.kk = (t, x, y, w, slot, o) => { o = o || {}; const fs = o.fs || 9.5, ls = o.ls == null ? 3.6 : o.ls, al = o.al || 'left';
@@ -49,7 +52,7 @@
   // ---------------- a caption beside its photo (left or right), its block centered top to bottom beside the photo ----------------
   // the label (accent caps, plan size beside it), then the caption (Work Sans). Class "cap side" so the fill takes it as a side caption;
   // data-capl marks a caption that sits LEFT of its photo (the refit then widens the photo leftward). FO.stackCenter centers it after the fill.
-  FO.sideCap = (D, c, x, y, w, H, slot, o) => { o = o || {}; c = FXS.augment(D, c); const L0 = FXS.leadLabel(c.lead), lh = o.lh || 15, fs = o.fs || 10.75, n = Math.max(3, Math.min(o.max || 12, Math.floor((H - 24)/lh))), sz = o.noSize ? '' : FO.feet(L0.size);
+  FO.sideCap = (D, c, x, y, w, H, slot, o) => { o = o || {}; c = FXS.augment(D, c); const L0 = FXS.leadLabel(c.lead || FO.lead(D, c.photo)), lh = o.lh || 15, fs = o.fs || 10.75, n = Math.max(3, Math.min(o.max || 12, Math.floor((H - 24)/lh))), sz = o.noSize ? '' : FO.feet(L0.size);
     const showSize = sz && !(FXS.__sizes = FXS.__sizes || new Set()).has(sz); if(showSize) FXS.__sizes.add(sz);
     const nm = L0.name.toUpperCase(), P = FO.poster(nm, w, 84, o.maxF || 40, 22, 2, 1.0), nh = P.lines.length*P.lh;
     return `<div class="abs" data-stk="${slot}" data-sh="${nh + 8}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${nh}pt"><div class="mq-h" style="position:absolute;left:0;top:0;width:${w}pt;height:${nh}pt;font-size:${P.f}pt;line-height:${P.lh}pt;color:var(--mq-on)" data-slot="${slot}.label" data-lines="${P.lines.length}">${P.lines.map(esc).join('<br>')}</div></div>`
@@ -62,18 +65,35 @@
     const pre = [...document.querySelectorAll(`[data-stk="${slot}"]`)], tot = pre.reduce((s, e) => s + +e.dataset.sh, 0) + n*lh, top0 = +box.dataset.phTop, H = +box.dataset.phH;
     let y = top0 + (H - tot)/2; pre.forEach(e => { e.style.top = (y + (+e.dataset.dy || 0)) + 'pt'; y += +e.dataset.sh; }); a.style.top = y + 'pt'; });
   FO.sideCenter = FO.stackCenter;
+  // owner 11/17 (book 4 p3: no write-up sits short over blank space): an inside room write-up whose true sentences end well short of its
+  // box takes bigger type (up to 15 pt), the largest size at which every line still runs 80%+ and the last 90%+, then the stack recenters
+  FO.bloom = () => document.querySelectorAll('.cap.side[data-stkbox]').forEach(box => { const a = box.querySelector('.a'); if(!a || !a.textContent.trim() || !/^(left|right)\./.test(a.dataset.slot)) return;
+    const pre = [...document.querySelectorAll(`[data-stk="${box.dataset.stkbox}"]`)].reduce((t, e) => t + +e.dataset.sh, 0), room = +box.dataset.phH - 40 - pre;
+    const fs0 = parseFloat(a.style.fontSize), r = parseFloat(a.style.lineHeight)/fs0, keep = {fs: a.style.fontSize, lh: a.style.lineHeight}; let best = null;
+    a.style.height = 'auto'; a.style.textAlign = 'left';
+    for(let fs = fs0; fs <= 15.01; fs += 0.25){ a.style.fontSize = fs + 'pt'; a.style.lineHeight = (fs*r) + 'pt'; const L = SW.lines(a); if(L.n*fs*r > room) break; if(L.n >= 3 && L.fill >= 0.9 && L.min >= 0.8) best = {fs, n: L.n}; }
+    if(best){ a.style.fontSize = best.fs + 'pt'; a.style.lineHeight = (best.fs*r) + 'pt'; a.style.height = (best.n*best.fs*r) + 'pt'; a.dataset.lines = best.n; }
+    else { a.style.fontSize = keep.fs; a.style.lineHeight = keep.lh; a.style.height = (SW.lines(a).n*parseFloat(keep.lh)) + 'pt'; }
+    a.style.textAlign = 'justify'; });
 
   // ---------------- the inside head band: the eyebrow, then the page's one display line in Anton, as big as two lines allow ----------------
   FO.HB = 196;   // the seam under the head band: one horizon across the spread
   FO.headBand = (kicker, title, slot, x, w) => { const t = FO.lid(String(title || '').replace(/\.$/, '')).toUpperCase(), fam = `${AF}`;
-    const room = FO.HB - 16 - 18 - 24, pick = nMax => { for(let ff = 66; ff >= 30; ff -= 0.5){ if(nMax*ff*1.04 > room + 0.5 && nMax > 2) continue; for(let ww = w; ww >= w*0.6; ww -= 12){ const LL = FO.wrapLines(t, `${fam};font-size:${ff}pt`, ww); if((nMax < 3 ? LL.length <= nMax : LL.length === 3) && LL.length*ff*1.04 <= room && (LL.length === 1 || LL[LL.length - 1] >= 0.45*w)) return {f: ff, L: LL, ww}; if(nMax < 3) break; } } return null; };
-    const p2 = pick(2), p3 = pick(3), P0 = !p2 ? p3 : p3 && (p3.f > p2.f*1.12 || room - p2.L.length*p2.f*1.04 > 36) ? p3 : p2; let f = P0 ? P0.f : 34, L = P0 ? P0.L : FO.wrapLines(t, `${fam};font-size:34pt`, w); if(P0 && P0.ww) w = Math.min(w, P0.ww);
+    const room = FO.HB - 12 - 12 - 24, pick = nMax => { for(let ff = 76; ff >= 30; ff -= 0.5){ if(nMax*ff*1.04 > room + 0.5 && nMax > 2) continue; for(let ww = w; ww >= w*0.6; ww -= 12){ const LL = FO.wrapLines(t, `${fam};font-size:${ff}pt`, ww); if((nMax < 3 ? LL.length <= nMax : LL.length === 3) && LL.length*ff*1.04 <= room && (LL.length === 1 || LL[LL.length - 1] >= 0.45*w)) return {f: ff, L: LL, ww}; if(nMax < 3) break; } } return null; };
+    const p2 = pick(2), p3 = pick(3), bal = P => { const ws = P.L; return Math.min(...ws)/Math.max(...ws) >= 0.7; }, P0 = !p2 ? p3 : p3 && bal(p3) && (p3.f > p2.f*1.12 || room - p2.L.length*p2.f*1.04 > 36) ? p3 : p2;   /* three lines only when they set even (owner 11/17: no empty corner beside two short lines) */ let f = P0 ? P0.f : 34, L = P0 ? P0.L : FO.wrapLines(t, `${fam};font-size:34pt`, w); if(P0 && P0.ww) w = Math.min(w, P0.ww);
     if(L.length === 1){ const one = FO.aw(t, f); if(one > w*0.62){ for(let ww = one*0.5; ww <= w; ww += 4){ const L2 = FO.wrapLines(t, `${fam};font-size:${f}pt`, ww); if(L2.length === 2){ L = L2; break; } } } }
-    const n = L.length, lh = +(f*1.04).toFixed(2), words = q => new Set((String(q).toLowerCase().match(/[a-z0-9]+/g) || []).filter(x => x.length > 2)), kw = [...words(kicker)], tw = words(title), rep = !kicker || (kw.length && kw.every(x => tw.has(x)));
-    const items = []; if(!rep) items.push({h: 24, html: y => FO.kk(kicker, x, y, w, slot + '.kicker')});
+    const n = L.length; let lh = +(f*1.04).toFixed(2); const words = q => new Set((String(q).toLowerCase().match(/[a-z0-9]+/g) || []).filter(x => x.length > 2)), kw = [...words(kicker)], tw = words(title), rep = !kicker || (kw.length && kw.every(x => tw.has(x)));
+    // owner 11/17 (book 4: no empty corner): with two lines and room beside the shorter one, the eyebrow sits beside it, on its middle
+    let LT = n === 2 ? FO.split(t, `${fam};font-size:${f}pt`, w) : null, lw2 = LT && LT.length === 2 ? LT.map(l => FO.aw(l, f)) : null, si = lw2 ? (lw2[0] <= lw2[1] ? 0 : 1) : -1, side = !rep && lw2 && w - lw2[si] >= 110;
+    const f0 = f, lh0 = lh;
+    if(side){ const kk = Math.max(1, Math.min((FO.HB - 30)/(n*lh), (w - 6)/Math.max(...lw2))); if(kk > 1){ f = Math.floor(f*kk*2)/2; lh = +(f*1.04).toFixed(2); lw2.forEach((v, q) => { lw2[q] = FO.aw(LT[q], f); }); } lh = +Math.min(f*1.3, (FO.HB - 30)/n).toFixed(2); }
+    if(side && n*lh < FO.HB - 56){ side = false; f = f0; lh = lh0; }   /* a headline that cannot fill the band keeps its eyebrow above it */
+    if(!side && n > 1) lh = +Math.max(f*1.04, Math.min(f*1.25, (FO.HB - 24 - 24)/n)).toFixed(2);   /* a short headline's lines open up so no empty band stands under it */   /* the two lines open up to fill the eyebrow's row */   // the eyebrow beside a line: the headline takes the eyebrow's row
+    const items = []; if(!rep && !side) items.push({h: 24, html: y => FO.kk(kicker, x, y, w, slot + '.kicker')});
     const lines = (() => { const out = []; let cur = ''; t.split(/\s+/).forEach(wd => { const tr = cur ? cur + ' ' + wd : wd; if(cur && FXS.width(tr, `${fam};font-size:${f}pt`) > w - 1){ out.push(cur); cur = wd; } else cur = tr; }); if(cur) out.push(cur); return out; })();
-    items.push({h: n*lh, html: y => `<div class="mq-h" style="left:${x}pt;top:${y}pt;width:${w + 8}pt;height:${n*lh}pt;font-size:${f}pt;line-height:${lh}pt;letter-spacing:.5pt;white-space:nowrap" data-slot="${slot}.title" data-lines="${n}" data-fine="1">${lines.map(esc).join('<br>')}</div>`});
-    return FO.vstack(items, 18, FO.HB - 16); };
+    items.push({h: n*lh, html: y => `<div class="mq-h" style="left:${x}pt;top:${y}pt;width:${w + 8}pt;height:${n*lh}pt;font-size:${f}pt;line-height:${lh}pt;letter-spacing:.5pt;white-space:nowrap" data-slot="${slot}.title" data-lines="${n}" data-fine="1">${lines.map(esc).join('<br>')}</div>`
+      + (side ? FO.kk(kicker, x + lw2[si] + 26, y + si*lh + lh*0.52 - 7, w - lw2[si] - 26, slot + '.kicker', {fs: 11}) : '')});
+    return side ? FO.vstack(items, 2 + f*0.05, FO.HB - 2 + f*0.05) : FO.vstack(items, 12, FO.HB - 12); };
 
   // ---------------- COVER (fold-over front): no agent, no brokerage ----------------
   // The marquee: the street in Anton capitals as big as the main-color block holds (one to three lines), the place in tracked accent caps
@@ -86,15 +106,23 @@
     const hero = FO.heroId(D, F.hero || K.hero || 'front'), BH = FO.BH, LX = 412;
     let h = `<div class="mq-leaf" style="left:${LX}pt;top:-9pt;width:${621 - LX}pt;height:${BH + 9}pt"></div>`;
     const place = [FXS.hood(L), 'Houston, TX'].filter(Boolean).join('  ·  ');
-    const PS = FO.poster(L.address, LX - 22 - X0, BH - 40 - 30, 118, 40, 3, 0.98);
-    h += FO.vstack([{h: PS.lines.length*PS.lh, html: y => FO.posterHtml(PS, X0 - 2, y, LX - 20 - X0, 'address')}, {h: 10, html: () => ''}, {h: 18, html: y => FO.kk(place, X0, y, LX - 22 - X0, 'front.place', {fs: 12, ls: 3.4})}], 6, BH);
-    // the leaf
-    const yr = String(L.yearBuilt || L.year || ''), st = +L.stories || 0, stW = ['', 'One story', 'Two stories', 'Three stories', 'Four stories'][st] || '', lw = 621 - LX - 9, cx = LX;
-    const nf = FO.afit(yr, lw - 40, 108, 50), items = [{h: 22, html: y => FO.kk('Built in', cx, y, lw, 'front.leaf.k', {al: 'center', fs: 11, ls: 4.4, color: 'var(--mq-acc-dark)'})},
-      {h: nf*1.0 + 6, html: y => `<div class="mq-num" style="left:${cx}pt;top:${y}pt;width:${lw}pt;height:${nf}pt;font-size:${nf}pt;line-height:${nf}pt" data-slot="front.leaf.n" data-lines="1">${esc(yr)}</div>`},
-      {h: 14, html: y => `<div class="mq-rl" style="left:${cx + 44}pt;top:${y + 4}pt;width:${lw - 88}pt"></div>`}];
-    if(stW) items.push({h: 24, html: y => `<div class="mq-kk w" style="left:${cx}pt;top:${y}pt;width:${lw}pt;height:22pt;font-size:15pt;line-height:22pt;letter-spacing:1.6pt;text-align:center;color:var(--mq-on-dark);font-weight:600;text-transform:none" data-slot="front.leaf.s" data-lines="1">${esc(stW)}</div>`});
-    h += yr ? FO.vstack(items, 0, BH) : '';
+    const PS = FO.poster(L.address, LX - 22 - X0, BH - 40 - 30, 118, 40, 2, 0.98);
+    // owner 11/17 (book 4: no empty space): a short first line (the street number) takes the place beside it, in two lines, so no empty
+    // corner stands at its right; otherwise the place runs under the street as before
+    const colW = LX - 22 - X0, ws = PS.lines.map(l => FO.aw(l, PS.f)), si = PS.lines.length > 1 ? (ws[0] <= ws[ws.length - 1] ? 0 : ws.length - 1) : -1, w1 = si < 0 ? colW : ws[si], hood = FXS.hood(L);
+    if(hood && colW - w1 - 28 >= 120){ const bh = PS.lines.length*PS.lh, yA = 6 + (BH - 6 - bh)/2, px = X0 + w1 + 28, pw = colW - w1 - 28, cy = yA + si*PS.lh + PS.lh*0.52;
+      h += FO.posterHtml(PS, X0 - 2, yA, LX - 20 - X0, 'address') + FO.kk(hood, px, cy - 21, pw, 'front.place', {fs: 13, ls: 3.4}) + FO.kk('Houston, TX', px, cy + 4, pw, 'front.place2', {fs: 13, ls: 3.4}); }
+    else     h += FO.vstack([{h: PS.lines.length*PS.lh, html: y => FO.posterHtml(PS, X0 - 2, y, LX - 20 - X0, 'address')}, {h: 10, html: () => ''}, {h: 18, html: y => FO.kk(place, X0, y, LX - 22 - X0, 'front.place', {fs: 12, ls: 3.4})}], 6, BH);
+    // the leaf (owner 11/17, book 4 p1: no huge year competing with the address): four short true statements about the house in smaller
+    // type, centered on the leaf's axis, a short accent rule between them, the stack centered top to bottom in the leaf
+    { const yr = String(L.yearBuilt || L.year || ''), st = +L.stories || 0, stW = ['', 'One story', 'Two stories', 'Three stories', 'Four stories'][st] || '', tx = LX + 18, tw = 612 - 18 - tx;
+      const hl = ((((D.sw || {}).pc || {}).jl || {}).front || {}).highlights || [];
+      let facts = (C.coverFacts || []).filter(Boolean).slice(0, 4); if(facts.length < 4) facts = facts.concat([yr ? 'Built in ' + yr : '', stW].concat(hl).filter(t => t && !facts.includes(t))).slice(0, 4);
+      let fs = 17, Ls; for(; fs >= 11; fs -= 0.5){ Ls = facts.map(t => FO.split(t, `font-family:WorkSans;font-weight:600;font-size:${fs}pt`, tw)); if(Ls.every(l => l.length <= (fs > 13 ? 1 : 2)) && Ls.reduce((s, l) => s + l.length, 0)*fs*1.25 + (facts.length - 1)*30 <= BH - 44) break; }
+      const lh = +(fs*1.25).toFixed(2), tot = Ls.reduce((s, l) => s + l.length*lh, 0), gap = Math.max(22, Math.min(40, (BH - 36 - tot)/Math.max(1, facts.length - 1))), items = [];
+      facts.forEach((t, i) => { if(i) items.push({h: gap, html: y => `<div class="mq-rl" style="left:${tx + tw/2 - 16}pt;top:${y + gap/2 - 1}pt;width:32pt"></div>`});
+        items.push({h: Ls[i].length*lh, html: y => `<div class="abs" style="left:${tx}pt;top:${y}pt;width:${tw}pt;height:${Ls[i].length*lh}pt;font-family:var(--mq-font);font-weight:600;font-size:${fs}pt;line-height:${lh}pt;text-align:center;color:${i ? 'var(--mq-on-dark)' : 'var(--mq-acc-dark)'};white-space:nowrap" data-slot="front.leaf.fact${i}" data-lines="${Ls[i].length}">${Ls[i].map(esc).join('<br>')}</div>`}); });
+      h += FO.vstack(items, 0, BH); }
     // the house, edge to edge (3.6 pt off the fold), the seam across its top
     let HP = Math.max(318, 792 - FO.BH - 176); while(HP < 380 && !SW.fits(D, hero, 621 - GAPF, HP)) HP += 4;
     h += FXS.box(D, hero, GAPF, BH, 621 - GAPF, HP, 'front.house') + FO.seam(BH, -9, 621, 4);
@@ -102,14 +130,16 @@
     const y0 = BH + HP + 16, y1 = 770, strip = (o.strip || C.cover || P.strip || []).filter(id => id !== hero).slice(0, 2), RX = 300, gw = (X1 - RX - 12)/2, lbH = 16, rh = y1 - y0 - lbH - 4;
     strip.forEach((id, i) => { const x = RX + i*(gw + 12); h += FXS.box(D, id, x, y0, gw, rh, 'front.strip' + i) + `<div class="mq-pf" style="left:${x}pt;top:${y0}pt;width:${gw}pt;height:${rh}pt"></div>`;
       h += `<div class="mq-place" style="left:${x}pt;top:${y0 + rh + 6}pt;width:${gw}pt;height:12pt;font-size:8.6pt;line-height:12pt;letter-spacing:2.2pt;text-align:center" data-slot="front.strip${i}.label" data-lines="1">${esc(FO.lead(D, id).split(/ and |, /)[0].toUpperCase())}</div>`; });
-    const intro = o.intro || K.summary || F.intro || [], ww = RX - 22 - X0, nl = Math.max(3, Math.min(o.lines || 5, Math.floor((y1 - y0 - 14)/18))), lh = 18;
-    h += `<div class="mq-rl" data-zone="${y0},${y1}" style="left:${X0}pt;top:${y0}pt;width:44pt;height:2pt;background:var(--mq-accent)" data-role="front-rule"></div>`;
-    h += FO.full(`<div class="abs wu" data-slot="front.summary" data-lines="${nl}" data-try="${nl},${nl - 1}" data-lh="${lh}" ${FXS.sd(intro)} style="left:${X0}pt;top:${y0 + 12}pt;width:${ww}pt;height:${nl*lh}pt;font-size:12pt;line-height:${lh}pt;color:var(--mq-on)"></div>`);
+    // the write-up (owner 11/17, book 4 p1: much longer): from the house photo's left edge (held 0.25 in off the fold) to where it ended
+    // before, its last line level with the foot of the two rooms at its right
+    const intro = C.coverIntro || o.intro || K.summary || F.intro || [], WX = 18, ww = RX - 22 - WX, yB = y0 + rh, wt = y0 + 14, WH = yB - wt, nl = Math.max(3, Math.floor(WH/16.5)), lh = +(WH/nl).toFixed(3);
+    h += `<div class="mq-rl" style="left:${WX}pt;top:${y0}pt;width:44pt;height:2pt;background:var(--mq-accent)" data-role="cover-rule"></div>`;
+    h += FO.full(`<div class="abs wu" data-slot="front.summary" data-cover="${wt},${yB}" data-lines="${nl}" data-try="${nl},${nl - 1}" data-lh="${lh}" ${FXS.sd(intro)} style="left:${WX}pt;top:${wt}pt;width:${ww}pt;height:${nl*lh}pt;font-size:11.5pt;line-height:${lh}pt;color:var(--mq-on)"></div>`);
     return h; };
-  // after the fill: the cover's rule and write-up sit centered top to bottom in their zone
-  FO.frontSnug = () => { const su = document.querySelector('[data-slot="front.summary"]'), ru = document.querySelector('[data-role="front-rule"]'); if(!su || !ru || !su.textContent.trim()) return;
-    const [y0, y1] = ru.dataset.zone.split(',').map(Number), n = SW.lines(su).n, lh = parseFloat(su.style.lineHeight), tot = 2 + 12 + n*lh, top = y0 + (y1 - y0 - tot)/2;
-    ru.style.top = top + 'pt'; su.style.top = (top + 14) + 'pt'; su.style.height = (n*lh) + 'pt'; };
+  // after the fill: the cover's write-up ends level with the foot of the rooms beside it (its leading spread to its box when it took a line less)
+  FO.frontSnug = () => { const su = document.querySelector('[data-slot="front.summary"][data-cover]'); if(!su || !su.textContent.trim()) return;
+    const [t, b] = su.dataset.cover.split(',').map(Number), n = SW.lines(su).n, lh = Math.min((b - t)/n, parseFloat(su.style.fontSize)*1.75);
+    su.style.lineHeight = lh + 'pt'; su.style.height = (n*lh) + 'pt'; su.style.top = (b - n*lh) + 'pt'; su.dataset.lines = n; };
 
   // ---------------- TWO-SIDED FLYER FRONT: its own composition (no agent, no brokerage) ----------------
   // The house first, edge to edge across the top, the seam under it; then a tall leaf down the right side to the bleed with the house's
@@ -144,7 +174,15 @@
   // kitchen card on the left leaf, the lead room's name, plan size and write-up on the right leaf); under them two photos meet at the
   // fold as a pair, each with its write-up at its outer side. One horizon, one seam, no grid of equal tiles.
   FO.TOPY = FO.HB + 4; FO.TOPB = 534; FO.BOTY = 548; FO.BOTB = 770;
-  FO.left = (D) => { const K = D.sw || {}, I = K.left || {}, box = I.box || {}, P = K.plan || {}, C = P.mq || {};
+  // the inside spread's own wording for a photo (sw.plan.mq.inside[id]: lead and sentences), so the fold-over's rooms say more without
+  // touching the cards the approved back and flyer share (owner 11/17, book 4 p3: longer write-ups, the wine bar named as the listing names it)
+  // a line of words broken to a measure: the lines' texts
+  FO.split = (t, css, w) => { const out = []; let cur = ''; String(t).split(/\s+/).forEach(wd => { const tr = cur ? cur + ' ' + wd : wd; if(cur && FXS.width(tr, css) > w - 1){ out.push(cur); cur = wd; } else cur = tr; }); if(cur) out.push(cur); return out; };
+  // the most caption lines a side caption (FO.sideCap) can take in a box H tall: its name, size, rule and 12 pt clear above and below
+  FO.capMax = (D, c, w, H, o) => { o = o || {}; const L0 = FXS.leadLabel(c.lead || FO.lead(D, c.photo)), P = FO.poster(L0.name.toUpperCase(), w, 84, o.maxF || 40, 22, 2, 1.0), sz = o.noSize || !FO.feet(L0.size) ? 0 : 18;
+    return Math.max(3, Math.floor((H - 24 - P.lines.length*P.lh - 8 - sz - 14 - 8)/(o.lh || 15))); };
+  FO.inCard = (D, id) => { const c = FXS.cardFor(D, id), o = (((((D.sw || {}).plan || {}).mq || {}).inside) || {})[id]; return o ? Object.assign({photo: id}, c || {}, o) : c; };
+  FO.left = (D) => { const K = D.sw || {}, I = K.left || {}, P = K.plan || {}, C = P.mq || {}, box = C.box || I.box || {};
     const kid = C.left || 'kitchen', bot = C.leftRow ? C.leftRow[0] : null;
     let h = FO.headBand(I.kicker, C.leftTitle || I.title, 'left', X0, CW - 6) + FO.seam(FO.HB, -9, 621, 4);
     const PX1 = 326, LX = PX1 + 12, LX1 = 612 - 18;   // the leaf stops 0.25 in short of the fold; its twin on the right page starts 0.25 in past it
@@ -162,26 +200,26 @@
     items.push({h: 10, html: y => `<div class="mq-rl" style="left:${lx}pt;top:${y + 2}pt;width:40pt"></div>`});
     rows.forEach((r, i) => items.push({h: 13 + r.n*lh + (i < rows.length - 1 ? gap : 0), html: y => FO.sq(i + 1, lx, y + 1, sqS, '')
       + `<div class="mq-wl" style="left:${tx}pt;top:${y}pt;width:${tw}pt;color:var(--mq-acc-dark)" data-slot="left.list.l${i}" data-lines="1">${esc(r.l)}</div>`
-      + `<div class="abs" style="left:${tx}pt;top:${y + 13}pt;width:${T.V + 1}pt;height:${r.n*lh}pt;font-weight:400;font-size:${T.f}pt;line-height:${lh}pt;font-family:var(--mq-font);color:color-mix(in srgb, var(--mq-on-dark) 88%, var(--mq-dark));overflow:hidden;text-align:justify;text-align-last:left" data-slot="left.list.t${i}" data-lines="${r.n}">${esc(r.t)}</div>`}));
+      + `<div class="abs" style="left:${tx}pt;top:${y + 13}pt;width:${T.V - 0.25}pt;height:${r.n*lh}pt;font-weight:400;font-size:${T.f}pt;line-height:${lh}pt;font-family:var(--mq-font);color:color-mix(in srgb, var(--mq-on-dark) 88%, var(--mq-dark));overflow:hidden;text-align:justify;text-align-last:left" data-slot="left.list.t${i}" data-lines="${r.n}">${esc(r.t)}</div>`}));
     h += `<div class="mq-leaf-on">${FO.vstack(items, FO.TOPY, FO.TOPB)}</div>`;
     // the pair at the fold: this page's photo runs to the fold (3.6 pt short), its write-up at the outer side
-    if(bot){ const c = FXS.cardFor(D, bot), PX = 258; if(c){ h += FXS.box(D, bot, PX, FO.BOTY, 612 - GAPF - PX, FO.BOTB - FO.BOTY, 'left.photo0') + FO.sideCap(D, c, X0, FO.BOTY, PX - 16 - X0, FO.BOTB - FO.BOTY, 'left.photo0', {capl: true}); } }
+    if(bot){ const c = FO.inCard(D, bot), PX = 258; if(c){ h += FXS.box(D, bot, PX, FO.BOTY, 612 - GAPF - PX, FO.BOTB - FO.BOTY, 'left.photo0') + FO.sideCap(D, c, X0, FO.BOTY, PX - 16 - X0, FO.BOTB - FO.BOTY, 'left.photo0', {capl: true, fs: 12, lh: 17, max: FO.capMax(D, c, PX - 16 - X0, FO.BOTB - FO.BOTY, {lh: 17})}); } }
     return h; };
   FO.right = (D) => { const K = D.sw || {}, R = K.right || {}, P = K.plan || {}, C = P.mq || {};
-    const top = FXS.cardFor(D, C.right || 'primary'), bot = (C.rightRow || [])[0];
-    let h = FO.headBand(R.kicker, C.rightTitle || R.title, 'right', X0, CW - 6) + FO.seam(FO.HB, -9, 621, 4);
+    const top = FO.inCard(D, C.right || 'primary'), bot = (C.rightRow || [])[0];
+    let h = FO.headBand(C.rightKicker || R.kicker, C.rightTitle || R.title, 'right', X0, CW - 6) + FO.seam(FO.HB, -9, 621, 4);
     const LX = 18, LX1 = 254, PX = LX1 + 12;
     h += `<div class="mq-leaf" style="left:${LX}pt;top:${FO.TOPY}pt;width:${LX1 - LX}pt;height:${FO.TOPB - FO.TOPY}pt"></div>`;
     h += FXS.box(D, top.photo, PX, FO.TOPY, 621 - PX, FO.TOPB - FO.TOPY, 'right.wide');
     // the right leaf: the lead room's plan size as the marquee numeral (when the plan prints one), its name, the rule, its write-up
-    const c0 = FXS.augment(D, top), L0 = FXS.leadLabel(c0.lead), sz = FO.feet(L0.size), lx = LX + 18, lw = LX1 - 18 - lx, slot = 'right.photo0';
+    const c0 = FXS.augment(D, top), L0 = FXS.leadLabel(c0.lead || FO.lead(D, c0.photo)), sz = FO.feet(L0.size), lx = LX + 18, lw = LX1 - 18 - lx, slot = 'right.photo0';
     const RP = FO.poster(L0.name.toUpperCase(), lw, 96, 44, 24, 2, 1.0), rnh = RP.lines.length*RP.lh;
     let pre = `<div class="abs" data-stk="${slot}" data-sh="${rnh + 8}" style="left:${lx}pt;width:${lw}pt;height:${rnh}pt"><div class="mq-h" style="position:absolute;left:0;top:0;width:${lw}pt;height:${rnh}pt;font-size:${RP.f}pt;line-height:${RP.lh}pt;color:var(--mq-on-dark)" data-slot="${slot}.label" data-lines="${RP.lines.length}">${RP.lines.map(esc).join('<br>')}</div></div>`;
-    if(sz){ (FXS.__sizes = FXS.__sizes || new Set()).add(sz); const f = FO.afit(sz, lw, 58, 30); pre += `<div class="mq-num" data-stk="${slot}" data-sh="${f + 4}" style="left:${lx}pt;width:${lw}pt;height:${f}pt;font-size:${f}pt;line-height:${f}pt;text-align:left" data-size="1" data-slot="right.size" data-lines="1">${esc(sz)}</div>`; }
+    if(sz){ (FXS.__sizes = FXS.__sizes || new Set()).add(sz); const f = FO.afit(sz, lw, 40, 26); pre += `<div class="mq-num" data-stk="${slot}" data-sh="${f + 4}" style="left:${lx}pt;width:${lw}pt;height:${f}pt;font-size:${f}pt;line-height:${f}pt;text-align:left" data-size="1" data-slot="right.size" data-lines="1">${esc(sz)}</div>`; }
     pre += `<div class="mq-rl" data-stk="${slot}" data-sh="16" data-dy="5" style="left:${lx}pt;width:40pt"></div>`;
-    const lh = 15.5, n = Math.max(3, Math.min(12, Math.floor((FO.TOPB - FO.TOPY - 150)/lh)));
-    h += `<div class="mq-leaf-on">${pre}<div class="abs cap side" data-ph-top="${FO.TOPY}" data-ph-h="${FO.TOPB - FO.TOPY}" data-stkbox="${slot}"><div class="a" style="position:absolute;left:${lx}pt;top:${FO.TOPY + 60}pt;width:${lw}pt;height:${n*lh}pt;font-size:11pt;line-height:${lh}pt;color:color-mix(in srgb, var(--mq-on-dark) 90%, var(--mq-dark))" data-slot="${slot}" data-room="${esc(L0.name)}" data-lh="${lh}" data-lines="${n}" data-min="3" data-narrow="0" data-nofit="1" ${FXS.sd(c0.s)}></div></div></div>`;
-    if(bot){ const c = FXS.cardFor(D, bot), PX1 = 354; if(c){ h += FXS.box(D, bot, GAPF, FO.BOTY, PX1 - GAPF, FO.BOTB - FO.BOTY, 'right.photo1') + FO.sideCap(D, c, PX1 + 16, FO.BOTY, X1 - PX1 - 16, FO.BOTB - FO.BOTY, 'right.photo1'); } }
+    const lh = 17, preH = rnh + 8 + (sz ? FO.afit(sz, lw, 40, 26) + 4 : 0) + 16, n = Math.max(3, Math.min(13, Math.floor((FO.TOPB - FO.TOPY - 36 - preH)/lh)));
+    h += `<div class="mq-leaf-on">${pre}<div class="abs cap side" data-ph-top="${FO.TOPY}" data-ph-h="${FO.TOPB - FO.TOPY}" data-stkbox="${slot}"><div class="a" style="position:absolute;left:${lx}pt;top:${FO.TOPY + 60}pt;width:${lw}pt;height:${n*lh}pt;font-size:12pt;line-height:${lh}pt;color:color-mix(in srgb, var(--mq-on-dark) 90%, var(--mq-dark))" data-slot="${slot}" data-room="${esc(L0.name)}" data-lh="${lh}" data-lines="${n}" data-min="3" data-narrow="0" data-nofit="1" ${FXS.sd(c0.s)}></div></div></div>`;
+    if(bot){ const c = FO.inCard(D, bot), PX1 = 354; if(c){ h += FXS.box(D, bot, GAPF, FO.BOTY, PX1 - GAPF, FO.BOTB - FO.BOTY, 'right.photo1') + FO.sideCap(D, c, PX1 + 16, FO.BOTY, X1 - PX1 - 16, FO.BOTB - FO.BOTY, 'right.photo1', {fs: 12, lh: 17, max: FO.capMax(D, c, X1 - PX1 - 16, FO.BOTB - FO.BOTY, {lh: 17})}); } }
     return h; };
   FO.leftHead = () => {};
 
@@ -254,4 +292,97 @@
     h += FO.contact(D, X0, FO.CARD_Y, CW, FO.CARD_H) + FO.fine(D);
     return {html: h, issues}; };
   FO.tallStack = () => {};
+
+  // ---------------- THE APPROVED BACK'S COMPANIONS (owner 11/17: the fold-over back is approved and must not change) ----------------
+  // The back's write-ups are picked by the fill beside what the other three pages say. These are the cover and inside pages exactly as
+  // they stood when the owner approved the back (11/17, book 4 p2): foldover.html fills the back once beside them, keeps that back, and
+  // then fills the new cover and inside pages beside it, so the cover and inside can change without moving a word of the approved back.
+  FO.rowsN0 = (items0, taken, o) => { const ok = a => !taken || !taken(a); let best = null;
+    for(let f = 9.5; f <= 11.51; f += 0.25) for(const V of o.Vs){ const css = `font-family:WorkSans;font-weight:400;font-size:${f}pt`, lh = f*1.4;
+      const rows = items0.map(it => { const S = (it.s || []).map(x => [].concat(x).filter(ok)).filter(a => a.length); let bt = '', bs = -1, bn = 0;
+        const walk = (i, acc) => { if(i === S.length){ const t = acc.join(' '); if(!t || SW.sameFactIn(t)) return; const Lw = FO.wrapW(t, css, V), n = Lw.length; if(n < 2 || n > 4 || Lw.slice(0, -1).some(x => x < 0.8*V) || Lw[n - 1] < 0.9*V) return; const sc = (5 - n)*3 + Lw.reduce((a, b) => a + b, 0)/V/n; if(sc > bs){ bs = sc; bt = t; bn = n; } return; } walk(i + 1, acc); S[i].forEach(a => walk(i + 1, acc.concat(a))); };
+        walk(0, []); return {l: it.l, t: bt, n: bn}; }).filter(r => r.t);
+      const kept = []; let used = 0; for(const r of rows){ const hh = 13 + r.n*lh + 12; if(kept.length < o.maxRows && used + hh <= o.room){ kept.push(r); used += hh; } }
+      const score = Math.min(kept.length, 5)*100 + f*4 + V*0.05;
+      if(!best || score > best.score) best = {score, f, V, rows: kept}; }
+    return best; };
+  FO.headBand0 = (kicker, title, slot, x, w) => { const t = FO.lid(String(title || '').replace(/\.$/, '')).toUpperCase(), fam = `${AF}`;
+    const room = FO.HB - 16 - 18 - 24, pick = nMax => { for(let ff = 66; ff >= 30; ff -= 0.5){ if(nMax*ff*1.04 > room + 0.5 && nMax > 2) continue; for(let ww = w; ww >= w*0.6; ww -= 12){ const LL = FO.wrapLines(t, `${fam};font-size:${ff}pt`, ww); if((nMax < 3 ? LL.length <= nMax : LL.length === 3) && LL.length*ff*1.04 <= room && (LL.length === 1 || LL[LL.length - 1] >= 0.45*w)) return {f: ff, L: LL, ww}; if(nMax < 3) break; } } return null; };
+    const p2 = pick(2), p3 = pick(3), P0 = !p2 ? p3 : p3 && (p3.f > p2.f*1.12 || room - p2.L.length*p2.f*1.04 > 36) ? p3 : p2; let f = P0 ? P0.f : 34, L = P0 ? P0.L : FO.wrapLines(t, `${fam};font-size:34pt`, w); if(P0 && P0.ww) w = Math.min(w, P0.ww);
+    if(L.length === 1){ const one = FO.aw(t, f); if(one > w*0.62){ for(let ww = one*0.5; ww <= w; ww += 4){ const L2 = FO.wrapLines(t, `${fam};font-size:${f}pt`, ww); if(L2.length === 2){ L = L2; break; } } } }
+    const n = L.length, lh = +(f*1.04).toFixed(2), words = q => new Set((String(q).toLowerCase().match(/[a-z0-9]+/g) || []).filter(x => x.length > 2)), kw = [...words(kicker)], tw = words(title), rep = !kicker || (kw.length && kw.every(x => tw.has(x)));
+    const items = []; if(!rep) items.push({h: 24, html: y => FO.kk(kicker, x, y, w, slot + '.kicker')});
+    const lines = (() => { const out = []; let cur = ''; t.split(/\s+/).forEach(wd => { const tr = cur ? cur + ' ' + wd : wd; if(cur && FXS.width(tr, `${fam};font-size:${f}pt`) > w - 1){ out.push(cur); cur = wd; } else cur = tr; }); if(cur) out.push(cur); return out; })();
+    items.push({h: n*lh, html: y => `<div class="mq-h" style="left:${x}pt;top:${y}pt;width:${w + 8}pt;height:${n*lh}pt;font-size:${f}pt;line-height:${lh}pt;letter-spacing:.5pt;white-space:nowrap" data-slot="${slot}.title" data-lines="${n}" data-fine="1">${lines.map(esc).join('<br>')}</div>`});
+    return FO.vstack(items, 18, FO.HB - 16); };
+
+  FO.front0 = (D, o) => { o = o || {};
+    const L = D.listing, K = (D.sw || {}).front || {}, F = ((D.companion || {}).flyer || {}).front || {}, P = (D.sw || {}).plan || {}, C = P.mq || {};
+    const hero = FO.heroId(D, F.hero || K.hero || 'front'), BH = FO.BH, LX = 412;
+    let h = `<div class="mq-leaf" style="left:${LX}pt;top:-9pt;width:${621 - LX}pt;height:${BH + 9}pt"></div>`;
+    const place = [FXS.hood(L), 'Houston, TX'].filter(Boolean).join('  ·  ');
+    const PS = FO.poster(L.address, LX - 22 - X0, BH - 40 - 30, 118, 40, 3, 0.98);
+    h += FO.vstack([{h: PS.lines.length*PS.lh, html: y => FO.posterHtml(PS, X0 - 2, y, LX - 20 - X0, 'address')}, {h: 10, html: () => ''}, {h: 18, html: y => FO.kk(place, X0, y, LX - 22 - X0, 'front.place', {fs: 12, ls: 3.4})}], 6, BH);
+    // the leaf
+    const yr = String(L.yearBuilt || L.year || ''), st = +L.stories || 0, stW = ['', 'One story', 'Two stories', 'Three stories', 'Four stories'][st] || '', lw = 621 - LX - 9, cx = LX;
+    const nf = FO.afit(yr, lw - 40, 108, 50), items = [{h: 22, html: y => FO.kk('Built in', cx, y, lw, 'front.leaf.k', {al: 'center', fs: 11, ls: 4.4, color: 'var(--mq-acc-dark)'})},
+      {h: nf*1.0 + 6, html: y => `<div class="mq-num" style="left:${cx}pt;top:${y}pt;width:${lw}pt;height:${nf}pt;font-size:${nf}pt;line-height:${nf}pt" data-slot="front.leaf.n" data-lines="1">${esc(yr)}</div>`},
+      {h: 14, html: y => `<div class="mq-rl" style="left:${cx + 44}pt;top:${y + 4}pt;width:${lw - 88}pt"></div>`}];
+    if(stW) items.push({h: 24, html: y => `<div class="mq-kk w" style="left:${cx}pt;top:${y}pt;width:${lw}pt;height:22pt;font-size:15pt;line-height:22pt;letter-spacing:1.6pt;text-align:center;color:var(--mq-on-dark);font-weight:600;text-transform:none" data-slot="front.leaf.s" data-lines="1">${esc(stW)}</div>`});
+    h += yr ? FO.vstack(items, 0, BH) : '';
+    // the house, edge to edge (3.6 pt off the fold), the seam across its top
+    let HP = Math.max(318, 792 - FO.BH - 176); while(HP < 380 && !SW.fits(D, hero, 621 - GAPF, HP)) HP += 4;
+    h += FXS.box(D, hero, GAPF, BH, 621 - GAPF, HP, 'front.house') + FO.seam(BH, -9, 621, 4);
+    // under it: the write-up at the left, two framed rooms at the right
+    const y0 = BH + HP + 16, y1 = 770, strip = (o.strip || C.cover || P.strip || []).filter(id => id !== hero).slice(0, 2), RX = 300, gw = (X1 - RX - 12)/2, lbH = 16, rh = y1 - y0 - lbH - 4;
+    strip.forEach((id, i) => { const x = RX + i*(gw + 12); h += FXS.box(D, id, x, y0, gw, rh, 'front.strip' + i) + `<div class="mq-pf" style="left:${x}pt;top:${y0}pt;width:${gw}pt;height:${rh}pt"></div>`;
+      h += `<div class="mq-place" style="left:${x}pt;top:${y0 + rh + 6}pt;width:${gw}pt;height:12pt;font-size:8.6pt;line-height:12pt;letter-spacing:2.2pt;text-align:center" data-slot="front.strip${i}.label" data-lines="1">${esc(FO.lead(D, id).split(/ and |, /)[0].toUpperCase())}</div>`; });
+    const intro = o.intro || K.summary || F.intro || [], ww = RX - 22 - X0, nl = Math.max(3, Math.min(o.lines || 5, Math.floor((y1 - y0 - 14)/18))), lh = 18;
+    h += `<div class="mq-rl" data-zone="${y0},${y1}" style="left:${X0}pt;top:${y0}pt;width:44pt;height:2pt;background:var(--mq-accent)" data-role="front-rule"></div>`;
+    h += FO.full(`<div class="abs wu" data-slot="front.summary" data-lines="${nl}" data-try="${nl},${nl - 1}" data-lh="${lh}" ${FXS.sd(intro)} style="left:${X0}pt;top:${y0 + 12}pt;width:${ww}pt;height:${nl*lh}pt;font-size:12pt;line-height:${lh}pt;color:var(--mq-on)"></div>`);
+    return h; };
+  // after the fill: the cover's rule and write-up sit centered top to bottom in their zone
+  FO.frontSnug0 = () => { const su = document.querySelector('[data-slot="front.summary"]'), ru = document.querySelector('[data-role="front-rule"]'); if(!su || !ru || !su.textContent.trim()) return;
+    const [y0, y1] = ru.dataset.zone.split(',').map(Number), n = SW.lines(su).n, lh = parseFloat(su.style.lineHeight), tot = 2 + 12 + n*lh, top = y0 + (y1 - y0 - tot)/2;
+    ru.style.top = top + 'pt'; su.style.top = (top + 14) + 'pt'; su.style.height = (n*lh) + 'pt'; };
+
+  FO.left0 = (D) => { const K = D.sw || {}, I = K.left || {}, box = I.box || {}, P = K.plan || {}, C = P.mq || {};
+    const kid = C.left || 'kitchen', bot = C.leftRow ? C.leftRow[0] : null;
+    let h = FO.headBand0(I.kicker, C.leftTitle || I.title, 'left', X0, CW - 6) + FO.seam(FO.HB, -9, 621, 4);
+    const PX1 = 326, LX = PX1 + 12, LX1 = 612 - 18;   // the leaf stops 0.25 in short of the fold; its twin on the right page starts 0.25 in past it
+    h += FXS.box(D, kid, -9, FO.TOPY, PX1 + 9, FO.TOPB - FO.TOPY, 'left.wide');
+    h += `<div class="mq-leaf" style="left:${LX}pt;top:${FO.TOPY}pt;width:${LX1 - LX}pt;height:${FO.TOPB - FO.TOPY}pt"></div>`;
+    // the kitchen card on the leaf: the room's name (and plan size), then numbered rows: the sign-in sheet's squares, each row its label in
+    // accent caps over two full lines of true detail. A row that only repeats what the back's lists print is left out (Night Fade's filter)
+    const SFb = FXS.sellingFacts(D), BXb = ((K.back || {}).boxes) || {}, backT = [].concat((BXb.inside && BXb.inside.items) || SFb.inside, (BXb.outside && BXb.outside.items) || SFb.outside).map(String), backG = new Set(backT.flatMap(t => SW.grams4(t)));
+    const taken = a => /^(It|Its|They|This|That)\b/.test(a) || SW.grams4(a).some(g => backG.has(g)) || backT.some(b => SW.sameFact(b, a) && (b.split(/\s+/).length >= 3 || b.toLowerCase().split(/\s+/).every(w => a.toLowerCase().includes(w))));
+    const lx = LX + 18, sqS = 24, tx = lx + sqS + 12, tw = LX1 - 18 - tx;
+    const T = FO.rowsN0((box.items || []).slice(0, 10), taken, {maxRows: 6, Vs: Array.from({length: 23}, (_, i) => tw - 44 + 2*i), room: FO.TOPB - FO.TOPY - 64}) || {rows: [], f: 10, V: tw};
+    const rows = T.rows, lh = +(T.f*1.4).toFixed(2), gap = 12, rm = FO.room(D, kid);
+    const items = [{h: 20, html: y => FO.kk(box.kicker && !/kitchen/i.test(box.kicker) ? box.kicker : 'The kitchen', lx, y, LX1 - 18 - lx, 'left.box.kicker', {fs: 10, ls: 3.6, color: 'var(--mq-acc-dark)'})}];
+    if(rm.size && !(box.kicker && !/kitchen/i.test(box.kicker))){ (FXS.__sizes = FXS.__sizes || new Set()).add(rm.size); items.push({h: 20, html: y => `<div class="mq-kk w" style="left:${lx}pt;top:${y}pt;width:${LX1 - 18 - lx}pt;height:14pt;font-size:9.5pt;line-height:14pt;letter-spacing:1.4pt;color:var(--mq-on-dark);font-weight:500;text-transform:none" data-size="1" data-slot="left.wide.size" data-lines="1">${esc('Kitchen, ' + rm.size)}</div>`}); }
+    items.push({h: 10, html: y => `<div class="mq-rl" style="left:${lx}pt;top:${y + 2}pt;width:40pt"></div>`});
+    rows.forEach((r, i) => items.push({h: 13 + r.n*lh + (i < rows.length - 1 ? gap : 0), html: y => FO.sq(i + 1, lx, y + 1, sqS, '')
+      + `<div class="mq-wl" style="left:${tx}pt;top:${y}pt;width:${tw}pt;color:var(--mq-acc-dark)" data-slot="left.list.l${i}" data-lines="1">${esc(r.l)}</div>`
+      + `<div class="abs" style="left:${tx}pt;top:${y + 13}pt;width:${T.V + 1}pt;height:${r.n*lh}pt;font-weight:400;font-size:${T.f}pt;line-height:${lh}pt;font-family:var(--mq-font);color:color-mix(in srgb, var(--mq-on-dark) 88%, var(--mq-dark));overflow:hidden;text-align:justify;text-align-last:left" data-slot="left.list.t${i}" data-lines="${r.n}">${esc(r.t)}</div>`}));
+    h += `<div class="mq-leaf-on">${FO.vstack(items, FO.TOPY, FO.TOPB)}</div>`;
+    // the pair at the fold: this page's photo runs to the fold (3.6 pt short), its write-up at the outer side
+    if(bot){ const c = FXS.cardFor(D, bot), PX = 258; if(c){ h += FXS.box(D, bot, PX, FO.BOTY, 612 - GAPF - PX, FO.BOTB - FO.BOTY, 'left.photo0') + FO.sideCap(D, c, X0, FO.BOTY, PX - 16 - X0, FO.BOTB - FO.BOTY, 'left.photo0', {capl: true}); } }
+    return h; };
+  FO.right0 = (D) => { const K = D.sw || {}, R = K.right || {}, P = K.plan || {}, C = P.mq || {};
+    const top = FXS.cardFor(D, C.right || 'primary'), bot = (C.rightRow || [])[0];
+    let h = FO.headBand0(R.kicker, C.rightTitle || R.title, 'right', X0, CW - 6) + FO.seam(FO.HB, -9, 621, 4);
+    const LX = 18, LX1 = 254, PX = LX1 + 12;
+    h += `<div class="mq-leaf" style="left:${LX}pt;top:${FO.TOPY}pt;width:${LX1 - LX}pt;height:${FO.TOPB - FO.TOPY}pt"></div>`;
+    h += FXS.box(D, top.photo, PX, FO.TOPY, 621 - PX, FO.TOPB - FO.TOPY, 'right.wide');
+    // the right leaf: the lead room's plan size as the marquee numeral (when the plan prints one), its name, the rule, its write-up
+    const c0 = FXS.augment(D, top), L0 = FXS.leadLabel(c0.lead || FO.lead(D, c0.photo)), sz = FO.feet(L0.size), lx = LX + 18, lw = LX1 - 18 - lx, slot = 'right.photo0';
+    const RP = FO.poster(L0.name.toUpperCase(), lw, 96, 44, 24, 2, 1.0), rnh = RP.lines.length*RP.lh;
+    let pre = `<div class="abs" data-stk="${slot}" data-sh="${rnh + 8}" style="left:${lx}pt;width:${lw}pt;height:${rnh}pt"><div class="mq-h" style="position:absolute;left:0;top:0;width:${lw}pt;height:${rnh}pt;font-size:${RP.f}pt;line-height:${RP.lh}pt;color:var(--mq-on-dark)" data-slot="${slot}.label" data-lines="${RP.lines.length}">${RP.lines.map(esc).join('<br>')}</div></div>`;
+    if(sz){ (FXS.__sizes = FXS.__sizes || new Set()).add(sz); const f = FO.afit(sz, lw, 58, 30); pre += `<div class="mq-num" data-stk="${slot}" data-sh="${f + 4}" style="left:${lx}pt;width:${lw}pt;height:${f}pt;font-size:${f}pt;line-height:${f}pt;text-align:left" data-size="1" data-slot="right.size" data-lines="1">${esc(sz)}</div>`; }
+    pre += `<div class="mq-rl" data-stk="${slot}" data-sh="16" data-dy="5" style="left:${lx}pt;width:40pt"></div>`;
+    const lh = 15.5, n = Math.max(3, Math.min(12, Math.floor((FO.TOPB - FO.TOPY - 150)/lh)));
+    h += `<div class="mq-leaf-on">${pre}<div class="abs cap side" data-ph-top="${FO.TOPY}" data-ph-h="${FO.TOPB - FO.TOPY}" data-stkbox="${slot}"><div class="a" style="position:absolute;left:${lx}pt;top:${FO.TOPY + 60}pt;width:${lw}pt;height:${n*lh}pt;font-size:11pt;line-height:${lh}pt;color:color-mix(in srgb, var(--mq-on-dark) 90%, var(--mq-dark))" data-slot="${slot}" data-room="${esc(L0.name)}" data-lh="${lh}" data-lines="${n}" data-min="3" data-narrow="0" data-nofit="1" ${FXS.sd(c0.s)}></div></div></div>`;
+    if(bot){ const c = FXS.cardFor(D, bot), PX1 = 354; if(c){ h += FXS.box(D, bot, GAPF, FO.BOTY, PX1 - GAPF, FO.BOTB - FO.BOTY, 'right.photo1') + FO.sideCap(D, c, PX1 + 16, FO.BOTY, X1 - PX1 - 16, FO.BOTB - FO.BOTY, 'right.photo1'); } }
+    return h; };
 })();

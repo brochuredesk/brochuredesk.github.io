@@ -365,7 +365,7 @@
     const hd = FO.headC(D, top.photo, C.rightTitle || R.title, 'right'); h += hd.html;
     // the big room's caption: its own write-up, full width, justified
     const c0 = FXS.augment(D, top), wl = 18, nw = 3, wy = hd.y + 2;   // the room's own write-up set large, as the page's lead
-    h += `<div class="abs cap"><div class="a" style="position:absolute;left:${X0}pt;top:${wy}pt;width:${CW}pt;height:${nw*wl}pt;font-size:12.5pt;line-height:${wl}pt" data-slot="right.photo0" data-room="${esc(FXS.leadLabel(top.lead).name)}" data-lh="${wl}" data-hbox="${nw*wl}" data-lines="${nw}" data-min="3" data-narrow="0" ${FXS.sd(c0.s)}></div></div>`;
+    h += `<div class="abs cap"><div class="a" style="position:absolute;left:${X0}pt;top:${wy}pt;width:${CW}pt;height:${nw*wl}pt;font-size:12.5pt;line-height:${wl}pt" data-slot="right.photo0" data-room="${esc(FXS.leadLabel(top.lead || FO.lead(D, top.photo)).name)}" data-lh="${wl}" data-hbox="${nw*wl}" data-lines="${nw}" data-min="3" data-narrow="0" ${FXS.sd(c0.s)}></div></div>`;
     const y2 = wy + nw*wl + 18, clh = 13.5, Lc = 3, g = 16, ws = rest.map(() => (CW - (rest.length - 1)*g)/rest.length), RH = 766 - y2 - 25 - Lc*clh;
     // the symmetric row: the strongest room in the wide middle, the bath and the plainer room in the narrow wings
     const score = c => /closet|wic|pbath|bath|laundry|hall|powder/i.test(c.photo) ? 0 : /bed|game|living|family|media|flex/i.test(c.photo) ? 2 : 1, ord = rest.length === 3 ? (() => { const s = rest.map((c, i) => [score(c), i, c]).sort((a, b) => b[0] - a[0] || a[1] - b[1]); return [s[1][2], s[0][2], s[2][2]]; })() : rest;

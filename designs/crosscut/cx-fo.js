@@ -127,6 +127,12 @@
     it.remove(); const HW = +ti.dataset.hw || parseFloat(ti.style.width), T = FO.fitTitle(ti.textContent, "font-family:Epilogue;letter-spacing:3.4pt", HW, 24, 13, 5), lh = T.f*1.3, H = 17 + T.n*lh + 9 + 1.2, y = 30 + (270 - 30 - H)/2;
     kk.style.top = y + 'pt'; ti.style.top = (y + 17) + 'pt'; ti.style.fontSize = T.f + 'pt'; ti.style.width = T.w + 'pt'; ti.style.lineHeight = lh + 'pt'; ti.style.height = (T.n*lh) + 'pt'; ti.dataset.lines = T.n; ru.style.top = (y + 17 + T.n*lh + 9) + 'pt'; };
   // after the fill: the cover write-up sits on the frame's foot; the rooms above it grow down into any room it did not use (no empty band)
+  // the flyer front's street block (street, place, write-up) centered on its ink between the stripe and the white line (owner 11/17, p17)
+  FO.ffCenter = () => { const mk = document.getElementById('ffblk'); if(!mk) return; const A = +mk.dataset.a, B = +mk.dataset.b, sh = document.querySelector('.sheet'); if(!sh) return;
+    const els = [...document.querySelectorAll('[data-slot^="address"], [data-slot="front.summary"]')]; if(!els.length) return; const s0 = sh.getBoundingClientRect(), pt = v => v*0.75;
+    let t = Infinity, b = -Infinity; els.forEach(e => { const r = document.createRange(); r.selectNodeContents(e); [...r.getClientRects()].filter(q => q.width > 1).forEach(q => { t = Math.min(t, pt(q.top - s0.top)); b = Math.max(b, pt(q.bottom - s0.top)); }); });
+    const bl = +(sh.dataset.bleed || 0) || (pt(s0.height) - 792)/2, d = (A + bl + (B - A - (b - t))/2) - t; if(!isFinite(d) || Math.abs(d) < .3) return;
+    els.forEach(e => { e.style.top = (parseFloat(e.style.top) + d) + 'pt'; }); };
   FO.frontSnug = () => {};   // Diagonal: the flyer front's write-up stays centered in its own room beside the overlapping print (no cover write-up)
   // a photo with its name under it (no caption text): a strip or row tile
   FO.tile = (D, id, x, y, w, h, slot) => `${FXS.box(D, id, x, y, w, h, slot)}<div class="abs" style="left:${x}pt;top:${y + h + 7}pt;width:${w}pt;white-space:nowrap"><div class="lbl" data-slot="${slot}.label" data-lines="1" style="max-width:${w}pt">${esc(FO.lead(D, id).split(/ and |, /)[0].toUpperCase())}</div></div>`;
@@ -236,9 +242,11 @@
       const lx = Math.max(X0, x + 10), lw = Math.min(X1, x + rw - 10) - lx;
       h += `<div class="cx-place" style="left:${lx}pt;top:${RB + 9}pt;width:${lw}pt;height:12pt;font-size:8.8pt;line-height:12pt;letter-spacing:2.2pt;text-align:${i === 0 ? 'left' : i === n - 1 ? 'right' : 'center'}" data-slot="front.strip${i}.label" data-lines="1">${esc(FO.lead(D, id).split(/ and |, /)[0].toUpperCase())}</div>`; });
     // the slab: the street, the place and the write-up at the left (the slab's tall side); the facts at the right behind the gold rule
-    const top = fP(X1) + 7 + 16, LW = 344, RX = X0 + LW + 26, RW = X1 - RX, S = FO.streetBlock(L, X0, top, LW, 120, 56, 'address', {rows: 2});
-    h += S.html;
-    { const wt = top + S.h + 12, wb = fR(X0 + LW) - 16, lh = 17, nl = Math.max(3, Math.floor((wb - wt)/lh));
+    // owner 11/17 (p17): the street, the place and the write-up move up as one block, centered top to bottom between the gold stripe and the
+    // white line at the block's right edge (where both run closest to it); FO.ffCenter settles it after the fill
+    const top = fP(X1) + 7 + 16, LW = 344, RX = X0 + LW + 26, RW = X1 - RX, bA = fP(X0 + LW) + 7, bB = fR(X0 + LW) - 6, S0 = FO.streetBlock(L, X0, 0, LW, 120, 56, 'address', {rows: 2});
+    { const lh = 17, nl = Math.max(3, Math.floor((bB - bA - 28 - S0.h - 12)/lh)), bh = S0.h + 12 + nl*lh, by = bA + Math.max(0, (bB - bA - bh)/2), S = FO.streetBlock(L, X0, by, LW, 120, 56, 'address', {rows: 2}), wt = by + S.h + 12;
+      h += `<div id="ffblk" data-a="${bA}" data-b="${bB}" style="display:none"></div>` + S.html;
       h += FO.full(`<div class="abs wu" data-slot="front.summary" data-lines="${nl}" data-try="${nl},${nl - 1}" data-lh="${lh}" ${FXS.sd(intro)} style="left:${X0}pt;top:${wt}pt;width:${LW}pt;height:${nl*lh}pt;font-size:13pt;line-height:${lh}pt"></div>`); }
     const fb = fR(X1) - 16, it = FO.factParts(L), half = Math.ceil(it.length/2), rh = (fb - top)/2;
     h += `<div class="cx-vrule" style="left:${RX - 13}pt;top:${top + 2}pt;height:${fb - top - 4}pt"></div>`;
@@ -409,9 +417,13 @@
     const r0 = IvoryPlan.draw(D.plan, {x: 0, y: 0, w: rot ? maxW - 44 : 900, h: maxH - 34}, {allowRotate: rot, angle: A}); let cw = Math.min(maxW, Math.max(Math.ceil((r0.usedW || 300)) + 40, D.plan.minCard || 0, noteW, 188));
     for(let hh = maxH; hh >= 130; hh -= 6){ const big = IvoryPlan.draw(D.plan, {x: 0, y: 0, w: cw - 28.8, h: hh}, {allowRotate: rot, angle: A}); if(!(big.issues || []).some(i => i.kind === 'plan-under-300ppi')){ if(big.usedW) cw = Math.min(cw, Math.max(Math.ceil(big.usedW) + 40, D.plan.minCard || 0, noteW, 188)); break; } }
     return FXS.planCard(D, x, y, cw, maxH); };
-  FO.lists = (c1, c2, t1, x, y, w, h, two) => { let t = ''; const fs = 10.5;
+  FO.lists = (c1, c2, t1, x, y, w, h, two, o) => { o = o || {}; let t = ''; const fs = 10.5;
     if(two){ const cw = (w - 28)/2, n = Math.max(Math.min(c1.length, 4), Math.min(c2.length, 4)), rh = Math.min(22, (h - 20)/n), y0 = y + (h - 20 - n*rh)/2;
-      t += `<div class="cx-wl" style="left:${x}pt;top:${y0}pt;width:${cw}pt" data-slot="back.updates.title" data-lines="1">${esc(t1.toUpperCase())}</div>` + FXS.bullets(c1, x, y0 + 18, cw, rh, 'back.updates', 4, fs).html;
+      // the flyer back (owner 11/17, p18): the left list takes up to six items at the same spacing, its foot level with Outside's and its
+      // head running up into the room the stripe leaves at the left (the head clear of the stripe by 12 pt, every row's rule under it)
+      let n1 = 4, y1 = y0; if(o.up){ const fits = c1.filter(q => FXS.width(q, `font-family:Epilogue;font-weight:400;font-size:${fs}pt`) <= cw - 14), foot = y0 + 18 + n*rh, tw = FXS.width(t1.toUpperCase(), 'font-family:Epilogue;font-weight:700;font-size:8.6pt;letter-spacing:1.8pt');
+        for(let k = Math.min(6, fits.length); k > 4; k--){ const yt = foot - k*rh - 18; if(yt >= o.up(x + tw) + 7 + 12 && yt + 18 + rh >= o.up(x + cw) + 7 + 4){ n1 = k; y1 = yt; break; } } }
+      t += `<div class="cx-wl" style="left:${x}pt;top:${y1}pt;width:${cw}pt" data-slot="back.updates.title" data-lines="1">${esc(t1.toUpperCase())}</div>` + FXS.bullets(c1, x, y1 + 18, cw, rh, 'back.updates', n1, fs).html;
       t += `<div class="cx-wl" style="left:${x + cw + 28}pt;top:${y0}pt;width:${cw}pt" data-slot="back.outside.title" data-lines="1">OUTSIDE</div>` + FXS.bullets(c2, x + cw + 28, y0 + 18, cw, rh, 'back.outside', 4, fs).html;
       t += `<div class="cx-vrule" style="left:${x + cw + 13.4}pt;top:${y0 + 2}pt;height:${18 + n*rh - 4}pt"></div>`; }
     else { const n1 = Math.min(c1.length, 3), n2 = Math.min(c2.length, 3), rh = Math.min(21, (h - 18*2 - 10)/(n1 + n2)), tot = 36 + 10 + (n1 + n2)*rh, y0 = y + (h - tot)/2;
@@ -425,9 +437,15 @@
     // the field: the heading in two voices, Nearby as P50's numerals
     const kickT = +(D.listing || {}).stories > 1 ? 'Floor by floor' : 'Room by room', ht = String((hasPlan ? (KB.plan || {}).title : (KB.noplan || {}).title) || '').replace(/\.$/, '');
     let fh = `<div class="cx-place" style="left:${X0}pt;top:32pt;width:${CW}pt;height:13pt;font-size:9.5pt;line-height:13pt;letter-spacing:2.8pt" data-slot="back.about.title" data-lines="1">${esc(kickT.toUpperCase())}</div>`;
-    let V = CX.voices(ht, CW, 34, 20); const vh = CX.voiceHtml(V, X0, 50, CW, 'back.about.head'); if(ht) fh += vh.html;
+    let V = CX.voices(ht, CW, 34, 20); let vh = CX.voiceHtml(V, X0, 50, CW, 'back.about.head');
+    // the flyer back (owner 11/17, no big empty space): the two voices run on one line across the field's full width, so no room is left
+    // empty beside a short two-line heading; Nearby's numerals take the height that frees
+    if(flyer && V.b){ { const ci = ht.indexOf(', '); if(ci > 0) V = Object.assign({}, V, {a: ht.slice(0, ci + 1), b: ht.slice(ci + 2)}); }   // one line: the two voices meet at the title's own comma
+      const wd = f => FXS.width(V.a.toUpperCase(), `${CX.EP};font-size:${f}pt`) + FXS.width(' ' + V.b, `${CX.CR};font-size:${f*1.08}pt`); let f = 56; while(f > 22 && wd(f) > CW - 4) f -= 0.25;
+      if(wd(f) >= 0.86*CW){ const f2 = +(f*1.08).toFixed(2), lh = +(f2*1.1).toFixed(2); vh = {h: lh, html: `<div class="cx-v1" style="left:${X0}pt;top:50pt;width:${CW}pt;height:${lh}pt;font-size:${f}pt;line-height:${lh}pt" data-slot="back.about.head" data-lines="1" data-fine="1">${esc(V.a.toUpperCase())} <span class="cx-v2" style="position:static;font-size:${f2}pt;text-transform:none;letter-spacing:0">${esc(V.b)}</span></div>`}; } }
+    if(ht) fh += vh.html;
     const N = (KB.nearby || []).slice(0, 3).map(nn => { const m = /^([\d.,]+)\s*(.*)$/.exec(String(nn.dist).trim()) || [0, nn.dist, '']; return {n: m[1] + (/mile/i.test(m[2]) ? ' mi' : /min/i.test(m[2]) ? ' min' : ''), l: nn.place}; });
-    const ny = 50 + (ht ? vh.h : 0) + 12, nb = fF(X1) - 14; if(N.length) fh += CX.facts(N, X0, ny, CW, nb - ny, 'back.near', {max: 24, lmax: 9});
+    const ny = 50 + (ht ? vh.h : 0) + (flyer ? 0 : 12), nb = flyer ? fF(621) : fF(X1) - 14;   /* the flyer: Nearby centered between the heading and the field's foot where it climbs highest (no empty band across the field) */ if(N.length) fh += CX.facts(N, X0, ny, CW, nb - ny, 'back.near', flyer ? {max: Math.min(46, (nb - ny - 50)/1.1), lmax: 10.5} : {max: 24, lmax: 9});
     h += `<div class="cx-onmain">${fh}</div>`;
     // the paper wedge
     const BX = KB.boxes || {}, SF = FXS.sellingFacts(D), c1 = ((BX.inside && BX.inside.items) || SF.inside.filter(t => !/^Built in|story|bedrooms|square feet/i.test(t))).slice(0, 6), c2 = ((BX.outside && BX.outside.items) || SF.outside).slice(0, 6), t1 = (BX.inside && BX.inside.title) || 'New and updated';
@@ -442,7 +460,7 @@
       const pw = Math.round(parseFloat(/width:([\d.]+)pt/.exec(pc.html)[1])), ax = X0 + pw + 22, aw = X1 - ax, T0 = fF(ax) + 16, B0 = fP(ax) - 14, n = Math.floor((B0 - T0)/16.5), lh = +((B0 - T0)/n).toFixed(3);
       sh += FO.full(FO.wu(keep(f2.concat(f1)), ax, T0, aw, n*lh + 0.01, 'back.about', 12.5, lh, 'body')).replace('data-slot="back.about"', `data-slot="back.about"${aw < 240 ? ' data-rag="1"' : ''} data-span="${(B0 - T0).toFixed(2)}"${P.pool ? ` data-pool="${P.pool}"` : ''}`);
       h += `<div class="cx-onsheet">${sh}</div>`;
-      const lt = fP(X1) + 7 + 14, lb = FO.CARD_Y - 16; h += FO.lists(c1, c2, t1, X0, lt, CW, lb - lt, true);
+      const lt = fP(X1) + 7 + 14, lb = FO.CARD_Y - 16; h += flyer ? FO.lists(c1.concat((BX.inside && BX.inside.more) || []).slice(0, 6), c2, (BX.inside && BX.inside.flyerTitle) || t1, X0, lt, CW, lb - lt, true, {up: fP}) : FO.lists(c1, c2, t1, X0, lt, CW, lb - lt, true);
     } else {
       const ax = X0, aw = 266, T0 = fF(ax) + 16, B0 = fP(ax + aw) - 14, n = Math.floor((B0 - T0)/16.5), lh = +((B0 - T0)/n).toFixed(3);
       sh += FO.full(FO.wu(keep(f2.concat(f1)), ax, T0, aw, n*lh + 0.01, 'back.about', 12.5, lh, 'body')).replace('data-slot="back.about"', `data-slot="back.about" data-span="${(B0 - T0).toFixed(2)}"${P.pool ? ` data-pool="${P.pool}"` : ''}`);

@@ -432,7 +432,7 @@
   // line sit centered top to bottom between the line over the contact row and the barcode markup under it
   // owner 11/16/2026 (center-fold gap, every fold-over): a marquee-cut photo stops 0.05 in short of the fold. The shared fold-gap step
   // leaves a design's own clip alone, so the V's polygon is clamped here on the fold side (x only; the V and its echo are unchanged)
-  MQ.foldTrim = () => { const PX = 96/72, GAP = 3.6*PX, BL = 9*PX, SIDE = {back: 'right', left: 'right', front: 'left', right: 'left'};
+  MQ.foldTrim = () => { const PX = 96/72, GAP = 3.6*PX, BL = 9*PX, SIDE = {left: 'right', right: 'left'} /* inside spread only, owner 11/17/2026 */;
     document.querySelectorAll('.mq-cutbox').forEach(el => { const half = el.closest('.half'), pg = el.closest('.page'); if(!pg) return;
       let side, fx; if(half){ const r = half.getBoundingClientRect(); side = half.classList.contains('l') ? 'right' : 'left'; fx = side === 'right' ? r.right : r.left; }
       else { side = SIDE[pg.dataset.page]; if(!side) return; const r = pg.getBoundingClientRect(); fx = side === 'right' ? r.right - BL : r.left + BL; }
