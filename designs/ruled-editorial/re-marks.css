@@ -1,0 +1,61 @@
+/* Ruled Editorial marks shared by every page (tokens in re-tokens.css), all read from the approved P01 flyer and sign-in sheet:
+   the full-measure ink rule (1.2 pt) that divides a page into decks, the hairline (rows, lists), the huge Epilogue caps line
+   (.re-hl) and its small two-line "join" in the main color (.re-join), the Epilogue street (.re-street), the spaced caps place line
+   (.re-place), the justified caps facts line (.re-facts), Hanken labels in the main color, Hanken body in ink, and the white card
+   with a thin ink line (.re-card, the event box). Crisp square photos on the margins of the rule grid; no frame, no fade. */
+@import url(re-tokens.css);
+.re-rule{position:absolute;height:var(--re-rule-w);background:var(--re-ink)}
+.re-rule.v{width:var(--re-rule-w);height:auto}
+.re-hair{position:absolute;height:.75pt;background:var(--re-hair)}
+.re-vhair{position:absolute;width:.75pt;background:var(--re-hair)}
+.re-hl{position:absolute;font-family:var(--re-display);font-weight:600;text-transform:uppercase;letter-spacing:-.03em;color:var(--re-ink);white-space:nowrap;overflow:visible}
+.re-join{position:absolute;font-family:var(--re-font);font-weight:500;color:var(--re-main);white-space:nowrap;overflow:hidden}
+.re-street{position:absolute;font-family:var(--re-display);font-weight:600;letter-spacing:-.012em;color:var(--re-ink);white-space:nowrap;overflow:hidden}
+.re-place{position:absolute;font-family:var(--re-font);font-weight:600;letter-spacing:2pt;text-transform:uppercase;color:var(--re-main);white-space:nowrap;overflow:hidden}
+.re-facts{position:absolute;font-family:var(--re-font);font-weight:700;letter-spacing:.6pt;text-transform:uppercase;color:var(--re-ink);white-space:nowrap;overflow:hidden;text-align:justify;text-align-last:justify}
+.re-num{position:absolute;font-family:var(--re-display);font-weight:600;letter-spacing:-.02em;color:var(--re-ink);white-space:nowrap;overflow:visible}
+.re-kick{position:absolute;font-family:var(--re-font);font-weight:700;font-size:8.6pt;line-height:11pt;letter-spacing:1.6pt;text-transform:uppercase;color:var(--re-main);white-space:nowrap;overflow:hidden}
+/* the one white card with a thin ink line (P01's event box): the kitchen card, the Just Sold note, the mail markups */
+.re-card{position:absolute;background:var(--re-card);border:1pt solid var(--re-ink)}
+.re-wbox{position:absolute;background:var(--re-card);border:1pt solid var(--re-ink)}
+.re-wbox:after{content:none}
+.re-lt{}
+.re-ink{}
+.re-cut{position:absolute;pointer-events:none}
+.re-fr{position:absolute;background:var(--re-ink);z-index:5}
+.re-glow{display:none}
+.re-eyebrow{position:absolute;font-family:var(--re-font);font-weight:600;font-size:9pt;line-height:12pt;letter-spacing:2pt;text-transform:uppercase;color:var(--re-main);white-space:nowrap;overflow:hidden}
+.re-caps{position:absolute;font-family:var(--re-font);font-weight:700;font-size:10pt;line-height:14pt;letter-spacing:.8pt;text-transform:uppercase;color:var(--re-ink);white-space:nowrap;overflow:hidden}
+.re-label{position:absolute;font-family:var(--re-display);font-weight:600;text-transform:uppercase;letter-spacing:-.03em;color:var(--re-ink);white-space:nowrap;overflow:hidden}
+.re-serif{position:absolute;font-family:var(--re-display);font-weight:600;letter-spacing:-.012em;color:var(--re-ink);white-space:nowrap;overflow:hidden}
+.re-head{position:absolute;font-family:var(--re-display);font-weight:600;color:var(--re-ink)}
+
+.taupe{position:absolute;background:var(--fx-taupe)}
+
+/* labels: Hanken bold caps in the main color, spaced (the sign-in sheet's column labels) */
+.lbl{display:inline-block;vertical-align:bottom;font-family:var(--re-font);font-weight:700;font-size:8.6pt;line-height:12pt;letter-spacing:1.6pt;text-transform:uppercase;color:var(--re-main);white-space:nowrap;overflow:hidden}
+.lbl.sz{text-transform:none;color:var(--re-ink);letter-spacing:.4pt;margin-left:9pt;font-weight:600}
+.body{font-family:var(--re-font);font-weight:400;font-size:10.5pt;line-height:16pt;color:var(--re-ink);overflow:hidden}
+.wu{font-family:var(--re-font);font-weight:400;font-size:11pt;line-height:17pt;color:var(--re-ink);overflow:hidden}
+.hr{position:absolute;height:.75pt;background:var(--re-hair)}
+.vr{position:absolute;width:.75pt;background:var(--re-hair)}
+.fine{font-family:var(--re-font);font-weight:500;font-size:7pt;line-height:9pt;color:var(--re-ink);white-space:nowrap;overflow:hidden;opacity:.7}
+
+/* photos: crisp square rectangles on the paper */
+.ph{position:relative;overflow:hidden;background:var(--fx-taupe-d);min-height:30pt}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:var(--fx-gap);min-height:0}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item{display:flex;flex-direction:column;min-width:0;min-height:0}
+.item > .ph{flex:1 1 0}
+.flow{position:absolute;display:flex;flex-direction:column}
+.cap{flex:none;padding-top:5pt}
+.cap .a{font-family:var(--re-font);font-weight:400;font-size:9.5pt;line-height:12.5pt;color:var(--re-ink);overflow:hidden;text-align:left;hyphens:manual}
+.cap .a b{font-weight:700;color:var(--re-ink)}
+
+.bul{position:absolute;display:flex;align-items:center;gap:9pt;font-family:var(--re-font);font-weight:500;font-size:10.5pt;line-height:14pt;color:var(--re-ink);white-space:nowrap;overflow:hidden;border-bottom:.75pt solid var(--re-hair)}
+.bul:before{content:"";width:9pt;height:1.2pt;background:var(--re-ink);flex:none}
+
+.logo.w img{filter:brightness(0) invert(1)}
+.card{position:absolute;border:1pt solid var(--re-ink);background:var(--re-paper)}
+.re-tintf{position:absolute;background:var(--re-tint)}
