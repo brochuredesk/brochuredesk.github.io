@@ -11,6 +11,43 @@
 <script src="../engine/carousel.js"></script>
 <script src="../engine/factrepeat.js"></script>
 <script src="../engine/socialset.js"></script>
+<script>
+// this set's own carousel slide (owner 11/23/2026: hints of the main design on every slide); replaces the shared strip slide
+// Architect: on the stone field, the photo held by the cover's corner ticks, the moment in tracked Instrument Sans caps set between
+// thin drafting rules that end in dimension ticks (the inside spread's room labels), and the street in white Libre Baskerville
+// capitals sized to run the column, centered as on the fold-over cover
+(function(){
+  const SS = window.SocialSet, esc = s => Ivory.esc(s);
+  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
+  const txt = (slot, t, x, y, w, h, size, min, css) => `<div class="abs nw" data-slot="${slot}" data-lines="1" data-fit="${size},${min}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;font-size:${size}pt;line-height:${h}pt;${css}">${esc(t)}</div>`;
+  SS.slide = (D, L, W, H) => {
+    const id = D.piece.photo, word = String(SS.M), addr = String(D.listing.address), m = 26, tw = W - 2*m, ink = 'var(--ss-ink)';
+    const cv = document.createElement('canvas').getContext('2d');
+    // the street in Baskerville capitals (tracking 0.02 em), started a little large so the fitter brings it to the column's edge: 24 to 40 pt
+    cv.font = `${L.dw || 700} 100px ${L.display}`;
+    const as = Math.max(24, Math.min(40, Math.floor(tw*1.08/(cv.measureText(addr.toUpperCase()).width/100 + .02*addr.length)))), ah = Math.round(as*1.4);
+    // the moment at 22 pt, tracked 0.2 em, measured so the rules stop 16 pt clear of its letters
+    const ks = 22, kt = ks*.2, kh = 30; cv.font = `${L.labelW || 600} ${ks}px ${L.labelFont || L.body}`;
+    const kw = cv.measureText(word.toUpperCase()).width + kt*(word.length - 1);
+    const ay = H - m - 8 - ah, ky = ay - 6 - kh, ph = ky - 22 - m, cx = W/2, ry = ky + kh/2;
+    let h = rect(0, 0, W, H, `background:${L.page}`);
+    h += OHL.photo(D, id, `left:${m}pt;top:${m}pt;width:${tw}pt;height:${ph}pt`);
+    // corner ticks 5 pt off the photo's corners, 14 pt arms
+    const o = 5, a = 14, t = 1, tk = `background:${ink};opacity:.75`;
+    [[m - o, m - o, 1, 1], [W - m + o, m - o, -1, 1], [m - o, m + ph + o, 1, -1], [W - m + o, m + ph + o, -1, -1]].forEach(([x, y, sx, sy]) => {
+      h += rect(sx > 0 ? x : x - a, sy > 0 ? y : y - t, a, t, tk);
+      h += rect(sx > 0 ? x : x - t, sy > 0 ? y : y - a, t, a, tk);
+    });
+    // the drafting rules each side of the moment, ending in short dimension ticks at the margins
+    const rl = cx - kw/2 - 16, rr = cx + kw/2 + 16, rs = 'background:var(--ss-hair)';
+    if(rl - m > 20){ h += rect(m, ry - .4, rl - m, .8, rs); h += rect(rr, ry - .4, W - m - rr, .8, rs);
+      h += rect(m, ry - 5, .8, 10, rs); h += rect(W - m - .8, ry - 5, .8, 10, rs); }
+    h += txt('moment', word, m, ky, tw, kh, ks, 20, `font-family:${L.labelFont || L.body};font-weight:${L.labelW || 600};text-transform:uppercase;letter-spacing:${kt.toFixed(2)}pt;text-indent:${kt.toFixed(2)}pt;color:var(--ss-acc);text-align:center`);
+    h += txt('address', addr, m, ay, tw, ah, as, 17.5, `font-family:${L.display};font-weight:${L.dw || 700};text-transform:uppercase;letter-spacing:${(as*.02).toFixed(2)}pt;color:${ink};text-align:center`);
+    return h;
+  };
+})();
+</script>
 <!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
      the brand dark lifted toward stone, white type, Baskerville capitals, thin drafting rules, corner ticks round the photo.
      The brand kit's colors (data.brand.colors, data.brand.paper) set the field, band and accents, as the set's other pieces do. -->

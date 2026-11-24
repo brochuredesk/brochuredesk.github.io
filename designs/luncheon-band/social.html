@@ -11,6 +11,31 @@
 <script src="../engine/carousel.js"></script>
 <script src="../engine/factrepeat.js"></script>
 <script src="../engine/socialset.js"></script>
+<script>
+// this set's own carousel slide (owner 11/23/2026: hints of the main design on every slide); replaces the shared strip slide
+// Luncheon Band: the photo over the kit paper, ONE dark band edge to edge naming the piece in bold white Plex Condensed caps with
+// its last word in the accent at regular weight (the flyer's band), the street on the paper under it in Libre Franklin
+(function(){
+  const SS = window.SocialSet, esc = s => Ivory.esc(s);
+  if(document.fonts && document.fonts.load) document.fonts.load('400 20px PlexCond').catch(() => 0);
+  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
+  const txt = (slot, t, x, y, w, h, size, min, css, raw) => `<div class="abs nw" data-slot="${slot}" data-lines="1" data-fit="${size},${min}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;font-size:${size}pt;line-height:${h}pt;${css}">${raw || esc(t)}</div>`;
+  const caps = (L, tr) => `text-transform:uppercase;letter-spacing:${tr}pt;`;
+  SS.slide = (D, L, W, H) => {
+    const bd = Object.assign({bg: L.page, ink: L.ink, accent: L.accent}, L.band || {}), id = D.piece.photo, word = SS.M, addr = D.listing.address;
+    const photo = st => OHL.photo(D, id, st);
+    const S = (D, L, W, H, X) => { const pb = 40, bh = 46, by = H - pb - bh; let h = X.rect(0, 0, W, H, `background:${L.page}`);
+   h += X.photo(`left:0;top:0;width:${W}pt;height:${by}pt`);
+   h += X.rect(0, by, W, bh, `background:${X.bd.bg}`);
+   const ws = String(X.word).trim().split(/\s+/), last = ws.pop();
+   const raw = `${esc(ws.join(' '))}${ws.length ? ' ' : ''}<span style="font-weight:400;color:${X.bd.accent}">${esc(last)}</span>`;
+   h += X.txt('moment', X.word, 24, by + 4, W - 48, bh - 8, 26, 20, `font-family:${L.labelFont || L.display};font-weight:${L.labelW || 700};${X.caps(L, 2)}text-indent:2pt;color:${X.bd.ink};text-align:center`, raw);
+   h += X.txt('address', X.addr, 24, by + bh + 3, W - 48, pb - 6, 25, 17.5, `font-family:${L.body};font-weight:${L.bw || 600};color:${L.ink};text-align:center`);
+   return h; };
+    return S(D, L, W, H, {bd, photo, word, addr, rect, txt, caps});
+  };
+})();
+</script>
 <!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
      the kit paper as the field, ONE dark band edge to edge naming the piece in bold Plex Condensed caps.
      The brand kit's colors (data.brand.colors, data.brand.paper) set the field, band and accents, as the set's other pieces do. -->

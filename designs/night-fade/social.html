@@ -11,6 +11,34 @@
 <script src="../engine/carousel.js"></script>
 <script src="../engine/factrepeat.js"></script>
 <script src="../engine/socialset.js"></script>
+<script>
+// this set's own carousel slide (owner 11/23/2026: hints of the main design on every slide); replaces the shared strip slide
+// Night Fade: the photo dissolving into the brand-dark field at its foot, the moment in wide-tracked Archivo caps with the accent
+// bar beside it (the post's column), the street on the solid accent bar in dark bold type (the flyer's key-line bar)
+(function(){
+  const SS = window.SocialSet, esc = s => Ivory.esc(s);
+  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
+  const txt = (slot, t, x, y, w, h, size, min, css) => `<div class="abs nw" data-slot="${slot}" data-lines="1" data-fit="${size},${min}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;font-size:${size}pt;line-height:${h}pt;${css}">${esc(t)}</div>`;
+  const caps = (L, tr) => `text-transform:uppercase;letter-spacing:${tr}pt;`;
+  SS.slide = (D, L, W, H) => {
+    const bd = Object.assign({bg: L.page, ink: L.ink, accent: L.accent}, L.band || {}), id = D.piece.photo, word = SS.M, addr = D.listing.address;
+    const photo = st => OHL.photo(D, id, st);
+    const S = (D, L, W, H, X) => { const m = 22, bh = 42, by = H - m - bh, wy = by - 14 - 28, fade = 190; let h = X.rect(0, 0, W, H, `background:${L.page}`);
+   h += X.photo(`left:0;top:0;width:${W}pt;height:${H}pt`);
+   h += X.rect(0, H - fade, W, fade, `background:linear-gradient(to bottom, rgba(0,0,0,0) 0%, ${L.page} 43%, ${L.page} 100%)`);
+   h += X.rect(m, wy + 1, 5, 26, 'background:var(--ss-anchor)');
+   h += X.txt('moment', X.word, m + 15, wy, W - 2*m - 15, 28, 22, 18, `font-family:${L.labelFont || L.display};font-weight:${L.labelW || 800};${X.caps(L, 4)}color:${L.ink};text-align:left`);
+   h += X.rect(m, by, W - 2*m, bh, 'background:var(--ss-anchor)');
+   h += X.txt('address', X.addr, m + 14, by + 3, W - 2*m - 28, bh - 6, 26, 17.5, `font-family:${L.display};font-weight:${L.dw || 700};color:${X.onAcc()};text-align:center`);
+   return h; };
+    // the bar's type: dark bold on the accent (white only on an accent too dark for it)
+    const onAcc = () => { const a = getComputedStyle(document.documentElement).getPropertyValue('--ss-anchor').trim().replace('#', ''), f = a.length === 3 ? a.split('').map(x => x + x).join('') : a;
+      const n = parseInt(f, 16), l = [n >> 16 & 255, n >> 8 & 255, n & 255].map(q => { q /= 255; return q <= .03928 ? q/12.92 : Math.pow((q + .055)/1.055, 2.4); }), y = .2126*l[0] + .7152*l[1] + .0722*l[2];
+      return (y + .05)/(.0089 + .05) >= (1.05)/(y + .05) ? '#161616' : '#ffffff'; };
+    return S(D, L, W, H, {bd, photo, word, addr, rect, txt, caps, onAcc});
+  };
+})();
+</script>
 <!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
      the brand dark as the field, the hero dissolving into it at the foot, wide-tracked Archivo caps with the accent bar beside them.
      The brand kit's colors (data.brand.colors, data.brand.paper) set the field, band and accents, as the set's other pieces do. -->

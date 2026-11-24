@@ -11,6 +11,36 @@
 <script src="../engine/carousel.js"></script>
 <script src="../engine/factrepeat.js"></script>
 <script src="../engine/socialset.js"></script>
+<script>
+// this set's own carousel slide (owner 11/23/2026: hints of the main design on every slide); replaces the shared strip slide
+// Arc: the photo whose foot is the set's swept arc (full height at the right, rising toward the left; the same cubic as AR.bez) with the
+// accent hairline echoing it, the street in main-color Spectral capitals on the kit paper, and the fold-over cover's main-color block
+// with its one rounded top-right corner carrying the moment in white Spectral capitals; each line sized to run its column
+(function(){
+  const SS = window.SocialSet, esc = s => Ivory.esc(s);
+  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
+  const txt = (slot, t, x, y, w, h, size, min, css) => `<div class="abs nw" data-slot="${slot}" data-lines="1" data-fit="${size},${min}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;font-size:${size}pt;line-height:${h}pt;${css}">${esc(t)}</div>`;
+  // the set's arc (templates/arc/ar.js AR.bez): P0 left end, P1 at 28% across and 85% of the drop, P2 at 62% across on the low line, P3 right end
+  const arcPts = (W, ya, yb, off) => { const P = [[0, ya], [.28*W, ya + .85*(yb - ya)], [.62*W, yb], [W, yb]];
+    return Array.from({length: 49}, (_, i) => { const t = i/48, u = 1 - t; return [0, 1].map(k => u*u*u*P[0][k] + 3*u*u*t*P[1][k] + 3*u*t*t*P[2][k] + t*t*t*P[3][k] + (k ? off : 0)); }); };
+  SS.slide = (D, L, W, H) => {
+    const id = D.piece.photo, word = String(SS.M), addr = String(D.listing.address), m = 24, tw = W - 2*m, r = 40;
+    const cv = document.createElement('canvas').getContext('2d'); cv.font = `${L.dw || 600} 100px ${L.display}`;
+    // started a little large so the fitter brings each to its column's edge: the street 24 to 40 pt, the moment 24 to 50 pt (clear of the corner)
+    const as = Math.max(24, Math.min(40, Math.floor(tw*1.08/(cv.measureText(addr.toUpperCase()).width/100 + .03*addr.length)))), ah = Math.round(as*1.4);
+    const mw = tw - r, ms = Math.max(24, Math.min(50, Math.floor(mw*1.06/(cv.measureText(word.toUpperCase()).width/100 + .08*word.length)))), mh = Math.round(ms*1.3);
+    const bh = mh + 30, by = H - bh, ay = by - 12 - ah, yb = ay - 22, ya = Math.round(yb*.84), off = 9;
+    let h = rect(0, 0, W, H, `background:${L.page}`);
+    const clip = `polygon(0 0,${W}pt 0,${arcPts(W, ya, yb, 0).reverse().map(([x, y]) => `${x.toFixed(2)}pt ${y.toFixed(2)}pt`).join(',')})`;
+    h += `<div class="abs" style="left:0;top:0;width:${W}pt;height:${yb}pt;clip-path:${clip}">${OHL.photo(D, id, `left:0;top:0;width:${W}pt;height:${yb}pt`)}</div>`;
+    h += `<svg class="abs" style="left:0;top:0;width:${W}pt;height:${H}pt;overflow:visible" viewBox="0 0 ${W} ${H}"><polyline points="${arcPts(W, ya, yb, off).map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' ')}" fill="none" stroke="var(--ss-hair)" stroke-width="1.6"/></svg>`;
+    h += txt('address', addr, m, ay, tw, ah, as, 17.5, `font-family:${L.display};font-weight:${L.dw || 600};text-transform:uppercase;letter-spacing:${(as*.03).toFixed(2)}pt;color:var(--ss-acc);text-align:left`);
+    h += rect(0, by, W, bh, `background:var(--ss-band);border-top-right-radius:${r}pt`);
+    h += txt('moment', word, m, by + 15, mw, mh, ms, 20, `font-family:${L.labelFont || L.display};font-weight:${L.labelW || 600};text-transform:uppercase;letter-spacing:${(ms*.08).toFixed(2)}pt;color:var(--ss-bandink);text-align:left`);
+    return h;
+  };
+})();
+</script>
 <!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
      the kit paper as the page, the photo whose foot is the swept arc with the accent hairline echoing it, Spectral caps in the main color.
      The brand kit's colors (data.brand.colors, data.brand.paper) set the field, band and accents, as the set's other pieces do. -->
@@ -115,6 +145,8 @@ const LANDFIX = (D, pg) => {
   else {   // no larger setting fits: the words as the engine set them; the block still goes lower when they leave the room
     save.forEach(([e, st, cl, ln, html]) => { e.setAttribute('style', st); e.className = cl; e.dataset.lines = ln; e.innerHTML = html; });
     yUp = Math.max(...save.map(([e]) => num(e, 'top') + num(e, 'height')));
+    // a face whose letters run taller than its line (Spectral): the stacked word's box grows to the word (type and places unchanged)
+    if(getComputedStyle(word).whiteSpace !== 'nowrap' && word.scrollHeight > word.clientHeight + 1) word.style.height = (word.scrollHeight*k + 1) + 'pt';
   }
   const dd = yUp <= need ? dy : Math.max(0, Math.min(dy, cardTop() - yUp - Math.max(18, H*.05)));
   card.forEach(e => e.style.top = (num(e, 'top') + dd) + 'pt');

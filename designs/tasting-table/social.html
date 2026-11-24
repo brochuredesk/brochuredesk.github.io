@@ -11,6 +11,37 @@
 <script src="../engine/carousel.js"></script>
 <script src="../engine/factrepeat.js"></script>
 <script src="../engine/socialset.js"></script>
+<script>
+// this set's own carousel slide (owner 11/23/2026: hints of the main design on every slide); replaces the shared strip slide
+// Tasting Table: the fold-over cover's kit-dark head block, the moment as its wide-tracked copper caps kicker with the copper dotted
+// leader running on to the margin (the nearby list's leaders), the street in Newsreader on the dark sized to run the column, and the
+// photo plated in a paper border that straddles the dark block and the kit paper, as the cover's photo does
+(function(){
+  const SS = window.SocialSet, esc = s => Ivory.esc(s);
+  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
+  const txt = (slot, t, x, y, w, h, size, min, css) => `<div class="abs nw" data-slot="${slot}" data-lines="1" data-fit="${size},${min}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;font-size:${size}pt;line-height:${h}pt;${css}">${esc(t)}</div>`;
+  SS.slide = (D, L, W, H) => {
+    const id = D.piece.photo, word = String(SS.M), addr = String(D.listing.address), m = 24, tw = W - 2*m;
+    const cv = document.createElement('canvas').getContext('2d');
+    // the kicker at 22 pt, its tracking 0.16 em; the leader starts 16 pt past its last letter
+    const ks = 22, kt = ks*.16; cv.font = `${L.labelW || 700} ${ks}px ${L.labelFont || L.body}`;
+    const kw = cv.measureText(word.toUpperCase()).width + kt*word.length, kh = 30;
+    // the street measured in Newsreader: 26 to 44 pt across the column (long streets down to 17.5)
+    cv.font = `${L.dw || 600} 100px ${L.display}`;
+    const as = Math.max(26, Math.min(44, Math.floor(tw*.96/(cv.measureText(addr).width/100)))), ah = Math.round(as*1.25);
+    const ky = 24, ay = ky + kh + 6, hb = ay + ah + 22 + 46, pad = 7, py = ay + ah + 22, ph = H - 24 - py;
+    let h = rect(0, 0, W, H, `background:${L.page}`);
+    h += rect(0, 0, W, hb, 'background:var(--ss-band)');
+    h += txt('moment', word, m, ky, Math.min(tw, Math.ceil(kw) + 4), kh, ks, 20, `font-family:${L.labelFont || L.body};font-weight:${L.labelW || 700};text-transform:uppercase;letter-spacing:${kt.toFixed(2)}pt;color:var(--ss-bandacc);text-align:left`);
+    const lx = m + kw + 16;
+    if(W - m - lx > 30) h += rect(lx, ky + kh/2, W - m - lx, 0, 'border-bottom:2pt dotted var(--ss-bandacc)');
+    h += txt('address', addr, m, ay, tw, ah, as, 17.5, `font-family:${L.display};font-weight:${L.dw || 600};color:var(--ss-bandink);text-align:left`);
+    h += rect(m - pad, py, W - 2*m + 2*pad, ph, 'background:color-mix(in srgb, var(--ss-plate) 45%, #ffffff);box-shadow:0 1pt 3pt rgba(0,0,0,.18)');
+    h += OHL.photo(D, id, `left:${m}pt;top:${py + pad}pt;width:${W - 2*m}pt;height:${ph - 2*pad}pt`);
+    return h;
+  };
+})();
+</script>
 <!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
      the kit paper as the field, the kit dark as the band carrying the title, copper caps, the photo plated in a paper border.
      The brand kit's colors (data.brand.colors, data.brand.paper) set the field, band and accents, as the set's other pieces do. -->

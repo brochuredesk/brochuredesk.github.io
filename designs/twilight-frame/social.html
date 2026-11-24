@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>twilight-frame social set</title>
+<link rel="stylesheet" href="tf-tokens.css">
+<script src="../engine/baths.js"></script>
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/carousel.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script src="../engine/socialset.js"></script>
+<script>
+// this set's own carousel slide (owner 11/23/2026: hints of the main design on every slide); replaces the shared strip slide
+// Twilight Frame: the photo over the brand-dark field, the one closed accent hairline frame over everything (the post's frame),
+// the moment in wide-tracked Tenor Sans caps in the accent between two accent hairlines, the street in Spectral
+(function(){
+  const SS = window.SocialSet, esc = s => Ivory.esc(s);
+  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
+  const txt = (slot, t, x, y, w, h, size, min, css) => `<div class="abs nw" data-slot="${slot}" data-lines="1" data-fit="${size},${min}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;font-size:${size}pt;line-height:${h}pt;${css}">${esc(t)}</div>`;
+  const caps = (L, tr) => `text-transform:uppercase;letter-spacing:${tr}pt;`;
+  SS.slide = (D, L, W, H) => {
+    const bd = Object.assign({bg: L.page, ink: L.ink, accent: L.accent}, L.band || {}), id = D.piece.photo, word = SS.M, addr = D.listing.address;
+    const photo = st => OHL.photo(D, id, st);
+    const S = (D, L, W, H, X) => { const st = 88, y = H - st, fi = 8, cx = W/2; let h = X.rect(0, 0, W, H, `background:${L.page}`);
+   h += X.photo(`left:0;top:0;width:${W}pt;height:${y}pt`);
+   // the eyebrow between two accent hairlines that run out to the frame (measured in the eyebrow's own face; 14 pt clear of the letters)
+   const lf = L.labelFont || L.display, lw = L.labelW || 400, cv = document.createElement('canvas').getContext('2d');
+   cv.font = `${lw} 22px ${lf}`; const tw = (cv.measureText(String(X.word).toUpperCase()).width + 4*String(X.word).length)*1 - 4, half = tw/2 + 14;
+   h += X.txt('moment', X.word, 34, y + 9, W - 68, 26, 22, 18, `font-family:${lf};font-weight:${lw};${X.caps(L, 4)}text-indent:4pt;color:var(--ss-acc);text-align:center`);
+   h += X.rect(fi + 12, y + 21.5, cx - half - fi - 12, 1, 'background:var(--ss-acc)') + X.rect(cx + half, y + 21.5, cx - half - fi - 12, 1, 'background:var(--ss-acc)');
+   h += X.txt('address', X.addr, 30, y + 38, W - 60, 33, 27, 17.5, `font-family:${L.display};font-weight:${L.dw || 500};color:${L.ink};text-align:center`);
+   h += `<div class="abs" data-frame="1" style="left:${fi}pt;top:${fi}pt;width:${W - 2*fi}pt;height:${H - 2*fi}pt;border:.9pt solid var(--ss-acc);box-sizing:border-box;pointer-events:none"></div>`;
+   return h; };
+    return S(D, L, W, H, {bd, photo, word, addr, rect, txt, caps});
+  };
+})();
+</script>
+<!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
+     The brand kit's main / accent / dark colors (data.brand.colors) set the field and accents, as the set's other pieces do. -->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+SocialSet.start(D => {
+  const c = (D.brand || {}).colors || {}, r = document.documentElement.style;
+  const rgb = h => { h = String(h||'').replace('#',''); if(h.length===3) h = h.split('').map(x=>x+x).join(''); const n = parseInt(h,16); return [n>>16&255, n>>8&255, n&255]; };
+  const lum = h => { const v = rgb(h).map(q => { q/=255; return q <= .03928 ? q/12.92 : Math.pow((q+.055)/1.055, 2.4); }); return .2126*v[0] + .7152*v[1] + .0722*v[2]; };
+  const con = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); };
+  const on = bg => con(bg, '#ffffff') >= con(bg, '#161616') ? '#ffffff' : '#161616';
+  const dark = c.dark || '#18201d', main = c.main || '#24453a', acc0 = c.accent || '#c3a265';
+  const acc = con(acc0, dark) >= 3 ? acc0 : on(dark);
+  r.setProperty('--ss-page', dark); r.setProperty('--ss-ink', on(dark)); r.setProperty('--ss-acc', acc); r.setProperty('--ss-band', main); r.setProperty('--ss-bandink', on(main)); r.setProperty('--ss-bandacc', con(acc0, main) >= 3 ? acc0 : on(main));
+});
+</script>
+</body>
+</html>

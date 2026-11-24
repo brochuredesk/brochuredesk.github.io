@@ -11,6 +11,34 @@
 <script src="../engine/carousel.js"></script>
 <script src="../engine/factrepeat.js"></script>
 <script src="../engine/socialset.js"></script>
+<script>
+// this set's own carousel slide (owner 11/23/2026: hints of the main design on every slide); replaces the shared strip slide
+// Evening Panel: the room photo edge to edge over the brand dark as a solid panel (the cover's panel), the moment in the accent
+// outlined box (the cover's "built in" box) with the accent rule running on from it to the margin, and the street as the cover's
+// two-tone DM Serif headline (house number in white, the street in the accent); each line sized to run its column
+(function(){
+  const SS = window.SocialSet, esc = s => Ivory.esc(s);
+  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
+  SS.slide = (D, L, W, H) => {
+    const id = D.piece.photo, word = String(SS.M), addr = String(D.listing.address), m = 26, tw = W - 2*m;
+    const cv = document.createElement('canvas').getContext('2d'); cv.font = `${L.dw || 400} 100px ${L.display}`;
+    // the moment in tracked DM Serif caps, 24 to 50 pt, its box sized to the word; the street 24 to 60 pt across the column
+    const kt = .06, mwd = cv.measureText(word.toUpperCase()).width/100 + kt*word.length;
+    const ms = Math.max(24, Math.min(50, Math.floor(tw*.62/mwd))), mh = Math.round(ms*1.3), px = 22, py = 14;
+    const bw = Math.min(tw, Math.ceil(ms*mwd) + 2*px + 4), bh = mh + 2*py;
+    const as = Math.max(24, Math.min(60, Math.floor(tw*1.06/(cv.measureText(addr).width/100)))), ah = Math.round(as*1.3);
+    const pt = 34, g = 20, P = pt + bh + g + ah + pt - 6, ph = H - P, by = ph + pt, ay = by + bh + g;
+    const mt = /^(\d[\w-]*)\s+(.+)$/.exec(addr), two = mt ? `<span style="color:var(--ss-ink)">${esc(mt[1])}</span> ${esc(mt[2])}` : esc(addr);
+    let h = rect(0, 0, W, H, 'background:var(--ss-page)');
+    h += OHL.photo(D, id, `left:0;top:0;width:${W}pt;height:${ph}pt`);
+    h += rect(m, by, bw, bh, 'border:1.5pt solid var(--ss-acc);box-sizing:border-box');
+    h += `<div class="abs nw" data-slot="moment" data-lines="1" data-fit="${ms},22" style="left:${m + px - 2}pt;top:${by + py}pt;width:${bw - 2*px + 4}pt;height:${mh}pt;font-size:${ms}pt;line-height:${mh}pt;font-family:${L.labelFont || L.display};font-weight:${L.labelW || 400};text-transform:uppercase;letter-spacing:${(ms*kt).toFixed(2)}pt;color:var(--ss-ink);text-align:center">${esc(word)}</div>`;
+    if(W - m - (m + bw + 18) > 40) h += rect(m + bw + 18, by + bh/2 - 1.25, W - m - (m + bw + 18), 2.5, 'background:var(--ss-acc)');
+    h += `<div class="abs nw" data-slot="address" data-lines="1" data-fit="${as},17.5" style="left:${m}pt;top:${ay}pt;width:${tw}pt;height:${ah}pt;font-size:${as}pt;line-height:${ah}pt;font-family:${L.display};font-weight:${L.dw || 400};color:var(--ss-acc);text-align:left">${two}</div>`;
+    return h;
+  };
+})();
+</script>
 <!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
      the brand dark as a solid panel, photos edge to edge beside it with a thin dark gutter, DM Serif with the accent rule.
      The brand kit's colors (data.brand.colors, data.brand.paper) set the field, band and accents, as the set's other pieces do. -->

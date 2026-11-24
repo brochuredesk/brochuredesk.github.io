@@ -11,6 +11,31 @@
 <script src="../engine/carousel.js"></script>
 <script src="../engine/factrepeat.js"></script>
 <script src="../engine/socialset.js"></script>
+<script>
+// this set's own carousel slide (owner 11/23/2026: hints of the main design on every slide); replaces the shared strip slide
+// Gallery Line: the paper over the brand main field with the room photo hanging across the seam (the cover's key photo), then the
+// cover's centered type on the field: the moment in widely spaced accent Spectral caps, the street in white Spectral caps across the
+// column, and the short accent rule under it; each line sized to run its column
+(function(){
+  const SS = window.SocialSet, esc = s => Ivory.esc(s);
+  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
+  const txt = (slot, t, x, y, w, h, size, min, css) => `<div class="abs nw" data-slot="${slot}" data-lines="1" data-fit="${size},${min}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;font-size:${size}pt;line-height:${h}pt;${css}">${esc(t)}</div>`;
+  SS.slide = (D, L, W, H) => {
+    const id = D.piece.photo, word = String(SS.M), addr = String(D.listing.address), m = 24, tw = W - 2*m;
+    const cv = document.createElement('canvas').getContext('2d'), cap = (f, t, k) => { cv.font = f; return cv.measureText(t.toUpperCase()).width/100 + k*t.length; };
+    // the moment 24 to 40 pt in widely spaced caps; the street 24 to 46 pt across the column (long streets down to 17.5)
+    const k1 = .2, k2 = .06, ms = Math.max(24, Math.min(40, Math.floor(tw*.98/cap(`${L.labelW || 500} 100px ${L.labelFont || L.display}`, word, k1)))), mh = Math.round(ms*1.3);
+    const as = Math.max(24, Math.min(46, Math.floor(tw*1.05/cap(`${L.dw || 600} 100px ${L.display}`, addr, k2)))), ah = Math.round(as*1.3);
+    const ty = H - 30 - 1.5 - 16 - ah - 4 - mh, yp = ty - 20, seam = Math.round(22 + (yp - 22)*.55);
+    let h = rect(0, 0, W, H, 'background:var(--ss-page)') + rect(0, 0, W, seam, 'background:var(--ss-band)');
+    h += OHL.photo(D, id, `left:${m}pt;top:22pt;width:${tw}pt;height:${yp - 22}pt`);
+    h += txt('moment', word, m, ty, tw, mh, ms, 22, `font-family:${L.labelFont || L.display};font-weight:${L.labelW || 500};text-transform:uppercase;letter-spacing:${(ms*k1).toFixed(2)}pt;text-indent:${(ms*k1).toFixed(2)}pt;color:var(--ss-acc);text-align:center`);
+    h += txt('address', addr, m, ty + mh + 4, tw, ah, as, 17.5, `font-family:${L.display};font-weight:${L.dw || 600};text-transform:uppercase;letter-spacing:${(as*k2).toFixed(2)}pt;color:var(--ss-ink);text-align:center`);
+    h += rect(W/2 - 20, H - 30 - 1.5, 40, 1.5, 'background:var(--ss-acc)');
+    return h;
+  };
+})();
+</script>
 <!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
      a field of the main color under the paper, the key photo hanging across the seam with a thin accent line, Spectral caps widely spaced.
      The brand kit's colors (data.brand.colors, data.brand.paper) set the field, band and accents, as the set's other pieces do. -->

@@ -67,7 +67,7 @@ const LANDFIX = (D, pg) => {
   const band = [...pg.querySelectorAll('.abs')].find(e => /var\(--ss-band\)/.test(e.getAttribute('style') || '') && R(e).t < 1 && R(e).b > H - 1 && R(e).l > 4);
   const word = pg.querySelector('[data-slot="moment"]'), facts = pg.querySelector('[data-slot="facts"]');
   if(!band || !word) return false;
-  const B = R(band), cx = (B.l + B.r)/2, pad = num(word, 'left') - B.l, iw = B.r - B.l - 2*pad, fin = pg.querySelector('[data-frame]') ? 8 : 0;
+  const B = R(band), cx = (B.l + B.r)/2, pad = js && !gbp && !facts ? Math.min(num(word, 'left') - B.l, (B.r - B.l)*.08) : num(word, 'left') - B.l, iw = B.r - B.l - 2*pad, fin = pg.querySelector('[data-frame]') ? 8 : 0;
   const ink = e => { const rg = document.createRange(); rg.selectNodeContents(e); const q = [...rg.getClientRects()].filter(x => x.width > .5);
     return q.length ? {l: (Math.min(...q.map(x => x.left)) - P0.left)*k, r: (Math.max(...q.map(x => x.right)) - P0.left)*k, t: (Math.min(...q.map(x => x.top)) - P0.top)*k, b: (Math.max(...q.map(x => x.bottom)) - P0.top)*k} : null; };
   // type scaled from its as-set size (font, line, tracking), the element and its inline spans
@@ -104,15 +104,25 @@ const LANDFIX = (D, pg) => {
   const items = facts ? facts.textContent.split(/\s+·\s+/).map(t => t.trim()).filter(Boolean) : [];
   const fw = t => { const c = getComputedStyle(facts), sp = document.createElement('span'); sp.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:' + c.font + ';letter-spacing:' + c.letterSpacing; sp.textContent = t; pg.appendChild(sp); const v = sp.getBoundingClientRect().width*k; sp.remove(); return v; };
   const pack = maxW => { const out = []; for(const it of items){ const t = out.length ? out[out.length - 1] + ' · ' + it : null; if(t && fw(t) <= maxW) out[out.length - 1] = t; else out.push(it); } return out; };
-  const w0 = ink(word), wl0 = base.get(word).lh || base.get(word).fs*1.15, cap = 2.4;
+  const w0 = ink(word), tight = js && !gbp && !facts, wl0 = tight ? base.get(word).fs*1.02 : base.get(word).lh || base.get(word).fs*1.15, cap = tight ? 3.2 : 2.4;
   const tw = t => { const c = getComputedStyle(word), s = document.createElement('span'); s.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:' + c.font + ';letter-spacing:' + c.letterSpacing + ';text-transform:' + c.textTransform; s.textContent = t; pg.appendChild(s); const v = s.getBoundingClientRect().width*k; s.remove(); return v; };
   const wds = word.textContent.trim().split(/\s+/), g1 = w0 && word.classList.contains('nw') ? iw*.97/(w0.r - w0.l) : 1, g2 = wds.length > 1 ? iw*.97/Math.max(...wds.map(tw)) : 0;
-  const top = Math.max(pad*1.6, H*.075) + fin, low = H - top;   // the same margin above the word and under the logo
+  // the word's letters as drawn (cap tops to the last line's foot), not its line boxes: a canvas measure of each line on its line box
+  const glyph = () => { const rg = document.createRange(); rg.selectNodeContents(word); const q = [...rg.getClientRects()].filter(x => x.width > .5).sort((a, b) => a.top - b.top);
+    if(!q.length) return null; const c = getComputedStyle(word), cx2 = document.createElement('canvas').getContext('2d'); cx2.font = c.font;
+    const up = c.textTransform === 'uppercase', ls = word.textContent.trim().split(/\s+/), n = +word.dataset.lines || 1, t1 = n > 1 ? ls[0] : ls.join(' '), t2 = n > 1 ? ls.slice(1).join(' ') : t1;
+    const m1 = cx2.measureText(up ? t1.toUpperCase() : t1), m2 = cx2.measureText(up ? t2.toUpperCase() : t2), last = q[q.length - 1];
+    return {t: (q[0].top + m1.fontBoundingBoxAscent - m1.actualBoundingBoxAscent - P0.top)*k, b: (last.top + m2.fontBoundingBoxAscent + m2.actualBoundingBoxDescent - P0.top)*k}; };
+  let top = Math.max(pad*1.6, H*.075) + fin; const low = H - top;   // the same margin above the word and under the logo
   const cardTop = () => Math.min(...card.map(e => num(e, 'top'))), cardBot = () => Math.max(...card.map(e => num(e, 'top') + num(e, 'height')));
   const gap0 = facts ? Math.max(8, num(facts, 'top') - (num(word, 'top') + num(word, 'height'))) : 0;
   const dy = low - cardBot(), need = cardTop() + dy - Math.max(18, H*.05);   // the lowest the words may reach once the block sits on the bottom margin
+  // Just Sold Wide (owner 11/23): the word as large as its space holds, centered top to bottom between the band's top and the rule,
+  // the rule centered between the word and the agent block (three equal gaps)
+  const jsw = js && !gbp && !facts, amin = Math.max(16, H*.055);
+  if(jsw) top = fin + amin;
   const lay = (n, g, gf) => {
-    scale(word, g); let wh = n*wl0*g + (n > 1 ? base.get(word).fs*g*.15 : 0);
+    scale(word, g); if(tight) word.style.lineHeight = (wl0*g).toFixed(2) + 'pt'; let wh = n*wl0*g + (n > 1 ? base.get(word).fs*g*.15 : 0);
     word.classList.remove('nw', 'wr'); word.classList.add(n > 1 ? 'wr' : 'nw'); word.dataset.lines = n;
     word.style.whiteSpace = n > 1 ? 'normal' : 'nowrap'; word.style.left = (B.l + pad + (n > 1 ? iw*.015 : 0)) + 'pt'; word.style.width = (n > 1 ? iw*.97 : iw) + 'pt';
     word.style.height = wh + 'pt'; word.style.top = top + 'pt';
@@ -129,17 +139,21 @@ const LANDFIX = (D, pg) => {
   // every way the words fit (one or two lines; the facts up to 1.3x on Just Listed GBP); the largest word wins, then the larger facts
   let best = null;
   for(const [n, gm] of [[1, word.classList.contains('nw') ? g1 : 0], [2, g2]]) for(const gf of (!js && gbp && facts ? [1.3, 1.25, 1.2, 1.15, 1.1, 1] : [1])){
-    for(let g = Math.min(cap, gm); g >= 1; g -= .02){ const y = lay(n, g, gf); if(y > 0 && y <= need){ const sc = g + gf; if(!best || sc > best.sc) best = {n, g, gf, sc}; break; } }
+    for(let g = Math.min(cap, gm); g >= 1; g -= .02){ const y = lay(n, g, gf), qi = jsw && y > 0 ? glyph() : null; if(y > 0 && (jsw ? qi && qi.b - qi.t <= cardTop() + dy - fin - 3*amin : y <= need)){ const sc = g + gf; if(!best || sc > best.sc) best = {n, g, gf, sc}; break; } }
   }
   let yUp;
   pg.dataset.landfix = best ? 'grown' : 'kept';
   if(best) yUp = lay(best.n, best.g, best.gf);
+  if(jsw && best){ const q = glyph(); if(q) yUp = Math.min(yUp, q.b); }
   else {   // no larger setting fits: the words as the engine set them; the block still goes lower when they leave the room
     save.forEach(([e, st, cl, ln, html]) => { e.setAttribute('style', st); e.className = cl; e.dataset.lines = ln; e.innerHTML = html; });
     yUp = Math.max(...save.map(([e]) => num(e, 'top') + num(e, 'height')));
   }
   const dd = yUp <= need ? dy : Math.max(0, Math.min(dy, cardTop() - yUp - Math.max(18, H*.05)));
   card.forEach(e => e.style.top = (num(e, 'top') + dd) + 'pt');
+  // (run again once the column has settled on the card's foot)
+  if(jsw && best){ pg._center = () => { const C = cardTop(), q = glyph(); if(!q) return; const hi = q.b - q.t, want = fin + (C - fin - hi)/3, sh = want - q.t;
+    word.style.top = (num(word, 'top') + sh) + 'pt'; if(rule) rule.style.top = ((q.b + sh + C)/2 - num(rule, 'height')/2) + 'pt'; }; pg._center(); return true; }
   if(rule) rule.style.top = ((yUp + cardTop())/2) + 'pt';
   return true;
 };
@@ -217,6 +231,7 @@ window.brochureReady = window.brochureReady.then(async () => {
      if(dy > 2) g.forEach(e => { const t = parseFloat(e.style.top); if(!isNaN(t)) e.style.top = (t + dy) + 'pt'; }); });
  })(); };
   SIG();
+  if(pg._center) pg._center();
 });
 </script>
 </body>

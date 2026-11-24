@@ -11,6 +11,34 @@
 <script src="../engine/carousel.js"></script>
 <script src="../engine/factrepeat.js"></script>
 <script src="../engine/socialset.js"></script>
+<script>
+// this set's own carousel slide (owner 11/23/2026: hints of the main design on every slide); replaces the shared strip slide
+// Angle: the room photo cut on the set's one slant (higher at the right) with the accent stripe along the cut, the brand main as
+// the field, the moment in the accent tag leaning on the same slant (skewX -14deg, the cover's tag) with the on-main hairline running
+// on from it, and the street in tall white Asap Condensed caps across the column; each line sized to run its column
+(function(){
+  const SS = window.SocialSet, esc = s => Ivory.esc(s);
+  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
+  SS.slide = (D, L, W, H) => {
+    const id = D.piece.photo, word = String(SS.M), addr = String(D.listing.address), m = 24, tw = W - 2*m;
+    const cv = document.createElement('canvas').getContext('2d'); cv.font = `${L.dw || 700} 100px ${L.display}`;
+    // the moment in tracked Asap Condensed caps, 24 to 50 pt, the tag sized to the word; the street 24 to 90 pt across the column
+    const kt = .08, mwd = cv.measureText(word.toUpperCase()).width/100 + kt*word.length;
+    const ms = Math.max(24, Math.min(50, Math.floor(tw*.5/mwd))), mh = Math.round(ms*1.2), px = 26, py = 9, lean = Math.tan(14*Math.PI/180);
+    const bh = mh + 2*py, bw = Math.min(tw*.8, Math.ceil(ms*mwd) + 2*px + bh*lean);
+    const as = Math.max(24, Math.min(90, Math.floor(tw*1.08/(cv.measureText(addr.toUpperCase()).width/100 + .01*addr.length)))), ah = Math.round(as*1.12);
+    const g = 22, st = 7, s = 64, yL = Math.round(H - 44 - (bh + g + ah) - 34 - st), yR = yL - s, by = yL + st + 34, ay = by + bh + g;
+    let h = rect(0, 0, W, H, 'background:var(--ss-page)');
+    h += `<div class="abs" style="left:0;top:0;width:${W}pt;height:${yL}pt;clip-path:polygon(0 0,100% 0,100% ${(yR/yL*100).toFixed(3)}%,0 100%)">${OHL.photo(D, id, `left:0;top:0;width:${W}pt;height:${yL}pt`)}</div>`;
+    h += `<svg class="abs" style="left:0;top:0;width:${W}pt;height:${H}pt" viewBox="0 0 ${W} ${H}"><polygon points="0,${yL - .5} ${W},${yR - .5} ${W},${yR + st} 0,${yL + st}" fill="var(--ss-acc)"/></svg>`;
+    h += rect(m + bh*lean/2, by, bw - bh*lean, bh, 'background:var(--ss-acc);transform:skewX(-14deg)');
+    h += `<div class="abs nw" data-slot="moment" data-lines="1" data-fit="${ms},22" style="left:${m + px}pt;top:${by + py}pt;width:${bw - 2*px}pt;height:${mh}pt;font-size:${ms}pt;line-height:${mh}pt;font-family:${L.labelFont || L.display};font-weight:${L.labelW || 700};text-transform:uppercase;letter-spacing:${(ms*kt).toFixed(2)}pt;color:var(--ss-band);text-align:center">${esc(word)}</div>`;
+    if(W - m - (m + bw + 18) > 40) h += rect(m + bw + 18, by + bh/2 - .5, W - m - (m + bw + 18), 1, 'background:var(--ss-ink);opacity:.35');
+    h += `<div class="abs nw" data-slot="address" data-lines="1" data-fit="${as},17.5" style="left:${m}pt;top:${ay}pt;width:${tw}pt;height:${ah}pt;font-size:${as}pt;line-height:${ah}pt;font-family:${L.display};font-weight:${L.dw || 700};text-transform:uppercase;letter-spacing:${(as*.01).toFixed(2)}pt;color:var(--ss-ink);text-align:left">${esc(addr)}</div>`;
+    return h;
+  };
+})();
+</script>
 <!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
      the brand main as the field, the photo cut on one slant with the accent stripe along the cut, tall Asap Condensed caps.
      The brand kit's colors (data.brand.colors, data.brand.paper) set the field, band and accents, as the set's other pieces do. -->

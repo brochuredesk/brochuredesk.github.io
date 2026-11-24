@@ -11,6 +11,29 @@
 <script src="../engine/carousel.js"></script>
 <script src="../engine/factrepeat.js"></script>
 <script src="../engine/socialset.js"></script>
+<script>
+// this set's own carousel slide (owner 11/23/2026: hints of the main design on every slide); replaces the shared strip slide
+// Warm Collage: the tiles on the mat (the main-color tint showing as the 8 pt grout and margin): a main-color block naming the
+// piece in Bitter caps, the photo tile, a main-color block with the street, the accent anchor at the photo's foot as on the post
+(function(){
+  const SS = window.SocialSet, esc = s => Ivory.esc(s);
+  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
+  const txt = (slot, t, x, y, w, h, size, min, css) => `<div class="abs nw" data-slot="${slot}" data-lines="1" data-fit="${size},${min}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;font-size:${size}pt;line-height:${h}pt;${css}">${esc(t)}</div>`;
+  const caps = (L, tr) => `text-transform:uppercase;letter-spacing:${tr}pt;`;
+  SS.slide = (D, L, W, H) => {
+    const bd = Object.assign({bg: L.page, ink: L.ink, accent: L.accent}, L.band || {}), id = D.piece.photo, word = SS.M, addr = D.listing.address;
+    const photo = st => OHL.photo(D, id, st);
+    const S = (D, L, W, H, X) => { const g = 8, bh = 38, iw = W - 2*g, py = g + bh + g, ph = H - 2*g - 2*bh - 2*g, by = py + ph + g; let h = X.rect(0, 0, W, H, `background:${L.page}`);
+   h += X.rect(g, g, iw, bh, `background:${X.bd.bg}`) + X.rect(g, by, iw, bh, `background:${X.bd.bg}`);
+   h += X.photo(`left:${g}pt;top:${py}pt;width:${iw}pt;height:${ph}pt`);
+   h += X.rect(g + iw - 64, py + ph - 7, 64, 7, 'background:var(--ss-anchor)');
+   h += X.txt('moment', X.word, g + 20, g + 3, iw - 40, bh - 6, 22, 18, `font-family:${L.labelFont || L.display};font-weight:${L.labelW || 700};${X.caps(L, 2)}text-indent:2pt;color:${X.bd.ink};text-align:center`);
+   h += X.txt('address', X.addr, g + 16, by + 2, iw - 32, bh - 4, 25, 17.5, `font-family:${L.display};font-weight:${L.dw || 700};color:${X.bd.ink};text-align:center`);
+   return h; };
+    return S(D, L, W, H, {bd, photo, word, addr, rect, txt, caps});
+  };
+})();
+</script>
 <!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
      the mat tint of the main color as the field, the main-color block that names the piece, the accent anchor, Bitter caps.
      The brand kit's colors (data.brand.colors, data.brand.paper) set the field, band and accents, as the set's other pieces do. -->

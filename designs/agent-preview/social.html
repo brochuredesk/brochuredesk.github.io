@@ -11,6 +11,33 @@
 <script src="../engine/carousel.js"></script>
 <script src="../engine/factrepeat.js"></script>
 <script src="../engine/socialset.js"></script>
+<script>
+// this set's own carousel slide (owner 11/23/2026: hints of the main design on every slide); replaces the shared strip slide
+// Agent Preview: the brand-dark field inside the one closed gold hairline frame (the post's outline), the photo in its gold hairline
+// mat (the fold-over cover's), the moment as the cover's wide-tracked gold Manrope kicker, and the street in Spectral capitals with
+// its last word in gold, as the cover's title, sized to run the column; all centered as on the cover
+(function(){
+  const SS = window.SocialSet, esc = s => Ivory.esc(s);
+  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
+  const txt = (slot, t, x, y, w, h, size, min, css, raw) => `<div class="abs nw" data-slot="${slot}" data-lines="1" data-fit="${size},${min}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;font-size:${size}pt;line-height:${h}pt;${css}">${raw || esc(t)}</div>`;
+  SS.slide = (D, L, W, H) => {
+    const id = D.piece.photo, word = String(SS.M), addr = String(D.listing.address), f = 12, m = 34, tw = W - 2*m;
+    // the street measured in Spectral capitals (tracking 0.04 em): 24 to 40 pt across the column (long streets down to 17.5)
+    const cv = document.createElement('canvas').getContext('2d'); cv.font = `${L.dw || 600} 100px ${L.display}`;
+    const as = Math.max(24, Math.min(40, Math.floor(tw*.96/(cv.measureText(addr.toUpperCase()).width/100 + .04*addr.length)))), ah = Math.round(as*1.45);
+    const ks = 22, kh = 30, pi = 27, gap = 22, ay = H - f - 22 - ah, ky = ay - 4 - kh, ph = ky - gap - pi;
+    const ws = addr.trim().split(/\s+/), last = ws.length > 1 ? ws.pop() : '';
+    const raw = `${esc(ws.join(' '))}${last ? ` <span style="color:var(--ss-acc)">${esc(last)}</span>` : ''}`;
+    let h = rect(0, 0, W, H, `background:${L.page}`);
+    h += rect(f, f, W - 2*f, H - 2*f, 'border:1pt solid var(--ss-hair);box-sizing:border-box');
+    h += rect(pi - 6, pi - 6, W - 2*pi + 12, ph + 12, 'border:.8pt solid var(--ss-hair);box-sizing:border-box');
+    h += OHL.photo(D, id, `left:${pi}pt;top:${pi}pt;width:${W - 2*pi}pt;height:${ph}pt`);
+    h += txt('moment', word, m, ky, tw, kh, ks, 20, `font-family:${L.labelFont || L.body};font-weight:${L.labelW || 700};text-transform:uppercase;letter-spacing:${(ks*.2).toFixed(2)}pt;text-indent:${(ks*.2).toFixed(2)}pt;color:var(--ss-acc);text-align:center`);
+    h += txt('address', addr, m, ay, tw, ah, as, 17.5, `font-family:${L.display};font-weight:${L.dw || 600};text-transform:uppercase;letter-spacing:${(as*.04).toFixed(2)}pt;color:${L.ink};text-align:center`, raw);
+    return h;
+  };
+})();
+</script>
 <!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
      the brand dark as the field, the gold outline, the gold mat around the photo, Spectral capitals, tracked Manrope caps.
      The brand kit's colors (data.brand.colors, data.brand.paper) set the field, band and accents, as the set's other pieces do. -->

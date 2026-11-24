@@ -11,6 +11,33 @@
 <script src="../engine/carousel.js"></script>
 <script src="../engine/factrepeat.js"></script>
 <script src="../engine/socialset.js"></script>
+<script>
+// this set's own carousel slide (owner 11/23/2026: hints of the main design on every slide); replaces the shared strip slide
+// Itinerary: the photo over the main-color title bar with its 3 pt accent line on top (the post's and fold-over's bar), the moment in
+// wide-tracked white Montserrat caps sized to run the bar, the street on the tinted paper under it in Playfair, sized to run the column
+(function(){
+  const SS = window.SocialSet, esc = s => Ivory.esc(s);
+  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
+  const txt = (slot, t, x, y, w, h, size, min, css) => `<div class="abs nw" data-slot="${slot}" data-lines="1" data-fit="${size},${min}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;font-size:${size}pt;line-height:${h}pt;${css}">${esc(t)}</div>`;
+  SS.slide = (D, L, W, H) => {
+    const id = D.piece.photo, word = String(SS.M), addr = String(D.listing.address), m = 22, tw = W - 2*m;
+    // measured in their own faces: the moment 24 to 50 pt across the bar, the street 23 to 44 pt across the column (long streets to 17.5)
+    const cv = document.createElement('canvas').getContext('2d');
+    cv.font = `${L.labelW || 700} 100px ${L.labelFont || L.body}`; const tr = .1;
+    const ms = Math.max(24, Math.min(50, Math.floor(tw*.97/(cv.measureText(word.toUpperCase()).width/100 + tr*word.length)))), mh = Math.round(ms*1.3);
+    cv.font = `${L.dw || 700} 100px ${L.display}`;
+    const as = Math.max(23, Math.min(44, Math.floor(tw*.95/(cv.measureText(addr).width/100)))), ah = Math.round(as*1.3);
+    const sh = ah + 30, bh = mh + 26, al = 3, by = H - sh - bh, py = by - al;
+    let h = rect(0, 0, W, H, `background:${L.page}`);
+    h += OHL.photo(D, id, `left:0;top:0;width:${W}pt;height:${py}pt`);
+    h += rect(0, py, W, al, 'background:var(--ss-anchor)');
+    h += rect(0, by, W, bh, 'background:var(--ss-band)');
+    h += txt('moment', word, m, by + 13, tw, mh, ms, 20, `font-family:${L.labelFont || L.body};font-weight:${L.labelW || 700};text-transform:uppercase;letter-spacing:${(ms*tr).toFixed(2)}pt;color:var(--ss-bandink);text-align:left`);
+    h += txt('address', addr, m, by + bh + 15, tw, ah, as, 17.5, `font-family:${L.display};font-weight:${L.dw || 700};color:${L.ink};text-align:left`);
+    return h;
+  };
+})();
+</script>
 <!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
      a light tint of the main color as the paper, the main-color title bar with a 3 pt accent line on its top, Playfair values.
      The brand kit's colors (data.brand.colors, data.brand.paper) set the field, band and accents, as the set's other pieces do. -->
