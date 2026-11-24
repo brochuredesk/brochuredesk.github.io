@@ -208,9 +208,9 @@
   // ---------------- Civic Diagonal (P45) shared pieces ----------------
   FO.GAP = 12;   // P45's white channel between the slab's slanted foot and the photos cut on the same slant (and between side-by-side photos)
   // the street in the display face: Jost Light caps, broken into two lines where they set largest, every line spread to the measure w
-  FO.wideStreet = (ad, w, maxH, max, min) => { const parts = String(ad || '').toUpperCase().split(/\s+/), opts = [[parts.join(' ')]];
+  FO.wideStreet = (ad, w, maxH, max, min, ls0) => { const parts = String(ad || '').toUpperCase().split(/\s+/), opts = [[parts.join(' ')]];
     for(let i = 1; i < parts.length; i++) opts.push([parts.slice(0, i).join(' '), parts.slice(i).join(' ')]);
-    let best = null; opts.forEach(ls => { let f = CD.wideFit(ls, w, max, min, 2.5); while(f > min && ls.length*f*1.12 > maxH) f -= 0.5;
+    let best = null; opts.forEach(ls => { let f = CD.wideFit(ls, w, max, min, ls0 == null ? 2.5 : ls0); while(f > min && ls.length*f*1.12 > maxH) f -= 0.5;
       const lo = Math.min(...ls.map(l => l.length))/Math.max(...ls.map(l => l.length)), sc = f*(ls.length === 1 ? 1 : 0.92 + 0.08*lo); if(!best || sc > best.sc) best = {ls, f, sc}; });
     return best; };
   FO.place = L => [FXS.hood(L), FXS.placeLine(L).replace(/\s+\d{5}(-\d{4})?$/, '')].filter(Boolean).join('  ·  ').toUpperCase();
@@ -230,26 +230,34 @@
   // icons. No agent, no brokerage.
   FO.front = (D, o) => { o = o || {};
     const L = D.listing, K = (D.sw || {}).front || {}, F = ((D.companion || {}).flyer || {}).front || {}, intro = o.intro || F.intro || K.summary || [];
-    const hero = FO.heroId(D, F.hero || K.hero || 'front'), SX = 336, PW = 621 - FO.FG, FZ = 100, B = 792 - FZ;
-    let Hh = 470; while(Hh > 300 && !SW.fits(D, hero, PW, Hh)) Hh -= 4;
+    const hero = FO.heroId(D, F.hero || K.hero || 'front'), SX = 368, PW = 630, BAR = 44, FZ = BAR + FO.GAP, B = 792 - FZ;   // owner 11/17 (p27): the facts line gives way to a solid dark bar under the house
+    // the house keeps its approved top (sized as when the facts row was 100 pt) and grows down into the room the bar does not use; where the
+    // photo cannot take the extra height, it keeps its height and moves down with the bar
+    let Hh = 470; while(Hh > 300 && !SW.fits(D, hero, PW, Hh)) Hh -= 4; if(SW.fits(D, hero, PW, Hh + (100 - FZ))) Hh += 100 - FZ;
     const yT = B - Hh, ln = CD.y(621, yT), foot = CD.y(621, yT - FO.GAP);   // ln: the photo's top line; foot: the slab's foot, one channel above it
-    let h = CD.cut(D, hero, FO.FG, yT, PW, B - yT, 'front.house', 'top', ln(FO.FG), yT);
+    let h = CD.cut(D, hero, -9, yT, PW, B - yT, 'front.house', 'top', ln(-9), yT);   // to the fold edge's bleed (owner 11/17: outside photos may cross the fold)
     h += CD.field(SX, 621, foot(SX), foot(621), 'above', -9, 'var(--cd-dark)');
     // the slab: the welcome block centered in its square part
     const hood = FXS.hood(L), city = FXS.placeLine(L).replace(/\s+\d{5}(-\d{4})?$/, ''), bw = 621 - 30 - (SX + 30);
     const blk = FO.slabBlock('', hood || city, hood ? city : '', SX + 30, 0, bw, 30, 'front.hood'), by = 30 + Math.max(0, (foot(621) - 26 - 30 - blk.h)/2);
     h += `<div class="cd-band">${FO.slabBlock('', hood || city, hood ? city : '', SX + 30, by, bw, 30, 'front.hood').html}</div>`;
     // the white field: the street as the display word, the place, the write-up
-    const LW = SX - 26 - X0, top = 40, bot = yT - 16, S = FO.wideStreet(L.address, LW, Math.min(150, (bot - top)*0.55), 62, 24), slh = +(S.f*1.12).toFixed(2);
-    let y = top; S.ls.forEach((l, i) => { h += CD.wide(l, X0, y, LW, S.f, slh, 'address' + (i ? '.2' : ''), {max: S.f*0.5}); y += slh; });
-    y += 6; const pl = FO.place(L), pf = FXS.fitSize(pl, 'font-family:Jost;font-weight:500;letter-spacing:2.2pt', LW, 10.5, 8.6);
+    // owner 11/17 (p27): the street larger (a wider white field, tighter fitting); where the approved cover carried its three-line write-up the
+    // street gives back only what that needs, never smaller than it was; with no write-up the street and the place sit centered in the field
+    const LW = SX - 26 - X0, top = 40, bot = yT - 16, pl = FO.place(L), pf = FXS.fitSize(pl, 'font-family:Jost;font-weight:500;letter-spacing:2.2pt', LW, 10.5, 8.6), plH = 6 + pf*1.4;
+    const S = FO.wideStreet(L.address, LW, Math.min(170, (bot - top)*0.6), 76, 24, 1), S0 = FO.wideStreet(L.address, 336 - 26 - X0, Math.min(150, (bot - top)*0.55), 62, 24);
+    const sumRoom = f => bot - top - S.ls.length*f*1.12 - plH - 14, had = intro.length && sumRoom0() >= 48; function sumRoom0(){ return bot - top - S0.ls.length*S0.f*1.12 - plH - 14; }
+    if(had) while(S.f > S0.f && sumRoom(S.f) < 48) S.f -= 0.5;
+    const slh = +(S.f*1.12).toFixed(2), showSum = intro.length && sumRoom(S.f) >= 48;
+    let y = showSum ? top : top + Math.max(0, (bot - top - S.ls.length*slh - plH)/2);
+    S.ls.forEach((l, i) => { h += CD.wide(l, X0, y, LW, S.f, slh, 'address' + (i ? '.2' : ''), {max: S.f*0.5}); y += slh; });
+    y += 6;
     h += `<div class="cd-place" style="left:${X0}pt;top:${y}pt;width:${LW}pt;height:${pf*1.4}pt;font-size:${pf}pt;line-height:${pf*1.4}pt;letter-spacing:2.2pt" data-slot="front.place" data-lines="1">${esc(pl)}</div>`; y += pf*1.4 + 14;
-    { const avail = bot - y, lh = 16, nl = Math.floor(avail/lh);
+    if(showSum){ const avail = bot - y, lh = 16, nl = Math.floor(avail/lh);
       if(nl >= 3) h += FO.full(`<div class="abs wu" data-slot="front.summary" data-lines="${nl}" data-try="${nl},${nl - 1}" data-lh="${lh}" ${FXS.sd(intro)} style="left:${X0}pt;top:${y + (avail - nl*lh)/2}pt;width:${LW}pt;height:${nl*lh}pt;font-size:11pt;line-height:${lh}pt"></div>`); }
-    // under the house: P45's facts with their icons, three to a row
-    const six = CD.factSix(L).filter(f => f[0] !== 'stories'); if(six.length < 5) CD.factSix(L).filter(f => f[0] === 'stories').forEach(f => six.push(f));
-    const cols = 3, rows = Math.ceil(six.length/cols), rh = 26, fy = B + (FZ - rows*rh)/2 - 2;
-    h += CD.facts(six, X0, fy, CW, cols, rh, 'front.fact', {ic: 18, max: 13.5, g: 14}).html;
+    // under the house (owner 11/17, p27): a solid bar in the slab's dark, side to side across the cover to the bleed, one white channel under
+    // the photo (the same channel that parts the slab from the photo at the top)
+    h += `<div class="abs" style="left:-9pt;top:${B + FO.GAP}pt;width:630pt;height:${BAR + 9}pt;background:var(--cd-dark)"></div>`;
     return h;
   };
 
@@ -396,16 +404,16 @@
   FO.slabTop = left => left ? CD.field(-9, 621, FO.spY(-9), FO.spY(621), 'above', -9, 'var(--cd-dark)') : CD.field(-9, 621, FO.spY(603), FO.spY(1233), 'above', -9, 'var(--cd-dark)');
   // the right page's text block under the horizon: the room's name, the headline in P45's Light caps (two lines, each spread to the
   // measure), its own write-up; returns {html, bottom}. Built once for its height so both pages' rows can share one top.
-  FO.rightHead = (D) => { const K = D.sw || {}, R = K.right || {}, P = K.plan || {}, C = P.cd || {}, ids = C.right ? [C.right].concat(C.rightRow || []) : (P.right || []), top = FO.cards(D, ids)[0];
+  FO.rightHead = (D, off) => { off = off || 0; const K = D.sw || {}, R = K.right || {}, P = K.plan || {}, C = P.cd || {}, ids = C.right ? [C.right].concat(C.rightRow || []) : (P.right || []), top = FO.cards(D, ids)[0];
     const c = FXS.cardFor(D, top.photo) || {}, lab = FXS.leadLabel(c.lead || FO.lead(D, top.photo)), t = String(C.rightTitle || R.title || '').replace(/\.$/, '').toUpperCase(); if(lab.size) (FXS.__sizes = FXS.__sizes || new Set()).add(lab.size);
-    const y0 = FO.HB + 16; let h = `<div class="cd-place" style="left:${X0}pt;top:${y0}pt;width:${CW}pt;height:13pt;font-size:9.5pt;line-height:13pt;letter-spacing:3pt" data-slot="right.room" data-lines="1">${esc(String(lab.name || '').toUpperCase())}${lab.size ? `<span data-size="1" style="margin-left:12pt;color:var(--cd-soft);letter-spacing:1.2pt;font-weight:500">${esc(lab.size)}</span>` : ''}</div>`;
+    const y0 = FO.HB + 16 + off; let h = `<div class="cd-place" style="left:${X0}pt;top:${y0}pt;width:${CW}pt;height:13pt;font-size:9.5pt;line-height:13pt;letter-spacing:3pt" data-slot="right.room" data-lines="1">${esc(String(lab.name || '').toUpperCase())}${lab.size ? `<span data-size="1" style="margin-left:12pt;color:var(--cd-soft);letter-spacing:1.2pt;font-weight:500">${esc(lab.size)}</span>` : ''}</div>`;
     // break the headline in two where both lines set largest at a shared size
     const ws = t.split(/\s+/); let best = null; for(let k = 1; k < ws.length; k++){ const l = [ws.slice(0, k).join(' '), ws.slice(k).join(' ')]; if(/^(A|AN|THE|AND|OF|WITH|I)$/.test(ws[k - 1])) continue; const f = CD.wideFit(l, CW, 30, 20, 2); const sc = f - 2*Math.abs(l[0].length - l[1].length)/Math.max(l[0].length, l[1].length); if(!best || sc > best.sc) best = {l, f, sc}; }
     if(!best) best = {l: [t], f: CD.wideFit([t], CW, 34, 18, 2)};
-    const lh = +(best.f*1.12).toFixed(2); let y = y0 + 19; best.l.forEach((l, i) => { h += CD.wide(l, X0, y, CW, best.f, lh, 'right.title' + (i ? '.2' : ''), {max: 9}); y += lh; });
+    const lh = +(best.f*1.12).toFixed(2); let y = y0 + 19; best.l.forEach((l, i) => { h += CD.wide(l, X0, y, CW, best.f, lh, 'right.title' + (i ? '.2' : ''), {max: 9}).replace(' data-fine="1"', ''); y += lh; });   // the headline is real text (not fine print): the checks see the write-up sits under it
     const c0 = FXS.augment(D, top), wl = 20, nw = 3; y += 8;
     h += `<div class="abs cap"><div class="a" style="position:absolute;left:${X0}pt;top:${y}pt;width:${CW}pt;height:${nw*wl}pt;font-size:15pt;line-height:${wl}pt;color:var(--cd-soft)" data-slot="right.photo0" data-room="${esc(lab.name)}" data-lh="${wl}" data-hbox="${nw*wl}" data-lines="${nw}" data-min="3" data-narrow="0" ${FXS.sd(c0.s)}></div></div>`;
-    return {html: h, bottom: y + nw*wl, top}; };
+    return {html: h, bottom: y + nw*wl, top, tTop: y0 + 19, tF: best.f, tLh: lh}; };
   // a locked row of two captioned rooms, straight tops at y, P45's white gap between them, captions under, closing at the page's foot
   FO.row2 = (D, cards, y, pre, first) => { const g = FO.GAP + 6, w = (CW - g)/2, Lc = 3, clh = 13.5, ph = 766 - y - 25 - Lc*clh;
     return cards.slice(0, 2).map((c, i) => FXS.captioned(D, c, X0 + i*(w + g), y, w, ph, Lc, pre + (i + (first || 0)), {fs: 10, lh: clh, min: 3}).replace(`data-slot="${pre}${i + (first || 0)}" data-room`, `data-slot="${pre}${i + (first || 0)}" data-nopair="1" data-room`)).join(''); };
@@ -416,12 +424,14 @@
     { const c = FXS.cardFor(D, kid) || {}, lab = FXS.leadLabel(c.lead || FO.lead(D, kid)), t = String(C.leftTitle || I.title || '').replace(/\.$/, '').toUpperCase(), css = 'font-family:Jost;font-weight:500;letter-spacing:1.5pt';
       if(lab.size) (FXS.__sizes = FXS.__sizes || new Set()).add(lab.size);
       const ky = 36; let pick = null;
-      for(let f = 34; f >= 22 && !pick; f -= 0.5){ const lh = f*1.1, yb = ky + 22 + 2*lh, xr = (FO.SY - yb - 18)/CD.S, w = Math.min(CW, xr - X0); if(w < 260 || yb > FO.spY(612 - FO.FG) + FO.GAP - 6) continue;
+      for(let f = 42; f >= 22 && !pick; f -= 0.5){ const lh = f*1.1, yb = ky + 22 + 2*lh, xr = (FO.SY - yb - 18)/CD.S, w = Math.min(CW, xr - X0); if(w < 260 || yb > FO.spY(612 - FO.FG) + FO.GAP - 6) continue;
         const ws = t.split(/\s+/); let b2 = null; for(let k = 1; k < ws.length; k++){ const l = [ws.slice(0, k).join(' '), ws.slice(k).join(' ')], mw = Math.max(...l.map(q => FXS.width(q, `${css};font-size:${f}pt`))); if(mw <= w - 2 && !/^(A|AN|THE|AND|OF|WITH)$/.test(ws[k - 1]) && (!b2 || Math.abs(l[0].length - l[1].length) < b2.d)) b2 = {l, d: Math.abs(l[0].length - l[1].length)}; }
-        if(b2) pick = {f, lh, l: b2.l}; }
+        if(b2) pick = {f, lh, l: b2.l, w}; }
       if(!pick) pick = {f: 22, lh: 24.2, l: CD.twoLines(t, CW, 22, 1.5)};
       let hh = `<div class="cd-place" style="left:${X0}pt;top:${ky}pt;width:${CW}pt;height:13pt;font-size:9.5pt;line-height:13pt;letter-spacing:3pt" data-slot="left.room" data-lines="1">${esc(String(lab.name || FO.lead(D, kid)).toUpperCase())}${lab.size ? `<span data-size="1" style="margin-left:12pt;color:var(--cd-soft-dark);letter-spacing:1.2pt;font-weight:500">${esc(lab.size)}</span>` : ''}</div>`;
-      hh += `<div class="cd-two" style="left:${X0}pt;top:${ky + 22}pt;width:${CW}pt;height:${pick.l.length*pick.lh}pt;font-size:${pick.f}pt;line-height:${pick.lh}pt;letter-spacing:1.5pt" data-slot="left.title" data-lines="${pick.l.length}" data-fine="1">${pick.l.map(esc).join('<br>')}</div>`;
+      // owner 11/17 (fill rule): a short headline is tracked out so its longer line spans the slab's room (no empty slab beside it)
+      const lsH = pick.w ? Math.max(1.5, Math.min(pick.f*0.2, 1.5 + (0.94*pick.w - Math.max(...pick.l.map(q => FXS.width(q, `${css};font-size:${pick.f}pt`))))/Math.max(...pick.l.map(q => q.length)))) : 1.5;
+      hh += `<div class="cd-two" style="left:${X0}pt;top:${ky + 22}pt;width:${CW}pt;height:${pick.l.length*pick.lh}pt;font-size:${pick.f}pt;line-height:${pick.lh}pt;letter-spacing:${lsH.toFixed(2)}pt" data-slot="left.title" data-lines="${pick.l.length}" data-fine="1">${pick.l.map(esc).join('<br>')}</div>`;
       h += `<div class="cd-band">${hh}</div>`; }
     // the kitchen card: the sign-in sheet's tinted rows under a dark rule; four rows in two columns (three on the 1-story's renovation
     // story), each its label in the main color over two full lines of true detail; a row that only repeats what the back's lists print is left out
@@ -430,12 +440,15 @@
     const KX = X0, KW = CW, cw2 = (KW - 36 - 26)/2;
     const T2 = FO.tableRows2((box.items || []).slice(0, 10), taken, {maxRows: 4, Vs: [cw2 - 24, cw2 - 16, cw2 - 8, cw2]});
     const cwW = (KW - 36 - 26)/2, T1 = FO.tableRows((box.items || []).slice(0, 10), cwW, taken, {stack: true, maxRows: 6, Vs: [cwW - 30, cwW - 20, cwW - 10, cwW]}); T1.rows = T1.rows.filter(r => r.fill >= 0.86).slice(0, 6);
-    const one = T2.rows.length < 4 && T1.rows.length > T2.rows.length, T = one ? T1 : T2, NL = one ? 1 : 2, NC = 2, CG = 26;
+    const one = T1.rows.length >= 6 || (T2.rows.length < 4 && T1.rows.length > T2.rows.length),   // owner 11/17 (p29): six full rows of kitchen facts when the listing has them
+      T = one ? T1 : T2, NL = one ? 1 : 2, NC = 2, CG = 26;
     if(T.rows.length % 2 && T.rows.length > 2) T.rows = T.rows.slice(0, T.rows.length - 1);
     const colW2 = (KW - 36 - (NC - 1)*CG)/NC, rows = T.rows, nr = Math.ceil(rows.length/NC), lh = +(T.f*1.42).toFixed(2), rowH = 13 + NL*lh + 12, BY = FO.HB + 16, BH0 = 14 + nr*rowH, RT = Math.max(BY + BH0, FO.rightHead(D).bottom) + 18, BH = RT - 18 - BY, OY = (BH - BH0)/2; FO._RT = RT;
     let b = `<div class="cd-wb" style="left:${KX}pt;top:${BY}pt;width:${KW}pt;height:${BH}pt"></div>`;
-    rows.forEach((r, i) => { const c = i % NC, rr = Math.floor(i/NC), x = KX + 18 + c*(colW2 + CG), y = BY + 13 + OY + rr*rowH;
-      if(rr) b += `<div class="abs hr" style="left:${x}pt;top:${y - 7}pt;width:${colW2}pt"></div>`;
+    // owner 11/17 (heading-uncentered): the box's height shared evenly by its rows, each row centered in its share, the hairlines on the shares' edges
+    const slot = BH/nr;
+    rows.forEach((r, i) => { const c = i % NC, rr = Math.floor(i/NC), x = KX + 18 + c*(colW2 + CG), y = BY + rr*slot + (slot - (13 + NL*lh))/2 + 1;
+      if(rr) b += `<div class="abs hr" style="left:${x}pt;top:${BY + rr*slot - .5}pt;width:${colW2}pt"></div>`;
       b += `<div class="cd-wl" style="left:${x}pt;top:${y}pt;width:${colW2}pt" data-slot="left.list.l${i}" data-lines="1">${esc(r.l)}</div>`;
       b += `<div class="abs" style="left:${x}pt;top:${y + 13}pt;width:${T.V + 1}pt;height:${NL*lh}pt;font-weight:400;font-size:${T.f}pt;line-height:${lh}pt;font-family:var(--cd-font);color:var(--cd-soft);overflow:hidden;${NL === 2 ? 'text-align:justify;text-align-last:left' : 'white-space:nowrap'}" data-slot="left.list.t${i}" data-lines="${NL}">${esc(r.t)}</div>`; });
     for(let c = 1; c < NC; c++) if(rows.length > NC - 1) b += `<div class="abs" style="left:${KX + 18 + c*(colW2 + CG) - CG/2 - .5}pt;top:${BY + 14}pt;width:1pt;height:${BH - 26}pt;background:var(--cd-rule)"></div>`;
@@ -445,7 +458,9 @@
   };
   FO.right = (D) => { const K = D.sw || {}, P = K.plan || {}, C = P.cd || {};
     const ids = C.right ? [C.right].concat(C.rightRow || []) : (P.right || []), cs = FO.cards(D, ids), rest = cs.slice(1).sort((a, b) => (/bath|closet|laundry|powder/.test(a.photo) ? 1 : 0) - (/bath|closet|laundry|powder/.test(b.photo) ? 1 : 0)).slice(0, 2);
-    const hd = FO.rightHead(D);
+    // owner 11/17 (heading-uncentered): the room's headline and write-up sit centered between the big photo's foot and the row of photos
+    const hd0 = FO.rightHead(D), RT0 = FO._RT || hd0.bottom + 18, inkT = hd0.tTop + (hd0.tLh - 0.72*hd0.tF)/2, inkB = hd0.bottom - 5, dOff = Math.max(-10, ((RT0 - inkB) - (inkT - FO.HB))/2);   // up at most 10 pt: the room label keeps 6 pt under the photo
+    const hd = Math.abs(dOff) > 1 ? FO.rightHead(D, dOff) : hd0;
     let h = FO.slabTop(false) + FO.topCut(D, hd.top.photo, 'right.wide', false) + hd.html;
     h += FO.row2(D, rest, FO._RT || hd.bottom + 18, 'right.photo', 1);
     return h;

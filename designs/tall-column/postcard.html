@@ -102,20 +102,37 @@ window.brochureReady = (async function(){
     h += `<div class="taupe" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:${H + 18}pt;background:#fff"></div>`;
     const rooms = roomIds.filter(id => id !== pid).slice(0, 2);
     if(!sold){
-      const CR = big ? 300 : 254, tx = 24, tw = CR - tx - 18, gx = CR + M, gw = W - M - gx;
+      // the column, top to bottom; the agent block sits on the foot, the rest spread evenly above it. Owner 11/17 (fill): the column is cut
+      // to its words (the widest of LISTED, the street, the highlights and the agent line, never wider than before) so no empty strip
+      // runs down its right side; the gallery takes the width it frees. The agent and the logo sit lower (6x11 p21, carried to the 6x9),
+      // the agent's line set as large as the column allows, four highlights (one more) at the largest size that fits.
+      const tx = 24, CR0 = big ? 300 : 254, logoH = 28*k;
+      const nmW = n => FXS.width(A.name || '', `font-family:'Asap Condensed';font-weight:700;font-size:${n}pt`) + (desT ? 7*k + FXS.width(desT, `font-family:Barlow;font-weight:600;font-size:${8.6*k}pt;letter-spacing:1.4pt`) + 1.4*desT.length : 0);
+      // the column's width is searched (from its old width down) for the widest at which JUST / LISTED, set as large as the height
+      // allows, still runs the full width; the street, the highlights and the agent line are then sized to that same width
+      const lay = tw => { const as = Math.min(FO.capsFit(ad, tw, 26*k, 12), 26*k), tg = (() => { const c = tags(tw, 12*k).slice(0, 6), keep = c.slice().sort((p, q) => q.length - p.length).slice(0, 4); return c.filter(t => keep.includes(t)); })(), bw = f => Math.max(...tg.map(t => 15*k + FXS.width(t, `font-family:Barlow;font-weight:500;font-size:${f}pt`)));
+        let hf = 12*k; while(hf > 10.5*k && bw(hf) > tw - 2) hf -= 0.25;   // one size per card (12 pt, 13.4 on the 6x11) so the 6x11 scales up from the 6x9
+        const rhh = Math.max(17*k, hf*1.45);
+        let ns = 14.5*k; while(ns < 26*k && nmW(ns + 0.5) <= tw - 2) ns += 0.5;
+        const ag = agent(tx, 0, tw, ns, logoH), foot = H - M - 2 - ag.h;
+        let smax = 104*k, st, parts, used, gap;
+        for(;;){ st = FO.stack(['Just', 'Listed'], tx, 0, tw, smax, 40, 'front.status', {flat: true}); parts = [['s', st.h + st.sizes[st.sizes.length - 1]*0.2], ['a', as + 4 + 13*k], ['r', 2], ['h', tg.length*rhh]]; used = parts.reduce((n, p) => n + p[1], 0); gap = (foot - 14 - 22 - used)/parts.length; if(gap >= 14 || smax <= 44) break; smax -= 2; }
+        gap = Math.max(6, gap);
+        const wS = Math.max(...st.sizes.map((f, i) => FO.tw(['Just', 'Listed'][i], f)));
+        return {ns, ag, foot, as, tg, hf, rhh, smax, parts, gap, wS}; };
+      let CR = CR0, o = lay(CR - tx - 18);
+      // never so narrow that the house no longer fits whole in the wider gallery, nor that the highlights lose their size
+      const heroOK = cr => { const gw = W - M - (cr + M), hh = Math.min(FO.heroH(D, pid, gw, Math.round(gw/1.42), 170), H - 2*M - (rooms.length ? 110*k : 0)); return SW.fits(D, pid, gw, rooms.length ? hh : H - 2*M); };
+      while(CR > (big ? 196 : 176) && o.wS < CR - tx - 18 - 8 && heroOK(CR - 4)){ const o2 = lay(CR - 4 - tx - 18); if(o2.hf < o.hf) break; CR -= 4; o = o2; }
+      const tw = CR - tx - 18, gx = CR + M, gw = W - M - gx;
       h += FO.col(-9, CR, -9, H + 9);
       const hh = Math.min(FO.heroH(D, pid, gw, Math.round(gw/1.42), 170), H - 2*M - (rooms.length ? 110*k : 0)), ry = M + hh + M, rh = H - M - ry, rw = (gw - (rooms.length - 1)*M)/Math.max(1, rooms.length);
       h += photoAt(pid, gx, M, gw, rooms.length ? hh : H - 2*M, 'front.hero');
       if(rooms.length) rooms.forEach((id, i) => { h += photoAt(id, gx + i*(rw + M), ry, rw, rh, 'front.room' + i); });
-      // the column, top to bottom; the agent block sits on the foot, the rest spread evenly above it
-      const ns = 14.5*k, logoH = 24*k, ag = agent(tx, 0, tw, ns, logoH), foot = H - 20 - ag.h;
-      const as = Math.min(FO.capsFit(ad, tw, 26*k, 14), 26*k), hf = 10.5*k, rhh = 17*k, tg = tags(tw, hf).slice(0, 3);
-      let smax = 104*k, st, parts, used, gap;
-      for(;;){ st = FO.stack(['Just', 'Listed'], tx, 0, tw, smax, 40, 'front.status', {flat: true}); parts = [['s', st.h], ['a', as + 4 + 13*k], ['r', 2], ['h', tg.length*rhh]]; used = parts.reduce((n, p) => n + p[1], 0); gap = (foot - 14 - 22 - used)/parts.length; if(gap >= 10 || smax <= 44) break; smax -= 2; }
-      gap = Math.max(6, gap);
+      const {ns, as, tg, hf, rhh, smax, parts, gap, foot} = o;   // the stack's part carries its capitals' drop below the line box (about 0.2 of the size), so the street never meets LISTED
       let y = 22;
       for(const [kd, hh0] of parts){
-        if(kd === 's') h += FO.stack(['Just', 'Listed'], tx, y, tw, smax, 40, 'front.status', {flat: true}).html;
+        if(kd === 's') h += FO.stack(['Just', 'Listed'], tx, y, tw, smax*1.3, 40, 'front.status', {cap: smax}).html;   // JUST up to 1.3x LISTED, so both run the column's width
         if(kd === 'a') h += FO.tall(ad, tx, y, tw, as, 'front.address', {css: 'text-transform:none'}) + `<div class="tc-eye" style="left:${tx}pt;top:${y + as + 4}pt;width:${tw}pt;height:${13*k}pt;font-size:${9.5*k}pt;line-height:${13*k}pt;letter-spacing:2pt" data-slot="front.city" data-lines="1">${esc(city.toUpperCase())}</div>`;
         if(kd === 'r') h += FO.rule(tx, y, tw);
         if(kd === 'h') h += hl(tg, tx, y, hf, rhh);
@@ -170,12 +187,26 @@ window.brochureReady = (async function(){
       // the facts on white discs in the main field, beside the address block
       const fx = CB + 14, fw = rx - MP - 12 - fx, items = [['bed', `${L.beds} Bed${L.beds == 1 ? '' : 's'}`], ['bath', window.BD && BD.bathsText ? BD.bathsText(L).main : `${L.baths} Full Baths`], ['area', `${Number(L.sqft).toLocaleString('en-US')} Sq Ft`]].filter(x => !/^undefined|^NaN/.test(x[1]));
       const d = 20*k, rhf = 30*k, fy = PB + (FT - 2 - PB - (items.length*rhf - (rhf - d)))/2;
-      if(fw > 80) items.forEach(([ic, t], i) => { h += `<div class="tc-fact on-main" style="left:${fx}pt;top:${fy + i*rhf}pt;width:${fw}pt;height:${d}pt;gap:7pt"><div class="ic" style="width:${d}pt;height:${d}pt">${FO.icon(ic, d*0.58)}</div><span style="font-size:${9*k}pt;line-height:${12*k}pt;letter-spacing:.8pt" data-slot="back.fact.${i}" data-lines="1">${esc(t)}</span></div>`; });
+      // owner 11/17 (6x9 p20): where the facts have no room (the 6x9), another room photo, square-cut, fills the main field between the column
+      // and the address block, the band's 6 pt gap above it and beside the address block's markup
+      // never a photo the front already shows (its house and its two room photos) nor one on this back
+      const FK = K.front || {}, capId = (FK.cap || {}).photo, frontIds = [capId].concat([...new Set([].concat(((D.sw || {}).back || {}).photos || [], ((D.sw || {}).left || {}).photos || []).map(c => c.photo))].filter(id => (D.photos || {})[id] && !(D.photos[id] || {}).fullHouse && id !== capId).slice(0, 2));
+      const spare = (B.photos || []).slice(ps.length).map(c => c.photo).concat([].concat(((D.sw || {}).back || {}).photos || [], ((D.sw || {}).left || {}).photos || [], ((D.sw || {}).right || {}).photos || []).map(c => c.photo)).find(id => id && (D.photos || {})[id] && !ps.some(c => c.photo === id) && !frontIds.includes(id) && !(D.photos[id] || {}).fullHouse);
+      const gx = CB, gy = PB + 6, gw = rx - MP - 6 - gx, gb = FT - 2 - 6;
+      if(fw <= 80 && spare){ h += `<div class="abs" style="left:${gx}pt;top:${gy}pt;width:${gw}pt;height:${gb - gy}pt">${SW.photo(D, spare, 'position:absolute;inset:0', 'back.photo' + ps.length)}</div>`; }
+      else if(spare){
+        // owner 11/17 (p20 carried to the 6x11 back): the room photo fills the whole gap, as on the 6x9; the facts move into the column as
+        // one row under the street (JUST / LISTED a step smaller pays for it, so the About box keeps its room)
+        h += `<div class="abs" style="left:${gx}pt;top:${gy}pt;width:${gw}pt;height:${gb - gy}pt">${SW.photo(D, spare, 'position:absolute;inset:0', 'back.photo' + ps.length)}</div>`; }
+      const factsCol = fw > 80 && !!spare;
+      if(fw > 80 && !spare) items.forEach(([ic, t], i) => { h += `<div class="tc-fact on-main" style="left:${fx}pt;top:${fy + i*rhf}pt;width:${fw}pt;height:${d}pt;gap:7pt"><div class="ic" style="width:${d}pt;height:${d}pt">${FO.icon(ic, d*0.58)}</div><span style="font-size:${9*k}pt;line-height:${12*k}pt;letter-spacing:.8pt" data-slot="back.fact.${i}" data-lines="1">${esc(t)}</span></div>`; });
       // the column: JUST / LISTED stacked, the full street, the rule, About this home
-      const s2 = FO.stack(['Just', 'Listed'], tx, 20, tw, 46*k, 26, 'back.status', {flat: true}), as = Math.min(FO.capsFit(st, tw, 22*k, 12), 22*k);
-      h += s2.html + FO.tall(st, tx, 20 + s2.h + 4, tw, as, 'back.signature', {css: 'text-transform:none'}) + FO.rule(tx, 20 + s2.h + 4 + as + 9, tw);
+      const fRH = 15*k, s20 = FO.stack(['Just', 'Listed'], tx, 20, tw, 46*k, 26, 'back.status', {flat: true}), s2 = factsCol ? FO.stack(['Just', 'Listed'], tx, 20, tw, 46*k*(s20.h - fRH - 6)/s20.h, 26, 'back.status', {flat: true}) : s20, as = Math.min(FO.capsFit(st, tw, 22*k, 12), 22*k), fx2 = factsCol ? 6 + fRH : 0;
+      h += s2.html + FO.tall(st, tx, 20 + s2.h + 4, tw, as, 'back.signature', {css: 'text-transform:none'}) + FO.rule(tx, 20 + s2.h + 4 + as + fx2 + 9, tw);
+      if(factsCol){ const fd = 13*k, fs = 9*k, fl = 'font-family:Barlow;font-weight:600;letter-spacing:.8pt;text-transform:uppercase', iw = t => fd + 6 + FXS.width(t.toUpperCase(), `${fl};font-size:${fs}pt`) + 2; let x = tx; const y = 20 + s2.h + 4 + as + 6 + 2;
+        items.forEach(([ic, t], n) => { h += `<div class="tc-fact" style="left:${x}pt;top:${y}pt;width:${iw(t) + 2}pt;height:${fd}pt;gap:6pt"><div class="ic" style="width:${fd}pt;height:${fd}pt">${FO.icon(ic, fd*0.6)}</div><span style="font-size:${fs}pt;line-height:${fd}pt;letter-spacing:.8pt" data-slot="back.fact.${n}" data-lines="1">${esc(t)}</span></div>`; x += iw(t) + 16; }); }
       const capAlts = ps.flatMap(c => FXS.augment(D, c).s.flatMap(x => [].concat(x))), aboutC = B.about && B.about.s ? Object.assign({}, B.about, {s: (() => { const kept = B.about.s.filter(x => ![].concat(x).some(a => capAlts.some(cs => SW.sameFact(a, cs)))); return kept.length >= 2 ? kept : B.about.s; })()}) : B.about;
-      const ay = 20 + s2.h + 4 + as + 9 + 2 + 14, ah = FT - 14 - ay, lh = big ? 16.5 : 15, lines = Math.max(2, Math.floor((ah - 16)/lh));
+      const ay = 20 + s2.h + 4 + as + fx2 + 9 + 2 + 14, ah = FT - 14 - ay, lh = big ? 16.5 : 15, lines = Math.max(2, Math.floor((ah - 16)/lh));
       h += `<div class="abs tc-eye main" style="left:${tx}pt;top:${ay}pt;width:${tw}pt;height:12pt;font-size:8.8pt;line-height:12pt;letter-spacing:2.4pt" data-slot="back.box.k" data-lines="1">About this home</div>`;
       h += `<div class="abs" id="aboutp" data-top="${ay + 16}" data-room="${ah - 16}" style="left:${tx}pt;top:${ay + 16}pt;width:${tw}pt">${SW.para(aboutC, 'back.box', lines, 'p', `font-family:var(--tc-font);font-size:${big ? 12.5 : 11.25}pt;color:var(--tc-ink);overflow:hidden`, lh).replace('data-lines="' + lines + '"', 'data-minl="2" data-lines="' + lines + '" data-try="' + Array.from({length: Math.max(1, lines - 2)}, (_, i) => lines - i).join(',') + '"')}</div>`;
       // the return address on a small main tag over the photo, beside the postage box

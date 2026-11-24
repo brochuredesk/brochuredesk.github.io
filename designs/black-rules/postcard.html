@@ -56,11 +56,26 @@ window.brochureReady = (async function(){
   const desT = A.designation ? (A.nar || /realtor/i.test(A.designation) ? 'REALTOR®' : A.designation) : '';
   const logoAt = (x, y, w, hh, src, just) => `<div class="abs logo" data-area="${w*hh}" data-maxh="${hh}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hh}pt;justify-content:${just || 'center'}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="word" data-slot="broker.name" data-lines="1">${esc(b.brokerage || '')}</span>`}</div>`;
   // the agent: name in Red Hat Display 700, REALTOR(R) in the label, the phone in Libre Franklin 700
-  const agentLine = (x, y, w, al, ns, white) => { const c = white ? '#fff' : 'var(--br-on)', cl = white ? '#fff' : 'var(--br-accent)';
+  const agentLine = (x, y, w, al, ns, white, nl) => { nl = nl || 1.15; const c = white ? '#fff' : 'var(--br-on)', cl = white ? '#fff' : 'var(--br-accent)';
     return `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;text-align:${al || 'left'};white-space:nowrap">`
-      + `<div style="${RH};font-size:${ns}pt;line-height:${ns*1.15}pt;color:${c}" data-slot="agent.name" data-lines="1">${esc(A.name || '')}</div>`
+      + `<div style="${RH};font-size:${ns}pt;line-height:${ns*nl}pt;color:${c}" data-slot="agent.name" data-lines="1">${esc(A.name || '')}</div>`
       + `<div style="line-height:${13*k}pt">${desT ? `<span style="${LFm};font-weight:700;font-size:${8.6*k}pt;letter-spacing:1.6pt;color:${cl};margin-right:10pt" data-slot="agent.desig" data-lines="1">${esc(desT)}</span>` : ''}<span style="${LFm};font-weight:700;font-size:${12*k}pt;color:${c}" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</span></div></div>`; };
   let h = '';
+  // the Just Sold note (owner 11/17, p49/p51): the note's own sentences in order (the first two always: the sale and what their home could
+  // bring; each later one in or out, any of its wordings), set at the size and length that fill the box best: three lines or more, every line
+  // full (86%+ before justifying, so the word gaps stay even; the last 90%+)
+  // returns every candidate, best first (the strictest pass first); the first is placed, and after layout fixNote() keeps the first one
+  // the browser really sets in its counted lines with the last line 91%+ full
+  function noteFill(S, w, room, css, fmax, fmin, lhK){ const all = []; let pass = 0; for(const [lf, of, f0] of [[0.93, 0.86, fmin], [0.92, 0.8, fmin], [0.92, 0.8, fmin - 0.75], [0.85, 0.7, fmin - 0.75]]) all.push(...noteFill1(S, w, room, css, fmax, f0, lhK, lf, of).map(c => Object.assign(c, {sc: c.sc - 6*pass})).filter(c => !all.some(a => a.t === c.t && a.fs === c.fs))), pass++; all.sort((a, b) => b.sc - a.sc); return all.length ? all : null; }
+  function noteFill1(S, w, room, css, fmax, fmin, lhK, lf, of){ const sets = (S || []).map(x => [].concat(x)), cands = [];
+    const walk = (i, acc) => { if(i === sets.length){ if(acc.length) cands.push(acc.join(' ')); return; } if(i > 1) walk(i + 1, acc); sets[i].forEach(a => walk(i + 1, acc.concat(a))); };
+    if(sets.length) walk(0, []);
+    const ok = cands.filter(t => (t.match(/\btoo\b/gi) || []).length < 2 && (t.match(/\bready\b/gi) || []).length < 2 && !SW.sameFactIn(t) && !SW.rep5(t)); const best = [];
+    for(let fs = fmax; fs >= fmin - 1e-6; fs -= 0.25){ const lh = fs*lhK, nmax = Math.floor((room + 0.5)/lh); if(nmax < 3) continue;
+      ok.forEach(t => { const Lw = FO.wrapLines(t, `${css};font-size:${fs}pt`, w - 1), n = Lw.length;   // the note box is set 2 pt narrower (w - 2) and wrapLines breaks past w - 2: the same breaks as the browser
+        if(n < 3 || n > nmax || Lw[n - 1] < lf*w || Lw.slice(0, -1).some(x => x < of*w)) return;
+        best.push({sc: Math.min(1, n*lh/room)*100 + fs*5, t, n, fs, lh}); }); }
+    return best.sort((a, b) => b.sc - a.sc).slice(0, 80); }
 
   if(front){
     const F = K.front || {}, pid = FO.heroId(D, (F.cap || {}).photo || 'front');
@@ -89,22 +104,29 @@ window.brochureReady = (async function(){
       // ---------- JUST SOLD, its own card: the bar grown into the slab across the head, JUST SOLD in white as the display line and the street
       // right under it; below, the seller question between 2 pt rules, the note in P39's framed box, who to call and the logo on the left;
       // the house whole on the right. ----------
-      const d = FO.disp('Just Sold', m, 30, CWc, 70*k, 40, 'front.status', {lh: 0.98, css: 'color:#fff'}), sts = FXS.fitSize(ad, RH, CWc, 22*k, 12), SH = Math.round(30 + d.h + 2 + sts*1.2 + 12);
+      const d = FO.disp('Just Sold', m, 12, CWc, 96*k, 40, 'front.status', {lh: 0.98, css: 'color:#fff'}), stl = hood ? `${ad}  ·  ${hood}` : ad, sts = Math.min(34*k, FXS.fitSize(stl, RH, CWc*0.92, 34*k, 12))   /* a short street sets larger across the slab, the slab snug around both lines (owner 11/17 fill rule) */, sty = 22 + d.h - 4 /* the street stays put; JUST SOLD rides 10 pt higher, centered between the card top and the street (owner book 3 p10, carried) */, SH = Math.round(sty + sts*1.2 + 22);   /* JUST SOLD and the street centered top to bottom in the slab (owner 11/17, heading-uncentered) */
       h += `<div class="br-slab" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:${SH + 9}pt"></div>` + d.html;
-      h += `<div class="br-street" style="left:${m}pt;top:${30 + d.h + 2}pt;width:${CWc}pt;height:${sts*1.2}pt;font-size:${sts}pt;line-height:${sts*1.2}pt;color:#fff;text-align:center" data-slot="front.address" data-lines="1">${esc(ad)}</div>`;
-      const top = SH + 14, PB = H - 22, ph = PB - top; const pw = FO.fitW(D, pid, Math.round(CWc*0.54), ph, CWc*0.42, CWc*0.68);
+      h += `<div class="br-street" style="left:${m}pt;top:${sty}pt;width:${CWc}pt;height:${sts*1.2}pt;font-size:${sts}pt;line-height:${sts*1.2}pt;color:#fff;text-align:center" data-slot="front.address" data-lines="1">${esc(ad)}${hood ? `<span style="opacity:.72">&nbsp;&nbsp;·&nbsp;&nbsp;</span><span data-slot="front.hood">${esc(hood)}</span>` : ''}</div>`;   /* the street runs the slab's width with its neighborhood (owner 11/17 fill rule) */
+      const top = SH + 10, PB = H - 22, ph = PB - top; const pw = FO.fitW(D, pid, Math.round(CWc*(big ? 0.55 : 0.54)), ph, CWc*0.42, CWc*0.68);   // the 6x11 photo a little wider: its photo area scales with the card
       const px = W - m - pw; h += FXS.box(D, pid, px, top, pw, ph, 'front.hero', '', 0);
       const cx = m, cw = px - 18 - cx, q = 'Thinking about selling?', qs = FXS.fitSize(q.toUpperCase(), `${RH};letter-spacing:1pt`, cw, 17*k, 10);
-      const ns = Math.min(17*k, d.fs*0.45, FXS.fitSize(A.name || '', RH, cw, 17*k, 11)), ah = ns*1.15 + 13*k, lgH = 34*k;
-      const N2 = (F.note2 || []).slice(), nb = 10, iw = cw - 2*nb;
-      let nt = null, alt = null; for(const mm of [1, .97, .94, .91, .88]) for(let fs = 13.5*k; fs >= 9.5 - 1e-6 && !nt; fs -= 0.25) N2.forEach(t => { if(nt) return; const w = iw*mm, Lw = FO.wrapLines(t, `${LFm};font-weight:400;font-size:${fs}pt`, w), n = Lw.length; if(n < 2 || n > 5 || !Lw.slice(0, -1).every(x => x >= 0.8*w)) return; const r = Lw[n - 1]/w; if(r >= .9) nt = {t, n, fs, w}; else if(!alt || r > alt.r) alt = {t, n, fs, w, r}; });
-      if(!nt) nt = alt || {t: N2[0] || '', n: 3, fs: 10*k, w: iw};
-      const nlh = nt.fs*1.4, boxH = nt.n*nlh + 2*nb, foot = ah + 8 + lgH, mid = PB - foot - (top + qs*1.3 + 8 + 2), gq = Math.max(10, (mid - boxH)/2);
+      const ns = Math.min(18*k, d.fs*0.45, FXS.fitSize(A.name || '', RH, cw, 18*k, 11)), ah = ns*1.25 + 13*k, lgH = 34*k;   // the agent's name and the logo under it a size up: the column's foot full
+      // owner 11/17 (p49/p51): the framed box grows to fill the room between the rule and the agent, with a longer write-up centered in it
+      // the logo beside the agent where the column has room for it (the foot of the column full, the box taller), else under it as before
+      const aw = Math.max(FXS.width(A.name || '', `${RH};font-size:${ns}pt`), (desT ? FXS.width(desT, `${LFm};font-weight:700;font-size:${8.6*k}pt;letter-spacing:1.6pt`) + 10 + desT.length*1.6 : 0) + FXS.width(A.phone || '', `${LFm};font-weight:700;font-size:${12*k}pt`));
+      const side = cw - aw - 18 >= 70*k, lgS = Math.min(ah + 4, 40*k);
+      const nb = 12*k, iw = cw - 2*nb, foot = side ? ah : ah + 8 + lgH, bY = top + qs*1.3 + 8 + 2 + 14, boxH = PB - foot - 16 - bY;
+      // the note's type: 11 to 12.25 pt on the 6x9 and 13.5 to 15 pt on the 6x11, so the larger card always sets it at least 10% larger
+      await document.fonts.load(`400 12pt 'Libre Franklin'`);   // the note is measured in its own face, never a fallback
+      const ntL = noteFill((F.note || {}).s, iw, boxH - 2*nb, `${LFm};font-weight:400`, big ? 17.5 : 12.5, big ? 14 : 10.75, 1.4); let nt = ntL && ntL[0];
+      if(!nt){ const t = (F.note2 || [])[0] || '', fs = 11*k; nt = {t, n: FO.wrapLines(t, `${LFm};font-weight:400;font-size:${fs}pt`, iw).length, fs, lh: fs*1.4}; }
       let y = top;
       h += `<div class="br-disp" style="left:${cx}pt;top:${y}pt;width:${cw}pt;height:${qs*1.3}pt;font-size:${qs}pt;line-height:${qs*1.3}pt;letter-spacing:1pt;text-align:left" data-slot="front.cta" data-lines="1">${esc(q)}</div>`; y += qs*1.3 + 8;
-      h += FO.r2(cx, y, cw); y += 2 + gq;
-      h += `<div class="br-box" id="notebox" style="left:${cx}pt;top:${y}pt;width:${cw}pt;height:${boxH}pt"></div><div class="abs" style="left:${cx + nb}pt;top:${y + nb}pt;width:${nt.w}pt;height:${nt.n*nlh}pt;${LFm};font-weight:400;font-size:${nt.fs}pt;line-height:${nlh}pt;color:#1b1b1b;text-align:justify;text-align-last:left" data-slot="front.note" data-lines="${nt.n}">${esc(nt.t)}</div>`;
-      h += agentLine(cx, PB - foot, cw, 'left', ns) + logoAt(cx, PB - lgH, cw, lgH, BR.logoPaper(D), 'flex-start');
+      h += FO.r2(cx, y, cw);
+      const nty = bY + nb + Math.max(0, (boxH - 2*nb - nt.n*nt.lh)/2);
+      window.__noteC = {args: [(F.note || {}).s, iw, boxH - 2*nb, `${LFm};font-weight:400`, big ? 17.5 : 12.5, big ? 14 : 10.75, 1.4], list: ntL || [], top: bY + nb, room: boxH - 2*nb};
+      h += `<div class="br-box" id="notebox" style="left:${cx}pt;top:${bY}pt;width:${cw}pt;height:${boxH}pt"></div><div class="abs" style="left:${cx + nb}pt;top:${nty}pt;width:${iw - 2}pt;height:${nt.n*nt.lh}pt;${LFm};font-weight:400;font-size:${nt.fs}pt;line-height:${nt.lh}pt;color:#1b1b1b;text-align:justify;text-align-last:left" data-slot="front.note" data-lines="${nt.n}">${esc(nt.t)}</div>`;
+      h += agentLine(cx, PB - foot, cw, 'left', ns, false, 1.25) + (side ? logoAt(cx + aw + 18, PB - foot + (ah - lgS)/2, cw - aw - 18, lgS, BR.logoPaper(D), 'center') : logoAt(cx, PB - lgH, cw, lgH, BR.logoPaper(D), 'flex-start'));
     }
   } else {
     // ---------------- BACK (the owner 11/16: the design runs through the whole card; the mail zones are small white markups) ----------------
@@ -172,6 +194,22 @@ window.brochureReady = (async function(){
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
   document.querySelectorAll('.cap .a[data-s]').forEach(el => { el.dataset.fill = 0.9; el.dataset.lfill = 0.82; el.dataset.min = Math.max(3, +el.dataset.min || 0); el.dataset.j3 = '1'; });
   SW.fill();
+  fixNote();
+  function fixNote(){ const el = document.querySelector('[data-slot="front.note"]'), C = window.__noteC; if(!el || !C || !C.list.length) return;
+    // the leading opens (up to 1.55) so the lines fill the box top to bottom
+    const put = c => { const lh = Math.min(c.fs*1.55, Math.max(c.lh, C.room/c.n)); el.textContent = c.t; el.style.fontSize = c.fs + 'pt'; el.style.lineHeight = lh + 'pt'; el.style.height = (c.n*lh) + 'pt'; el.style.top = (C.top + Math.max(0, (C.room - c.n*lh)/2)) + 'pt'; el.dataset.lines = c.n; };
+    // the widest justified word gap stays under 2.6 normal spaces (FO.gaps sets a box ragged at 3.2)
+    const gapOK = () => { const sp = parseFloat(getComputedStyle(el).fontSize)*0.28; let worst = 0; const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for(let n = w.nextNode(); n; n = w.nextNode()){ const t = n.textContent; for(let i = 0; i < t.length; i++){ if(t[i] !== ' ') continue; const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + 1); const q = r.getBoundingClientRect(); if(q.width > worst && q.height > 0) worst = q.width; } }
+      return worst <= sp*2.6; };
+    // the note's own context can set type a little tighter or looser than the measuring span: measure that, and refit the list to it
+    if(C.args && C.list.length){ const c0 = C.list[0], css0 = `${C.args[3]};font-size:${c0.fs}pt`; el.textContent = c0.t; el.style.fontSize = c0.fs + 'pt'; el.style.whiteSpace = 'nowrap';
+      const rg = document.createRange(); rg.selectNodeContents(el); const dom = rg.getBoundingClientRect().width*0.75, r = dom/FXS.width(c0.t, css0); el.style.whiteSpace = '';
+      if(r > 0.5 && Math.abs(r - 1) > 0.004){ const a = C.args.slice(); a[1] = a[1]/r; const L2 = noteFill(...a); if(L2) C.list = L2.concat(C.list); } }
+    for(const c of C.list){ put(c); const L = SW.lines(el); if(L.n === c.n && L.fill >= 0.91 && gapOK()) return; }
+    for(const c of C.list){ put(c); const L = SW.lines(el); if(L.n === c.n && L.fill >= 0.91) return; }
+    let best = null; for(const c of C.list.slice(0, 120)){ put(c); const L = SW.lines(el); if(L.n === c.n && (!best || L.fill > best.f)) best = {c, f: L.fill}; }   // else the fullest last line the browser really sets
+    put(best ? best.c : C.list[0]); }
   FO.refit();
   FO.just3();
   FO.gaps();

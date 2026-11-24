@@ -189,12 +189,23 @@
     } else { const as = FXS.fitSize(ad, "font-family:'Newsreader';font-weight:500", w, 64, 30); h += `<div class="abs fo-addr" data-slot="address" data-lines="1" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${as*1.15}pt;font-size:${as}pt;line-height:${as*1.15}pt;text-align:left">${esc(ad)}</div>`; bottom = y + as*1.15; }
     return {html: h, bottom}; };
   FO.frame = () => '';
+  // owner 11/17 (cover): the address sits centered top to bottom between the double rule over it and the hairline under it, measured on the
+  // letters' ink (the font's own metrics), not on the boxes
+  FO.mastCenter = () => { const m = document.getElementById('wemast'), r = document.getElementById('wemastr'), hl = document.getElementById('wemasth'); if(!m || !r || !hl) return;
+    const cv = FO.__cv || (FO.__cv = document.createElement('canvas').getContext('2d')); let top = Infinity, bot = -Infinity;
+    m.querySelectorAll('[data-slot]').forEach(el => { const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let nd; const rg = document.createRange();
+      while((nd = w.nextNode())){ const tx = nd.textContent.trim(); if(!tx) continue; const cs = getComputedStyle(nd.parentElement); cv.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        const tt = cs.textTransform === 'uppercase' ? tx.toUpperCase() : tx, mm = cv.measureText(tt); rg.selectNodeContents(nd); const qs = [...rg.getClientRects()].filter(q => q.width > 1); if(!qs.length) continue;
+        const sc = qs[0].height/(mm.fontBoundingBoxAscent + mm.fontBoundingBoxDescent) || 1;
+        qs.forEach(q => { const base = q.top + (q.height - (mm.fontBoundingBoxAscent + mm.fontBoundingBoxDescent)*sc)/2 + mm.fontBoundingBoxAscent*sc; top = Math.min(top, base - mm.actualBoundingBoxAscent*sc); bot = Math.max(bot, base + mm.actualBoundingBoxDescent*sc); }); } });
+    if(!isFinite(top)) return; const rb = Math.max(...[...r.querySelectorAll('*')].map(e => e.getBoundingClientRect().bottom)), ht = hl.getBoundingClientRect().top, pt = parseFloat(hl.style.width)/(hl.getBoundingClientRect().width || 1);   // pt per screen px
+    const want = rb + ((ht - rb) - (bot - top))/2, dpx = want - top; m.style.top = (dpx*pt) + 'pt'; };
   FO.front = (D, o) => { o = o || {};
     const L = D.listing, K = (D.sw || {}).front || {}, F = ((D.companion || {}).flyer || {}).front || {}, P = (D.sw || {}).plan || {};
     const hood = FXS.hood(L), city = FXS.placeLine(L), hero = FO.heroId(D, F.hero || K.hero || 'front');
-    let t = WE.runhead(X0, 34, CW, hood || city, hood ? city : '', 'front') + WE.rule2(X0, 50, CW);
-    const M = FO.masthead(D, X0, 76, CW); t += M.html;
-    const hy = M.bottom + 18; t += `<div class="we-hair" style="left:${X0}pt;top:${hy}pt;width:${CW}pt"></div>`;
+    let t = WE.runhead(X0, 34, CW, hood || city, hood ? city : '', 'front') + `<div id="wemastr" style="position:absolute;left:0;top:0;width:0;height:0">${WE.rule2(X0, 50, CW)}</div>`;
+    const M = FO.masthead(D, X0, 76, CW); t += `<div id="wemast" style="position:absolute;left:0;top:0;width:0;height:0">${M.html}</div>`;
+    const hy = M.bottom + 18; t += `<div class="we-hair" id="wemasth" style="left:${X0}pt;top:${hy}pt;width:${CW}pt"></div>`;
     const BAND = 682, strip = (o.strip || P.strip || []).slice(0, 3), gap = 14, SH = strip.length ? 104 : 0, SY = BAND - 22 - SH, HY = hy + 14, HH = (strip.length ? SY - 16 : BAND - 18) - HY;
     let h = SW.heroHtml(D, hero, X0, HY, CW, HH, 'front.house', []);
     const sw_ = (CW - (strip.length - 1)*gap)/Math.max(1, strip.length);

@@ -38,7 +38,11 @@
     if(room){ const rh = rowH - 18;
       t += FXS.box(D, room, NX, y, NW, rh, 'front.strip0') + AS.tri(NX, y, 26);
       t += eye(roomName(D, room), NX, y + rh + 6, NW, 'front.strip0.label', {fs: 8.6, ls: 2.2, color: 'var(--as-on-main)'}); }
-    { const nl = Math.max(3, Math.min(6, Math.floor(rowH/20))), lh = +(rowH/nl).toFixed(2), fs = Math.min(13, +(lh/1.45).toFixed(2));
+    if(room){   // owner 11/17 (p40): the write-up runs top to bottom beside the room photo, its first line level with the photo's top and its
+      // last line's foot on the photo's foot: larger type (13 to 16 pt) and as many true sentences as fill it (FO.coverSpan sets the leading)
+      const rh = rowH - 18, fs = 16, nl = Math.max(3, Math.floor(rh/(fs*1.4))), lh = +(rh/nl).toFixed(2);
+      t += FO.full(`<div class="abs wu" data-slot="front.summary" data-lines="${nl}" data-try="${[nl, nl - 1, nl - 2].filter(q => q >= 3).join(',')}" data-lh="${lh}" ${FXS.sd(intro)} style="left:${WX}pt;top:${y}pt;width:${WW}pt;height:${nl*lh}pt;font-size:${fs}pt;line-height:${(fs*1.5).toFixed(2)}pt"></div>`).replace('data-slot="front.summary"', `data-slot="front.summary" data-span="${rh.toFixed(2)}" data-cspan="${rh.toFixed(2)}" data-top0="${y}"`); }
+    else { const nl = Math.max(3, Math.min(6, Math.floor(rowH/20))), lh = +(rowH/nl).toFixed(2), fs = Math.min(13, +(lh/1.45).toFixed(2));
       t += FO.full(`<div class="abs wu" data-slot="front.summary" data-lines="${nl}" data-try="${[nl, nl - 1, nl - 2, nl - 3].filter(q => q >= 3).join(',')}" data-lh="${lh}" ${FXS.sd(intro)} style="left:${room ? WX : M}pt;top:${y}pt;width:${room ? WW : CW}pt;height:${nl*lh}pt;font-size:${fs}pt;line-height:${lh}pt"></div>`).replace('data-slot="front.summary"', `data-slot="front.summary" data-span="${rowH.toFixed(2)}" data-vc="1" data-top0="${y}"`); }
     return h + `<div class="as-onm">${t}</div>`;
   };
@@ -109,7 +113,12 @@
     return best; };
 
   // after FO.span: a write-up marked data-vc sits centered top to bottom in its span (owner 11/16: everything centered in its space)
-  FO.centerSpan = () => { document.querySelectorAll('[data-vc][data-span]').forEach(el => { const S = +el.dataset.span, top0 = +el.dataset.top0, hh = parseFloat(el.style.height); if(!(S > 0) || isNaN(top0)) return; el.style.top = (top0 + (S - hh)/2) + 'pt'; });
+  // the cover write-up beside the room photo: its lines spread so the block runs exactly the photo's height, top on top
+  // (optically: the first line's capitals start level with the photo's top edge, the last line's baseline sits on its foot)
+  FO.coverSpan = () => document.querySelectorAll('[data-cspan]').forEach(el => { const S = +el.dataset.cspan, n = SW.lines(el).n, fs = parseFloat(getComputedStyle(el).fontSize)*0.75; if(n < 2 || !(S > 0)) return;
+    const lh = (S - 0.55*fs)/(n - 1), T = +el.dataset.top0 - (lh - fs)/2 - 0.25*fs;
+    el.style.lineHeight = lh + 'pt'; el.style.height = (n*lh) + 'pt'; el.style.top = T + 'pt'; el.dataset.lines = n; });
+  FO.centerSpan = () => { FO.coverSpan(); document.querySelectorAll('[data-vc][data-span]').forEach(el => { const S = +el.dataset.span, top0 = +el.dataset.top0, hh = parseFloat(el.style.height); if(!(S > 0) || isNaN(top0)) return; el.style.top = (top0 + (S - hh)/2) + 'pt'; });
     document.querySelectorAll('[data-vbox]').forEach(el => { const [y0, hh] = el.dataset.vbox.split(',').map(Number), n = SW.lines(el).n, lh = parseFloat(el.style.lineHeight); if(!n) return; el.style.height = (n*lh) + 'pt'; el.style.top = (y0 + (hh - n*lh)/2) + 'pt'; }); };
 
   // ---------------- FLYER FRONT: the Open House flyer's own grid, with the house in place of the event ----------------
@@ -118,14 +127,17 @@
   // the main color, carrying the listing's facts on the flyer's line icons, in white. No agent, no brokerage on the front.
   FO.flyerFront = (D, o) => { o = o || {};
     const L = D.listing, K = (D.sw || {}).front || {}, F = ((D.companion || {}).flyer || {}).front || {}, P = (D.sw || {}).plan || {}, C = P.as || {}, intro = o.intro || F.intro || K.summary || [];
-    const hero = FO.heroId(D, F.hero || K.hero || 'front'), BT = 694;
+    const hero = FO.heroId(D, F.hero || K.hero || 'front'), BT = 738;   // owner 11/17 (p43): a slimmer foot band, the column above it fuller
     let HH = 300; while(HH > 220 && !SW.fits(D, hero, WW, HH)) HH -= 4;
     let h = AS.photo(D, hero, WX, 40, WW, HH, 'front.house', OFF, TRI + 6);
     const S = AS.fitStack(String(L.address || ''), NW, 46, 26, 4); h += AS.stack(S.lines, NX, 40, NW, S.fs, 'address', {lh: 1.0});
     const sy = 40 + S.lines.length*S.fs + 24;
     const strip = (C.flyerStrip || P.flyerStrip || P.strip || []).filter(id => id !== hero).slice(0, 2), LB = BT - 26;
     // the facts on the flyer's line icons, at the foot of the narrow column (the Open House flyer's own place for them)
-    const fx = AS.facts(L).slice(0, 5), fsz = 10.5, nF = fx.length, tot = LB + 8 - sy, ph = Math.max(150, Math.min(NW*1.45, tot - 38 - nF*24)), frh = Math.min(34, (tot - 38 - ph)/Math.max(1, nF)), fy = sy + ph + 38 + (tot - 38 - ph - nF*frh)/2;
+    // owner 11/17 (p43): the facts in larger type, filling the room under the room photo (up to 21 pt, each still on one line in the column)
+    const fx = AS.facts(L).slice(0, 5), nF = fx.length, tot = LB + 8 - sy, ph = Math.max(150, Math.min(NW*1.45, tot - 38 - nF*24)), roomF = tot - 38 - ph;
+    let fsz = 10.5; for(let f = 21; f > 10.5; f -= 0.25){ if(nF*f*2.1 <= roomF && fx.every(([ic, tt]) => FXS.width(tt, `font-family:Outfit;font-weight:600;font-size:${f}pt`) + f*2.25 + 4 <= NW)){ fsz = f; break; } }
+    const frh = Math.min(fsz*3.2, roomF/Math.max(1, nF)), fy = sy + ph + 38 + (roomF - nF*frh)/2;
     fx.forEach(([ic, t], i) => { h += AS.fact(ic, t, NX, fy + i*frh + (frh - fsz*1.7)/2, NW, fsz, 'front.fact' + i); });
     if(strip[0]){ h += FXS.box(D, strip[0], NX, sy, NW, ph, 'front.strip0') + eye(roomName(D, strip[0]), NX, sy + ph + 6, NW, 'front.strip0.label', {fs: 8.6, ls: 2.2, color: 'var(--as-mp)'}); }
     const wy = 40 + HH + OFF + 20, nl = 5, lh = 17.5, fs2 = 12;
@@ -134,8 +146,9 @@
     // the band: the neighborhood large in white and the city in tracked caps (the flyer's address band, the street being up top)
     h += `<div class="as-band" style="left:-9pt;top:${BT}pt;width:630pt;height:${801 - BT}pt"></div>`;
     const hood = FXS.hood(L) || String(L.city || ''), city = FXS.placeLine(L).replace(/\s+\d{5}(-\d{4})?$/, '');
+    // a name with a descender (Rice Military) rides up a touch so its ink, not its line box, is centered in the band
     const hs = FXS.fitSize(hood, "font-family:'Red Hat Display';font-weight:700", CW - 200, 30, 18), mid = BT + (792 - BT)/2;
-    let f = `<div class="as-addr" style="left:${M}pt;top:${mid - hs*0.6}pt;width:${CW - 190}pt;height:${hs*1.2}pt;font-size:${hs}pt;line-height:${hs*1.2}pt" data-slot="front.hood" data-lines="1">${esc(hood)}</div>`;
+    let f = `<div class="as-addr" style="left:${M}pt;top:${mid - hs*0.6 - (/[gjpqy]/.test(hood) ? 0.095*hs : 0)}pt;width:${CW - 190}pt;height:${hs*1.2}pt;font-size:${hs}pt;line-height:${hs*1.2}pt" data-slot="front.hood" data-lines="1">${esc(hood)}</div>`;
     f += eye(city, R - 190, mid - 7, 190, 'front.place', {fs: 10, ls: 3, align: 'right', color: 'var(--as-on-main)'});
     h += `<div class="as-onm">${f}</div>`;
     return h;

@@ -72,7 +72,7 @@ window.brochureReady = (async function(){
   const stackW = (words, w, max, min) => { let f = max; const css = q => `${RH};letter-spacing:-.3pt;text-transform:uppercase;font-size:${q}pt`; while(f > min && words.some(t => FXS.width(t, css(f)) > w - 2)) f -= 0.5; return f; };
   const placeShort = [FXS.hood(L), FXS.placeLine(L).replace(/\s+\d{5}(-\d{4})?$/, '')].filter(Boolean).join('  ·  ');
   if(front){
-    const F = K.front || {}, pid = FO.heroId(D, (F.cap || {}).photo || 'front'), hls = (F.highlights || FXS.tagFacts(D).tags || []).slice(0, 3);
+    const F = K.front || {}, pid = FO.heroId(D, (F.cap || {}).photo || 'front'), hls = (F.highlights || FXS.tagFacts(D).tags || []).slice(0, 4);   // owner 11/17 (p45): a fourth highlight where the room holds it
     if(!sold){
       // ---------- JUST LISTED: the paper, JUST / LISTED stacked in P18's caps in the narrow column, the house in the wide one with the
       // main-color block offset behind it running on off the right and bottom edges (the cover's move); the agent line on that block ----------
@@ -85,7 +85,7 @@ window.brochureReady = (async function(){
       h += FO.eye(placeShort, 24, y, cw, 'front.place', {fs: 8.6*k > 9.5 ? 9.5 : 8.6, ls: 1.8}); y += 13*k + 16*k;
       // the listing's facts on the flyer's line icons, two by two under the street (the Open House flyer's facts)
       { const fx = AS.facts(L).slice(0, 4), fz = 10*k, frh = fz*2.1, c2 = cw/2; fx.forEach(([ic, tt], i) => { h += AS.fact(ic, tt, 24 + (i % 2)*c2, y + Math.floor(i/2)*frh, c2 - 6, fz, 'front.fact' + i); }); y += Math.ceil(fx.length/2)*frh + 8*k; }
-      const hfs = 11*k, hrh = hfs*1.8, HL = hls.filter(t => FXS.width(t, `font-family:Outfit;font-weight:600;font-size:${hfs}pt`) <= cw - 16).slice(0, 3);
+      const hfs = 11*k, hrh = hfs*1.8, HL = hls.filter(t => FXS.width(t, `font-family:Outfit;font-weight:600;font-size:${hfs}pt`) <= cw - 16).slice(0, 4);
       const ns = 15*k, agH = ns*1.2 + ns*1.0, agY = H - 22 - agH, room = agY - 14 - y; while(HL.length && HL.length*hrh > room) HL.pop(); const hh = HL.length*hrh, gy = y + Math.max(0, (room - hh)/2);
       HL.forEach((t, i) => { const yy = gy + i*hrh; h += `<div class="abs" style="left:24pt;top:${yy + hrh/2 - 3}pt;width:6pt;height:6pt;background:var(--as-mp)"></div><div class="abs" style="left:38pt;top:${yy}pt;width:${cw - 14}pt;height:${hrh}pt;font-family:var(--as-font);font-weight:600;font-size:${hfs}pt;line-height:${hrh}pt;color:var(--as-on);white-space:nowrap" data-slot="front.hl.${i}" data-lines="1">${esc(t)}</div>`; });
       h += `<div class="abs" style="left:24pt;top:${agY - 10}pt;width:${cw}pt;height:1pt;background:color-mix(in srgb, var(--as-mp) 45%, transparent)"></div>`;
@@ -98,26 +98,42 @@ window.brochureReady = (async function(){
       // color (the signature turned over) and the accent triangle; JUST / SOLD stacked in white caps, the street right under it, the seller
       // question, the note in P18's event box sized to its text, who to call. No house features. ----------
       h += `<div class="as-band" style="left:-9pt;top:-9pt;width:${W + 18}pt;height:${H + 18}pt"></div>`;
-      const PX = 24, PY = 24; let PW = Math.round(W*0.47), PH = H - PY - 24 - 16; while(PW < W*0.58 && !SW.fits(D, pid, PW, PH)) PW += 6; while(PH > 200 && !SW.fits(D, pid, PW, PH)) PH -= 6;
+      const PX = 24; let PY = 24, PW = Math.round(W*(big ? 0.6 : 0.47)), PH = H - PY - 24 - 16; while(PW < W*0.58 && !SW.fits(D, pid, PW, PH)) PW += 6; while(PH > 200 && !SW.fits(D, pid, PW, PH)) PH -= 6;
+      PY = (H - PH - 16)/2;   // a photo cut shorter for its house sits centered top to bottom, so no strip is left under it
       h += AS.blk(PX, PY, PW, PH, 16, {blockColor: 'var(--as-paper)'}) + FXS.box(D, pid, PX, PY, PW, PH, 'front.hero') + AS.tri(PX, PY, 44*k);
-      const rx = PX + PW + 16 + 26, cw = W - 26 - rx, js = stackW(['JUST', 'SOLD'], cw, big ? 76 : 72, 40);
+      const rx = PX + PW + 16 + 26, cw = W - 26 - rx;
+      // owner 11/17 (p49, p51): no empty field beside the words or under the logo. JUST / SOLD fill the column's width (as large as the
+      // note still leaves room for), the agent and the logo share one row on the foot, the note's box takes the rest.
+      const ns = 13.5*k, agW = Math.max(FXS.width(A.name || '', `${RH};font-size:${ns}pt`), (desT ? FXS.width(desT, `font-family:Outfit;font-weight:600;letter-spacing:1.4pt;font-size:8.6pt`) + 10 : 0) + FXS.width(A.phone || '', `font-family:Outfit;font-weight:600;font-size:${ns*0.72}pt`)), agH = ns*1.2 + ns*0.9, ab = H - 22; let ny = ab - agH;
+      // the logo beside the agent when the row has room for it at full height (never under half the name's size, TREC), else under the agent
+      const logoH0 = Math.min(26*k, agH), side = rx + cw - (rx + agW + 16) >= 4.2*logoH0, logoH = side ? logoH0 : 34*k, lx0 = side ? rx + agW + 16 : rx, ly = side ? ny + (agH - logoH)/2 : ab - logoH;
+      if(!side) ny -= logoH + 8;
+      const qf0 = 15*k, needNote = 3*11*k*1.4 + 2*12 + 14;
+      let js = stackW(['JUST', 'SOLD'], cw, 100, 40); while(js > 56 && ny - 14 - (Math.max(20, 16 + 0.17*js) + 2*js*0.98 + 8 + 22*k*1.18 + 12 + qf0*1.25 + 6) < needNote) js -= 1;
       const sy0 = Math.max(20, 16 + (1.32*js - 0.98*js)/2); let t = AS.stack(['Just', 'Sold'], rx, sy0, cw, js, 'front.word', {lh: 0.98, color: 'var(--as-on-main)'});
       let y = sy0 + 2*js*0.98 + 8;
       const st = addr(rx, y, cw, 22*k, 13, 'front.address', 'var(--as-on-main)'); t += st.html; y += st.fs*1.18 + 12;
       const q = 'Thinking about selling?', qf = FXS.fitSize(q, RH, cw, 15*k, 10);
       t += `<div class="as-kick" style="left:${rx}pt;top:${y}pt;width:${cw}pt;height:${qf*1.25}pt;font-size:${qf}pt;line-height:${qf*1.25}pt;color:var(--as-acc-m);white-space:nowrap" data-slot="front.cta" data-lines="1">${esc(q)}</div>`; y += qf*1.25 + 6;
       // the agent at the foot of the column
-      const ns = 13.5*k, logoH = 26*k, ab = H - 22, ly = ab - logoH, ny = ly - 8 - ns*1.2 - ns*0.9;
       t += `<div class="abs" style="left:${rx}pt;top:${ny}pt;width:${cw}pt;white-space:nowrap"><div style="${RH};font-size:${ns}pt;line-height:${ns*1.2}pt;color:var(--as-on-main)" data-slot="agent.name" data-lines="1">${esc(A.name || '')}</div><div style="font-family:var(--as-font);font-weight:600;font-size:${ns*0.72}pt;line-height:${ns*0.9}pt;color:var(--as-on-main)">${desT ? `<span style="letter-spacing:1.4pt;margin-right:10pt;font-size:8.6pt" data-slot="agent.desig" data-lines="1">${esc(desT)}</span>` : ''}<span data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</span></div></div>`;
-      t += FXS.logo(D, rx, ly, cw, logoH, 'flex-start');
+      t += FXS.logo(D, lx0, ly, rx + cw - lx0, logoH, side ? 'flex-end' : 'flex-start');
       // the note between the question and the agent, in the event box sized to its text
-      const room = ny - 12 - y, N2 = (K.front || {}).note2 || []; let iw = cw - 24, note = '', nl = 0, nfs = 10*k, nlh = 14*k;
-      for(const f of [11.5*k, 11*k, 10.5*k, 10*k, 9.5*k, 9]){ if(note) break; for(const c of [...new Set(N2.concat(N2.map(x => String(x).split(/(?<=\.)\s/)[0])))].sort((p, q2) => q2.length - p.length)){ if(note) break;
-        const css = `font-family:Outfit;font-weight:400;font-size:${f}pt`, T = FXS.width(c, css);
-        for(const n2 of [2, 3, 4, 1]){ const iw0 = n2 === 1 ? T + 4 : Math.min(cw - 24, Math.max(120, T/(n2 - 0.08))); if(iw0 > cw - 24 + 0.5) continue; const ws = FO.wrapLines(c, css, iw0);
-          if(ws.length === n2 && n2*f*1.4 + 20 <= room && (n2 === 1 || ws[n2 - 1] >= 0.8*iw0)){ note = c; nl = n2; nfs = f; nlh = f*1.4; iw = iw0; break; } } } }
-      if(note){ const bh = nl*nlh + 20, by = y + (room - bh)/2;
-        t += `<div class="as-tintbox" style="left:${rx}pt;top:${by}pt;width:${iw + 24}pt;height:${bh}pt;background:var(--as-paper)"></div><div class="abs" style="left:${rx + 12}pt;top:${by + 10}pt;width:${iw}pt;height:${nl*nlh}pt;font-family:var(--as-font);font-weight:400;font-size:${nfs}pt;line-height:${nlh}pt;color:#161616" data-slot="front.note" data-lines="${nl}">${esc(note)}</div>`; }
+      // owner 11/17 (p49, p51): the note's box spans the column to its right margin, taller, the note in larger type (up to 15 pt), centered in it
+      const room = ny - 14 - y, N2 = (K.front || {}).note2 || [], bw = cw; let pad = 14*k, iw = bw - 2*pad; let note = '', nl = 0, nfs = 10*k, nlh = 14*k, nw = iw;
+      const cands = [...new Set(N2.concat(N2.map(x => String(x).split(/(?<=\.)\s/)[0])))].sort((p, q2) => q2.length - p.length);
+      for(const [ev, mms, pd] of [[.84, [1, .96, .92], 14*k], [.75, [1, .96, .92, .88, .84, .8, .76, .72], 14*k], [.75, [1, .96, .92, .88, .84, .8, .76, .72], 10]]) for(let f = big ? 15*k : 12.25; f >= 9 && !note; f -= 0.25){ pad = pd; iw = bw - 2*pad; const css = `font-family:Outfit;font-weight:400;font-size:${f}pt`;
+        for(const c of cands){ if(note) break; for(const mm of mms){ const w = iw*mm, ws = FO.wrapLines(c, css, w), n2 = ws.length;
+          if(n2 >= 3 && n2*f*1.4 + 2*pad <= room && ws.slice(0, -1).every(x => x >= ev*w) && ws[n2 - 1] >= 0.93*w){ note = c; nl = n2; nfs = f; nlh = f*1.4; nw = w; break; } } } }
+      // owner 11/23 (p25, the 6x9): the white box keeps its size, the write-up fills it: slim margins, the largest type at which a note
+      // (with the call-to-action line when it helps) fills the box, every line but the last 84%+ and the last 90%+, justified
+      if(note && !big){ const bh0 = Math.min(room, nl*nlh + 2*pad + 16*k), p2 = 10, iw2 = bw - 2*p2, ih = bh0 - 2*p2, cands2 = cands.concat(cands.map(c => c + ' Call or text me whenever you are ready.'));
+        let got = null; for(let f = 17; f >= nfs && !got; f -= 0.25){ const css = `font-family:Outfit;font-weight:400;font-size:${f}pt`;
+          for(const c of cands2){ const ws = FO.wrapLines(c, css, iw2), n2 = ws.length; if(n2 < 3) continue; const lh2 = ih/n2; if(lh2 < f*1.22 || lh2 > f*1.5) continue;
+            if(ws.slice(0, -1).every(x => x >= .84*iw2) && ws[n2 - 1] >= .9*iw2){ got = {c, n2, f, lh2}; break; } } }
+        if(got){ note = got.c; nl = got.n2; nfs = got.f; nlh = got.lh2; nw = iw2; pad = p2; iw = iw2; } }
+      if(note){ const bh = !big && nw === bw - 20 ? Math.min(room, nl*nlh + 20) : Math.min(room, nl*nlh + 2*pad + 16*k), by = y + (room - bh)/2;
+        t += `<div class="as-tintbox" style="left:${rx}pt;top:${by}pt;width:${bw}pt;height:${bh}pt;background:var(--as-paper)"></div><div class="abs" style="left:${rx + pad + (iw - nw)/2 - 1}pt;top:${by + (bh - nl*nlh)/2}pt;width:${nw + 2}pt;height:${nl*nlh}pt;font-family:var(--as-font);font-weight:400;font-size:${nfs}pt;line-height:${nlh}pt;color:#161616;text-align:justify;text-align-last:left" data-slot="front.note" data-lines="${nl}">${esc(note)}</div>`; }
       h += `<div class="as-onm">${t}</div>`;
     }
   } else {
@@ -189,6 +205,7 @@ window.brochureReady = (async function(){
   FO.refit();
   FO.just3();
   FO.gaps();
+  if(front && sold) noteFit();
   if(!front && sold) fitSteps();
   if(front){ const lock = document.getElementById('lock'); if(lock){ const t0 = +lock.dataset.top, room = +lock.dataset.foot - t0, used = +lock.dataset.bottom; lock.style.top = (t0 + Math.max(0, (room - used)/2)) + 'pt'; }
     const lk = document.getElementById('lockL'); if(lk){ /* the left column of the Just Sold front sits centered between the photo's shoulder and the foot */ } }
@@ -200,6 +217,11 @@ window.brochureReady = (async function(){
   window.brochureCheck = () => SW.check(D, issues);
   window.photoPlacements = SW.placements;
 
+  // the Just Sold note as the browser sets it: narrow the measure (kept centered in its box) until the last line runs 92%+ of it, same line count
+  function noteFit(){ const el = document.querySelector('[data-slot="front.note"]'); if(!el) return; const w0 = parseFloat(el.style.width), x0 = parseFloat(el.style.left), n0 = SW.lines(el).n;
+    if(SW.lines(el).fill >= 0.92) return;
+    for(let w = w0 - 1; w >= w0*0.7; w -= 1){ el.style.width = w + 'pt'; el.style.left = (x0 + (w0 - w)/2) + 'pt'; const L = SW.lines(el); if(L.n === n0 && L.fill >= 0.92 && L.min >= 0.8) return; }
+    el.style.width = w0 + 'pt'; el.style.left = x0 + 'pt'; }
   function fitDisc(){ const el = document.getElementById('pcdisc'); if(!el) return; let fs = 8;
     const ok = () => [...el.children].every(c => { const r = document.createRange(); r.selectNodeContents(c); return r.getBoundingClientRect().width <= el.clientWidth; });
     for(; fs > 7.5; fs -= .25){ el.style.fontSize = fs + 'pt'; if(ok()) break; }

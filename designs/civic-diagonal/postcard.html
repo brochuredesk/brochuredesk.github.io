@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrochureDesk · Diagonal postcards</title>
+<link rel="stylesheet" href="cd.css">
+<link rel="stylesheet" href="cd-fo.css">
+<script src="cd.js"></script>
+<script src="../engine/baths.js"></script>
+<script src="../engine/agentcard.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script>window.Ivory = window.Ivory || {esc: s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))};</script>
+<script src="cd-fo.js"></script>
+<!--
+  BrochureDesk · Diagonal · Just Listed and Just Sold postcards, in the hand of the approved Open House library flyer P13 Diagonal
+  (templates/oh-library/p13-diagonal.html) and its sign-in sheet: the kit's paper, photos as prints in white mats, the main-color band
+  with the one giant word, Jost throughout, facts centered with short rules, the brokerage logo where the flyer puts it.
+  data.piece.card = "listed" | "sold", data.piece.size = "6x11" (trim 792 x 432 pt) | "6x9" (648 x 432 pt), data.piece.side = "front" | "back".
+  FRONTS. Just Listed: the house print, the logo top right over the house's real story (short rules between), the agent; the band across
+  the foot with JUST LISTED in giant caps | the street and the place. Just Sold, its own card: the band across the head with JUST SOLD and
+  the street; the house print laid over the band's edge; the seller question, the note on the white mat, who to call and the logo.
+  BACKS (the owner 11/16: the design runs through the whole card): the band runs across the head, down the mail side and across the foot;
+  the postage box, the address block and the barcode strip are small white markups set into it; the paper shows in the window it frames
+  (two captioned prints, or the six steps on the white mat); the contact card half its old height in one row. No price, no QR.
+-->
+<style>
+  div.pc-wbox{position:absolute;background:#fff;box-sizing:border-box}
+  .pc-steps .it{position:absolute;display:flex;align-items:flex-start}
+  .pc-steps .num{position:absolute;display:flex;align-items:center;justify-content:center;font-family:var(--cd-font);font-weight:700;color:var(--cd-main-ink)}
+  .pc-steps .stp{font-family:var(--cd-font);font-weight:400;color:#1b1b1b;overflow:hidden}
+  .pc-disc{position:absolute;font-size:7.5pt;line-height:10pt;font-weight:500;color:var(--fx-soft);overflow:hidden;white-space:nowrap}
+  .pc-ret{position:absolute;font-family:var(--cd-font);font-weight:400;font-size:8.6pt;line-height:11pt;color:var(--fx-on);overflow:hidden;height:36pt}
+  .pc-ret b{font-weight:700;letter-spacing:1.4pt;text-transform:uppercase}
+  .mailp{position:absolute;background:#fff}
+  .cap .a{font-weight:400}
+</style>
+</head>
+<body data-mode="email">
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+window.brochureReady = (async function(){
+  const D = SW.data();
+  if(!D.listing){ document.getElementById('pages').innerHTML = '<p style="padding:20pt">No data injected.</p>'; return; }
+  const esc = SW.esc, b = D.brand || {}, A = D.agent || {}, L = D.listing, P = D.piece || {};
+  document.body.dataset.mode = D.mode || 'email';
+  await SW.setup(D);
+  const sold = P.card === 'sold', big = P.size === '6x11', front = P.side === 'front';
+  const W = big ? 792 : 648, H = 432, k = big ? 1.12 : 1;
+  const K = ((D.sw || {}).pc || {})[sold ? 'js' : 'jl'] || {};
+  const hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot) || '';
+  const word = sold ? 'Just Sold' : 'Just Listed';
+  const issues = [];
+  const place = [FXS.hood(L), FXS.placeLine(L).replace(/\s+\d{5}(-\d{4})?$/, '')].filter(Boolean).join('  ·  ').toUpperCase(), ad = String(L.address || '');
+  // reversed caps never under 8.6 pt: a line that does not fit gives up tracking before it gives up size
+  const capsFit = (t, w, max, wt, tracks) => { for(const ls of tracks){ const fs = FXS.fitSize(t, `font-family:Jost;font-weight:${wt};letter-spacing:${ls}pt`, w, max, 8.6); if(FXS.width(t, `font-family:Jost;font-weight:${wt};letter-spacing:${ls}pt;font-size:${fs}pt`) <= w - 12) return {fs: Math.max(8.6, fs), ls}; } return {fs: 8.6, ls: tracks[tracks.length - 1]}; };
+  const placeLine = (x, y, w, al, slot, max) => { const c = capsFit(place, w, max || 9.5*k, 600, [3, 2.2, 1.4, 0.8]); return `<div class="cd-place" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${13*k}pt;font-size:${c.fs}pt;line-height:${13*k}pt;letter-spacing:${c.ls}pt;text-align:${al || 'center'}" data-slot="${slot || 'front.place'}" data-lines="1">${esc(place)}</div>`; };
+  const disp = (t, x, y, w, fs, slot, al) => `<div class="cd-disp" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${fs*1.08}pt;font-size:${fs}pt;line-height:${fs*1.08}pt;letter-spacing:${Math.min(3, fs*0.05)}pt;text-align:${al || 'center'}" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
+  const street = (x, y, w, max, min, slot, al) => { const fs = FXS.fitSize(ad, 'font-family:Jost;font-weight:600', w - 4, max, min); return {fs, html: `<div class="cd-street" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${fs*1.2}pt;font-size:${fs}pt;line-height:${fs*1.2}pt;text-align:${al || 'center'}" data-slot="${slot || 'front.address'}" data-lines="1">${esc(ad)}</div>`}; };
+  const dispFit = (t, w, max, min) => { let f = max; while(f > min && FXS.width(t.toUpperCase(), `font-family:Jost;font-weight:700;letter-spacing:${Math.min(3, f*0.05)}pt;font-size:${f}pt`) > w - 4) f -= 0.5; return f; };
+  const desT = A.designation ? (A.nar || /realtor/i.test(A.designation) ? 'REALTOR®' : A.designation) : '';
+  let h = '';
+
+  const BF = 'font-family:Jost';
+  const wMax = id => { const p = (D.photos || {})[id] || {}; return hh => p.maxW && p.w && p.h ? hh*(p.w/p.h)*p.maxW : Infinity; };
+  const wordW = (t, f) => FXS.width(String(t).toUpperCase(), `${BF};font-weight:700;letter-spacing:-.5pt;font-size:${f}pt`);
+  const fitWord = (t, w, max, min) => { let f = max; while(f > min && wordW(t, f) > w - 4) f -= 0.5; return f; };
+  // the two-tone word on one line: the first word in the page's type color, the rest in the accent (P22's sign-in sheet)
+  const twoOne = (a, b2, x, y, f, slot, al) => `<div class="cd-two" style="left:${x}pt;top:${y}pt;width:${wordW(a + ' ' + b2, f) + 8}pt;height:${f*1.02}pt;font-size:${f}pt;line-height:${f*1.02}pt;text-align:${al || 'left'}" data-slot="${slot}" data-lines="1">${esc(a.toUpperCase())} <span class="a2">${esc(b2.toUpperCase())}</span></div>`;
+  const agentLine = (x, y, w, al, onDark) => { const ns = Math.min(17*k, FXS.fitSize(A.name || '', `${BF};font-weight:700`, w, 17*k, 11)), c1 = onDark ? 'var(--cd-on-dark)' : 'var(--cd-on)', c2 = onDark ? 'var(--cd-gold-dark)' : 'var(--cd-accent)';
+    return {h: ns*1.2 + 15*k, html: `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;text-align:${al || 'left'};white-space:nowrap">`
+      + `<div style="${BF};font-weight:700;font-size:${ns}pt;line-height:${ns*1.2}pt;color:${c1}" data-slot="agent.name" data-lines="1">${esc(A.name || '')}</div>`
+      + `<div style="line-height:${15*k}pt">${desT ? `<span style="${BF};font-weight:600;font-size:${8.6*k}pt;letter-spacing:1.6pt;color:${c2};margin-right:10pt" data-slot="agent.desig" data-lines="1">${esc(desT)}</span>` : ''}<span style="${BF};font-weight:600;font-size:${13*k}pt;color:${c1}" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</span></div></div>`}; };
+  const koLogo = (x, y, w, hh, just) => { const src = CD.logoSrc(D); return `<div class="abs logo" data-area="${w*hh}" data-maxh="${hh}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hh}pt;justify-content:${just || 'center'}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="word" data-slot="broker.name" data-lines="1">${esc(b.brokerage || '')}</span>`}</div>`; };
+
+  const kitLogo = (x, y, w, hh, just) => { const src = CD.logoPaper(D); return `<div class="abs logo" data-area="${w*hh}" data-maxh="${hh}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${hh}pt;justify-content:${just || 'center'}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="word" data-slot="broker.name" data-lines="1">${esc(b.brokerage || '')}</span>`}</div>`; };
+  const wideTwo = (t1, t2, x, y, w, f, slot, wt) => { const lh = +(f*1.04).toFixed(2); return CD.wide(t1, x, y, w, f, lh, slot, {max: f*0.6, wt}) + CD.wide(t2, x, y + lh, w, f, lh, slot + '.2', {max: f*0.6, wt}); };
+  const agentInk = (x, y, w, al, nmax) => { const ns = Math.min(nmax || 17*k, FXS.fitSize(A.name || '', `${BF};font-weight:600`, w, nmax || 17*k, 11));
+    const aw = Math.max(FXS.width(A.name || '', `${BF};font-weight:600;font-size:${ns}pt`), (desT ? FXS.width(desT, `${BF};font-weight:500;font-size:${8.6*k}pt;letter-spacing:1.6pt`) + 10 + desT.length*1.6 : 0) + FXS.width(A.phone || '', `${BF};font-weight:600;font-size:${13*k}pt`));
+    return {ns, aw, h: ns*1.2 + 15*k, html: `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;text-align:${al || 'left'};white-space:nowrap">`
+      + `<div style="${BF};font-weight:600;font-size:${ns}pt;line-height:${ns*1.2}pt;color:var(--cd-on)" data-slot="agent.name" data-lines="1">${esc(A.name || '')}</div>`
+      + `<div style="line-height:${15*k}pt">${desT ? `<span style="${BF};font-weight:500;font-size:${8.6*k}pt;letter-spacing:1.6pt;color:var(--cd-accent);margin-right:10pt" data-slot="agent.desig" data-lines="1">${esc(desT)}</span>` : ''}<span style="${BF};font-weight:600;font-size:${13*k}pt;color:var(--cd-accent)" data-slot="agent.phone" data-lines="1">${esc(A.phone || '')}</span></div></div>`}; };
+  const hood = FXS.hood(L), city = FXS.placeLine(L).replace(/\s+\d{5}(-\d{4})?$/, '');
+  // the Just Sold note (owner 11/17): the note's own sentences in order (the first two always: the sale and what their home could bring; each later one in or out, any of its wordings),
+  // set at the size and length that fill the box best: three lines or more, every line full (86%+ before justifying, so the word gaps stay even; the last 90%+)
+  // returns every candidate, best first (the strictest pass first); the first is placed, and after layout fixNote() keeps the first one
+  // the browser really sets in its counted lines with the last line 91%+ full
+  function noteFill(S, w, room, css, fmax, fmin, lhK){ const all = []; let pass = 0; for(const [lf, of, f0] of [[0.93, 0.86, fmin], [0.92, 0.8, fmin], [0.92, 0.8, fmin - 0.75], [0.85, 0.7, fmin - 0.75]]) all.push(...noteFill1(S, w, room, css, fmax, f0, lhK, lf, of).map(c => Object.assign(c, {sc: c.sc - 6*pass})).filter(c => !all.some(a => a.t === c.t && a.fs === c.fs))), pass++; all.sort((a, b) => b.sc - a.sc); return all.length ? all : null; }
+  function noteFill1(S, w, room, css, fmax, fmin, lhK, lf, of){ const sets = (S || []).map(x => [].concat(x)), cands = [];
+    const walk = (i, acc) => { if(i === sets.length){ if(acc.length) cands.push(acc.join(' ')); return; } if(i > 1) walk(i + 1, acc); sets[i].forEach(a => walk(i + 1, acc.concat(a))); };
+    if(sets.length) walk(0, []);
+    const ok = cands.filter(t => (t.match(/\btoo\b/gi) || []).length < 2 && (t.match(/\bready\b/gi) || []).length < 2 && !SW.sameFactIn(t) && !SW.rep5(t)); const best = [];
+    for(let fs = fmax; fs >= fmin - 1e-6; fs -= 0.25){ const lh = fs*lhK, nmax = Math.floor((room + 0.5)/lh); if(nmax < 3) continue;
+      ok.forEach(t => { const Lw = FO.wrapLines(t, `${css};font-size:${fs}pt`, w - 1), n = Lw.length;   // the note box is set 2 pt narrower (w - 2) and wrapLines breaks past w - 2: the same breaks as the browser
+        if(n < 3 || n > nmax || Lw[n - 1] < lf*w || Lw.slice(0, -1).some(x => x < of*w)) return;
+        best.push({sc: Math.min(1, n*lh/room)*100 + fs*5, t, n, fs, lh}); }); }
+    return best.sort((a, b) => b.sc - a.sc).slice(0, 80); }
+
+  if(front){
+    const F = K.front || {}, pid = FO.heroId(D, (F.cap || {}).photo || 'front');
+    const hls = (F.highlights || FXS.tagFacts(D).tags || []).slice(0, 4), m = 22;
+    if(!sold){
+      // ---------- JUST LISTED: the sign-in sheet's header laid on the card. The kit's dark slab holds the top right with the street in white
+      // caps, the gold rule and the place (the sign-in sheet's welcome block); its foot on the set's slant. Under the white channel the house
+      // fills the right of the card to the bleed, its top cut on the same slant. On the white field at left: JUST / LISTED as P45's display
+      // word, spread to one measure; the facts with their line icons; the real highlights; the agent and the logo. ----------
+      const mw = wMax(pid); let PX = Math.round(W*0.4); const yF = 120*(big ? 1.04 : 1), foot = CD.y(W + 9, yF), top = CD.y(W + 9, yF + FO.GAP);
+      while(PX > W*0.3 && !SW.fits(D, pid, W + 9 - PX, H + 9 - top(W + 9))) PX -= 6;
+      while(W + 9 - PX > mw(H + 9 - top(W + 9)) && PX < W*0.5) PX += 4;
+      // owner 11/17 (fill rule): where the column is much wider than its longest highlight needs, the house widens toward it (still whole, still 300 ppi)
+      { const hlW = Math.max(...hls.map(t => FXS.width(t, `${BF};font-weight:500;font-size:${(big ? 13.5 : 11.5)*k}pt`))) + 22, PXd = m + 20 + Math.max(hlW + 24, W*0.27);
+        while(PX - 6 > Math.max(PXd, W*0.3) && SW.fits(D, pid, W + 9 - (PX - 6), H + 9 - top(W + 9)) && W + 9 - (PX - 6) <= mw(H + 9 - top(W + 9))) PX -= 6; }
+      const SXs = PX + 26;
+      h += CD.field(SXs, W + 9, foot(SXs), foot(W + 9), 'above', -9, 'var(--cd-dark)');
+      h += CD.cut(D, pid, PX, top(W + 9), W + 9 - PX, H + 9 - top(W + 9), 'front.hero', 'top', top(PX), top(W + 9));
+      { const bx = SXs + 24, bw = W - m - bx, sf = Math.min(38*k, FXS.fitSize(ad.toUpperCase(), `${BF};font-weight:500;letter-spacing:2pt`, bw, 38*k, 12))   /* a short street sets larger across the band (owner 11/17 fill rule) */, cf = 15*k, bh = sf*1.2 + 10 + 12 + cf*1.4, by = m - 2 + Math.max(0, (foot(W - m) - 18 - (m - 2) - bh)/2);
+        h += `<div class="cd-band"><div class="cd-addr" style="left:${bx}pt;top:${by}pt;width:${bw}pt;height:${sf*1.2}pt;font-size:${sf}pt;line-height:${sf*1.2}pt;letter-spacing:2pt" data-slot="front.address" data-lines="1">${esc(ad.toUpperCase())}</div><div class="cd-grule" style="left:${bx}pt;top:${by + sf*1.2 + 9}pt;width:36pt"></div>`;
+        const pc = capsFit(place, bw, cf, 500, [2.6, 2, 1.4, .8]); h += `<div class="cd-place" style="left:${bx}pt;top:${by + sf*1.2 + 22}pt;width:${bw}pt;height:${cf*1.4}pt;font-size:${pc.fs}pt;line-height:${cf*1.4}pt;letter-spacing:${pc.ls}pt" data-slot="front.place" data-lines="1">${esc(place)}</div></div>`; }
+      // the white field
+      const cw = PX - 20 - m;
+      const ag0 = agentInk(m, 0, cw*0.62, 'left', big ? 21*k : 0), lgH = (big ? 38 : 30)*k, stack = cw - ag0.aw - 14 < 100*k,   // the 6x11: the logo beside the agent, its column's full width in use
+        footY = H - m - ag0.h - (stack ? lgH + 8 : 0), ag = agentInk(m, footY, big && stack ? cw : cw*0.62, big && stack ? 'center' : 'left', big ? 21*k : 0);   // the 6x11: the agent and the logo under it centered in the column
+      const fl = CD.factSix(L).filter(f => /bed|bath|area/.test(f[0])).slice(0, 3);
+      let frh = (big ? 19 : 17)*k, hf = Math.min(...hls.map(t => FXS.fitSize(t, `${BF};font-weight:500`, cw - 22, (big ? 13.5 : 11.5)*k, 8.6))), hp = hf*1.6;   // the 6x11's wide column: bigger rows that reach across it
+      let fc = 1; const blockOf = () => Math.ceil(fl.length/fc)*frh + 10 + hls.length*hp;   // fc: the facts in one column, or two side by side when they are short
+      // owner 11/17 (p34): the facts and highlights always fit above the agent; the rows tighten first, then the display word gives up size
+      let wf = Math.min(78*k, CD.wideFit(['Listed'], cw, 80*k, 36, 3, 400)); const yOf = f => 16 + f*0.2 + 2*(+(f*1.04).toFixed(2)) + 8;
+      // the highlights and facts grow toward the photo where the column has the height for it (the fill rule: no empty strip beside them)
+      { const fitH = f => Math.min(...hls.map(t => FXS.fitSize(t, `${BF};font-weight:500`, cw - 22, f, 8.6))), base = hf;
+        for(let f = 16*k; f > base + 0.1; f -= 0.25){ const g = fitH(f), sv = [hf, hp, frh]; hf = g; hp = g*1.6; frh = Math.max(frh, g*1.5);
+          if(yOf(wf*0.66) + blockOf() <= footY - 12) break; [hf, hp, frh] = sv; } }   // the display word may give up to a third so the rows can reach across the column
+      while(yOf(wf) + blockOf() > footY - 12 && hp > hf*1.4){ hp -= 0.25; frh = Math.max(15*k, frh - 0.2); }
+      while(wf > 40 && yOf(wf) + blockOf() > footY - 12) wf -= 1;
+      const wlh = +(wf*1.04).toFixed(2), sty = 16 + wf*0.2; h += wideTwo('Just', 'Listed', m, sty, cw, wf, 'front.status', 400);
+      // the rows open up (and the facts set larger) into room the column still has, so no empty band sits around the block (owner 11/17 fill rule)
+      let fMax = Math.max((big ? 13.5 : 11.5)*k, hf*1.12); { const y0 = sty + 2*wlh + 8; for(let i = 0; i < 40 && footY - 10 - y0 - blockOf() > 12; i++){ if(hp < hf*2.1) hp += 0.5; if(frh < hf*2.0) frh += 0.5; if(fMax < hf*1.45) fMax += 0.15; if(hp >= hf*2.1 && frh >= hf*2.0) break; } }
+      { const fw = Math.max(...fl.map(f => FXS.width(f[1], `font-family:Jost;font-weight:500;font-size:${fMax}pt`))) + Math.max(14*k, hf*1.3) + 9;
+        if(fl.length > 2 && 2*fw + 10 <= cw*1.35 && 2*fw + 10 >= cw*0.7) fc = 2; }   // owner 11/17 fill rule: short facts run two to a row across the column, not a narrow stack with empty room beside it
+      const y = sty + 2*wlh + 8, blockH = blockOf(), by2 = y + Math.max(0, (footY - 10 - y - blockH)/2);
+      if(by2 + blockH > footY - 4) issues.push({slot: 'front.hl', kind: 'text-overlap', detail: 'the highlights run into the agent'});
+      // owner 11/17 (fill rule, "centered when appropriate"): where the facts and highlights are much narrower than the column, the block
+      // (still left-aligned inside) is centered side to side in it
+      const fF = CD.facts(fl, 0, 0, cw, 1, frh, 'x', {ic: Math.max(14*k, hf*1.3), max: fMax, min: 8.6}).fs, icW = Math.max(14*k, hf*1.3) + 9;
+      const bW = Math.max(...hls.map(t => 22 + FXS.width(t, `${BF};font-weight:500;font-size:${hf}pt`)), ...fl.map(f => icW + FXS.width(f[1], `font-family:Jost;font-weight:500;font-size:${fF}pt`))), bx = m + (cw - bW > 0.15*cw ? (cw - bW)/2 : 0);
+      h += CD.facts(fl, fc > 1 ? m : bx, by2, fc > 1 ? cw : cw - (bx - m), fc, frh, 'front.fact', {ic: Math.max(14*k, hf*1.3), max: fMax, min: 8.6}).html;
+      const hy = by2 + Math.ceil(fl.length/fc)*frh + 10;
+      hls.forEach((t, i) => { h += `<div class="cd-mk" style="left:${bx + 4}pt;top:${hy + i*hp + hp/2 - 0.75}pt;width:8pt;height:1.5pt"></div><div class="abs" style="left:${bx + 22}pt;top:${hy + i*hp}pt;width:${cw - 22 - (bx - m)}pt;height:${hp}pt;${BF};font-weight:500;font-size:${hf}pt;line-height:${hp}pt;color:var(--cd-on);white-space:nowrap" data-slot="front.hl.${i}" data-lines="1">${esc(t)}</div>`; });
+      h += ag.html + (stack ? kitLogo(m, footY + ag.h + 8, big ? cw : Math.max(ag.aw, 110*k), lgH, 'center') : kitLogo(m + ag.aw + 14, footY + (ag.h - lgH)/2, cw - ag.aw - 14, lgH, 'center'));
+    } else {
+      // ---------- JUST SOLD, its own card: the kit's dark slab runs across the whole head of the card, its foot on the set's slant, with
+      // JUST SOLD in P45's display caps in white and the street under it in gold; under the white channel the house holds the lower left,
+      // its top cut on the slant; on the white field at right the seller question, the note in the sign-in sheet's tinted panel (sized to
+      // its text), who to call and the logo. No house features. ----------
+      const sw0 = FXS.fitSize('JUST SOLD', `${BF};font-weight:400;letter-spacing:6pt`, W*0.6, 66*k, 36), wf = sw0, sl = hood ? `${ad.toUpperCase()}  ·  ${hood.toUpperCase()}` : ad.toUpperCase(), sts = Math.min(17*k, FXS.fitSize(sl, `${BF};font-weight:500;letter-spacing:2.4pt`, CD.wideW('JUST SOLD', wf, 6, 400), 17*k, 10));   // the street with its neighborhood, across the slab (owner 11/17 fill rule)
+      const ty = 10, tb = ty + wf*1.04 + 14 + sts*1.3,   /* owner 11/17 (heading-uncentered): JUST SOLD centered between the card's top and the street */ xr = m + Math.max(CD.wideW('JUST SOLD', wf, 6, 400), FXS.width(sl, `${BF};font-weight:500;letter-spacing:2.4pt;font-size:${sts}pt`)), foot = CD.y(xr, tb + 16), top = CD.y(xr, tb + 16 + FO.GAP);
+      h += CD.field(-9, W + 9, foot(-9), foot(W + 9), 'above', -9, 'var(--cd-dark)');
+      h += `<div class="cd-band">${CD.wide('Just Sold', m, ty, xr - m, wf, +(wf*1.04).toFixed(2), 'front.status', {wt: 400, max: 8})}<div class="cd-place" style="left:${m}pt;top:${ty + wf*1.04 + 14}pt;width:${W*0.62}pt;height:${sts*1.3}pt;font-size:${sts}pt;line-height:${sts*1.3}pt;letter-spacing:2.4pt" data-slot="front.address" data-lines="1">${esc(sl)}</div></div>`;
+      let PW = Math.round(W*(big ? 0.6 : 0.56)); const mw = wMax(pid);   // the 6x11's house a little wider: its photo area scales with the card
+      while(PW < W*0.66 && !SW.fits(D, pid, PW + 9, H + 9 - top(PW))) PW += 6;
+      while(PW + 9 > mw(H + 9 - top(PW)) && PW > W*0.46) PW -= 4;
+      // owner 11/17 (fill rule): where the note cannot fill a wide column at a good size, the house widens (still whole, still 300 ppi)
+      // and the column narrows until the note fills its box
+      await document.fonts.load(`400 12pt 'Jost'`);
+      { const scoreAt = P => { const lx = P + 22, CWc = W - m - lx, colT = top(lx) + 12, ag = agentInk(lx, 0, CWc*0.62, 'left', 21*k), side = CWc - ag.aw - 18 >= 80*k,
+          footH = side ? ag.h : ag.h + 6 + 36*k, boxH = H - 12 - footH - 14 - colT, nb = 14*k, Ls = noteFill((F.note || {}).s, CWc - 2*nb, boxH - 2*nb, `${BF};font-weight:400`, big ? 17.5 : 15.5, big ? 13.25 : 10.75, 1.42); return Ls ? Ls[0].sc : -1; };
+        let best = {P: PW, sc: scoreAt(PW)};
+        for(let P = PW + 12; P <= W*0.66 && P + 9 <= mw(H + 9 - top(P)) && SW.fits(D, pid, P + 9, H + 9 - top(P)); P += 12){ const sc = scoreAt(P); if(sc > best.sc + 5) best = {P, sc}; }
+        PW = best.P; }
+      h += CD.cut(D, pid, -9, top(PW), PW + 9, H + 9 - top(PW), 'front.hero', 'top', top(-9), top(PW));
+      // owner 11/17 (p36/p38): the seller question in bigger letters, the tinted note box grown with a longer write-up (the note's own
+      // sentences, every line full, justified), the agent and the logo brought down to the card's foot. The question takes the slab's empty
+      // right end beside JUST SOLD (in two lines, as large as the slab allows above its slanted foot), so the column under it is all note box
+      // (the fill rule: no empty slab, no empty column); where the slab has no room for it, it heads the column as before.
+      const lx = PW + 22, CWc = W - m - lx, colT = top(lx) + 12, QQ = 'Thinking about selling?', qcss = `${BF};font-weight:600`;
+      const qx = m + CD.wideW('JUST SOLD', wf, 6, 400) + 30*k, qw = W - m - qx, qT = Math.max(ty - 2, 13), qB = foot(W - m) - 10;   // the question's letters keep 0.2 in from the trim
+      const qsSlab = Math.min(FXS.fitSize('Thinking about', qcss, qw - 2, 40*k, 11), (qB - qT)/(2*1.02)), inSlab = qsSlab >= 20*k;
+      let ql, qs, qlh;
+      if(inSlab){ qs = qsSlab; qlh = qs*1.02; ql = ['Thinking about', 'selling?']; const qy = qT + (qB - qT - 2*qlh)/2;
+        h += ql.map((q, i) => `<div class="abs" style="left:${qx}pt;top:${qy + i*qlh}pt;width:${qw}pt;height:${qlh}pt;${qcss};font-size:${qs}pt;line-height:${qlh}pt;color:var(--cd-on-dark);white-space:nowrap" data-slot="front.cta${i ? 2 : ''}" data-lines="1">${esc(q)}</div>`).join(''); ql = []; }
+      else { const qOne = FXS.fitSize(QQ, qcss, CWc - 2, 40*k, 11), qTwo = Math.min(28*k, FXS.fitSize('Thinking about', qcss, CWc - 2, 40*k, 11)), two = qTwo > qOne*1.15;
+        qs = two ? qTwo : Math.min(28*k, qOne); ql = two ? ['Thinking about', 'selling?'] : [QQ]; qlh = qs*1.12; }
+      // the agent in a larger name; the logo beside the agent where the column has room for it, else under it and larger, so the foot of the column is full
+      const ag = agentInk(lx, 0, CWc*0.62, 'left', 21*k), side = CWc - ag.aw - 18 >= 80*k, lgH = side ? Math.min(ag.h + 6, 44*k) : 36*k, mb = 12, footH = side ? ag.h : ag.h + 6 + lgH, agY = H - mb - footH;
+      const nb = 14*k, boxY = colT + (ql.length ? ql.length*qlh + 10 : 0), boxH = agY - 14 - boxY, iw = CWc - 2*nb;
+      await document.fonts.load(`400 12pt 'Jost'`);   // the note is measured in its own face, never a fallback
+      const ntL = noteFill((F.note || {}).s, iw, boxH - 2*nb, `${BF};font-weight:400`, big ? 17.5 : 15.5, big ? 13.25 : 10.75, 1.42); let nt = ntL && ntL[0];   // the 6x11 always at least 10% larger than the 6x9
+      if(!nt){ const t = (F.note2 || [])[0] || '', fs = 11*k; nt = {t, n: FO.wrapLines(t, `${BF};font-weight:400;font-size:${fs}pt`, iw).length, fs, lh: fs*1.42}; }
+      let ly = colT;
+      ql.forEach((q, i) => { h += `<div class="abs" style="left:${lx}pt;top:${ly}pt;width:${CWc}pt;height:${qlh}pt;${qcss};font-size:${qs}pt;line-height:${qlh}pt;color:var(--cd-accent);white-space:nowrap" data-slot="front.cta${i ? 2 : ''}" data-lines="1">${esc(q)}</div>`; ly += qlh; });
+      const nty = boxY + nb + Math.max(0, (boxH - 2*nb - nt.n*nt.lh)/2);
+      window.__noteC = {args: [(F.note || {}).s, iw, boxH - 2*nb, `${BF};font-weight:400`, big ? 17.5 : 15.5, big ? 13.25 : 10.75, 1.42], list: ntL || [], top: boxY + nb, room: boxH - 2*nb};
+      h += `<div class="cd-wb" id="notebox" style="left:${lx}pt;top:${boxY}pt;width:${CWc}pt;height:${boxH}pt"></div><div class="abs" style="left:${lx + nb}pt;top:${nty}pt;width:${iw - 2}pt;height:${nt.n*nt.lh}pt;${BF};font-weight:400;font-size:${nt.fs}pt;line-height:${nt.lh}pt;color:var(--cd-on);text-align:justify;text-align-last:left" data-slot="front.note" data-lines="${nt.n}">${esc(nt.t)}</div>`;
+      h += side ? agentInk(lx, agY, CWc*0.62, 'left', 21*k).html + kitLogo(lx + ag.aw + 18, agY + (ag.h - lgH)/2, CWc - ag.aw - 18, lgH, 'center') : agentInk(lx, agY, CWc, 'center', 21*k).html + kitLogo(lx, agY + ag.h + 6, CWc, lgH, 'center');   // stacked: the agent and the logo centered in the column
+    }
+  } else {
+    // ---------------- BACK (the owner 11/16: the design runs through the whole card; the mail zones are small white markups) ----------------
+    // Civic Diagonal: P45's slab holds the top of the content side, its foot on the set's slant, with the status in gold and the full street
+    // in white caps; under the white channel the photos (Just Listed) or the six steps on the sign-in sheet's numbered rows (Just Sold) take
+    // the slant. The sign-in sheet's tint runs down the whole mail side and across the foot: the postage box, the address block and the
+    // barcode strip are small white markups set into it; the return address stacks beside the postage box; the facts with their icons
+    // (Just Listed) or the seller question (Just Sold) sit between the postage box and the address block; the contact row is one compact row
+    // on the tint at the foot.
+    const dx = W - 648, X = 24, B = K.back || {};
+    const Z = {postage: [552 + dx, 12, 84, 98.25], address: [405 + dx, 187.5, 240, 112.5], barcode: [306 + dx, 387, 342, 45]};
+    window.__zones = Z; window.__cardX = X;
+    const mk = (z, m, ext) => `<div class="mailp" data-mail-panel="1" style="left:${z[0] - m}pt;top:${z[1] - m}pt;width:${z[2] + 2*m + (ext || 0)}pt;height:${z[3] + 2*m + (ext || 0)}pt"></div>`;
+    const RX = Z.address[0] - 22, FB = 330;
+    // the tint: the whole mail column from the top bleed, and the foot band across the card
+    h += `<div class="abs" style="left:${RX}pt;top:-9pt;width:${W + 9 - RX}pt;height:${H + 18}pt;background:var(--cd-tint2)"></div><div class="abs" style="left:-9pt;top:${FB}pt;width:${W + 18}pt;height:${H + 9 - FB}pt;background:var(--cd-tint2)"></div>`;
+    // the slab: the head of the content side
+    const hw = RX - 14 - X, sf = Math.min(26*k, FXS.fitSize(ad.toUpperCase(), `${BF};font-weight:500;letter-spacing:2pt`, hw, 26*k, 13)), hy = 18, sb = hy + 18 + sf*1.2 + 8 + 13*k, xr = X + FXS.width(ad.toUpperCase(), `${BF};font-weight:500;letter-spacing:2pt;font-size:${sf}pt`), foot = CD.y(Math.max(xr, X + hw*0.6), sb + 14), cut = CD.y(Math.max(xr, X + hw*0.6), sb + 14 + FO.GAP);
+    h += CD.field(-9, RX, foot(-9), foot(RX), 'above', -9, 'var(--cd-dark)');
+    // Just Sold (owner 11/17, heading-uncentered): the street and its neighborhood sit centered between the card's top and
+    // the slab's lowest edge, never closer than 10 pt to the slab's slanted foot
+    const hyS = !sold ? hy : (() => { const inkT = hy + 18 + sf*0.24, inkB = hy + 18 + sf*1.2 + 11, d = ((foot(-9) - inkB) - inkT)/2, lim = foot(xr) - 10 - (hy + 18 + sf*1.2 + 13); return hy + Math.max(0, Math.min(d, lim)); })();
+    h += `<div class="cd-band"><div class="cd-place" style="left:${X}pt;top:${hyS}pt;width:${hw}pt;height:13pt;font-size:${9.5*k}pt;line-height:13pt;letter-spacing:3.4pt" data-slot="back.status" data-lines="1">${esc(word.toUpperCase())}</div>`
+      + `<div class="cd-addr" style="left:${X}pt;top:${hyS + 18}pt;width:${hw}pt;height:${sf*1.2}pt;font-size:${sf}pt;line-height:${sf*1.2}pt;letter-spacing:2pt" data-slot="back.street" data-lines="1">${esc(ad.toUpperCase())}</div>`
+      + `<div class="cd-grule" style="left:${X}pt;top:${hyS + 18 + sf*1.2 + 6 - (sold ? 3 : 0)}pt;width:36pt"></div>`
+      + (hood ? `<div class="cd-place" style="left:${X + 48}pt;top:${hyS + 18 + sf*1.2 - (sold ? 3 : 0)}pt;width:${hw - 48}pt;height:13pt;font-size:${8.6*k}pt;line-height:13pt;letter-spacing:2.4pt;color:var(--cd-soft-dark)" data-slot="back.hood" data-lines="1">${esc(hood.toUpperCase())}</div>` : '') + `</div>`;
+    // the return address, stacked beside the postage box
+    const ret = [b.brokerage || ''].concat([].concat(b.returnAddress || b.address || []).flatMap(a => String(a).split('\n'))).filter(Boolean).slice(0, 3), rw = Z.postage[0] - 14 - Z.address[0];
+    h += `<div class="pc-ret" data-small="1" data-fine="1" data-slot="back.return" style="left:${Z.address[0]}pt;top:${Z.postage[1] + 4}pt;width:${rw}pt;text-align:right"><b>${esc(ret[0] || '')}</b>${ret.slice(1).map(t => '<br>' + esc(t)).join('')}</div>`;
+    // between the postage box and the address block: the facts with their icons (Just Listed) or the seller question (Just Sold)
+    { const sx = Z.address[0], sw = Z.address[2], y1 = Z.postage[1] + Z.postage[3] + 10, room = Z.address[1] - 10 - y1;
+      if(!sold){ const fl = CD.factSix(L).filter(f => f[0] !== 'stories' && f[0] !== 'lot').slice(0, 4), cols = 2, rh = Math.min(22*k, room/Math.ceil(fl.length/cols)), yy = y1 + (room - Math.ceil(fl.length/cols)*rh)/2;
+        h += CD.facts(fl, sx, yy, sw, cols, rh, 'back.fact', {ic: 13*k, max: 11*k, min: 8.6, g: 10}).html; }
+      else { const qf = Math.min(18*k, FXS.fitSize('Thinking about selling?', `${BF};font-weight:600`, sw, 18*k, 11)), s1 = 'Ask me what your home would bring today.', sf2 = FXS.fitSize(s1, `${BF};font-weight:400`, sw, 11*k, 8.6), bh = qf*1.2 + 4 + sf2*1.4, yy = y1 + (room - bh)/2;
+        h += `<div class="abs" style="left:${sx}pt;top:${yy}pt;width:${sw}pt;height:${qf*1.2}pt;${BF};font-weight:600;font-size:${qf}pt;line-height:${qf*1.2}pt;color:var(--cd-accent);white-space:nowrap" data-slot="back.cta" data-lines="1">Thinking about selling?</div>`;
+        h += `<div class="abs" style="left:${sx}pt;top:${yy + qf*1.2 + 4}pt;width:${sw}pt;height:${sf2*1.4}pt;${BF};font-weight:400;font-size:${sf2}pt;line-height:${sf2*1.4}pt;color:var(--cd-on);white-space:nowrap" data-slot="back.sold" data-lines="1" data-fine="1">${esc(s1)}</div>`; } }
+    // the foot: the contact row (half its old height) on the tint and the fine print
+    let band = ContactCard.html([X, FB + 10, W - 2*X, 44], Object.assign({}, A, {headshot: hsSrc}), Object.assign({}, b, {logo: CD.logoPaper(D)}), {postcard: true, fine: '', bottomGap: 0.5, grow: 0, fieldAccent: true, s: {inlineLabel: true, desigInline: true, pad: [3, 12, 3], hsGap: 10, hsW: 34, name: 15, nameFloor: 12, phone: 12, label: 8.6, line: 8.6, rowGap: 10, panelW: 150, panelPad: [2, 6], panelGap: 2, office: 8.6, officeLH: 1.05, logo: {wide: [118, 24], square: [24, 24], tall: [26, 26]}}});
+    band += `<div class="pc-disc" id="pcdisc" style="left:${X}pt;top:394pt;width:${Z.barcode[0] - 16 - X}pt;height:20pt" data-slot="back.fine" data-lines="2" data-fine="1"><div>Information deemed reliable but not guaranteed.</div><div>Not intended to solicit property listed with a broker.</div></div>`;
+    h += mk(Z.postage, 4) + mk(Z.address, 6) + `<div class="mailp" data-mail-panel="1" style="left:${Z.barcode[0] - 4}pt;top:${Z.barcode[1] - 4}pt;width:${Z.barcode[2] + 13}pt;height:${Z.barcode[3] + 13}pt"></div>`;
+    h += band;
+    const CL = big ? 14 : 12.5, fsC = big ? 10.75 : 9.5, x0 = sold ? -9 : X, x1 = RX - FO.GAP;
+    if(!sold){
+      // two captioned rooms under the channel, their tops cut on the slant, P45's white gap between them, feet and captions level
+      const ps = (B.photos || []).slice(0, 2), g = FO.GAP + 4, Lc = 3, capTop = FB - 12 - Lc*CL, PB = capTop - 18 - 5, pw = (x1 - x0 - g)/2;
+      ps.forEach((c, i) => { const x = x0 + i*(pw + g), yl = cut(x), yr = cut(x + pw), tx = Math.max(X, x), tw = x + pw - tx;
+        h += `<div class="abs cd-print" style="left:${x}pt;top:${yr}pt;width:${pw}pt;height:${PB - yr}pt;clip-path:${CD.clip('top', yr, PB - yr, yl, yr)}">${SW.photo(D, c.photo, 'position:absolute;inset:0', 'back.photo' + i)}</div>`;
+        const cc = FXS.augment(D, c), L0 = FXS.leadLabel(cc.lead);
+        h += `<div class="abs" style="left:${tx}pt;top:${PB + 6}pt;width:${tw}pt;white-space:nowrap"><div class="lbl" data-slot="back.photo${i}.label" data-lines="1" style="max-width:${tw}pt">${esc(L0.name.toUpperCase())}</div></div>`;
+        h += `<div class="abs cap"><div class="a" style="position:absolute;left:${tx}pt;top:${capTop}pt;width:${tw}pt;height:${Lc*CL}pt;font-size:${fsC}pt;line-height:${CL}pt" data-slot="back.photo${i}" data-room="${esc(L0.name)}"${tw < pw - .5 ? ' data-bleed="1"' : ''} data-lh="${CL}" data-hbox="${Lc*CL}" data-lines="${Lc}" data-min="3" data-narrow="0" data-nopair="1" ${FXS.sd(cc.s)}></div></div>`; });
+    } else {
+      // the six steps as the sign-in sheet's numbered rows: Light numerals in the main color, a hairline between rows; the steps' wording
+      // is the product's own, unchanged
+      const steps = (B.stepsLong || B.help || B.steps6 || []).slice(0, 6);
+      if(steps.length < 6) issues.push({slot: 'back.steps', kind: 'fewer-than-six-bullets', detail: `${steps.length} bullets; the Just Sold back carries six`});
+      const bx = X, bw = x1 - bx, yl = cut(bx), yr = cut(bx + bw), bb = FB - 12, tl = cut(-9), tr = cut(x1);
+      h += `<svg class="abs pc-wbox" id="stepsbox" data-bh="${bb - yl}" style="left:-9pt;top:${tr}pt;width:${x1 + 9}pt;height:${FB - tr}pt;overflow:visible;background:none" viewBox="0 0 ${x1 + 9} ${FB - tr}" preserveAspectRatio="none"><polygon points="0,${tl - tr} ${x1 + 9},0 ${x1 + 9},${FB - tr} 0,${FB - tr}" fill="var(--cd-tint2)"/></svg>`;
+      const kw = FXS.width('HERE’S HOW I’D START', `${BF};font-weight:500;font-size:8.6pt;letter-spacing:2.4pt`) + 8;
+      h += `<div class="cd-wl" id="jskick" style="left:${bx}pt;top:${yl + 4}pt;width:${kw + 6}pt;text-align:left;color:var(--cd-main-ink);letter-spacing:2.4pt" data-slot="back.box.k" data-lines="1">HERE’S HOW I’D START</div>`;
+      const sy = yl + 24;
+      h += `<div class="pc-steps" id="stepslist" data-x="${bx}" data-y="${sy}" data-w="${bw - (big ? 0 : 8)}" data-b="${bb - 18}" data-gt="${yl}" data-gb="${FB + 10}">${steps.map((e, i) => `<div class="it" data-i="${i}"><div class="cd-sq" style="left:0;top:0;width:${18*k}pt;height:${18*k}pt;font-size:${17*k}pt;line-height:${18*k}pt">${i + 1}</div><div class="stp" data-slot="back.step${i}" data-lines="2" data-fine="1">${esc([].concat(e)[0])}</div></div>`).join('')}</div>`;
+      h += `<div class="abs" id="jscall" style="left:${bx}pt;top:${bb - 16}pt;width:${bw}pt;height:14pt;${BF};font-weight:600;font-size:${10.5*k}pt;line-height:14pt;text-align:left;color:var(--cd-main-ink)" data-slot="back.call" data-lines="1">${esc(B.call || 'Call or text me anytime.')}</div>`;
+    }
+    if((D.mode || 'email') !== 'print'){
+      const gb = (z, extra) => `left:${z[0]}pt;top:${z[1]}pt;width:${z[2]}pt;height:${z[3]}pt;${extra||''}`;
+      h += `<div class="mg mg-stamp" style="${gb(Z.postage)}">Postage<br><span style="text-transform:none">mail vendor</span></div>
+        <div class="mg mg-addr" style="${gb(Z.address)}">${[0,1,2,3].map(i => `<div class="aline" style="left:12pt;right:12pt;top:${28 + i*17.25}pt"></div>`).join('')}<div class="gl" style="left:12pt;bottom:9pt">Address block · filled by the mail vendor</div></div>
+        <div class="mg mg-bar" style="${gb(Z.barcode)}"><div class="gl" style="left:0;right:0;top:50%;text-align:center;transform:translateY(-50%)">Barcode strip · keep clear</div></div>`;
+    }
+  }
+
+  const f = SW.frame(D, W, H, h);
+  document.getElementById('pages').innerHTML = f.html;
+  window.pieceSize = {W: f.W, H: f.H, bleed: f.bleed};
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  document.querySelectorAll('.cap .a[data-s]').forEach(el => { el.dataset.fill = 0.9; el.dataset.lfill = 0.82; el.dataset.min = Math.max(3, +el.dataset.min || 0); el.dataset.j3 = '1'; });
+  SW.fill();
+  fixNote();
+  function fixNote(){ const el = document.querySelector('[data-slot="front.note"]'), C = window.__noteC; if(!el || !C || !C.list.length) return;
+    // the leading opens (up to 1.55) so the lines fill the box top to bottom
+    const put = c => { const lh = Math.min(c.fs*1.55, Math.max(c.lh, C.room/c.n)); el.textContent = c.t; el.style.fontSize = c.fs + 'pt'; el.style.lineHeight = lh + 'pt'; el.style.height = (c.n*lh) + 'pt'; el.style.top = (C.top + Math.max(0, (C.room - c.n*lh)/2)) + 'pt'; el.dataset.lines = c.n; };
+    // the widest justified word gap stays under 2.6 normal spaces (FO.gaps sets a box ragged at 3.2)
+    const gapOK = () => { const sp = parseFloat(getComputedStyle(el).fontSize)*0.28; let worst = 0; const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for(let n = w.nextNode(); n; n = w.nextNode()){ const t = n.textContent; for(let i = 0; i < t.length; i++){ if(t[i] !== ' ') continue; const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + 1); const q = r.getBoundingClientRect(); if(q.width > worst && q.height > 0) worst = q.width; } }
+      return worst <= sp*2.6; };
+    // the note's own context can set type a little tighter or looser than the measuring span: measure that, and refit the list to it
+    if(C.args && C.list.length){ const c0 = C.list[0], css0 = `${C.args[3]};font-size:${c0.fs}pt`; el.textContent = c0.t; el.style.fontSize = c0.fs + 'pt'; el.style.whiteSpace = 'nowrap';
+      const rg = document.createRange(); rg.selectNodeContents(el); const dom = rg.getBoundingClientRect().width*0.75, r = dom/FXS.width(c0.t, css0); el.style.whiteSpace = '';
+      if(r > 0.5 && Math.abs(r - 1) > 0.004){ const a = C.args.slice(); a[1] = a[1]/r; const L2 = noteFill(...a); if(L2) C.list = L2.concat(C.list); } }
+    for(const c of C.list){ put(c); const L = SW.lines(el); if(L.n === c.n && L.fill >= 0.91 && gapOK()) return; }
+    for(const c of C.list){ put(c); const L = SW.lines(el); if(L.n === c.n && L.fill >= 0.91) return; }
+    put(C.list[0]); }
+  FO.refit();
+  FO.just3();
+  FO.gaps();
+  if(!front && sold) fitSteps();
+  if(front){ const lock = document.getElementById('lock'); if(lock){ const t0 = +lock.dataset.top, room = +lock.dataset.foot - t0, used = +lock.dataset.bottom; lock.style.top = (t0 + Math.max(0, (room - used)/2)) + 'pt'; }
+    const lk = document.getElementById('lockL'); if(lk){ /* the left column of the Just Sold front sits centered between the photo's shoulder and the foot */ } }
+  SW.fitLogos();
+  ContactCard.fit(document);
+  if(!front) fitDisc();
+  issues.push(...SW.focus(D)); issues.push(...CD.slashFix(D));
+  if(!front){ issues.push(...mailCheck(), ...panelCheck(), ...backCheck()); }
+  window.brochureCheck = () => SW.check(D, issues);
+  window.photoPlacements = SW.placements;
+
+  function fitDisc(){ const el = document.getElementById('pcdisc'); if(!el) return; let fs = 8;
+    const ok = () => [...el.children].every(c => { const r = document.createRange(); r.selectNodeContents(c); return r.getBoundingClientRect().width <= el.clientWidth; });
+    for(; fs > 7.5; fs -= .25){ el.style.fontSize = fs + 'pt'; if(ok()) break; }
+    el.style.fontSize = Math.max(7.5, fs) + 'pt'; }
+  // the six steps: the largest size (12 pt down to 8.6) at which each sets in two lines or fewer inside the box, then the rows spread to fill it
+  // the six steps: one column on the 6x9; two columns of three on the 6x11 (each step two full lines, owner 11/1); the largest size
+  // (20 pt down to 8.6) at which each sets in two lines or fewer and the column fits, then the rows spread to fill it
+  function fitSteps(){ const L = document.getElementById('stepslist'); if(!L) return; const x = +L.dataset.x, y0 = +L.dataset.y, w0 = +L.dataset.w, yB = +L.dataset.b, its = [...L.querySelectorAll('.it')], sq = 18*k, tx = sq + 10, NC = big ? 2 : 1, cg = 20, w = (w0 - (NC - 1)*cg)/NC, per = Math.ceil(its.length/NC);
+    const colOf = i => Math.floor(i/per);
+    let best = null;
+    for(let fs = big ? 20*k : 10.4; fs >= 8.6 - 1e-6; fs -= 0.2){ const lh = fs*1.3, tot = Array(NC).fill(0); const ns = its.map((it, i) => { const s = it.querySelector('.stp'); s.style.cssText = `position:absolute;left:${tx}pt;top:0;width:${w - tx}pt;font-size:${fs}pt;line-height:${lh}pt`; const n = SW.lines(s).n; tot[colOf(i)] += n*lh; return n; });
+      if(ns.every(n => n <= 2) && tot.every(t => t + (per - 1)*3 <= yB - y0)){ best = {fs, lh, ns, tot}; break; } }
+    if(!best) best = {fs: 8.6, lh: 11.2, ns: its.map(() => 2), tot: Array(NC).fill(per*22.4)};
+    const yF = +L.dataset.gb - 10 - 19;   // owner 11/17: the rows spread to fill the tinted area down to the call line above the card
+    for(let c = 0; c < NC; c++){ const gap = Math.min(big ? 30 : 16, (Math.max(yB, yF) - y0 - best.tot[c])/Math.max(1, per - 1)); let y = y0;
+      its.forEach((it, i) => { if(colOf(i) !== c) return; const s = it.querySelector('.stp'), n = best.ns[i]; s.style.fontSize = best.fs + 'pt'; s.style.lineHeight = best.lh + 'pt'; s.style.height = (n*best.lh) + 'pt'; s.dataset.lines = n;
+        it.style.left = (x + c*(w + cg)) + 'pt'; it.style.top = y + 'pt'; it.style.width = w + 'pt'; it.style.height = (n*best.lh) + 'pt';
+        const q = it.querySelector('.cd-sq'); q.style.top = (best.lh/2 - sq/2) + 'pt';
+        y += n*best.lh + gap; }); }
+    // owner 11/17 (p37/p39): the call line follows the steps, and the kicker, the steps and the call move down as one block, centered top to
+    // bottom between the top of the tinted area and the top of the contact card
+    const kick = document.getElementById('jskick'), call = document.getElementById('jscall'), gt = +L.dataset.gt, gb = +L.dataset.gb;
+    const sb = Math.max(...its.map(it => parseFloat(it.style.top) + parseFloat(it.style.height)));
+    if(call) call.style.top = (sb + 5) + 'pt';
+    const bt = kick ? parseFloat(kick.style.top) : y0, bbm = (call ? sb + 5 + 14 : sb), d = Math.max(0, (gt + gb)/2 - (bt + bbm)/2);
+    [kick, call].concat(its).forEach(el => { if(el) el.style.top = (parseFloat(el.style.top) + d) + 'pt'; }); }
+  function backCheck(){ const out = [], pt = v => v*72/96, sh = document.querySelector('.sheet').getBoundingClientRect(), X0 = window.__cardX || 30;
+    const cc = document.querySelector('.sheet .cc');
+    if(!cc) out.push({slot: 'back.card', kind: 'no-contact-card', detail: 'the back has no standard contact card'});
+    else { const r = cc.getBoundingClientRect(), l = pt(r.left - sh.left), rr = pt(r.right - sh.left), Wt = pt(sh.width) - 18;
+      if(l > X0 + 1 || rr < Wt - X0 - 1) out.push({slot: 'back.card', kind: 'card-not-full-width', detail: `card spans ${l.toFixed(0)}-${rr.toFixed(0)} pt of ${Wt.toFixed(0)}`}); }
+    let area = 0; document.querySelectorAll('.sheet [data-mail-panel]').forEach(el => { const r = el.getBoundingClientRect(); const w = Math.min(pt(r.right - sh.left) - 9, pt(sh.width) - 18) - Math.max(pt(r.left - sh.left) - 9, 0), hh = Math.min(pt(r.bottom - sh.top) - 9, 432) - Math.max(pt(r.top - sh.top) - 9, 0); area += Math.max(0, w)*Math.max(0, hh); });
+    if(area > .25*(pt(sh.width) - 18)*432) out.push({slot: 'back.panels', kind: 'light-block-too-big', detail: `mail panels cover ${(100*area/((pt(sh.width) - 18)*432)).toFixed(0)}% of the card`});
+    if(sold) out.push(...jsCheck());
+    return out; }
+  // owner 11/7: the Just Sold back's six bullets are long (8 words or more) and the box is at least 85% filled with text
+  function jsCheck(){ const out = [], box = document.getElementById('stepsbox'); if(!box) return [{slot: 'back.steps', kind: 'steps-missing'}];
+    const items = [...document.querySelectorAll('.stp')];
+    items.forEach((el, i) => { const w = el.textContent.trim().split(/\s+/).filter(Boolean).length; if(w < 8) out.push({slot: 'back.step' + i, kind: 'js-bullet-too-short', detail: `${w} words: "${el.textContent.trim()}"`}); });
+    if(items.length < 6) out.push({slot: 'back.steps', kind: 'fewer-than-six-bullets', detail: items.length + ' bullets'});
+    const bh = +box.dataset.bh || box.getBoundingClientRect().height*0.75, used = items.reduce((n, el) => n + SW.lines(el).n*parseFloat(el.style.lineHeight), 0) + 11 + 14 + 18;
+    window.__jsFill = +(used/(bh - 20)).toFixed(2);
+    if(used/(bh - 20) < .85) out.push({slot: 'back.steps', kind: 'js-box-under-85', detail: `the Just Sold box is ${Math.round(100*used/(bh - 20))}% full (85% minimum)`});
+    return out; }
+  function lum(c){ const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c); return m ? .2126*m[1] + .7152*m[2] + .0722*m[3] : 0; }
+  function panelCheck(){ const out = [], Z = window.__zones, sh = document.querySelector('.sheet').getBoundingClientRect(), pt = v => v*72/96;
+    const panels = [...document.querySelectorAll('.mailp')].map(p => { const r = p.getBoundingClientRect(); return {l: pt(r.left - sh.left), t: pt(r.top - sh.top), r: pt(r.right - sh.left), b: pt(r.bottom - sh.top), lum: lum(getComputedStyle(p).backgroundColor)}; });
+    if(!panels.length) out.push({slot: 'back.panel', kind: 'mail-panel-missing', detail: 'no light panel under the mail zones'});
+    ['postage', 'address', 'barcode'].forEach(k => { const z = Z[k], p = panels.find(q => q.l <= z[0] + .5 && q.t <= z[1] + .5 && q.r >= z[0] + z[2] - .5 && q.b >= z[1] + z[3] - .5);
+      if(!p) out.push({slot: 'back.' + k, kind: 'mail-zone-not-light', detail: `the ${k} zone is not fully on a light panel`});
+      else if(p.lum < 200) out.push({slot: 'back.' + k, kind: 'mail-zone-not-light', detail: `the ${k} panel's luminance is ${Math.round(p.lum)} (200 minimum)`}); });
+    return out; }
+  // nothing but the proof guides may sit in the mail vendor's zones (postage, address block, barcode strip)
+  function mailCheck(){ const out = [], Z = window.__zones, pt = v => v*72/96, sh = document.querySelector('.sheet').getBoundingClientRect();
+    const hit = (r, z) => pt(r.left - sh.left) < z[0] + z[2] - .5 && pt(r.right - sh.left) > z[0] + .5 && pt(r.top - sh.top) < z[1] + z[3] - .5 && pt(r.bottom - sh.top) > z[1] + .5;
+    document.querySelectorAll('.sheet .ph, .sheet .pc-wbox, .sheet .cap, .sheet .cc, .sheet .pc-ret, .sheet .pc-disc, .sheet [data-slot^="back."]').forEach(el => {
+      const r = el.getBoundingClientRect(); for(const k in Z) if(hit(r, Z[k])) out.push({slot: el.dataset.slot || el.className, kind: 'in-mail-zone', zone: k}); });
+    return out; }
+})();
+</script>
+</body>
+</html>

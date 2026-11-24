@@ -92,8 +92,9 @@ window.brochureReady = (async function(){
     const status = (t, x, y, w, fs, slot, al) => `<div class="abs we-label" style="left:${x}pt;top:${y}pt;width:${w + 4}pt;height:${fs*1.04}pt;font-size:${fs}pt;line-height:${fs*1.04}pt;letter-spacing:3pt;overflow:visible${al ? ';text-align:' + al : ''}" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
     const serif = (t, x, y, w, fs, slot, extra) => `<div class="abs we-serif" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${fs*1.25}pt;font-size:${fs}pt;line-height:${fs*1.25}pt;${extra || ''}" data-slot="${slot}" data-lines="1">${esc(t)}</div>`;
     // the highlights: real selling facts, the specific ones first (a dated improvement beats a plain feature), one per line on a small accent mark
-    const tags = w => { const tg = FXS.tagFacts(D).tags.filter(t => FXS.width(t, `font-family:Hanken Grotesk;font-weight:500;font-size:${11.5*k}pt`) < w - 16).filter((t, i, arr) => !arr.slice(0, i).some(u => SW.sameFact(t, u))); const sc = t => (/\b(19|20)\d\d\b/.test(t) ? 4 : 0) + (/\d/.test(t) ? 1 : 0) + Math.min(t.length, 30)/30; const hi = ((K.front || {}).highlights || []).filter(t => FXS.width(t, `font-family:Hanken Grotesk;font-weight:500;font-size:${11.5*k}pt`) < w - 16); return hi.concat(tg.map((t, i) => [sc(t), i, t]).sort((a, b) => b[0] - a[0] || a[1] - b[1]).map(x => x[2]).filter(t => !hi.some(u => SW.sameFact(t, u)))); };   // the sample's own highlights (the house's real story) lead
-    const hl = (t, i, x, y, w, rh) => `<div class="abs" style="left:${x}pt;top:${y + rh/2 - 2.5*k}pt;width:${5*k}pt;height:${5*k}pt;background:var(--we-accent)"></div><div class="abs" style="left:${x + 15*k}pt;top:${y}pt;width:${w - 15*k}pt;height:${rh}pt;font-weight:500;font-size:${11.5*k}pt;line-height:${rh}pt;font-family:var(--we-font);color:var(--we-on);white-space:nowrap;overflow:hidden" data-slot="front.hl.${i}" data-lines="1">${esc(t)}</div>`;
+    const tags = w => { const tg = FXS.tagFacts(D).tags.filter(t => FXS.width(t, `font-family:Hanken Grotesk;font-weight:500;font-size:${HLF}pt`) < w - 16).filter((t, i, arr) => !arr.slice(0, i).some(u => SW.sameFact(t, u))); const sc = t => (/\b(19|20)\d\d\b/.test(t) ? 4 : 0) + (/\d/.test(t) ? 1 : 0) + Math.min(t.length, 30)/30; const hi = ((K.front || {}).highlights || []).filter(t => FXS.width(t, `font-family:Hanken Grotesk;font-weight:500;font-size:${HLF}pt`) < w - 16); return hi.concat(tg.map((t, i) => [sc(t), i, t]).sort((a, b) => b[0] - a[0] || a[1] - b[1]).map(x => x[2]).filter(t => !hi.some(u => SW.sameFact(t, u)))); };   // the sample's own highlights (the house's real story) lead
+    const HLF = big ? 13.4 : 12.4;   // owner 11/17: the highlights set bigger so each line runs out toward the photo
+    const hl = (t, i, x, y, w, rh) => `<div class="abs" style="left:${x}pt;top:${y + rh/2 - 2.5*k}pt;width:${5*k}pt;height:${5*k}pt;background:var(--we-accent)"></div><div class="abs" style="left:${x + 15*k}pt;top:${y}pt;width:${w - 15*k}pt;height:${rh}pt;font-weight:500;font-size:${HLF}pt;line-height:${rh}pt;font-family:var(--we-font);color:var(--we-on);white-space:nowrap;overflow:hidden" data-slot="front.hl.${i}" data-lines="1">${esc(t)}</div><div class="we-hair" style="left:${x}pt;top:${y + rh - 1}pt;width:${w}pt"></div>`;   /* owner 11/17 fill: each highlight on its ruled line, the column's full width */
     const note = (x, y, w, n, lh, fs, pad) => { fs = fs || 10*k; pad = pad || 13; return `<div class="we-dk"><div class="we-wbox" id="notebox" data-pad="${pad}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${n*lh + 2*pad}pt"></div><div class="abs cap"><div class="a" style="position:absolute;left:${x + 15}pt;top:${y + pad}pt;width:${w - 30}pt;height:${n*lh}pt;font-size:${fs}pt;line-height:${lh}pt;color:var(--fx-soft)" data-slot="front.note" data-lh="${lh}" data-lines="${n}" data-min="3" data-narrow="0" data-flexh="1" ${FXS.sd(capC.s || [])}></div></div></div>`; };   // the Just Sold note is the card's one light moment: B01's white card
     const nameW = ns => FXS.width(A.name || '', `font-family:'Newsreader';letter-spacing:.8pt;font-size:${ns}pt`), phoneW = ns => FXS.width(A.phone || '', `font-family:Hanken Grotesk;font-weight:600;font-size:${ns*0.74}pt`);
     const desT = A.designation ? (A.nar || /realtor/i.test(A.designation) ? 'REALTOR®' : A.designation) : '', DS = 8.5*k, desW = desT ? FXS.width(desT, `font-family:Hanken Grotesk;font-weight:500;letter-spacing:2pt;font-size:${DS}pt`) + 9*k : 0, LOGO_MIN = 104*k;
@@ -134,22 +135,24 @@ window.brochureReady = (async function(){
         let y = y0; h += eyebrow(cR, y, rW); y += 13*k;
         const as = FXS.fitSize(ad, "font-family:Newsreader;font-weight:500", rW, 22*k, 13); h += serif(ad, cR, y, rW, as, 'front.address'); y += as*1.25 + 1;
         h += factsLine(cR, y, rW); y += 14*k + 3*k;
-        const rh0 = 16*k, nT = Math.max(0, Math.min(3, Math.floor((yB - y)/rh0))), tg = tags(rW).slice(0, nT), rh = tg.length ? Math.min(18*k, (yB - y)/tg.length) : rh0; tg.forEach((t, i) => { h += hl(t, i, cR, y + i*rh, rW, rh); });
+        const rh0 = 16*k, nT = Math.max(0, Math.min(5, Math.floor((yB - y)/rh0))), tg = tags(rW).slice(0, nT), rh = tg.length ? Math.min(18*k, (yB - y)/tg.length) : rh0; tg.forEach((t, i) => { h += hl(t, i, cR, y + i*rh, rW, rh); });
       } else {
         const PX = W - M - PW, TX0 = TI, TX1 = PX - 22, TW = TX1 - TX0, parts = []; let y = M + 8;
         h += photoAt(PX, M, PW, PH);
         parts.push(eyebrow(TX0, y, TW)); y += 16*k;
-        const ls = Math.min(FXS.fitSize('LISTED', tenor, TW - 2, 80*k, 30), 88);
-        parts.push(status('Just', TX0, y, TW, ls, 'front.status') + status('Listed', TX0, y + ls*1.0, TW, ls, 'front.status2')); y += 2*ls*1.0 + 6;
+        // owner 11/17: five highlights (6x9 two more, 6x11 three more); JUST / LISTED gives up the height they need
+        const as0 = FXS.fitSize(ad, "font-family:Newsreader;font-weight:500", TW, 26*k, 15), NW = 5, rh = big ? 21.6 : 20, room = BY - 14 - y - 6 - 16*k - (as0*1.25 + 2) - 26*k - NW*rh;
+        const ls = Math.max(30, Math.min(FXS.fitSize('LISTED', tenor, TW - 2, 80*k, 30), 88, room/2.1)), js = ls*1.1, lex = Math.max(0, Math.min(ls*0.3, (TW - 6 - FXS.width('LISTED', `${tenor};font-size:${ls}pt`))/5)), jex = Math.max(0, Math.min(js*0.3, (FXS.width('LISTED', `${tenor};font-size:${ls}pt`) + 5*lex - FXS.width('JUST', `${tenor};font-size:${js}pt`))/3));   /* LISTED tracked out to the column, JUST to LISTED */   /* JUST a step bigger and tracked out to LISTED's width */   /* JUST set up toward LISTED's width (no empty corner beside it) */
+        parts.push(status('Just', TX0, y, TW + 40, js, 'front.status').replace('letter-spacing:3pt', `letter-spacing:${(3 + jex).toFixed(2)}pt`) + status('Listed', TX0, y + js*1.0, TW + 40, ls, 'front.status2').replace('letter-spacing:3pt', `letter-spacing:${(3 + lex).toFixed(2)}pt`)); y += js + ls + 6;
         parts.push(WE.rule2(TX0, y, TW, {heavy: 2.2, gap: 3.2})); y += 16*k;
-        const as = FXS.fitSize(ad, "font-family:Newsreader;font-weight:500", TW, 26*k, 15); parts.push(serif(ad, TX0, y, TW, as, 'front.address')); y += as*1.25 + 2;
+        const as = as0; parts.push(serif(ad, TX0, y, TW, as, 'front.address')); y += as*1.25 + 2;
         parts.push(factsLine(TX0, y, TW)); y += 14*k + 12*k;
-        const rh = 19*k, nT = Math.max(2, Math.min(3, Math.floor((BY - 14 - y)/rh)));
+        const nT = Math.max(2, Math.min(NW, Math.floor((BY - 14 - y + 1)/rh)));
         tags(TW).slice(0, nT).forEach((t, i) => { parts.push(hl(t, i, TX0, y, TW, rh)); y += rh; });
         h += `<div class="abs" id="lock" data-bottom="${y}" data-foot="${BY + 2}" style="left:0;top:0;width:0;height:0">${parts.join('')}</div>`;
       }
       // the foot band: the agent's line and the one logo in white on the main color
-      h += wrapLt(koRow(() => agentRow(TI, BY + 10*k, W - 2*TI, 17*k, FB - 20*k, true)));
+      h += wrapLt(koRow(() => agentRow(TI, BY + 10*k, W - 2*TI, big ? 24 : 20.5, FB - 20*k, true)));   // the 6x9's agent line larger (owner 11/17)
     } else {
       const PT = M; let PWi = big ? 380 : 300; while(PWi < W*0.58 && !SW.fits(D, pid, PWi - 6, H - 2*PT)) PWi += 6;
       const side = SW.fits(D, pid, PWi - 6, H - 2*PT);   // 6 pt of slack over the measured fit (the box rounds to whole pixels)   // a little slack over the measured fit (the box rounds to whole pixels)
