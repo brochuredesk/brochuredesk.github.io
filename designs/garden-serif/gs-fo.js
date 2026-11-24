@@ -277,7 +277,7 @@
   // The Open House flyer's own order, grown into the listing's cover: the rail with the street and the neighborhood; the street as the
   // display words, as large as the measure allows; the place in champagne caps; the house wide, the round room photo laid over its
   // top corner (over the sky, never the house); one Libre italic line at the foot.
-  FO.COVER = 'onebr';   // owner 11/23 (p1): the earlier cover, its one round photo at the bottom right corner
+  FO.COVER = 'corner';   // owner 11/24 (books 2-3 round 2, Q1): cover B, the street on one line, the house full size, one round photo
   // the cover's small rooms: the plan's strip first, then the listing's other room photos, never a photo or a space the fold-over shows elsewhere
   FO.coverRooms = (D, n) => { const P = (D.sw || {}).plan || {}, ph = D.photos || {}, used = new Set([].concat(P.left || [], P.right || [], P.backRow || ['bath2'], D.plan ? [] : [(P.back || [])[0] || (P.backNoplan || [])[0]].filter(Boolean))), usedSp = new Set([...used].map(id => SW.space(D, id)));
     const cand = [].concat(P.strip || [], Object.keys(ph)).filter((id, i, a) => a.indexOf(id) === i && ph[id] && !ph[id].fullHouse && !used.has(id) && !usedSp.has(SW.space(D, id)) && !/^(front|exterior|aerial|street|plan|evening|twilight|dusk)/i.test(id) && !/front|aerial|street/i.test(ph[id].tags || ''));
@@ -563,18 +563,32 @@
   FO.back = (D, o) => { o = o || {}; const K = D.sw || {}, KB = K.back || {}, FB = ((D.companion || {}).flyer || {}).back || {}, hasPlan = !!D.plan, P = K.plan || {}, flyer = !!o.flyer, issues = [];
     const topId = flyer ? P.flyerTop : (P.back || [])[0] || (P.backNoplan || [])[0];
     const rowIds = flyer ? (P.flyerBack || []).slice(0, 3) : (P.backRow || ['bath2']).slice(0, 3), rowCards = FO.cards(D, rowIds);
-    const TOP = 30, CT = FO.CARD_Y - 14, TBH = 104, TBY = CT - TBH, n = Math.max(1, rowCards.length), RH = flyer ? (n > 2 ? 106 : 118) : (n > 2 ? 112 : 128), CL = 3, clh = 13, RY = TBY - 14 - CL*clh - 8 - RH, ZB = RY - 20;
+    const TOP = 30, CT = FO.CARD_Y - 14, TBH = 104, TBY = CT - TBH, n = Math.max(1, rowCards.length), CL = 3, clh = 13; let RH = flyer ? (n > 2 ? 106 : 118) : (n > 2 ? 112 : 128), RY = TBY - 14 - CL*clh - 8 - RH, ZB = RY - 20, wuB = null;
     let h = GS.rail('left', (D.listing || {}).address), t = '', colX, colW;
-    // the row of captioned photos
-    { const g = 16, pw = (CW - (n - 1)*g)/n; rowCards.forEach((c, i) => { h += FO.capT(D, c, X0 + i*(pw + g), RY, pw, RH, CL, 'back.photo' + i, {fs: n > 2 ? 9.25 : 10, lh: clh, min: 3}); }); }
     // the plan (its box its own width, on the right) or the outdoor photo
-    if(hasPlan){ const PM = (D.plan.levels || []).length >= 3 ? 340 : 300, RT = FO.roomTable(D), tNeed = RT.rows.length ? 12 + 20 + Math.ceil(RT.rows.length/2)*20 : 0;
+    // owner 11/24 (books 2-3 round 2 p4, p6; a standing rule for every plan with a room sizes table): the plan larger and taller, closer to the
+    // top; the table tighter (short ruled rows) and listing every room with its size
+    if(hasPlan){ const PM = (D.plan.levels || []).length >= 3 ? 360 : 330, PT = 16, RT = FO.roomTable(D), need = RT.rows.length ? FO.roomTableNeed(RT) : 0;
+      let wide = false, tNeed = RT.rows.length ? 10 + FO.RT_KH + Math.ceil(RT.rows.length/2)*FO.RT_RH : 0;
       // owner 11/23 (books 2-3 p5, every flyer back; carried to the fold-over back, same builder): the plan moves up to the top and a table of
       // the listing's room sizes (its facts when it gives none) sits under it, in the plan's own width, down to the photo row
-      const pM = Math.max(160, ZB - TOP - 36 - tNeed), pc0 = FO.planBox(D, X0, TOP, pM, PM), pw = Math.round(parseFloat(/width:([\d.]+)pt/.exec(pc0.html)[1])), py = RT.rows.length ? TOP : TOP + Math.max(0, (ZB - TOP - (pc0.bottom - TOP))/2), pc = FO.planBox(D, X1 - pw, py, pM, PM);
+      let pM = Math.max(160, ZB - PT - tNeed), pc0 = FO.planBox(D, X0, PT, pM, PM);
+      for(let k = 0; k < 4 && RT.rows.length && pc0.bottom + tNeed > ZB + 0.5 && pM > 160; k++){ pM = Math.max(160, pM - (pc0.bottom + tNeed - ZB)); pc0 = FO.planBox(D, X0, PT, pM, PM); }   // the plan's card can run taller than asked: the table keeps its full rows
+      // the room names do not fit two to a row under the plan: the table runs the page's full width in four columns under the plan and the write-up
+      if(RT.rows.length && need > Math.round(parseFloat(/width:([\d.]+)pt/.exec(pc0.html)[1])) + 0.5){ wide = true; tNeed = 10 + FO.RT_KH + Math.ceil(RT.rows.length/4)*FO.RT_RH; pM = Math.max(160, ZB - PT - tNeed); pc0 = FO.planBox(D, X0, PT, pM, PM);
+        for(let k = 0; k < 4 && pc0.bottom + tNeed > ZB + 0.5 && pM > 160; k++){ pM = Math.max(160, pM - (pc0.bottom + tNeed - ZB)); pc0 = FO.planBox(D, X0, PT, pM, PM); } }
+      const pw = Math.round(parseFloat(/width:([\d.]+)pt/.exec(pc0.html)[1])), py = RT.rows.length ? PT : PT + Math.max(0, (ZB - PT - (pc0.bottom - PT))/2), pc = FO.planBox(D, X1 - pw, py, pM, PM);
       h += pc.html; issues.push(...pc.issues); window.planIssues = pc.issues; colX = X0; colW = X1 - pw - 22 - X0;
-      if(RT.rows.length) h += FO.roomTableHtml(RT, X1 - pw, pc.bottom + 14, pw, ZB - pc.bottom - 14); }
+      if(RT.rows.length){ const nc = wide ? 4 : 2, tw = wide ? CW : pw, rowsN = Math.ceil(RT.rows.length/nc), tH = FO.RT_KH + rowsN*FO.RT_RH;
+        // a plan that cannot grow (its own resolution or width) leaves room: the table's rows take a little, the photo row the rest (never a gap)
+        const slack = Math.max(0, ZB - (pc.bottom + 10 + tH)), give = Math.min(slack, 110); RH += give; RY -= give; ZB -= give;
+        const tH2 = Math.min(FO.RT_KH + rowsN*(FO.RT_RH + 1.5), ZB - pc.bottom - 10);
+        h += FO.roomTableHtml(RT, X1 - tw, pc.bottom + 10, tw, tH2, nc);
+        if(wide) wuB = pc.bottom;   // the full-width table: the write-up ends level with the plan's foot
+        colX = X0; colW = X1 - pw - 22 - X0; } }
     else { const c = FXS.cardFor(D, topId), pw = 288, tph = ZB - TOP - 8 - 3*13; h += FO.capT(D, c, X1 - pw, TOP, pw, tph, 3, 'back.top', {fs: 10, lh: 13, min: 3}); colX = X0; colW = X1 - pw - 22 - X0; }
+    // the row of captioned photos
+    { const g = 16, pw = (CW - (n - 1)*g)/n; rowCards.forEach((c, i) => { h += FO.capT(D, c, X0 + i*(pw + g), RY, pw, RH, CL, 'back.photo' + i, {fs: n > 2 ? 9.25 : 10, lh: clh, min: 3}); }); }
     // the column: eyebrow, headline, short champagne rule, the write-up filling to the plan's foot
     const kickT = +(D.listing || {}).stories > 1 ? 'Floor by floor' : 'Room by room', ht = String((hasPlan ? (KB.plan || {}).title : (KB.noplan || {}).title) || '').replace(/\.$/, '');
     const hd = FO.headL(kickT, ht, 'back.about', colX, TOP, colW, {max: 28, min: 20}); t += hd.html;
@@ -584,7 +598,7 @@
     const used = FO.cards(D, [topId].filter(Boolean).concat(rowIds));
     const stem = w => w.replace(/^hardwood$/, 'wood').replace(/s$/, ''), saysBox = a => [...c1, ...c2].some(t => { const bw = (String(t).toLowerCase().match(/[a-z0-9'-]+/g) || []).filter(w => !['new','a','the','and','of','with'].includes(w)).map(stem), xw = new Set((String(a).toLowerCase().match(/[a-z0-9'-]+/g) || []).map(stem)); return bw.length > 0 && bw.every(w => xw.has(w)); });
     const keep = list => { const k = list.filter(x => ![].concat(x).some(saysBox) && !used.some(c => (c.s || []).some(s => [].concat(s).some(b => [].concat(x).some(a => SW.sameFact(a, b)))))); return k.length >= 3 ? k : list; };
-    const T0 = hd.y + 24, zb = ZB, nL = Math.max(3, Math.floor((zb - T0)/15.5)), lhw = +((zb - T0)/nL).toFixed(3);
+    const T0 = hd.y + 24, zb = wuB || ZB, nL = Math.max(3, Math.floor((zb - T0)/15.5)), lhw = +((zb - T0)/nL).toFixed(3);
     t += FO.full(FO.wu(keep(f2.concat(f1)), colX, T0, colW, nL*lhw + 0.01, 'back.about', 10.5, lhw, 'body')).replace('data-slot="back.about"', `data-slot="back.about" data-vc="1"${hasPlan ? ' data-growmax="1.45"' : ''} data-span="${(zb - T0).toFixed(2)}" data-pool="${Math.max(P.pool || 16, 18)}"` + (colW < 240 ? ' data-rag="1"' : ''));
     // the blush card: one ruled table of three columns (the sign-in sheet's), champagne labels, white hairlines between
     { const pad = 18, g = 22, w3 = (CW - 2*pad - 2*g)/3, x = i => X0 + pad + i*(w3 + g), ly = TBY + 16, by = ly + 20, rows = 3, rh = (TBH - 16 - 20 - 12)/rows, fs = 9.6;
@@ -603,21 +617,23 @@
 
   // the table under the plan: the listing's rooms with their sizes (by floor on a home of two or more stories); without room sizes, its facts
   FO.roomTable = D => { const L = D.listing || {}, multi = +L.stories > 1, ord = ['First', 'Second', 'Third', 'Fourth'];
-    const rooms = (L.rooms || []).filter(r => r && r.name && r.size).slice(0, 8).map(r => ({l: r.name, v: String(r.size).replace(/\s*x\s*/i, ' × '), lv: +r.level || 0}));
+    const rooms = (L.rooms || []).filter(r => r && r.name && r.size).map(r => ({l: r.name, v: String(r.size).replace(/\s*x\s*/i, ' × '), lv: +r.level || 0}));
     if(rooms.length >= 3) return {title: 'Room sizes', rows: rooms.sort((a, b) => a.lv - b.lv)};
     const rows = []; if(L.beds) rows.push({l: 'Bedrooms', v: String(L.beds)}); if(L.baths) rows.push({l: 'Baths', v: String(L.baths)}); if(L.sqft) rows.push({l: 'Square feet', v: Number(L.sqft).toLocaleString('en-US')});
     if(L.stories) rows.push({l: 'Stories', v: String(L.stories)}); if(L.yearBuilt) rows.push({l: 'Built', v: String(L.yearBuilt)}); if(L.lotSize) rows.push({l: 'Lot', v: String(L.lotSize).replace(/\s*Lot$/i, '')});
     return {title: 'The facts', rows: rows.length >= 3 ? rows : []}; };
-  FO.roomTableHtml = (RT, x, y, w, hh) => { const n = RT.rows.length, rowsN = Math.ceil(n/2), kh = 20, rh = Math.min(26, (hh - kh)/rowsN), top = y + Math.max(0, (hh - kh - rowsN*rh)/2), g = 14, cw = (w - g)/2;
+  FO.RT_KH = 16; FO.RT_RH = 16.5;
+  FO.roomTableNeed = RT => { let m = 0; RT.rows.forEach(r => { m = Math.max(m, FXS.width(r.l, 'font-family:Instrument Sans;font-weight:500;font-size:8.8pt') + FXS.width(r.v, `${LBI(700)};font-size:${(8.8*1.06).toFixed(2)}pt`) + 10); }); return Math.ceil(2*m + 12); };   // owner 11/24: the tight table (kicker, row)
+  FO.roomTableHtml = (RT, x, y, w, hh, nc) => { nc = nc || 2; const n = RT.rows.length, rowsN = Math.ceil(n/nc), kh = FO.RT_KH, rh = Math.min(FO.RT_RH + 1.5, (hh - kh)/rowsN), top = y + Math.max(0, (hh - kh - rowsN*rh)/2), g = 12, cw = (w - (nc - 1)*g)/nc;
     // two columns of rooms (the plan above names the floors), champagne hairlines between rows, the size in the set's italic
-    const lab = (r, cx) => { let fs = Math.min(10, rh*0.46); const vw = () => FXS.width(r.v, `${LBI(700)};font-size:${fs*1.06}pt`), lw = () => FXS.width(r.l, `font-family:Instrument Sans;font-weight:500;font-size:${fs}pt`); while(fs > 8.2 && lw() + vw() + 8 > cw) fs -= 0.2; return fs; };
+    const lab = (r, cx) => { let fs = Math.min(10, rh*0.58); const vw = () => FXS.width(r.v, `${LBI(700)};font-size:${fs*1.06}pt`), lw = () => FXS.width(r.l, `font-family:Instrument Sans;font-weight:500;font-size:${fs}pt`); while(fs > 8.6 && lw() + vw() + 4 > cw) fs -= 0.2; return Math.max(8.6, fs); };
     const fsAll = Math.min(...RT.rows.map(r => lab(r))), lh = fsAll*1.3;
     let b = cline('gs-eyebrow', RT.title.toUpperCase(), x, top, w, 9, 12, 'back.rooms.kicker', 'letter-spacing:3pt');
     for(let k = 0; k <= rowsN; k++) b += `<div class="abs" style="left:${x}pt;top:${top + kh + k*rh}pt;width:${w}pt;height:1pt;background:var(--gs-accent);opacity:.45"></div>`;
-    b += `<div class="abs" style="left:${x + cw + g/2 - .3}pt;top:${top + kh + 4}pt;width:1pt;height:${rowsN*rh - 8}pt;background:var(--gs-accent);opacity:.45"></div>`;
-    RT.rows.forEach((r, i) => { const col = i < rowsN ? 0 : 1, row = i % rowsN, cx = x + col*(cw + g), ty = top + kh + row*rh + (rh - lh)/2;
-      b += `<div class="abs" style="left:${cx}pt;top:${ty}pt;width:${cw*0.66}pt;height:${lh}pt;font-family:Instrument Sans;font-weight:500;font-size:${fsAll}pt;line-height:${lh}pt;color:var(--gs-on);white-space:nowrap" data-slot="back.rooms${i}" data-lines="1">${esc(r.l)}</div>`;
-      b += `<div class="abs" style="left:${cx + cw*0.5}pt;top:${ty}pt;width:${cw*0.5}pt;height:${lh}pt;font-family:'Libre Baskerville';font-style:italic;font-weight:700;font-size:${(fsAll*1.06).toFixed(2)}pt;line-height:${lh}pt;color:var(--gs-accent);text-align:right;white-space:nowrap" data-slot="back.rooms${i}.size" data-lines="1">${esc(r.v)}</div>`; });
+    for(let c = 1; c < nc; c++) b += `<div class="abs" style="left:${x + c*(cw + g) - g/2 - .3}pt;top:${top + kh + 4}pt;width:1pt;height:${rowsN*rh - 8}pt;background:var(--gs-accent);opacity:.45"></div>`;
+    RT.rows.forEach((r, i) => { const col = Math.floor(i/rowsN), row = i % rowsN, cx = x + col*(cw + g), ty = top + kh + row*rh + (rh - lh)/2, vW = Math.ceil(FXS.width(r.v, `${LBI(700)};font-size:${fsAll*1.06}pt`)) + 2;
+      b += `<div class="abs" style="left:${cx}pt;top:${ty}pt;width:${cw - vW - 3}pt;height:${lh}pt;font-family:Instrument Sans;font-weight:500;font-size:${fsAll}pt;line-height:${lh}pt;color:var(--gs-on);white-space:nowrap" data-slot="back.rooms${i}" data-lines="1">${esc(r.l)}</div>`;
+      b += `<div class="abs" style="left:${cx + cw - vW}pt;top:${ty}pt;width:${vW}pt;height:${lh}pt;font-family:'Libre Baskerville';font-style:italic;font-weight:700;font-size:${(fsAll*1.06).toFixed(2)}pt;line-height:${lh}pt;color:var(--gs-accent);text-align:right;white-space:nowrap" data-slot="back.rooms${i}.size" data-lines="1">${esc(r.v)}</div>`; });
     return b; };
   FO.tallStack = () => { const col = document.querySelector('[data-tallcol]'); if(!col) return; const bottom = +col.dataset.tallcol, ps = [...document.querySelectorAll('[data-para]')]; if(ps.length < 2) return;
     const [a, b] = ps, la = parseFloat(a.style.lineHeight), lb = parseFloat(b.style.lineHeight), na = SW.lines(a).n, nb = SW.lines(b).n;

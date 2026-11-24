@@ -131,11 +131,11 @@ window.brochureReady = (async function(){
         // owner 11/23 (p7): on the 6x11 the round room moves off the words (it ran into LISTED's D); four places to pick from (data.jlCircle):
         // 'br' the card's bottom right corner, part of the circle off the trim (default) | 'tr' the top right corner, part off the trim |
         // 'bl' inside the photo's bottom left corner | 'bm' the photo's foot, middle, half off the trim
-        const cpos = big ? ((D.piece || {}).jlCircle || D.jlCircle || 'br') : 'word', room = roomIds[0], dc = big && cpos !== 'word' ? 150 : d;
+        const cpos = big ? ((D.piece || {}).jlCircle || D.jlCircle || 'br') : 'word', room = null /* owner 11/24 (books 2-3 round 2 p7, p8, ALSO): no round photo on either Just Listed front */, dc = big && cpos !== 'word' ? 150 : d;
         if(room){ const at = {word: [PX + d*0.08, 22 + d/2], br: [W - dc*0.32, H - dc*0.32], tr: [W - dc*0.32, dc*0.32], bl: [PX + dc/2 + 16, H - dc/2 - 16], bm: [PX + PW/2, H - dc*0.3]}[cpos] || [PX + d*0.08, 22 + d/2];
           const sky = cpos === 'word';
           h += GS.circ(D, room, at[0], at[1], dc, 'front.circle', sky ? {over: 'front.hero', ring: 5, shrink: cpos === 'tr' ? 'tr' : 'tl'} : {ring: 5}).replace('class="gs-circ"', `class="gs-circ" data-rise="0"${cpos === 'br' || cpos === 'tr' || cpos === 'bm' ? ' data-bleed="1"' : ''}`); }
-        const cw = TW - (room ? d*0.42 + 8 : 0),   /* the words keep their approved size (and the five bullets under them) wherever the round room sits */ ls = Math.min(FXS.fitSize('LISTED', icapsC, cw, 66*k, 30), 70*k), lh1 = ls*1.0;
+        const cw = TW - (roomIds[0] ? d*0.42 + 8 : 0),   /* the words keep their approved size (and the five bullets under them) wherever the round room sits */ ls = Math.min(FXS.fitSize('LISTED', icapsC, cw, 66*k, 30), 70*k), lh1 = ls*1.0;
         const js = Math.min(ls*1.2, FXS.fitSize('JUST', icapsC, cw - 4, ls*1.2, ls));   /* owner 11/17 fill: JUST set up to run out under LISTED's width (no empty corner beside it) */
         const lex = Math.max(0, Math.min(ls*0.3, (TW - 6 - 0.15*ls - FXS.width('LISTED', `${icapsC};font-size:${ls}pt`))/6)), jex = Math.max(0, Math.min(js*0.3, (Math.min(FXS.width('LISTED', `${icapsC};font-size:${ls}pt`) + 5*lex, cw - 4) - FXS.width('JUST', `${icapsC};font-size:${js}pt`))/3));   /* LISTED tracked out to the column, JUST to LISTED */   /* JUST tracked out to LISTED's width */
         parts.push(status('Just', CX0, y, cw + 40, js, 'front.status').replace('style="left:', `style="letter-spacing:${(-0.5 + jex).toFixed(2)}pt;left:`) + status('Listed', CX0, y + js*1.16, TW + 40, ls, 'front.status2').replace('style="left:', `style="letter-spacing:${(-0.5 + lex).toFixed(2)}pt;left:`)); y += js*1.16 + lh1 + 14;   // owner 11/23 (p6, p7): more space between JUST and LISTED (the J's tail hit the L)
@@ -149,7 +149,7 @@ window.brochureReady = (async function(){
         // a wide house runs across the top from the rail to the bleed, the round room over its top right corner; the words under it
         let SH = big ? 214 : 206; while(SH < H*0.72 && !SW.fits(D, pid, W + 9 - CX0 + 6, SH + 9)) SH += 4;
         h += photoAt(CX0 - 6, -9, W + 15 - CX0, SH + 9);
-        const room = roomIds[0]; if(room) h += GS.circ(D, room, W - d*0.5 - 14, SH - d*0.36, d, 'front.circle', {over: 'front.hero', ring: 5, shrink: 'tr'}).replace('class="gs-circ"', 'class="gs-circ" data-rise="0"');
+        const room = null; if(room) h += GS.circ(D, room, W - d*0.5 - 14, SH - d*0.36, d, 'front.circle', {over: 'front.hero', ring: 5, shrink: 'tr'}).replace('class="gs-circ"', 'class="gs-circ" data-rise="0"');
         const TX1 = W - 24 - (room ? d + 4 : 0), y0 = SH + 14, yB = H - 24, cW = Math.round((W - 24 - CX0)*0.5), cR = CX0 + cW + 24, rW = W - 24 - cR;
         const ls = Math.min(FXS.fitSize(word.toUpperCase(), icapsC, cW, 46*k, 22), 50*k);
         h += status(word, CX0, y0, cW, ls, 'front.status');
@@ -305,6 +305,7 @@ window.brochureReady = (async function(){
   SW.fitLogos();
   ContactCard.fit(document);
   if(front && sold) blkCenter();
+  if(front && sold) evenBox();
   
   // the About box is sized to its content: a write-up that sets in fewer lines than planned does not leave an empty strip at the foot of its box
   if(!front) fitDisc();
@@ -352,6 +353,15 @@ window.brochureReady = (async function(){
     SW.resetFill(); SW.fill(); FO.refit(); }
   // owner 11/17 (book 4): on a Just Sold front with the house across the top, JUST SOLD and the street sit centered between the photo's
   // foot and the agent's name under them, measured on the letters
+  // owner 11/24 (books 2-3 round 2 p9, p10): the purple box bigger; the space from "Thinking about selling?" down to the box matches the
+  // space from the box down to the agent's name (measured on the letters). The lockup starts at the top; the box takes the rest.
+  function evenBox(){ const nb = document.getElementById('notebox'), nt = document.querySelector('[data-slot="front.note"]'), cta = document.querySelector('[data-slot="front.cta"]'), nm = document.querySelector('[data-slot="agent.name"]'), lk = document.getElementById('lock');
+    if(!nb || !nt || !cta || !nm || !lk || lk.dataset.flush) return;
+    lk.style.top = '0pt';
+    const r = nb.getBoundingClientRect(), k2 = r.height/parseFloat(nb.style.height), ctaB = ink(cta)[1], nmT = ink(nm)[0];
+    const G = (r.top - ctaB)/k2, old = parseFloat(nb.style.height), hh = (nmT - ctaB)/k2 - 2*G;
+    if(!(G > 0) || hh <= old) return;
+    nb.style.height = hh.toFixed(2) + 'pt'; nt.style.top = (parseFloat(nt.style.top) + (hh - old)/2).toFixed(2) + 'pt'; }
   function blkCenter(){ const bl = document.getElementById('jsblk'), ag = document.getElementById('jsagent'), ph = document.querySelector('.ph[data-slot-photo="front.hero"]'); if(!bl || !ag || !ph) return;
     const t0 = ink(bl.querySelector('[data-slot="front.status"]'))[0], b0 = ink(bl.querySelector('[data-slot="front.address"]'))[1], nm = ag.querySelector('[data-slot="agent.name"]'); if(!nm || !isFinite(t0) || !isFinite(b0)) return;
     const pb = ph.getBoundingClientRect().bottom, at = ink(nm)[0], want = pb + ((at - pb) - (b0 - t0))/2, el = bl.querySelector('[data-slot="front.status"]'), sc = parseFloat(el.style.width)/(el.getBoundingClientRect().width || 1);
