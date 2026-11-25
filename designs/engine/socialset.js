@@ -485,6 +485,22 @@
           const text = document.querySelector('.page').innerText;
           if(/\$\s?\d/.test(text)) out.push({slot: 'page', kind: 'price', detail: 'a dollar amount is on the graphic'});
           if(/\bphoto\s*#?\s*\d+|\b\d+\s*\/\s*\d+\s*$/im.test(text)) out.push({slot: 'page', kind: 'photo-number', detail: 'a photo number is on the graphic'});
+          // no photo or slide numbers (owner 11/24/2026, Fable socials review p32/p35/p42): a room label reads "Entry", never "01 Entry",
+          // and a carousel slide carries no number at all (the apps show the dots)
+          { const seen = new Set(), adr = String((D.listing || {}).address || '').toLowerCase();
+            // a count that is one of the listing's own facts (3 beds, 2 baths, 3 stories) is a fact tile, not a slide number
+            const FACTN = new Set(Object.entries(D.listing || {}).filter(([k, v]) => /bed|bath|stor|garage|car|half|full/i.test(k) && v != null && typeof v !== 'object').flatMap(([, v]) => String(v).match(/\d+/g) || []));
+            [...document.querySelectorAll('.page *')].forEach(el => { if(el.children.length) return; const t = (el.textContent || '').trim(); if(!t || (adr && adr.startsWith(t.toLowerCase()))) return;
+              const slot = (el.closest('[data-slot]') || el).getAttribute('data-slot') || 'page';
+              const hit = /^0\d$/.test(t) ? 'a numbered stop'
+                : /^(no\.?\s*)?\d{1,2}[.):]?\s+[A-Z][a-z]/.test(t) && !/^\d{1,2}\s+(beds?|baths?|bedrooms?|bathrooms?|stor(y|ies)|car|half|full|acres?|ft|sq|min|mi|miles?|minutes?|blocks?)\b/i.test(t) ? 'a number before the room name'
+                : s === 'slide' && /^(\d{1,2}|\d{1,2}\s*(\/|of)\s*\d{1,2})$/i.test(t) && !FACTN.has(t) ? 'a slide number' : '';
+              if(hit && !seen.has(slot)){ seen.add(slot); out.push({slot, kind: 'number-label', detail: `${hit}: "${t.slice(0, 30)}"`}); } }); }
+          // every Just Listed and Just Sold image names the agent (carousel slides excepted): a layout that falls back to one without
+          // the agent fails the build instead of shipping (owner 11/24/2026, Evening Panel X images had no agent)
+          { const nm = String((D.agent || {}).name || '').replace(/\s+/g, ' ').trim().toLowerCase(), mo = (D.piece || {}).moment;
+            if(nm && /^(jl|js)$/.test(mo || '') && s !== 'slide' && !text.replace(/\s+/g, ' ').toLowerCase().includes(nm))
+              out.push({slot: 'agent.name', kind: 'agent-missing', level: 'fail', detail: 'the agent\'s name is not on the image'}); }
           if(/virtual(ly)?\s+stag/i.test(text)) out.push({slot: 'page', kind: 'staging', detail: '"virtually staged" is on the graphic'});
           if(SS.CONDITION.test(text)) out.push({slot: 'page', kind: 'condition', detail: 'a condition claim is on the graphic'});
           const b = D.brand || {}, lg = [b.logo, b.logoOnDark, b.logoKnockout].filter(Boolean).map(u => new URL(u, document.baseURI).href);
