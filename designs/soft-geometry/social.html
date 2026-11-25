@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>soft-geometry social set</title>
+<link rel="stylesheet" href="sg-tokens.css">
+<script src="../engine/baths.js"></script>
+<script src="../engine/ivory.js"></script>
+<script src="../engine/ohlib.js"></script>
+<script src="../engine/ohemail.js"></script>
+<script src="../engine/carousel.js"></script>
+<script src="../engine/factrepeat.js"></script>
+<script src="../engine/socialset.js"></script>
+<script src="sg-social.js"></script>
+<!-- Soft Geometry's Just Listed and Just Sold social sets (owner 11/18/2026). The shared engine (templates/_shared/socialset.js) loads the
+     fonts and the data and runs the checks; the layouts are the set's own (sg-social.js): the two-tone sentence-case word with the
+     sunburst, the accent wedge with the street and the facts, sunburst bullets, soft-cornered photos, the slanted dark foot.
+     The colors come from the agent's brand kit exactly as the set's print pieces read them (SG.colors / SG.brand in sg.js). -->
+</head>
+<body>
+<script id="brochure-data" type="application/json">{}</script>
+<div id="pages"></div>
+<script>
+SocialSet.portrait = SGSocial.portrait; SocialSet.landscape = SGSocial.landscape; SocialSet.slide = SGSocial.slide;
+SocialSet.start(D => {
+  const b = D.brand || {}, c = b.colors || {}, r = document.documentElement.style, set = (n, v) => r.setProperty(n, v);
+  const rgb = h => { h = String(h||'').replace('#',''); if(h.length===3) h = h.split('').map(x=>x+x).join(''); const n = parseInt(h,16); return [n>>16&255, n>>8&255, n&255]; };
+  const lum = h => { const v = rgb(h).map(q => { q/=255; return q <= .03928 ? q/12.92 : Math.pow((q+.055)/1.055, 2.4); }); return .2126*v[0] + .7152*v[1] + .0722*v[2]; };
+  const con = (a, z) => { const x = lum(a), y = lum(z); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); };
+  const on = bg => con(bg, '#ffffff') >= con(bg, '#161616') ? '#ffffff' : '#161616';
+  const readable = (fg, bg, min) => con(fg, bg) >= (min || 3) ? fg : on(bg);
+  const mix = (a, z, t) => { const p = rgb(a), q = rgb(z); return '#' + p.map((v, i) => Math.round(v + (q[i] - v)*t).toString(16).padStart(2, '0')).join(''); };
+  // as SG.colors / SG.brand: the kit's dark is the field and the foot, its accent the wedge, the ribbon and the sunburst, its pale
+  // paper the Just Sold card; every text color is picked for contrast on the field it sits on
+  const main = c.main || b.accent || '#2f4a3a', dark = c.dark || b.ink || '#1c1c1c', accent = c.accent || b.accent2 || main;
+  const paper = b.paper || mix(main, '#ffffff', .93), pon = on(paper);
+  set('--sg-dark', dark); set('--sg-main', main); set('--sg-on', on(dark)); set('--sg-accent', readable(accent, dark));
+  // the marks (sunburst, ribbon) keep the kit's accent where it shows on both fields; else the color that does
+  set('--sg-wedge', con(accent, dark) >= 1.6 && con(accent, paper) >= 1.3 ? accent : readable(accent, dark, 1.6));
+  set('--sg-on-accent', on(accent) === '#ffffff' ? '#ffffff' : mix(dark, '#000000', .55));
+  set('--sg-paper', paper); set('--sg-ink', pon === '#ffffff' ? '#ffffff' : mix(dark, '#000000', .35)); set('--sg-text', pon === '#ffffff' ? '#eeeeee' : mix(dark, '#3a3a3a', .55));
+  set('--sg-pmain', readable(main, paper, 4.5));
+  set('--ss-page', D.piece && D.piece.moment === 'js' ? paper : dark);
+});
+</script>
+</body>
+</html>
