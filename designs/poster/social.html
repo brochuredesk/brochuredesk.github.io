@@ -11,50 +11,29 @@
 <script src="../engine/carousel.js"></script>
 <script src="../engine/factrepeat.js"></script>
 <script src="../engine/socialset.js"></script>
-<script>
-// this set's own carousel slide (owner 11/23/2026: hints of the main design on every slide); replaces the shared strip slide
-// Poster: the brand-dark field, the photo set in with the thin offset accent frame behind it (the frame round the house), the moment
-// in Archivo caps set huge in the paper color across the column, the accent bar beside the words, the street under it in the accent
-(function(){
-  const SS = window.SocialSet, esc = s => Ivory.esc(s);
-  const rect = (x, y, w, h, css) => `<div class="abs" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;${css}"></div>`;
-  const txt = (slot, t, x, y, w, h, size, min, css) => `<div class="abs nw" data-slot="${slot}" data-lines="1" data-fit="${size},${min}" style="left:${x}pt;top:${y}pt;width:${w}pt;height:${h}pt;font-size:${size}pt;line-height:${h}pt;${css}">${esc(t)}</div>`;
-  const caps = (L, tr) => `text-transform:uppercase;letter-spacing:${tr}pt;`;
-  SS.slide = (D, L, W, H) => {
-    const bd = Object.assign({bg: L.page, ink: L.ink, accent: L.accent}, L.band || {}), id = D.piece.photo, word = SS.M, addr = D.listing.address;
-    const photo = st => OHL.photo(D, id, st);
-    const S = (D, L, W, H, X) => { const m = 18, off = 7, bar = 5, tx = m + bar + 10, tw = W - m - tx; let h = X.rect(0, 0, W, H, `background:${L.page}`);
-   // the moment sized to run the column's width (Archivo caps, measured in its own face), never under 30 pt nor over 62 pt; the street the same way, 24 to 36 pt
-   const cv = document.createElement('canvas').getContext('2d'); cv.font = `${L.dw || 700} 100px ${L.display}`;
-   const fs = Math.max(30, Math.min(62, Math.floor(tw*.97/(cv.measureText(String(X.word).toUpperCase()).width/100 + .005*String(X.word).length)))), mh = Math.round(fs*1.02);
-   cv.font = `${L.bw || 600} 100px ${L.body}`; const as = Math.max(24, Math.min(36, Math.floor(tw*.96/(cv.measureText(String(X.addr)).width/100)))), ah = Math.round(as*1.2);
-   const ay = H - m - ah, my = ay - 4 - mh, ph = my - 12 - off - m;
-   h += X.rect(m + off, m + off, W - 2*m, ph, 'border:1.2pt solid var(--ss-acc);box-sizing:border-box');
-   h += X.photo(`left:${m}pt;top:${m}pt;width:${W - 2*m}pt;height:${ph}pt`);
-   h += X.rect(m, my + mh*.14, bar, ay + ah*.86 - my - mh*.14, 'background:var(--ss-acc)');
-   h += X.txt('moment', X.word, tx, my, tw, mh, fs, 26, `font-family:${L.display};font-weight:${L.dw || 700};${X.caps(L, fs*.005)}color:${L.ink};text-align:left`);
-   h += X.txt('address', X.addr, tx, ay, tw, ah, as, 17.5, `font-family:${L.body};font-weight:${L.bw || 600};color:var(--ss-acc);text-align:left`);
-   return h; };
-    return S(D, L, W, H, {bd, photo, word, addr, rect, txt, caps});
-  };
-})();
-</script>
-<!-- Just Listed and Just Sold social sets in this set's look (templates/_shared/socialset.js); the look is in socials.json.
-     The brand kit's main / accent / dark colors (data.brand.colors) set the field and accents, as the set's other pieces do. -->
+<script src="po-social.js"></script>
+<!-- Poster's Just Listed and Just Sold social sets (owner 11/18/2026). The shared engine (templates/_shared/socialset.js) loads the
+     fonts and the data and runs the checks; the layouts are Poster's own (po-social.js): the dark field, JUST over LISTED / SOLD
+     stacked huge in two colors, the giant house number with the street in accent caps, the house in the offset accent keyline, the
+     heavy rule. The colors come from the agent's brand kit as the set's print pieces read them (PO.brand in po.js). -->
 </head>
 <body>
 <script id="brochure-data" type="application/json">{}</script>
 <div id="pages"></div>
 <script>
+SocialSet.portrait = POSocial.portrait; SocialSet.landscape = POSocial.landscape; SocialSet.slide = POSocial.slide;
 SocialSet.start(D => {
-  const c = (D.brand || {}).colors || {}, r = document.documentElement.style;
+  const b = D.brand || {}, c = b.colors || {}, r = document.documentElement.style;
   const rgb = h => { h = String(h||'').replace('#',''); if(h.length===3) h = h.split('').map(x=>x+x).join(''); const n = parseInt(h,16); return [n>>16&255, n>>8&255, n&255]; };
   const lum = h => { const v = rgb(h).map(q => { q/=255; return q <= .03928 ? q/12.92 : Math.pow((q+.055)/1.055, 2.4); }); return .2126*v[0] + .7152*v[1] + .0722*v[2]; };
-  const con = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); };
+  const con = (a, x) => { const p = lum(a), q = lum(x); return (Math.max(p,q)+.05)/(Math.min(p,q)+.05); };
   const on = bg => con(bg, '#ffffff') >= con(bg, '#161616') ? '#ffffff' : '#161616';
-  const dark = c.dark || '#15181d', main = c.main || '#b5301f', acc0 = c.accent || '#f0b43c';
-  const acc = con(acc0, dark) >= 3 ? acc0 : on(dark);
-  r.setProperty('--ss-page', dark); r.setProperty('--ss-ink', '#f4f1ea'); r.setProperty('--ss-acc', acc); r.setProperty('--ss-band', dark); r.setProperty('--ss-bandink', '#f4f1ea'); r.setProperty('--ss-bandacc', acc);
+  const mix = (a, x, t) => { const p = rgb(a), q = rgb(x); return '#' + p.map((v, i) => Math.round(v + (q[i] - v)*t).toString(16).padStart(2, '0')).join(''); };
+  // as PO.brand: the kit's dark is the field, its paper the headline color where it reads, its accent the second word, the keyline and the labels
+  const dark = c.dark || '#15181d', acc0 = c.accent || '#f0b43c', paper0 = /^#[0-9a-f]{3,6}$/i.test(b.paper || '') ? b.paper : '#f4f1ea', o = on(dark), light = o === '#ffffff';
+  const paper = con(paper0, dark) >= 4.5 ? paper0 : o, acc = con(acc0, dark) >= 3 ? acc0 : o;
+  r.setProperty('--po-dark', dark); r.setProperty('--po-head', paper); r.setProperty('--po-on', o); r.setProperty('--po-accent', acc); r.setProperty('--po-frame', acc);
+  r.setProperty('--po-paper', paper); r.setProperty('--po-paper-ink', on(paper)); r.setProperty('--po-soft', mix(o, dark, .14)); r.setProperty('--po-rule', light ? 'rgba(255,255,255,.3)' : 'rgba(0,0,0,.3)');
 });
 </script>
 </body>
