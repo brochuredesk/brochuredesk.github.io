@@ -290,12 +290,13 @@
     let h = spine(D, E, P, 54, 396, 20);
     // the day as a stat tile, the title, then two columns to write in; the photo and the rating tiles stack on the right
     h += box(m, 22, 58, 58, `background:${P.dark}`);
-    h += txt('oh.day', ev.day, m, 26, 58, `text-align:center;font:600 27pt/30pt ${OSW};color:${on}`);
-    h += txt('oh.mon', ev.mon3, m, 62, 58, `text-align:center;font:600 8pt/1 ${MONT};letter-spacing:2.4pt;text-transform:uppercase;color:${soft}`);
+    // an Open House with no date yet (the order page's listing) keeps the tile filled: "Open" over "House"
+    h += txt('oh.day', ev.day || 'Open', m, 26, 58, `text-align:center;font:600 27pt/30pt ${OSW};color:${on}${ev.day ? '' : ';text-transform:uppercase'}`);
+    h += txt('oh.mon', ev.mon3 || 'House', m, 62, 58, `text-align:center;font:600 8pt/1 ${MONT};letter-spacing:2.4pt;text-transform:uppercase;color:${soft}`);
     const tx = m + 70, tw = 398 - tx;
     h += X.line('oh.label', ev.label.toUpperCase(), tx, 22, tw, 8.5, 8, '', `font:600 8.5pt/1 ${MONT};letter-spacing:3pt;color:${P.accInk}`);
     h += X.line('title', 'Your feedback', tx, 31, tw, 34, 22, '', `font:700 34pt/38pt ${OSW};letter-spacing:1.2pt;text-transform:uppercase;color:${P.ink}`);
-    h += X.line('oh.date', `${ev.weekday}   ·   ${ev.time}`, tx, 72, tw, 8.5, 8, '', `font:600 8.5pt/1 ${MONT};letter-spacing:.4pt;color:${P.muted}`);
+    h += X.line('oh.date', ev.weekday && ev.time ? `${ev.weekday}   ·   ${ev.time}` : (ev.weekday || ev.time || 'Date and time to come'), tx, 72, tw, 8.5, 8, '', `font:600 8.5pt/1 ${MONT};letter-spacing:.4pt;color:${P.muted}`);
     h += X.line('address', `${L.address.toUpperCase()}  ·  ${X.cityZip(L)}`, m, 88, 328, 11.5, 8, '', `font:600 11.5pt/13pt ${OSW};letter-spacing:1pt;color:${P.ink}`);
     h += box(m, 106, 328, 2.5, `background:${P.fill}`);
     const qsz = Math.round(10.5 * Math.min(kl, 1.06) * 2) / 2;
