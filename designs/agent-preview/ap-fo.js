@@ -369,13 +369,16 @@
   FO.back = (D, o) => { o = o || {}; const K = D.sw || {}, KB = K.back || {}, FB = ((D.companion || {}).flyer || {}).back || {}, hasPlan = !!D.plan, P = K.plan || {}, flyer = !!o.flyer, issues = [];
     const topId = flyer ? P.flyerTop : (P.back || [])[0] || (P.backNoplan || [])[0];
     const rowIds = flyer ? (P.flyerBack || []).slice(0, 3) : (P.backRow || ['bath2']).slice(0, 3), rowCards = FO.cards(D, rowIds);
-    const L0 = X0, R0 = X1, kickT0 = +(D.listing || {}).stories > 1 ? 'Floor by floor' : 'Room by room', ht0 = String((hasPlan ? (KB.plan || {}).title : (KB.noplan || {}).title) || '').replace(/\.$/, ''), hfs = ht0 ? AP.dfit(ht0, CW, 30, 18) : 0, TOP = 36 + 18 + hfs*1.1 + 6 + 1.4 + 18;
+    const L0 = X0, R0 = X1, kickT0 = +(D.listing || {}).stories > 1 ? 'Floor by floor' : 'Room by room', ht0 = String((hasPlan ? (KB.plan || {}).title : (KB.noplan || {}).title) || '').replace(/\.$/, ''), hfs = ht0 ? AP.dfit(ht0, CW, 30, 18) : 0, TOP0 = 36 + 18 + hfs*1.1 + 6 + 1.4;
     let hdr = AP.eyebrow(kickT0, X0, 36, CW, 'back.about.title') + (ht0 ? AP.display(ht0, X0, 54, CW, hfs, 'back.about.head', {lh: 1.1}) : '') + AP.rule(306, 54 + hfs*1.1 + 6, 56);
     let h = '', top, leftW;
     const LV = hasPlan ? (D.plan.levels || []) : []; let tall = hasPlan && (LV.length >= 4 || (LV.length === 1 && LV[0].h/LV[0].w > 1.5));
+    // owner 11/24/2026 (a standing rule from the Garden Serif back: every plan with a room sizes table): on the fold-over back where the
+    // room sizes sit beside the plan, the plan is larger and taller and sits closer to the top; the gaps under it give the height
+    const big = hasPlan && !flyer && !tall, TOP = TOP0 + (big ? 10 : 18);
     // the fold-over back: a wide plan leaves a narrow column whose write-up (every fact said once on the piece) cannot fill it; that column
     // takes a captioned photo over two short paragraphs instead (the tall layout), and the photo takes whatever the paragraphs leave
-    const TH = tall ? Math.min(464, FO.CARD_Y - 14 - 16 - 112 - TOP - 32) : flyer ? Math.min(244, (P.flyerTH || 300) - 10) : Math.min(240, P.backTH || 282);
+    const TH = tall ? Math.min(464, FO.CARD_Y - 14 - 16 - 112 - TOP - 32) : flyer ? Math.min(244, (P.flyerTH || 300) - 10) : Math.min(big ? 264 : 240, (P.backTH || 282) + (big ? 24 : 0));
     if(hasPlan){ const pc = FO.planBox(D, L0, TOP, TH, tall ? 300 : flyer ? 360 : 340); h += pc.html; issues.push(...pc.issues); window.planIssues = pc.issues; top = pc.bottom; leftW = Math.round(parseFloat(/width:([\d.]+)pt/.exec(pc.html)[1])); }
     const BX = KB.boxes || {}, SF = FXS.sellingFacts(D), c1 = ((BX.inside && BX.inside.items) || SF.inside.filter(t => !/^Built in|story|bedrooms|square feet/i.test(t))).slice(0, 6), c2 = ((BX.outside && BX.outside.items) || SF.outside).slice(0, 6), t1 = (BX.inside && BX.inside.title) || 'New and updated';
     if(!hasPlan){   // the big outdoor photo: as tall as leaves the row under it a full-size photo
@@ -403,11 +406,11 @@
       const T0 = TOP + 4 + hh, nar = aw < 240, n = Math.floor((top - T0)/(nar ? 19 : 16)), lh = +((top - T0)/n).toFixed(3);
       h += head(TOP + 2) + FO.full(FO.wu(keep(f2.concat(f1)), ax, T0, aw, n*lh + 0.01, 'back.about', nar ? 12.5 : 11, lh, 'body')).replace('data-slot="back.about"', `data-slot="back.about"${aw < 240 ? ' data-rag="1"' : ''} data-span="${(top - T0).toFixed(2)}"${P.pool ? ` data-pool="${P.pool}"` : ''}`);
       if(!flyer && hasPlan) h += `<div data-sizecol="${ax},${T0},${aw},${top}" style="display:none"></div>`;   // owner 11/16 (Book 4 p41): room sizes fill a write-up that runs short (FO.sizeTab)
-      const y0 = top + 18, n2 = rowCards.length, gap = 12, tw = (R0 - L0 - (n2 - 1)*gap)/n2, nb = Math.max(Math.min(c1.length, 5), Math.min(c2.length, 5), 3), need = 24 + Math.max(4, nb)*23 + 10, PH = Math.max(104, Math.min(n2 > 2 ? 214 : 190, BOXB - need - 14 - y0 - 25 - 3*13.5));
+      const y0 = top + (big ? 14 : 18), n2 = rowCards.length, gap = 12, tw = (R0 - L0 - (n2 - 1)*gap)/n2, nb = Math.max(Math.min(c1.length, 5), Math.min(c2.length, 5), 3), need = 24 + Math.max(4, nb)*23 + 10, PH = Math.max(104, Math.min(n2 > 2 ? 214 : 190, BOXB - need - 14 - y0 - 25 - 3*13.5));
       rowCards.forEach((c, i) => { h += FXS.captioned(D, c, L0 + i*(tw + gap), y0, tw, PH, 3, 'back.photo' + i, {fs: 10.5, lh: 13.5, min: 3}); });
       rowEnd = y0 + PH + 25 + 3*13.5;
     }
-    const by = rowEnd + 16, BH = BOXB - by;
+    const by = rowEnd + (big ? 12 : 16), BH = BOXB - by;
     h += FO.signTable(D, c1, c2, t1, L0, by, R0 - L0, BH);
     h += FO.contact(D, X0, window.__cardY || FO.CARD_Y, CW, FO.CARD_H) + FO.fine(D);
     return {html: hdr + h, issues};
@@ -441,16 +444,22 @@
   // table from the listing's own plan (the sizes printed on the plan, under the plan's room names) fills the rest; the two sit as one block
   // centered on the plan box, the table's rows spread to the column's foot. A write-up that fills its column gets no table.
   FO.sizeTab = D => { const mk = document.querySelector('[data-sizecol]'), el = document.querySelector('[data-slot="back.about"]'); if(!mk || !el || !el.textContent.trim()) return;
-    const [x, T0, w, bot] = mk.dataset.sizecol.split(',').map(Number), n = SW.lines(el).n, lh = Math.min(parseFloat(el.style.lineHeight), parseFloat(el.style.fontSize)*1.45), wh = n*lh, gap = 20, labH = 22;
-    const L = ((D.sw || {}).plan || {}).leads || {}, rooms = []; SW.SIZE.lastIndex = 0;
-    Object.keys(L).forEach(k => { const m = /^(.*?),\s*(\d+'(?:\s*\d+")?\s*x\s*\d+'(?:\s*\d+")?)\.?$/.exec(L[k]); if(m && !rooms.some(r => r.s === m[2])) rooms.push({n: m[1], s: m[2]}); });
-    const free = (bot - T0) - wh - gap - labH; if(rooms.length < 3 || free < 3*21) return;
-    const nr = Math.min(rooms.length, Math.floor(free/21)), rh = Math.min(32, free/nr), blockH = wh + gap + labH + nr*rh, y0 = T0 + ((bot - T0) - blockH)/2;
+    const [x, T0, w, bot] = mk.dataset.sizecol.split(',').map(Number), n = SW.lines(el).n, lh = Math.min(parseFloat(el.style.lineHeight), parseFloat(el.style.fontSize)*1.45), wh = n*lh, gap = 18, labH = 18;
+    // owner 11/24/2026 (standing rule from the Garden Serif back): the table lists EVERY room the listing gives with a size, each under the
+    // plan's own name and size (PlanRooms; the plan's printed labels when the listing gives fewer than three), in short ruled rows
+    const LR = ((D.listing || {}).rooms || []).filter(r => r && r.name && r.size).map(r => ({name: r.name, size: String(r.size).replace(/^\s*(\d+)\s*x\s*(\d+)\s*$/i, "$1' x $2'"), level: r.level ? +r.level - 1 : null}));
+    let rooms = [];
+    if(LR.length >= 3){ const M = window.PlanRooms ? PlanRooms.match(D, LR) : LR; LR.forEach((r, i) => { const q = M[i] || r; rooms.push({n: String(q.name || r.name).replace(/^(\w)/, c => c.toUpperCase()), s: String(q.size || r.size).replace(/\s*[x×]\s*/, ' x '), lv: r.level == null ? 0 : r.level}); }); rooms = rooms.map((r, i) => Object.assign(r, {i})).sort((a, b) => a.lv - b.lv || a.i - b.i); }
+    else { const L = ((D.sw || {}).plan || {}).leads || {}; Object.keys(L).forEach(k => { const m = /^(.*?),\s*(\d+'(?:\s*\d+")?\s*x\s*\d+'(?:\s*\d+")?)\.?$/.exec(L[k]); if(m && !rooms.some(r => r.s === m[2])) rooms.push({n: m[1], s: m[2]}); }); }
+    rooms = rooms.filter((r, i, a) => a.findIndex(u => u.n === r.n && u.s === r.s) === i);
+    const free = (bot - T0) - wh - gap - labH; if(rooms.length < 3 || free < 3*16) return;
+    const nr = Math.min(rooms.length, Math.floor(free/16)), rh = Math.min(21, free/nr), blockH = wh + gap + labH + nr*rh, y0 = T0 + ((bot - T0) - blockH)/2;
     el.style.top = y0 + 'pt'; el.style.lineHeight = lh + 'pt'; el.style.height = wh + 'pt'; delete el.dataset.span;
     const ty = y0 + wh + gap; let t = `<div class="abs fo-kick" style="left:${x}pt;top:${ty}pt;width:${w}pt" data-slot="back.sizes.kicker" data-lines="1">ROOM SIZES</div><div data-size="1" data-sizetable="1">`;
-    rooms.slice(0, nr).forEach((r, i) => { const ry = ty + labH + i*rh; let fs = 11.5; while(fs > 9 && FXS.width(r.n, `font-family:Manrope;font-weight:500;font-size:${fs}pt`) + FXS.width(r.s, `font-family:Spectral;font-weight:500;font-size:${fs + 2}pt`) + 16 > w) fs -= 0.25;
+    const fsOf = r => { let fs = Math.min(10.5, rh*0.56); while(fs > 9 && FXS.width(r.n, `font-family:Manrope;font-weight:500;font-size:${fs}pt`) + FXS.width(r.s, `font-family:Spectral;font-weight:500;font-size:${fs + 1.5}pt`) + 12 > w) fs -= 0.25; return fs; }, fs = Math.min(...rooms.slice(0, nr).map(fsOf));
+    rooms.slice(0, nr).forEach((r, i) => { const ry = ty + labH + i*rh;
       t += `<div class="abs" style="left:${x}pt;top:${ry}pt;width:${w}pt;height:.8pt;background:var(--ap-rule)"></div>`;
-      t += `<div class="abs" style="left:${x}pt;top:${ry}pt;width:${w}pt;height:${rh}pt;display:flex;align-items:center;justify-content:space-between;white-space:nowrap" data-slot="back.sizes.r${i}" data-lines="1"><span style="font-family:var(--ap-font);font-weight:500;font-size:${fs}pt;color:var(--ap-on)">${esc(r.n)}</span><span style="font-family:var(--ap-serif);font-weight:500;font-size:${fs + 2}pt;color:var(--ap-accent)">${esc(r.s)}</span></div>`; });
+      t += `<div class="abs" style="left:${x}pt;top:${ry}pt;width:${w}pt;height:${rh}pt;display:flex;align-items:center;justify-content:space-between;white-space:nowrap" data-slot="back.sizes.r${i}" data-lines="1"><span style="font-family:var(--ap-font);font-weight:500;font-size:${fs}pt;color:var(--ap-on)">${esc(r.n)}</span><span style="font-family:var(--ap-serif);font-weight:500;font-size:${fs + 1.5}pt;color:var(--ap-accent)">${esc(r.s)}</span></div>`; });
     t += `<div class="abs" style="left:${x}pt;top:${ty + labH + nr*rh}pt;width:${w}pt;height:.8pt;background:var(--ap-rule)"></div></div>`;
     mk.insertAdjacentHTML('afterend', t); };
   // after the fill: a block with data-span spreads the lines it took over that height, so its last line ends where its neighbor's does (owner 11/7, p12)

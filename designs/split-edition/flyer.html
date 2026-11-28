@@ -134,7 +134,7 @@ window.brochureReady = (async function(){
     if(!sf){ SN = Math.max(3, SF.most(sbt, sw, SM, 5, 3)); sf = SF.fit(sbt, sw, SM, SN); }
     const CLH = 9 + 28 + 6 + SN*14 + 9;
     const CARDH = 66, CARDT = 752 - CARDH, CLT = CARDT - 6 - CLH, BOTB = CLT - 12;
-    const B = FL.back || {}, NP = B.noplan || {}, TOP = 94, ZH = (D.plan && D.plan.levels && D.plan.levels.length) ? 272 : 215;
+    const B = FL.back || {}, NP = B.noplan || {}, TOP = 94, ZH = (D.plan && D.plan.levels && D.plan.levels.length) ? 300 : 215;   // owner 11/24/2026 (standing rule from the Garden Serif back): the plan larger and taller beside a tighter room table (was 272)
     const kicker = (!hasPlan && NP.kicker) || B.kicker || '', title = (!hasPlan && NP.title) || B.title || '';
     h += header(kicker, 'back.kicker');
     h += `<div class="abs fl-title" data-fit="22" style="left:${X}pt;top:41pt;width:376pt;height:34pt" data-slot="back.title" data-lines="1">${esc(title)}</div>`;
@@ -165,8 +165,11 @@ window.brochureReady = (async function(){
         issues.push(...probe.issues); h += probe.html;
         const nmax = Math.floor((ZH - 14 - nR*18 - 10 - 14)/12);
         const N = Math.max(3, SF.most(nb, RW, NT, Math.max(3, nmax), 3)), nf = SF.fit(nb, RW, NT, N); fillNote('back.plannote', nf, N);
-        const noteH = 14 + N*12; pitch = Math.min(30, (ZH - 14 - 10 - noteH)/nR);
-        noteHtml = `<div class="abs kick" style="left:${RX}pt;top:${TOP + ZH - noteH}pt;width:${RW}pt;height:10pt" data-slot="back.notehead" data-lines="1">${esc((B.plan || {}).head || 'Reading the plan')}</div>` + SF.para('back.plannote', nf.text, RX, TOP + ZH - N*12, RW, N, 9, 12, '', 'data-para="1"');
+        // owner 11/24/2026: short ruled rows (was up to 30 pt); the height they give back opens the note's leading (to 14.5 pt), any rest
+        // goes back to the rows, so the column stays full
+        const room = ZH - 14 - 10 - 14; pitch = Math.min(20, (room - N*12)/nR); const nlh = Math.min(14.5, (room - nR*pitch)/N); pitch = (room - N*nlh)/nR;
+        const noteH = 14 + N*nlh;
+        noteHtml = `<div class="abs kick" style="left:${RX}pt;top:${TOP + ZH - noteH}pt;width:${RW}pt;height:10pt" data-slot="back.notehead" data-lines="1">${esc((B.plan || {}).head || 'Reading the plan')}</div>` + SF.para('back.plannote', nf.text, RX, TOP + ZH - N*nlh, RW, N, 9, +nlh.toFixed(2), '', 'data-para="1"');
       }
       h += `<div class="abs kick" style="left:${RX}pt;top:${TOP}pt;width:${RW}pt;height:10pt" data-slot="back.roomshead" data-lines="1">${esc(B.roomsHead || 'Room by room')}</div>`;
       h += `<div class="abs rooms" style="left:${RX}pt;top:${TOP + 14}pt;width:${RW}pt">${rooms.map((r, i) => `<div style="height:${pitch.toFixed(2)}pt" data-slot="back.room${i}" data-lines="1"><span class="n">${esc(r[0])}</span><span class="s">${esc(r[1])}</span></div>`).join('')}</div>` + noteHtml;
