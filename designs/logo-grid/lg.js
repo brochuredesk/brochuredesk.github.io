@@ -682,8 +682,9 @@
   FXS.stat3 = (L) => { const items = FXS.statItems(L).slice(0, 3); return items.map(t => FXS.statParts(t)); };
   FXS.statLines = (parts, x, y, pitch, slot) => parts.map((p, i) => `<div class="abs stat" data-slot="${slot}.${i}" data-lines="1" style="left:${x}pt;top:${y + i*pitch}pt;height:${pitch}pt"><span class="n">${esc(p.n)}</span><span class="l">${esc(p.l)}</span></div>`).join('');
   // the cover's real-selling-fact tags
-  FXS.tagFacts = D => { const SF = FXS.sellingFacts(D), pri = /garage|fenced|deck|pergola|gated|roof|patio|pool|balcon|turf/i, all = SF.outside.concat(SF.inside), pick = all.filter(t => pri.test(t));
-    return {tags: pick.concat(all.filter(t => !pick.includes(t))).filter(t => !/^Built in|story|bedrooms|square feet|sq ft/i.test(t))}; };
+  FXS.tagFacts = D => { if(D.preview){ const SP = FXS.sellingFacts(D); return {tags: SP.inside.concat(SP.outside).filter((t, i, a) => a.indexOf(t) === i)}; }
+    const SF = FXS.sellingFacts(D), pri = /garage|fenced|deck|pergola|gated|roof|patio|pool|balcon|turf/i, all = SF.outside.concat(SF.inside), pick = all.filter(t => pri.test(t));
+    return {tags: pick.concat(all.filter(t => !pick.includes(t))).filter(t => !/^Built in|story|bedrooms|square feet|sq ft/i.test(t)).filter((t, i, a) => a.indexOf(t) === i)}; };   // "2 stories" sits in both boxes: one highlight, not two (11/28)
   // the white agent card of a cover: name, REALTOR(R), phone, email, the one logo; a headshot rides the card's top edge
   FXS.agentCard = (D, x, y, w, h) => { const A = D.agent || {}, b = D.brand || {}, hsSrc = A.headshot && ((D.photos||{})[A.headshot] ? D.photos[A.headshot].src : A.headshot) || '', hs = !!hsSrc;
     const ns = FXS.fitSize(A.name || '', "font-family:Red Hat Display", w - 24, 25, 16);
@@ -748,6 +749,11 @@
 
   // real selling facts for the back's two boxes, read from the package's own sentences (never a box label like CABINETS)
   FXS.sellingFacts = D => {
+    // a gallery preview carries the example house's sentences: its facts ("Fenced yard", a balcony) would show on another listing,
+    // so a preview reads only this listing's own facts (11/28)
+    if(D.preview){ const L = D.listing || {}, n = v => Number(v).toLocaleString('en-US');
+      return {inside: [L.beds ? `${L.beds} bedrooms` : '', L.baths ? `${L.baths} full baths` : '', L.sqft ? `${n(L.sqft)} square feet` : '', L.yearBuilt ? `Built in ${L.yearBuilt}` : ''].filter(Boolean),
+        outside: [L.stories ? (L.stories == 1 ? 'One story' : `${L.stories} stories`) : '', L.lotSize ? String(L.lotSize).replace(/\s*Sq Ft Lot/i, ' sq ft lot') : ''].filter(Boolean)}; }
     const strs = []; const walk = (o, k) => { if(k === 'nearby') return; if(typeof o === 'string') strs.push(o); else if(Array.isArray(o)) o.forEach(v => walk(v, k)); else if(o && typeof o === 'object') Object.keys(o).forEach(kk => walk(o[kk], kk)); };
     walk(D.sw || {}); walk(D.companion || {});
     const T = strs.join(' \n ');

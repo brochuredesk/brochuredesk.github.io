@@ -1111,11 +1111,25 @@
     const FACTY = /\d|flood|never|\bnew\b|updated|replaced|renovat|remodel|roof|foundation|hvac|solar|pool|acre|original|restored/i;
     const TEXT = {kicker: 'kicker', title: 'headline', q: 'headline', heading: 'headline', intro: 'intro', summary: 'summary', notes: 'summary', body: 'feature',
       a: 'feature', detail: 'feature', locationBody: 'location', locationTitle: 'heading:Location', nearbyTitle: 'heading:Nearby'};
+    // the example house's short fact lists ("Fenced yard", "2-car garage") never show on another listing (11/28): each takes this
+    // listing's own facts, then the rooms its photos show, in the example's case (all caps stays all caps)
+    const L = pkg.listing || {}, num = n => Number(n).toLocaleString('en-US');
+    const own = [L.beds ? `${L.beds} bedroom${L.beds != 1 ? 's' : ''}` : '', L.baths ? `${L.baths} full bath${L.baths != 1 ? 's' : ''}` + (L.halfBaths ? `, ${L.halfBaths} half` : '') : '',
+      L.sqft ? `${num(L.sqft)} square feet` : '', L.yearBuilt ? `Built in ${L.yearBuilt}` : '', L.stories ? (L.stories == 1 ? 'One story' : `${L.stories} stories`) : '',
+      L.lotSize ? String(L.lotSize).replace(/\s*Sq Ft Lot/i, ' sq ft lot') : '']
+      .concat([...new Set(ids.map(roomOf).filter(r => r && r !== 'room' && r !== 'floor plan').map(PT.heading))]).filter(Boolean);
+    const FACTLIST = /^(items|highlights|tags|bullets|inside|outside|coverFacts|featuresShort|more|new|frontTags|builtIn)$/;
+    let ownAt = 0;
+    // a front's highlights open on the house's main facts; the back's boxes go on from where the last box stopped
+    const ownList = (v, key) => { const caps = v.every(x => x === x.toUpperCase()), out = [], front = /^(highlights|tags|coverFacts|featuresShort|frontTags)$/.test(key), at0 = front ? 0 : ownAt;
+      for(let i = 0; i < v.length && i < own.length; i++){ const t = own[(at0 + i) % own.length]; out.push(caps ? t.toUpperCase() : t); }
+      if(!front) ownAt += out.length; return out.length ? out : v.map(() => 'To come'); };
     function walk(v, path, group){
       const key = path[path.length - 1], b = at(base, path);
       if(typeof key === 'string' && KEEP.test(key)) return b !== undefined ? b : v;
       if(Array.isArray(v)){
         if(v.every(x => typeof x === 'string') && /photos$/i.test(key)) return b !== undefined ? b : v.filter(x => ids.includes(x));
+        if(typeof key === 'string' && FACTLIST.test(key) && b === undefined && v.length && v.every(x => typeof x === 'string' && x.length < 40 && !/[.!?]$/.test(x) && !ids.includes(x))) return ownList(v, key);
         const arr = v.map((x, i) => walk(x, path.concat(i), group));
         // a sentence list (or a list of [long, short] variants) never repeats a line (11/28)
         return arr.every(x => typeof x === 'string' || Array.isArray(x) && x.every(y => typeof y === 'string')) ? PT.distinct(arr, seed) : arr;
