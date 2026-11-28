@@ -44,13 +44,44 @@
     const got = [], room = () => len * 1.08 - (got.join(' ').length + (got.length ? 1 : 0));
     for(const s of order){ if(got.join(' ').length >= len * 0.92) break; if(s.length <= room()) got.push(s); }
     let out = got.join(' ');
-    if(!out){   // a very short slot: the shortest line, cut at a word
-      const short = order.slice().sort((x, y) => x.length - y.length)[0];
-      out = short.slice(0, Math.max(12, len)).replace(/\s+\S*$/, '').replace(/[,;:]$/, '');
-      if(!/[.!?]$/.test(out)) out += '.';
-      got.push(short);
+    if(!out){   // a very short slot: the shortest whole line (its own pool first, then any short line), never cut mid-sentence (11/28)
+      const short = order.concat(shortLines()).sort((x, y) => x.length - y.length)[0];
+      out = short; got.push(short);
     }
     if(rot) got.forEach(s => turn.used.add(s));
+    return out;
+  };
+  // every whole line that suits any text slot (no room names): the sections but headlines, the general room lines, the fillers
+  const general = () => [...Object.entries(LIB.sections).filter(([k]) => k !== 'headline').map(([, a]) => a).flat(), ...LIB.rooms.room, ...(LIB.fillers || [])];
+  const shortLines = () => general().filter(s => s.length <= 40);
+  const sents = t => String(t).split(/(?<=[.!?])\s+/).filter(Boolean);
+  // one design slot often reads a list of sentences and picks from it to fill its lines; with only a few approved lines per
+  // section the list came back with the same line two or three times, and the slot printed it twice (11/28, gallery tiles).
+  // Each preview entry keeps only sentences no earlier entry has; the gap is topped up with whole lines not yet in the list
+  // (lines the package hasn't shown first), about the same length. An entry with nothing new left is dropped, never repeated.
+  // An entry can also be a set of variants of one sentence ([long, short], as Logo Grid's): each variant is kept clear of the
+  // entries before it (not of its own siblings), and all its sentences count as seen for the entries after it.
+  PT.distinct = (arr, turn, keepAll) => {
+    if(!LIB || !Array.isArray(arr)) return arr;
+    const seen = new Set(), used = (turn && turn.used) || new Set(), pool = general();
+    const order = pool.filter(s => !used.has(s)).concat(pool.filter(s => used.has(s)));
+    const fix = (t, before) => {   // t with no sentence from `before`; null when nothing new is left
+      if(typeof t !== 'string' || !PT.isPreview(t)) return t;
+      const len = t.length, keep = sents(t).filter(s => !before.has(s)), total = () => keep.join(' ').length;
+      if(keep.length < sents(t).length) for(const s of order){ if(total() >= len * 0.92) break; if(!before.has(s) && !keep.includes(s) && s.length + 1 <= len * 1.08 - total()) keep.push(s); }
+      if(!keep.length){   // nothing left of it: the unseen line closest to its length (a short bullet gets a short line, so it still fits)
+        const near = order.filter(x => !before.has(x)).map((x, i) => [x, Math.abs(x.length - len) + (used.has(x) ? 20 : 0) + i * 0.01]).sort((p, q) => p[1] - q[1])[0];
+        if(near) keep.push(near[0]); }
+      return keep.length ? keep.join(' ') : (keepAll ? t : null);
+    };
+    const out = [];
+    for(const t of arr){
+      const before = new Set(seen);
+      const r = Array.isArray(t) ? t.map(x => fix(x, before)).filter(x => x != null) : fix(t, before);
+      if(r == null || (Array.isArray(r) && !r.length)) continue;
+      [].concat(r).forEach(x => { if(typeof x === 'string' && PT.isPreview(x)) sents(x).forEach(s => { seen.add(s); used.add(s); }); });
+      out.push(r);
+    }
     return out;
   };
   // after the design lays out: each preview line grows a sentence at a time to the lines its slot fills (data-fill), then
@@ -82,7 +113,9 @@
         parts.push(f);
       }
       set(parts);
-      if(over()){   // one long sentence in a small box: cut at a word
+      if(over()){   // one long sentence in a small box: a shorter whole line first; cut at a word only if no whole line fits (11/28)
+        const fits = shortLines().concat(general()).filter((x, i, a) => a.indexOf(x) === i).sort((x, y) => y.length - x.length).find(x => (set([x]), !over()));   // the longest whole line that fits
+        if(fits) continue;
         while(over() && el.textContent.length > 12) el.textContent = el.textContent.replace(/\s+\S+$/, '');
         el.textContent = el.textContent.replace(/[\s,;:]+$/, '').replace(/([^.!?])$/, '$1.');
       }

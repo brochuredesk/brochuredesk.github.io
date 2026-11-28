@@ -1116,7 +1116,9 @@
       if(typeof key === 'string' && KEEP.test(key)) return b !== undefined ? b : v;
       if(Array.isArray(v)){
         if(v.every(x => typeof x === 'string') && /photos$/i.test(key)) return b !== undefined ? b : v.filter(x => ids.includes(x));
-        return v.map((x, i) => walk(x, path.concat(i), group));
+        const arr = v.map((x, i) => walk(x, path.concat(i), group));
+        // a sentence list (or a list of [long, short] variants) never repeats a line (11/28)
+        return arr.every(x => typeof x === 'string' || Array.isArray(x) && x.every(y => typeof y === 'string')) ? PT.distinct(arr, seed) : arr;
       }
       if(v && typeof v === 'object'){
         if('walls' in v || 'rooms' in v && 'w' in v) return null;   // the sample's drawn plan: never shown for another listing
@@ -1126,6 +1128,9 @@
         for(const [k, x] of Object.entries(v)) if(k !== 'photo' || typeof x !== 'string') o[k] = walk(x, path.concat(k), g);
         // a section's kicker names the rooms in it (after its photos are placed)
         if(typeof o.kicker === 'string' && g.rooms.length) o.kicker = [...new Set(g.rooms.map(PT.heading))].slice(0, 2).join(' + ');
+        // sibling text slots (hl.1, hl.2 ...) don't show the same preview line either; a slot is never emptied (11/28)
+        const tk = Object.keys(o).filter(k => typeof o[k] === 'string' && PT.isPreview(o[k]));
+        if(tk.length > 1){ const d = PT.distinct(tk.map(k => o[k]), seed, true); tk.forEach((k, i) => { o[k] = d[i]; }); }
         return o;
       }
       if(typeof v !== 'string') return v;
@@ -1135,7 +1140,9 @@
       if(room && key === 'lead') return '';
       if(room && /^(body|a|detail|notes)$/.test(key)) return PT.line(room, len, seed);
       const t = TEXT[key];
-      // a short label stays; a short fact from the example's house (a size, "Never flooded", "New roof") never shows on this one
+      // a short label stays; a short fact from the example's house (a size, "Never flooded", "New roof") never shows on this one,
+      // and neither does a short sentence from it ("The yard is fenced." showed on other listings' previews, 11/28)
+      if(!t && b === undefined && !ids.includes(v) && v.length < 24 && /\s/.test(v) && /[.!?]$/.test(v)) return PT.line('feature', len, seed);
       if(!t) return b !== undefined ? b : ids.includes(v) ? v : v.length < 24 ? (FACTY.test(v) ? 'To come' : v) : PT.line('feature', len, seed) || 'To come';
       if(t.startsWith('heading:')) return t.slice(8);
       if(t === 'kicker') return v;
