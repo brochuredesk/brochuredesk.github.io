@@ -188,8 +188,16 @@ window.brochureReady = (async function(){
     h += `<div class="pc-ret" data-small="1" data-fine="1" data-slot="back.return" style="left:${rx}pt;top:18pt;width:${rw}pt;text-align:right;color:#fff"><b style="color:#fff">${esc(ret[0] || '')}</b>${ret.slice(1).map(t => '<br>' + esc(t)).join('')}</div>`;
     // the strip between the postage box and the address block
     { const sx = rx, sy = Z.postage[1] + Z.postage[3] + 10, sw2 = W - 20 - sx, sh = Z.address[1] - 8 - sy;
-      if(!sold){ const items = FXS.statItems(L).filter(t => !/^Built/.test(t)).map(t => FXS.statParts(t)), cw = sw2/items.length;
-        items.forEach((p, i) => { h += `<div class="abs" style="left:${sx + i*cw}pt;top:${sy + sh/2 - 18}pt;width:${cw}pt;height:36pt;font-family:Urbanist;color:#fff;white-space:nowrap;overflow:hidden" data-slot="back.fact${i}" data-lines="1" data-fine="1"><div style="font-weight:700;font-size:${21*Math.min(k, 1.05)}pt;line-height:22pt;letter-spacing:-.3pt">${esc(p.n)}</div><div style="font-weight:600;font-size:8.6pt;line-height:12pt;letter-spacing:1.6pt;text-transform:uppercase;color:var(--sg-accent)">${esc(p.l)}</div></div>`; }); }
+      if(!sold){ // owner 11/16 (p20, p22): no blank space above the facts or around the return address. The facts stack, big, in the column
+        // under the return address beside the postage box (each numeral with its label on one line, right aligned like the address), and
+        // the sunburst fills the strip under the postage box.
+        const items = FXS.statItems(L).filter(t => !/^Built/.test(t)).map(t => FXS.statParts(t)), cx0 = rx, cw0 = Z.postage[0] - 12 - rx, cy0 = 62, cy1 = Z.address[1] - 12, rh = (cy1 - cy0)/items.length;
+        const css = (ns, ls) => `font-family:Urbanist;font-weight:700;font-size:${ns}pt;letter-spacing:-.3pt`, lcss = s => `font-family:Urbanist;font-weight:600;font-size:${s}pt;letter-spacing:1.4pt`;
+        let ns = Math.min(30, rh*0.82), ls = 8.6; const fits = () => items.every(p => FXS.width(p.n, css(ns)) + 7 + FXS.width(String(p.l).toUpperCase(), lcss(ls)) <= cw0);
+        while(!fits() && ns > 18) ns -= 0.5; while(!fits() && ls > 7.4) ls -= 0.2;
+        items.forEach((p, i) => { h += `<div class="abs" style="left:${cx0}pt;top:${cy0 + i*rh}pt;width:${cw0}pt;height:${rh}pt;line-height:${rh}pt;text-align:right;font-family:Urbanist;color:#fff;white-space:nowrap;overflow:hidden" data-slot="back.fact${i}" data-lines="1" data-fine="1"><span style="font-weight:700;font-size:${ns}pt;letter-spacing:-.3pt;vertical-align:middle">${esc(p.n)}</span><span style="display:inline-block;width:7pt"></span><span style="font-weight:600;font-size:${ls}pt;letter-spacing:1.4pt;text-transform:uppercase;color:var(--sg-accent);vertical-align:middle">${esc(p.l)}</span></div>`; });
+        const by0 = Z.postage[1] + Z.postage[3] + 4, by1 = Z.address[1] - 4, br = Math.min(26, (by1 - by0)/2 - 4);
+        h += SG.burst(Z.postage[0] + Z.postage[2]/2, (by0 + by1)/2, 12, br, {w: 2.2}); }
       else { const d2 = SG.disp('Thinking', 'about selling?', sx - 1, sy + (sh - 2*20*k*1.0)/2, sw2 - 50, 20*k, 13, 'back.cta', {lh: 1.0}); h += d2.html + (big ? '' : SG.burst(W - 20 - 22, sy + sh/2, 8, 22, {w: 2})); } }
     // the band under the address block: full width
     const bandY = Z.address[1] + Z.address[3] + 8, bandH = cardY - 6 - bandY;

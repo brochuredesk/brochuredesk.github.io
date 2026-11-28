@@ -509,10 +509,10 @@
   // horizon for the spread). The kitchen big, bleeding off the outer edge, square; beside it the white soft card (the approved flyer's event
   // box: 9 pt corners, a thin main-color line) with its rows on round main-color numerals (the sign-in sheet's rows); then two rooms in soft
   // corners with their captions. ----------------
-  FO.SEAM = {l: [186, 173], r: [173, 160]};   // one slanted seam across the inside spread (left page, right page; pt at x = -9 and x = 621)
+  FO.SEAM = {l: [152, 139], r: [139, 126]};   // owner 11/16 p16: heading narrower and tighter, the crown shorter; the room goes to the photos and write-ups   // one slanted seam across the inside spread (left page, right page; pt at x = -9 and x = 621)
   FO.left = (D) => { const K = D.sw || {}, I = K.left || {}, box = I.box || {}, P = K.plan || {}, ids = P.left || [], heroC = FXS.cardFor(D, ids[0]), rowC = FO.cards(D, ids.slice(1, 3));
-    let h = bg('var(--sg-paper)') + SG.crown(-9, 621, FO.SEAM.l[0], FO.SEAM.l[1]); const hd = FO.sgHead(I.kicker, I.title, 'left', {max: 46}); h += hd.html;
-    const Y0 = 206, PH = 296, clh = 14, L = 4;
+    let h = bg('var(--sg-paper)') + SG.crown(-9, 621, FO.SEAM.l[0], FO.SEAM.l[1]); const hd = FO.sgHead(I.kicker, I.title, 'left', {max: 36, min: 26, y: 28, w: 420}); h += hd.html;
+    const Y0 = 168, PH = 316, clh = 14, L = 5;
     const SFb = FXS.sellingFacts(D), BXb = ((K.back || {}).boxes) || {}, backT = [].concat((BXb.inside || {}).items || SFb.inside, (BXb.outside || {}).items || SFb.outside).map(String), backG = new Set(backT.flatMap(t => SW.grams4(t)));
     // Night Fade's repeat filter: a row is dropped only for a fact the back's lists really print; a two-word item repeats only when both its words are in the row
     const taken = a => SW.grams4(a).some(g => backG.has(g)) || backT.some(b => SW.sameFact(b, a) && (b.split(/\s+/).length >= 3 || b.toLowerCase().split(/\s+/).every(w => a.toLowerCase().includes(w))));
@@ -541,15 +541,15 @@
   // arrangement: the lead room big, bleeding off the outer edge, with its write-up under it; beside it a tall soft column (the second room,
   // cropped to the thing worth seeing, its caption under it); across the foot two rooms in soft corners. ----------------
   FO.right = (D) => { const K = D.sw || {}, R = K.right || {}, P = K.plan || {}, cs = FO.cards(D, P.right || []);
-    let h = bg('var(--sg-paper)') + SG.crown(-9, 621, FO.SEAM.r[0], FO.SEAM.r[1]); const hd = FO.sgHead(R.kicker || '', R.title || '', 'right', {max: 46, w: 412}); h += hd.html;
-    h += SG.burst(522, 100, 15, 44, {w: 2.9});
+    let h = bg('var(--sg-paper)') + SG.crown(-9, 621, FO.SEAM.r[0], FO.SEAM.r[1]); const hd = FO.sgHead(R.kicker || '', R.title || '', 'right', {max: 36, min: 26, y: 28, w: 390}); h += hd.html;
+    h += SG.burst(530, 70, 12, 34, {w: 2.6});
     // three rooms only: the lead room runs the height of the page and the other two stack in the soft column beside it
-    const four = !!cs[3], Y0 = 192, BX = 240, l1 = 3, lh1 = 15, sideW = BX - 14 - X0, BH = four ? 258 : 772 - Y0 - 25 - l1*lh1;
-    let s = FXS.captioned(D, cs[0], BX, Y0, 621 - BX, BH, l1, 'right.photo0', {fs: 11.2, lh: lh1, min: 3, tw: X1 - BX});
+    const four = !!cs[3], Y0 = 156, BX = 240, l1 = 4, lh1 = 15, sideW = BX - 14 - X0, BH = four ? 258 : 772 - Y0 - 25 - l1*lh1;
+    let s = FXS.captioned(D, cs[0], BX, Y0, X1 - BX, BH, l1, 'right.photo0', {fs: 11.2, lh: lh1, min: 3, tw: X1 - BX});
     const capEnd = Y0 + BH + 25 + l1*lh1;
     if(four){ const slh = 13, sph = Math.min(sideW*1.36, capEnd - Y0 - 25 - 4*slh), sl = Math.floor((capEnd - Y0 - 25 - sph)/slh); s += `<div class="sg-soft">` + FXS.captioned(D, cs[1], X0, Y0, sideW, sph, sl, 'right.photo1', {fs: 9.8, lh: slh, min: 3}) + `</div>`; }
     else { const slh = 13, hh = (capEnd - Y0 - 18)/2, sl = 5, sph = hh - 25 - sl*slh; cs.slice(1, 3).forEach((c, i) => { s += `<div class="sg-soft">` + FXS.captioned(D, c, X0, Y0 + i*(hh + 18), sideW, sph, sl, 'right.photo' + (i + 1), {fs: 9.8, lh: slh, min: 3}) + `</div>`; }); return h + `<div class="sg-pp">${s}</div>`; }
-    const rest = cs.slice(2, 4), y2 = capEnd + 12, n = Math.max(1, rest.length), g = 14, tw = (CW - (n - 1)*g)/n, L2 = 3, lh2 = 13.5, RH = 772 - y2 - 25 - L2*lh2;
+    const rest = cs.slice(2, 4), y2 = capEnd + 12, n = Math.max(1, rest.length), g = 14, tw = (CW - (n - 1)*g)/n, L2 = 4, lh2 = 13.5, RH = 772 - y2 - 25 - L2*lh2;
     s += `<div class="sg-soft">` + rest.map((c, i) => FXS.captioned(D, c, X0 + i*(tw + g), y2, tw, RH, L2, 'right.photo' + (i + 2), {fs: 10.4, lh: lh2, min: 3}).replace(`data-slot="right.photo${i + 2}" data-room`, `data-slot="right.photo${i + 2}" data-nopair="1" data-room`)).join('') + `</div>`;
     return h + `<div class="sg-pp">${s}</div>`;
   };

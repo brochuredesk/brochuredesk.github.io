@@ -76,6 +76,10 @@
 .sg-pp .cap .a b{color:var(--sg-ink)}
 /* soft geometry: a photo set inside the paper takes the cards' 9 pt corners; a photo that bleeds stays square */
 .sg-soft .ph,.ph.soft{border-radius:9pt}
+/* owner 11/26 (SG inside review p1): the kitchen bleeds off the outer (left) edge, so only its two inner corners round; the primary
+   bedroom on the right page stops at the margin, so all four of its corners round, matching the soft photos below them */
+.ph[data-slot-photo="left.wide"]{border-radius:0 9pt 9pt 0}
+.ph[data-slot-photo="right.photo0"]{border-radius:9pt}
 .sg-scard{position:absolute;background:#fff;border:1pt solid var(--sg-pmain);border-radius:9pt}
 .sg-tcard{position:absolute;background:var(--sg-tint);border:.75pt solid var(--sg-line);border-radius:9pt}
 /* the round numeral of the sign-in rows */
